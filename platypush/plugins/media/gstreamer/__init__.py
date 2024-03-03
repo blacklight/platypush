@@ -1,3 +1,4 @@
+from dataclasses import asdict
 import os
 from typing import Optional
 
@@ -186,7 +187,7 @@ class MediaGstreamerPlugin(MediaPlugin):
         pos = self._player.get_position()
         length = self._player.get_duration()
 
-        return {
+        status = {
             'duration': length,
             'filename': self._resource[7:]
             if self._resource.startswith('file://')
@@ -203,6 +204,17 @@ class MediaGstreamerPlugin(MediaPlugin):
             'url': self._resource,
             'volume': self._player.get_volume() * 100,
         }
+
+        if self._latest_resource:
+            status.update(
+                {
+                    k: v
+                    for k, v in asdict(self._latest_resource).items()
+                    if v is not None
+                }
+            )
+
+        return status
 
     @staticmethod
     def _gst_to_player_state(state) -> PlayerState:

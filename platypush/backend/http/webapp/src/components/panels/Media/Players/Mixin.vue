@@ -56,6 +56,10 @@ export default {
       return await this.request(`${this.pluginName}.set_volume`, {volume: volume})
     },
 
+    async toggleMute() {
+      return await this.request(`${this.pluginName}.mute`)
+    },
+
     async seek(position) {
       return await this.request(`${this.pluginName}.seek`, {position: position})
     },

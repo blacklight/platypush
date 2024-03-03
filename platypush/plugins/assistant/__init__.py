@@ -3,7 +3,7 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 import os
 from threading import Event
-from typing import Any, Collection, Dict, Optional
+from typing import Any, Collection, Dict, Optional, Type
 
 from platypush.context import get_bus, get_plugin
 from platypush.entities.assistants import Assistant
@@ -67,7 +67,8 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         tts_plugin: Optional[str] = None,
         tts_plugin_args: Optional[Dict[str, Any]] = None,
         conversation_start_sound: Optional[str] = None,
-        **kwargs
+        stop_conversation_on_speech_match: bool = False,
+        **kwargs,
     ):
         """
         :param tts_plugin: If set, the assistant will use this plugin (e.g.
@@ -81,10 +82,19 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
             audio file when it detects a speech. The sound file will be played
             on the default audio output device. If not set, the assistant won't
             play any sound when it detects a speech.
+
+        :param stop_conversation_on_speech_match: If set, the plugin will close the
+            conversation if the latest recognized speech matches a registered
+            :class:`platypush.message.event.assistant.SpeechRecognizedEvent` hook
+            with a phrase. This is usually set to ``True`` for
+            :class:`platypush.plugins.assistant.google.GoogleAssistantPlugin`,
+            as it overrides the default assistant response when a speech event is
+            actually handled on the application side.
         """
         super().__init__(*args, **kwargs)
         self.tts_plugin = tts_plugin
         self.tts_plugin_args = tts_plugin_args or {}
+        self.stop_conversation_on_speech_match = stop_conversation_on_speech_match
         self._conversation_start_sound = None
         if conversation_start_sound:
             self._conversation_start_sound = os.path.abspath(
@@ -97,6 +107,7 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         self._last_query: Optional[str] = None
         self._last_response: Optional[str] = None
         self._cur_alert_type: Optional[AlertType] = None
+        self._plugin_name = get_plugin_name_by_class(type(self))
 
     @property
     def _state(self) -> AssistantState:
@@ -189,35 +200,35 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
 
         audio.play(self._conversation_start_sound)
 
-    def _send_event(self, event: AssistantEvent):
+    def _send_event(self, event_type: Type[AssistantEvent], **kwargs):
         self.publish_entities([self])
-        get_bus().post(event)
+        get_bus().post(event_type(assistant=self._plugin_name, **kwargs))
 
     def _on_conversation_start(self):
         self._last_response = None
         self._last_query = None
         self._conversation_running.set()
-        self._send_event(ConversationStartEvent(assistant=self))
+        self._send_event(ConversationStartEvent)
         self._play_conversation_start_sound()
 
     def _on_conversation_end(self):
         self._conversation_running.clear()
-        self._send_event(ConversationEndEvent(assistant=self))
+        self._send_event(ConversationEndEvent)
 
     def _on_conversation_timeout(self):
         self._last_response = None
         self._last_query = None
         self._conversation_running.clear()
-        self._send_event(ConversationTimeoutEvent(assistant=self))
+        self._send_event(ConversationTimeoutEvent)
 
     def _on_no_response(self):
         self._last_response = None
         self._conversation_running.clear()
-        self._send_event(NoResponseEvent(assistant=self))
+        self._send_event(NoResponseEvent)
 
     def _on_reponse_rendered(self, text: Optional[str]):
         self._last_response = text
-        self._send_event(ResponseEvent(assistant=self, response_text=text))
+        self._send_event(ResponseEvent, response_text=text)
         tts = self._get_tts_plugin()
 
         if tts and text:
@@ -227,39 +238,39 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
     def _on_speech_recognized(self, phrase: Optional[str]):
         phrase = (phrase or '').lower().strip()
         self._last_query = phrase
-        self._send_event(SpeechRecognizedEvent(assistant=self, phrase=phrase))
+        self._send_event(SpeechRecognizedEvent, phrase=phrase)
 
     def _on_alarm_start(self):
         self._cur_alert_type = AlertType.ALARM
-        self._send_event(AlarmStartedEvent(assistant=self))
+        self._send_event(AlarmStartedEvent)
 
     def _on_alarm_end(self):
         self._cur_alert_type = None
-        self._send_event(AlarmEndEvent(assistant=self))
+        self._send_event(AlarmEndEvent)
 
     def _on_timer_start(self):
         self._cur_alert_type = AlertType.TIMER
-        self._send_event(TimerStartedEvent(assistant=self))
+        self._send_event(TimerStartedEvent)
 
     def _on_timer_end(self):
         self._cur_alert_type = None
-        self._send_event(TimerEndEvent(assistant=self))
+        self._send_event(TimerEndEvent)
 
     def _on_alert_start(self):
         self._cur_alert_type = AlertType.ALERT
-        self._send_event(AlertStartedEvent(assistant=self))
+        self._send_event(AlertStartedEvent)
 
     def _on_alert_end(self):
         self._cur_alert_type = None
-        self._send_event(AlertEndEvent(assistant=self))
+        self._send_event(AlertEndEvent)
 
     def _on_mute(self):
         self._is_muted = True
-        self._send_event(MicMutedEvent(assistant=self))
+        self._send_event(MicMutedEvent)
 
     def _on_unmute(self):
         self._is_muted = False
-        self._send_event(MicUnmutedEvent(assistant=self))
+        self._send_event(MicUnmutedEvent)
 
     def _on_mute_changed(self, value: bool):
         if value:
@@ -267,7 +278,7 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         else:
             self._on_unmute()
 
-    def transform_entities(self, entities: Collection['AssistantPlugin']):
+    def transform_entities(self, entities: Collection['AssistantPlugin'], **_):
         return super().transform_entities(
             [
                 Assistant(

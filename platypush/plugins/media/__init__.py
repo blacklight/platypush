@@ -1,6 +1,8 @@
+from dataclasses import dataclass
 import enum
 import functools
 import inspect
+import json
 import os
 import queue
 import re
@@ -27,6 +29,25 @@ class PlayerState(enum.Enum):
     PLAY = 'play'
     PAUSE = 'pause'
     IDLE = 'idle'
+
+
+@dataclass
+class MediaResource:
+    """
+    Models a media resource
+    """
+
+    resource: str
+    url: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    filename: Optional[str] = None
+    image: Optional[str] = None
+    duration: Optional[float] = None
+    channel: Optional[str] = None
+    channel_url: Optional[str] = None
+    type: Optional[str] = None
+    resolution: Optional[str] = None
 
 
 class MediaPlugin(Plugin, ABC):
@@ -130,14 +151,14 @@ class MediaPlugin(Plugin, ABC):
         'f4b',
     }
 
-    _supported_media_plugins = {
+    supported_media_plugins = [
         'media.mplayer',
         'media.omxplayer',
         'media.mpv',
         'media.vlc',
         'media.chromecast',
         'media.gstreamer',
-    }
+    ]
 
     _supported_media_types = ['file', 'jellyfin', 'plex', 'torrent', 'youtube']
     _default_search_timeout = 60  # 60 seconds
@@ -149,7 +170,6 @@ class MediaPlugin(Plugin, ABC):
         env: Optional[Dict[str, str]] = None,
         volume: Optional[Union[float, int]] = None,
         torrent_plugin: str = 'torrent',
-        # youtube_format: Optional[str] = 'bv*[height<=?1080][ext=mp4]+bestaudio/best',
         youtube_format: Optional[str] = 'best[height<=?1080][ext=mp4]',
         youtube_dl: str = 'yt-dlp',
         **kwargs,
@@ -197,7 +217,7 @@ class MediaPlugin(Plugin, ABC):
         if self.__class__.__name__ == 'MediaPlugin':
             # Abstract class, initialize with the default configured player
             for plugin_name in Config.get_plugins().keys():
-                if plugin_name in self._supported_media_plugins:
+                if plugin_name in self.supported_media_plugins:
                     player = get_plugin(plugin_name)
                     if player and player.is_local():
                         # Local players have priority as default if configured
@@ -240,6 +260,7 @@ class MediaPlugin(Plugin, ABC):
         self._youtube_proc = None
         self.torrent_plugin = torrent_plugin
         self.youtube_format = youtube_format
+        self._latest_resource: Optional[MediaResource] = None
 
     @staticmethod
     def _torrent_event_handler(evt_queue):
@@ -271,7 +292,29 @@ class MediaPlugin(Plugin, ABC):
             for extractor in self.get_extractors()
         )
 
-    def _get_resource(self, resource):
+    def _get_youtube_best_thumbnail(self, info: Dict[str, dict]):
+        thumbnails = info.get('thumbnails', {})
+        if not thumbnails:
+            return None
+
+        # Preferred resolution
+        for res in ((640, 480), (480, 360), (320, 240)):
+            thumb = next(
+                (
+                    thumb
+                    for thumb in thumbnails
+                    if thumb.get('width') == res[0] and thumb.get('height') == res[1]
+                ),
+                None,
+            )
+
+            if thumb:
+                return thumb.get('url')
+
+        # Default fallback (best quality)
+        return info.get('thumbnail')
+
+    def _get_resource(self, resource: str):
         """
         :param resource: Resource to play/parse. Supported types:
 
@@ -282,8 +325,33 @@ class MediaPlugin(Plugin, ABC):
 
         """
 
-        if self._is_youtube_resource(resource):
-            resource = self.get_youtube_video_url(resource)
+        if resource.startswith('file://'):
+            path = resource[len('file://') :]
+            assert os.path.isfile(path), f'File {path} not found'
+            self._latest_resource = MediaResource(
+                resource=resource,
+                url=resource,
+                title=os.path.basename(resource),
+                filename=os.path.basename(resource),
+            )
+        elif self._is_youtube_resource(resource):
+            info = self._get_youtube_info(resource)
+            url = info.get('url')
+            if url:
+                resource = url
+                self._latest_resource = MediaResource(
+                    resource=resource,
+                    url=resource,
+                    title=info.get('title'),
+                    description=info.get('description'),
+                    filename=info.get('filename'),
+                    image=info.get('thumbnail'),
+                    duration=float(info.get('duration') or 0) or None,
+                    channel=info.get('channel'),
+                    channel_url=info.get('channel_url'),
+                    resolution=info.get('resolution'),
+                    type=info.get('extractor'),
+                )
         elif resource.startswith('magnet:?'):
             self.logger.info(
                 'Downloading torrent %s to %s', resource, self.download_dir
@@ -307,8 +375,6 @@ class MediaPlugin(Plugin, ABC):
                 resource = self._videos_queue.pop(0)
             else:
                 raise RuntimeError(f'No media file found in torrent {resource}')
-        elif re.search(r'^https?://', resource):
-            return resource
 
         assert resource, 'Unable to find any compatible media resource'
         return resource
@@ -323,42 +389,42 @@ class MediaPlugin(Plugin, ABC):
 
     @action
     @abstractmethod
-    def play(self, resource, *args, **kwargs):
+    def play(self, resource, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def pause(self, *args, **kwargs):
+    def pause(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def stop(self, *args, **kwargs):
+    def stop(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def quit(self, *args, **kwargs):
+    def quit(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def voldown(self, *args, **kwargs):
+    def voldown(self, step: Optional[float] = 5.0, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def volup(self, *args, **kwargs):
+    def volup(self, step: Optional[float] = 5.0, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def back(self, *args, **kwargs):
+    def back(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def forward(self, *args, **kwargs):
+    def forward(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
@@ -374,42 +440,42 @@ class MediaPlugin(Plugin, ABC):
 
     @action
     @abstractmethod
-    def toggle_subtitles(self, *args, **kwargs):
+    def toggle_subtitles(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def set_subtitles(self, filename, *args, **kwargs):
+    def set_subtitles(self, filename, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def remove_subtitles(self, *args, **kwargs):
+    def remove_subtitles(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def is_playing(self, *args, **kwargs):
+    def is_playing(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def load(self, resource, *args, **kwargs):
+    def load(self, resource, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def mute(self, *args, **kwargs):
+    def mute(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def seek(self, *args, **kwargs):
+    def seek(self, position, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def set_position(self, *args, **kwargs):
+    def set_position(self, position, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
@@ -538,6 +604,12 @@ class MediaPlugin(Plugin, ABC):
     def is_audio_file(cls, filename: str):
         return filename.lower().split('.')[-1] in cls.audio_extensions
 
+    def _get_info(self, resource: str):
+        if self._is_youtube_resource(resource):
+            return self.get_youtube_info(resource)
+
+        return {'url': resource}
+
     @action
     def start_streaming(
         self, media: str, subtitles: Optional[str] = None, download: bool = False
@@ -563,7 +635,11 @@ class MediaPlugin(Plugin, ABC):
             }
 
         """
+        return self._start_streaming(media, subtitles=subtitles, download=download)
 
+    def _start_streaming(
+        self, media: str, subtitles: Optional[str] = None, download: bool = False
+    ):
         http = get_backend('http')
         assert http, f'Unable to stream {media}: HTTP backend not configured'
 
@@ -589,7 +665,7 @@ class MediaPlugin(Plugin, ABC):
         assert response.ok, response.text or response.reason
         return response.json()
 
-    def get_youtube_video_url(self, url, youtube_format: Optional[str] = None):
+    def _get_youtube_info(self, url, youtube_format: Optional[str] = None):
         ytdl_cmd = [
             self._ytdl,
             *(
@@ -597,16 +673,21 @@ class MediaPlugin(Plugin, ABC):
                 if youtube_format or self.youtube_format
                 else []
             ),
+            '-j',
             '-g',
             url,
         ]
 
         self.logger.info('Executing command %s', ' '.join(ytdl_cmd))
         with subprocess.Popen(ytdl_cmd, stdout=subprocess.PIPE) as ytdl:
-            url = ytdl.communicate()[0].decode().strip()
+            output = ytdl.communicate()[0].decode().strip()
             ytdl.wait()
 
-        return url
+        stream_url, info = output.split('\n')
+        return {
+            **json.loads(info),
+            'url': stream_url,
+        }
 
     @staticmethod
     def get_youtube_id(url: str) -> Optional[str]:
@@ -632,12 +713,13 @@ class MediaPlugin(Plugin, ABC):
         youtube_id = self.get_youtube_id(url)
         if youtube_id:
             url = f'https://www.youtube.com/watch?v={youtube_id}'
-            return self.get_youtube_video_url(url, youtube_format=youtube_format)
+            return self._get_youtube_info(url, youtube_format=youtube_format).get('url')
 
         return None
 
     @action
     def get_youtube_info(self, url):
+        # Legacy conversion for Mopidy YouTube URIs
         m = re.match('youtube:video:(.*)', url)
         if m:
             url = f'https://www.youtube.com/watch?v={m.group(1)}'
@@ -647,6 +729,10 @@ class MediaPlugin(Plugin, ABC):
                 return None
 
             return proc.stdout.read().decode("utf-8", "strict")[:-1]
+
+    @action
+    def get_info(self, resource: str):
+        return self._get_info(resource)
 
     @action
     def get_media_file_duration(self, filename):
@@ -678,7 +764,7 @@ class MediaPlugin(Plugin, ABC):
                             .pop()
                             .strip(),
                         )
-                        .group(1)
+                        .group(1)  # type: ignore
                         .split(':')[::-1]
                     )
                 ],
@@ -716,7 +802,7 @@ class MediaPlugin(Plugin, ABC):
         return self._is_local
 
     @staticmethod
-    def get_subtitles_file(subtitles):
+    def get_subtitles_file(subtitles: Optional[str] = None):
         if not subtitles:
             return None
 

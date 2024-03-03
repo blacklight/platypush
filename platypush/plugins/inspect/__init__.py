@@ -17,7 +17,7 @@ from platypush.message.event import Event
 from platypush.message.response import Response
 from platypush.utils import get_enabled_backends, get_enabled_plugins
 from platypush.utils.mock import auto_mocks
-from platypush.utils.manifest import Manifest, Manifests
+from platypush.utils.manifest import Manifest, Manifests, PackageManagers
 
 from ._cache import Cache
 from ._serialize import ProcedureEncoder
@@ -33,9 +33,20 @@ class InspectPlugin(Plugin):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._cache_file = os.path.join(Config.get_cachedir(), 'components.json')
         self._cache = Cache()
         self._load_cache()
+
+    @property
+    def cache_file(self) -> str:
+        """
+        :return: The path to the components cache file.
+        """
+        import platypush
+
+        return os.path.join(
+            os.path.dirname(inspect.getfile(platypush)),
+            'components.json.gz',
+        )
 
     def _load_cache(self):
         """
@@ -43,24 +54,26 @@ class InspectPlugin(Plugin):
         """
         with self._cache.lock(), auto_mocks(), override_definitions():
             try:
-                self._cache = Cache.load(self._cache_file)
+                self._cache = Cache.load(self.cache_file)
             except Exception as e:
                 self.logger.warning(
                     'Could not initialize the components cache from %s: %s',
-                    self._cache_file,
+                    self.cache_file,
                     e,
                 )
-                self._cache = Cache()
 
-            self._refresh_cache()
+                self.logger.exception(e)
 
-    def _refresh_cache(self):
+    def refresh_cache(self, force: bool = False):
         """
         Refreshes the components cache.
         """
         cache_version_differs = self._cache.version != Cache.cur_version
+        force = force or cache_version_differs
 
-        with ThreadPoolExecutor(self._num_workers) as pool:
+        with self._cache.lock(), auto_mocks(), override_definitions(), ThreadPoolExecutor(
+            self._num_workers
+        ) as pool:
             futures = []
 
             for base_type in [Plugin, Backend]:
@@ -69,7 +82,7 @@ class InspectPlugin(Plugin):
                         self._scan_integrations,
                         base_type,
                         pool=pool,
-                        force_refresh=cache_version_differs,
+                        force_refresh=force,
                         futures=futures,
                     )
                 )
@@ -80,7 +93,7 @@ class InspectPlugin(Plugin):
                         self._scan_modules,
                         base_type,
                         pool=pool,
-                        force_refresh=cache_version_differs,
+                        force_refresh=force,
                         futures=futures,
                     )
                 )
@@ -89,9 +102,11 @@ class InspectPlugin(Plugin):
                 futures.pop().result()
 
         if self._cache.has_changes:
-            self.logger.info('Saving new components cache to %s', self._cache_file)
-            self._cache.dump(self._cache_file)
+            self.logger.info('Saving new components cache to %s', self.cache_file)
+            self._cache.dump(self.cache_file)
             self._cache.loaded_at = self._cache.saved_at
+
+        return self._cache
 
     def _scan_integration(self, manifest: Manifest):
         """
@@ -188,9 +203,11 @@ class InspectPlugin(Plugin):
         """
         :return: True if the given file needs to be refreshed in the cache.
         """
-        return os.lstat(os.path.dirname(filename)).st_mtime > (
-            self._cache.saved_at or 0
-        )
+        dirname = os.path.dirname(filename)
+        if not os.path.isdir(dirname):
+            return True
+
+        return os.lstat(dirname).st_mtime > (self._cache.saved_at or 0)
 
     @staticmethod
     def _module_filename(path: str, modname: str) -> str:
@@ -284,6 +301,29 @@ class InspectPlugin(Plugin):
         Get the list of enabled backends.
         """
         return list(get_enabled_backends().keys())
+
+    @action
+    def get_pkg_managers(self) -> dict:
+        """
+        Get the list of supported package managers. This is supposed to be an
+        internal-only method, only used by the UI to populate the install
+        commands.
+        """
+        pkg_manager = PackageManagers.scan()
+        return {
+            'items': {
+                pkg.value.executable: {
+                    'executable': pkg.value.executable,
+                    'install': pkg.value.install,
+                    'install_doc': pkg.value.install_doc,
+                    'uninstall': pkg.value.uninstall,
+                    'list': pkg.value.list,
+                    'default_os': pkg.value.default_os,
+                }
+                for pkg in PackageManagers
+            },
+            'current': pkg_manager.value.executable if pkg_manager else None,
+        }
 
 
 # vim:sw=4:ts=4:et:

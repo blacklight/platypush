@@ -1,5 +1,6 @@
 @use "sass:math";
 
+$tablet-small: 640px;
 $tablet: 769px;
 $desktop: 1024px;
 $widescreen: 1216px;
@@ -13,6 +14,7 @@ $widths: (
 );
 
 $width-ranges: (
+    tablet-small: ($tablet-small, $tablet),
     tablet:     ($tablet, $desktop),
     desktop:    ($desktop, $widescreen),
     widescreen: ($widescreen, $fullhd),
@@ -159,23 +161,23 @@ $width-ranges: (
   .#{$name} {
     &.from {
       @include until(nth($range, 1)) {
-        display: none;
+        display: none !important;
       }
     }
 
     &.until {
       @include from(nth($range, 2)) {
-        display: none;
+        display: none !important;
       }
     }
 
     &.only {
       @include until(nth($range, 1)) {
-        display: none;
+        display: none !important;
       }
 
       @include from(nth($range, 2)) {
-        display: none;
+        display: none !important;
       }
     }
   }
@@ -183,13 +185,13 @@ $width-ranges: (
 
 .mobile {
   @include from($tablet) {
-    display: none;
+    display: none !important;
   }
 }
 
 .fullhd {
   @include until($fullhd) {
-    display: none;
+    display: none !important;
   }
 }
 
@@ -225,5 +227,34 @@ $width-ranges: (
   font-size: 1.5em;
   align-items: center;
   justify-content: center;
+}
+
+// Grid layout
+.grid {
+  width: 100%;
+  display: grid;
+  row-gap: 1em;
+  column-gap: 1.5em;
+  padding: 1em;
+
+  @include until($tablet-small) {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  @include between($tablet-small, $tablet) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include between($tablet, $desktop) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  @include between($desktop, $widescreen) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  @include from($widescreen) {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
 }
 

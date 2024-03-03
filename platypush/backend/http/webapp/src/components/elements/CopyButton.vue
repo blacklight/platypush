@@ -2,8 +2,8 @@
   <button class="copy-button"
           ref="copyButton"
           title="Copy to clipboard"
-          @click="copy"
-          @input="copy">
+          @click.prevent="copy"
+          @input.prevent="copy">
     <i class="fas fa-clipboard" />
   </button>
 </template>

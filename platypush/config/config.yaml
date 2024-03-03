@@ -321,6 +321,18 @@ backend.http:
 ###
 
 ###
+# # Example last.fm scrobbler configuration, to synchronize your music
+# # activities to your Last.fm profile. You'll need to register an application
+# # with your account at https://www.last.fm/api.
+#
+# lastfm:
+#     api_key: <API_KEY>
+#     api_secret: <API_SECRET>
+#     username: <USERNAME>
+#     password: <PASSWORD>
+###
+
+###
 # # Plugins with empty configuration can also be explicitly enabled by specifying
 # # `enabled: true` or `disabled: false`. An integration with no items will be
 # # enabled with no configuration.
@@ -356,6 +368,68 @@ backend.http:
 ###
 
 ###
+# # Example configuration for the alarm plugin. It is possible to define alarms
+# # both statically, i.e. through configuration snippets under the `alarm`
+# # section, and dynamically, i.e. with an `alarm.add` request with the
+# # configuration of the desired alarm.
+# 
+# alarm:
+#     # Media plugin that will be used to play the alarm audio.
+#     # If not specified, the first available configured media plugin
+#     # will be used.
+#     media_plugin: media.vlc
+# 
+#     alarms:
+#         morning_alarm:
+#             # Cron expression format: run every weekday at 7 AM
+#             when: '0 7 * * 1-5'
+#             media: ~/path/your_ringtone.mp3
+#             audio_volume: 10       # 10%
+# 
+#             # Repeat the played media resource until the alarm is
+#             # snoozed/dismissed (default: true)
+#             media_repeat: true
+# 
+#             # Wait 5 minutes between a snooze and another run
+#             snooze_interval: 300
+# 
+#             # After 10 minutes with no manual snooze/dismiss,
+#             # stop the alarm
+#             dismiss_interval: 600
+# 
+#             # Actions to be executed when the alarm goes on
+#             actions:
+#                 - action: tts.say
+#                   args:
+#                       text: Good morning
+# 
+#                 - action: light.hue.bri
+#                   args:
+#                       value: 1
+# 
+#                 - action: light.hue.bri
+#                   args:
+#                       value: 140
+#                       transitiontime: 150
+# 
+#         one_shot_alarm:
+#             # One-shot execution, with timestamp in ISO format
+#             when: '2020-02-18T07:00:00.000000'
+#             media: ~/path/your_ringtone.mp3
+#             actions:
+#                 - action: light.hue.on
+# 
+#         timer:
+#             # This alarm will execute the specified number of seconds
+#             # after being initialized (5 minutes after the plugin has
+#             # been initialized in this case)
+#             when: 300
+#             media: ~/path/your_ringtone.mp3
+#             actions:
+#                 - action: light.hue.on
+###
+
+###
 # # Torrent plugin configuration, with the default directory that should be used
 # # to store downloaded files.
 #
@@ -380,6 +454,30 @@ backend.http:
 #         - https://news.ycombinator.com/rss
 #         - https://www.technologyreview.com/stories.rss
 #         - https://api.quantamagazine.org/feed/
+###
+
+###
+# # The file monitor plugin can be used to track modifications to the
+# # filesystem - for example, when a file or a directory is modified, created
+# # or removed.
+#
+# file.monitor:
+#     paths:
+#         # Recursively monitor changes on the
+#         # ~/my-images folder that include all the files
+#         # matching a JPEG extension in case-insensitive
+#         # mode, excluding those whose name starts with
+#         # tmp_ and all the files contained in the
+#         # __MACOSX folders
+#         - path: ~/my-images
+#           recursive: true
+#           case_sensitive: false
+#           regexes:
+#             - '.*\\.jpe?g$'
+#           ignore_patterns:
+#             - '^tmp_.*'
+#           ignore_directories:
+#             - '__MACOSX'
 ###
 
 ###
@@ -508,6 +606,29 @@ backend.http:
 #   horizontal_flip: false
 #   # Whether to flip the image along the horizontal axis (default: False)
 #   vertical_flip: false
+#
+#   # -- Streaming options
+#   # If `stream_on_start` is set to true, then camera streaming will start as
+#   # soon as the application/plugin is started. Otherwise, only when the
+#   # `camera.<plugin>.start_streaming` action is run. The camera will be
+#   # streamed on the specified `bind_address` and `listen_port` in the
+#   # specified `stream_format`. If `stream_format` is a video format (e.g.
+#   # h264 or mkv) then you can play the raw camera stream through e.g.
+#   # `vlc tcp://<address>:<listen_port>`.
+#   # Alternatively, you can access the camera stream over HTTP at
+#   # `http(s)://<address>:<http-port>/camera/<plugin>/video.<format>`.
+#   # For example, for MJPEG stream (usually the fastest option over HTTP):
+#   # `http://localhost:8008/camera/ffmpeg/video.mjpeg`.
+#   # An HTTP stream is the safest option, as it has to go through the standard
+#   # HTTP authentication process, while direct TCP access may expose your
+#   # camera to unauthenticated access. If you decide to directly stream over
+#   # TCP, make sure to carefully select the `bind_address`, add a firewall
+#   # rule for the streaming port, and/or ensure that the device's port is only
+#   # accessible from a safe network.
+#   # stream_on_start: false
+#   # bind_address: 0.0.0.0
+#   # listen_port: 5000
+#   # stream_format: h264
 ###
 
 ### -----------------
@@ -711,6 +832,73 @@ backend.http:
 #
 #     thresholds:
 #         proximity: 10.0
+###
+
+### -----------------------------------------
+### Example configuration of the mail plugin.
+### -----------------------------------------
+#
+# mail:
+#   # Display name to be used for outgoing emails. Default:
+#   # the `from` parameter will be used from :meth:`.send`,
+#   # and, if missing, the username from the account configuration
+#   # will be used.
+#   display_name: My Name
+# 
+#   # How often we should poll for updates (default: 60 seconds)
+#   poll_interval: 60
+# 
+#   # Connection timeout (default: 20 seconds)
+#   # Can be overridden on a per-account basis
+#   timeout: 20
+# 
+#   accounts:
+#     - name: "My Local Account"
+#       username: me@mydomain.com
+#       password: my-password
+# 
+#       # The default flag sets this account as the default one
+#       # for mail retrieval and sending if no account is
+#       # specified on an action. If multiple accounts are set
+#       # and none is set as default, and no account is specified
+#       # on an action, then the first configured account will be
+#       # used.
+#       default: true
+#       # Domain to be used for outgoing emails. Default: inferred
+#       # from the account configuration
+#       domain: example.com
+#
+# 
+#       # Alternatively, you can run an external command
+#       # to get the password
+#       # password_cmd: "pass show mail/example.com"
+# 
+#       # Path to a custom certfile if the mail server uses a
+#       # self-signed certificate
+#       # certfile: /path/to/certfile
+# 
+#       # Path to a custom keyfile if the mail server requires
+#       # client authentication. It requires certfile to be set
+#       # too
+#       # keyfile: /path/to/keyfile
+# 
+#       incoming:
+#         # Supported protocols: imap, imaps
+#         server: imaps://mail.example.com:993
+# 
+#         outgoing:
+#           # The `incoming` and `outgoing` configurations can
+#           # override the global `username` and `password` and
+#           # other authentication parameters of the account
+#           username: me
+#           password: my-smtp-password
+# 
+#           # Supported protocols: smtp, smtps, smtp+starttls,
+#           server: smtps://mail.example.com:465
+# 
+#           # These folders will be monitored for new messages
+#           monitor_folders:
+#             - All Mail
 ###
 
 ### --------------------------------
@@ -923,6 +1111,23 @@ backend.http:
 #               value: ${msg["value"]}
 #               source: ${msg["source"]}
 ###
+
+###
+# # The example below is a hook that reacts when a `NewPlayingTrackEvent` event
+# # is received and synchronize the listening activity to the users' Last.fm
+# # profile (it requires the `lastfm` plugin and at least a music plugin
+# # enabled, like `music.mpd`).
+# 
+# event.hook.OnNewMusicActivity:
+#     if:
+#         type: platypush.message.event.music.NewPlayingTrackEvent
+#     then:
+#       - if ${track.get('artist') and track.get('title')}:
+#         - action: lastfm.scrobble
+#           args:
+#             artist: ${track['artist']}
+#             title: ${track['title']}
+##
 
 ###
 # # The example below plays the music on mpd/mopidy when your voice assistant

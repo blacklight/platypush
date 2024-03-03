@@ -279,7 +279,10 @@ class Dependencies:
             'packages': list(self.packages),
             'pip': self.pip,
             'after': self.after,
-            'install_cmd': list(self.to_install_commands()),
+            'by_pkg_manager': {
+                pkg_manager.value.executable: list(pkgs)
+                for pkg_manager, pkgs in self.by_pkg_manager.items()
+            },
         }
 
     @property
@@ -467,7 +470,7 @@ class Dependencies:
             deps = sorted(self.pip)
             if full_command:
                 yield (
-                    'pip install -U --no-input '
+                    'pip install --no-input '
                     + ('--no-cache-dir ' if self._is_docker else '')
                     + (
                         '--break-system-packages '

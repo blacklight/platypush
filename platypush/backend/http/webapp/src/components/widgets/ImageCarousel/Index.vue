@@ -34,7 +34,7 @@ import Weather from "@/components/widgets/Weather/Index";
  *
  *   ```yaml
  *   backend.http:
- *     resources:
+ *     resource_dirs:
  *       carousel: /mnt/hd/photos/albums/carousel
  *   ```
  */
@@ -228,7 +228,7 @@ export default {
   align-items: center;
   justify-content: center;
   background-color: black;
-  margin: -0.75em 0.75em 0.75em -0.75em !important;
+  margin: 0;
 
   .background {
     position: absolute;
@@ -239,8 +239,8 @@ export default {
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
-    filter: blur(13px);
-    -webkit-filter: blur(13px);
+    filter: brightness(15%);
+    -webkit-filter: brightness(15%);
   }
 
   img {

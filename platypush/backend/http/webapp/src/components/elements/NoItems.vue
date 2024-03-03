@@ -1,6 +1,6 @@
 <template>
 <div class="no-items-container">
-  <div class="no-items fade-in">
+  <div class="no-items fade-in" :class="{shadow: withShadow}">
     <slot />
   </div>
 </div>
@@ -9,6 +9,12 @@
 <script>
 export default {
   name: "NoItems",
+  props: {
+    withShadow: {
+      type: Boolean,
+      default: true,
+    },
+  },
 }
 </script>
 
@@ -45,7 +51,10 @@ export default {
     align-items: center;
     justify-content: center;
     border-radius: 1em;
-    box-shadow: $border-shadow-bottom;
+
+    &.shadow {
+      box-shadow: $border-shadow-bottom;
+    }
   }
 }
 </style>

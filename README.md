@@ -419,9 +419,7 @@ backend](https://docs.platypush.tech/en/latest/platypush/backend/http.html), an
 [MQTT
 instance](https://docs.platypush.tech/en/latest/platypush/backend/mqtt.html), a
 [Kafka
-instance](https://docs.platypush.tech/en/latest/platypush/backend/kafka.html),
-[Pushbullet](https://docs.platypush.tech/en/latest/platypush/backend/pushbullet.html)
-etc.).
+instance](https://docs.platypush.tech/en/latest/platypush/backend/kafka.html).
 
 If a backend supports the execution of requests (e.g. HTTP, MQTT, Kafka,
 Websocket and TCP) then you can send requests to these services in JSON format.
@@ -706,8 +704,6 @@ requests, the built-in web server also provides a full-featured interface that
 groups together the controls for most of the plugins - e.g. sensors, switches,
 music controls and search, media library and torrent management, lights,
 Zigbee/Z-Wave devices and so on. The UI is responsive and mobile-friendly.
-
-Some screenshots:
 
 #### The main web panel
 

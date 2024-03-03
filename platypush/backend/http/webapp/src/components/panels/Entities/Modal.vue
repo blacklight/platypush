@@ -366,16 +366,56 @@ export default {
 @import "common";
 
 :deep(.modal) {
-  .body {
-    padding: 0;
+  @include until($tablet) {
+    width: 100%;
+  }
 
-    @include from($desktop) {
-      min-width: 45em;
+  .table-row {
+    display: flex;
+    align-items: center;
+    box-shadow: none;
+    padding: 0.5em;
+    border-bottom: 1px solid $border-color-2;
+
+    &:hover {
+      background: $hover-bg;
     }
 
-    .table-row {
-      box-shadow: none;
-      padding: 0.5em;
+    .title {
+      font-weight: bold;
+
+      @include from($tablet) {
+        width: 50%;
+        display: inline-block;
+      }
+    }
+
+    .value {
+      overflow: auto;
+
+      @include from($tablet) {
+        width: 50%;
+        display: inline-block;
+        text-align: right;
+      }
+    }
+  }
+
+  .content {
+    @include until($tablet) {
+      width: calc(100% - 1em) !important;
+    }
+
+    @include from($tablet) {
+      min-width: 30em;
+    }
+
+    .body {
+      padding: 0;
+
+      @include from($desktop) {
+        min-width: 45em;
+      }
     }
   }
 
@@ -392,6 +432,7 @@ export default {
     @include from($tablet) {
       .icon-container {
         justify-content: right;
+        margin-right: 0.5em;
       }
     }
   }
@@ -437,12 +478,6 @@ export default {
     margin: 0;
 
     .section-title {
-      @include section-title;
-    }
-  }
-
-  .config-container {
-    .title {
       @include section-title;
     }
   }

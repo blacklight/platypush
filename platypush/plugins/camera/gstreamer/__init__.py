@@ -22,7 +22,7 @@ class CameraGstreamerPlugin(CameraPlugin):
         """
         super().__init__(device=device, **opts)
 
-    def prepare_device(self, camera: GStreamerCamera) -> Pipeline:
+    def prepare_device(self, camera: GStreamerCamera, **_) -> Pipeline:
         pipeline = Pipeline()
         src = pipeline.add_source('v4l2src', device=camera.info.device)
         convert = pipeline.add('videoconvert')

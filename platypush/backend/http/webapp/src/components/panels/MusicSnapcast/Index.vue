@@ -78,7 +78,13 @@ export default {
 
   methods: {
     parseServerStatus(status) {
-      status.server.host.port = this.ports[status.server.host.name]
+      status.server = status.server || {
+        host: status.server.host || {
+          name: status.host
+        }
+      }
+
+      status.server.host.port = this.ports[status.host]
       this.hosts[status.server.host.name] = {
         ...status,
         groups: status.groups.map((group) => {
@@ -105,14 +111,11 @@ export default {
       this.loading = true
 
       try {
-        const hosts = await this.request('music.snapcast.get_backend_hosts')
-        const statuses = await Promise.all(Object.keys(hosts).map(
-            async (host) => this.request('music.snapcast.status', {host: host, port: hosts[host]})
-        ))
-
+        const statuses = await this.request('music.snapcast.status')
         this.hosts = {}
+
         statuses.forEach((status) => {
-          this.ports[status.server.host.name] = hosts[status.server.host.name]
+          this.ports[status.host] = status.port
           this.parseServerStatus(status)
         })
       } finally {
@@ -494,6 +497,20 @@ export default {
   .music-snapcast-container {
     .modal {
       width: 45vw;
+    }
+  }
+}
+
+:deep(.modal-container) {
+  .modal {
+    .content {
+      @include until($tablet) {
+        width: 95vw;
+      }
+
+      @include from($tablet) {
+        min-width: 600px;
+      }
     }
   }
 }

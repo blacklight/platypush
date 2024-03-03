@@ -65,7 +65,7 @@ class CameraIrMlx90640Plugin(CameraPlugin):
     def _is_capture_running(self):
         return self._capture_proc is not None and self._capture_proc.poll() is None
 
-    def prepare_device(self, device: Camera):
+    def prepare_device(self, device: Camera, **_):
         if not self._is_capture_running():
             self._capture_proc = subprocess.Popen(
                 [self.rawrgb_path, '{}'.format(device.info.fps)],

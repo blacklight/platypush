@@ -65,8 +65,7 @@ class PubSubMixin:
         with self._pubsub_lock:
             # Close and free the pub/sub object if it has no active subscriptions.
             if self._pubsub is not None and len(self._subscriptions) == 0:
-                self._pubsub.close()
-                self._pubsub = None
+                self._pubsub_close()
 
     @staticmethod
     def _serialize(data: MessageType) -> bytes:
@@ -126,7 +125,7 @@ class PubSubMixin:
                         continue
 
                     yield Message(data=msg.get('data', b''), channel=channel)
-        except (AttributeError, RedisConnectionError):
+        except (AttributeError, ValueError, RedisConnectionError):
             return
 
     def _pubsub_close(self):

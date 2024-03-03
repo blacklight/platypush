@@ -1,70 +1,277 @@
+from dataclasses import dataclass
 import json
 import os
-from typing import Optional
+import time
+from enum import Enum
+from threading import Event, RLock
+from typing import Optional, Type
 
 import requests
 
-from platypush.context import get_backend
-from platypush.plugins import Plugin, action
+from platypush.config import Config
+from platypush.message.event.pushbullet import (
+    PushbulletDismissalEvent,
+    PushbulletEvent,
+    PushbulletFileEvent,
+    PushbulletLinkEvent,
+    PushbulletMessageEvent,
+    PushbulletNotificationEvent,
+)
+from platypush.plugins import RunnablePlugin, action
+from platypush.schemas.pushbullet import PushbulletDeviceSchema, PushbulletSchema
 
 
-class PushbulletPlugin(Plugin):
+class PushbulletType(Enum):
     """
-    This plugin allows you to send pushes and files to your PushBullet account.
-    Note: This plugin will only work if the :mod:`platypush.backend.pushbullet`
-    backend is configured.
-
-    Requires:
-
-        * The :class:`platypush.backend.pushbullet.PushbulletBackend` backend enabled
-
+    PushBullet event types.
     """
 
-    def __init__(self, token: Optional[str] = None, **kwargs):
+    DISMISSAL = 'dismissal'
+    FILE = 'file'
+    LINK = 'link'
+    MESSAGE = 'message'
+    MIRROR = 'mirror'
+    NOTE = 'note'
+
+
+@dataclass
+class PushbulletEventType:
+    """
+    PushBullet event type.
+    """
+
+    type: PushbulletType
+    event_class: Type[PushbulletEvent]
+
+
+_push_event_types = [
+    PushbulletEventType(
+        type=PushbulletType.DISMISSAL,
+        event_class=PushbulletDismissalEvent,
+    ),
+    PushbulletEventType(
+        type=PushbulletType.FILE,
+        event_class=PushbulletFileEvent,
+    ),
+    PushbulletEventType(
+        type=PushbulletType.LINK,
+        event_class=PushbulletLinkEvent,
+    ),
+    PushbulletEventType(
+        type=PushbulletType.MESSAGE,
+        event_class=PushbulletMessageEvent,
+    ),
+    PushbulletEventType(
+        type=PushbulletType.MIRROR,
+        event_class=PushbulletNotificationEvent,
+    ),
+    PushbulletEventType(
+        type=PushbulletType.NOTE,
+        event_class=PushbulletMessageEvent,
+    ),
+]
+
+_push_events_by_type = {t.type.value: t for t in _push_event_types}
+
+
+class PushbulletPlugin(RunnablePlugin):
+    """
+    `PushBullet <https://www.pushbullet.com/>`_ integration.
+
+    Among the other things, this plugin allows you to easily interact with your
+    mobile devices that have the app installed from Platypush.
+
+    If notification mirroring is enabled on your device, then the push
+    notifications will be mirrored to Platypush as well as PushBullet events.
+
+    Since PushBullet also comes with a Tasker integration, you can also use this
+    plugin to send commands to your Android device and trigger actions on it.
+    It can be used to programmatically send files to your devices and manage
+    shared clipboards too.
+    """
+
+    _timeout = 15.0
+    _upload_timeout = 600.0
+
+    def __init__(
+        self,
+        token: str,
+        device: Optional[str] = None,
+        enable_mirroring: bool = True,
+        **kwargs,
+    ):
         """
-        :param token: Pushbullet API token. If not set the plugin will try to retrieve it from
-            the Pushbullet backend configuration, if available
+        :param token: PushBullet API token, see https://docs.pushbullet.com/#authentication.
+        :param device: Device ID that should be exposed. Default: ``Platypush @
+            <device_id | hostname>``.
+        :param enable_mirroring: If set to True (default) then the plugin will
+            receive notifications mirrored from other connected devices -
+            these will also be rendered on the connected web clients. Disable
+            it if you don't want to forward your mobile notifications through
+            the plugin.
         """
         super().__init__(**kwargs)
 
-        if not token:
-            backend = get_backend('pushbullet')
-            if not backend or not backend.token:
-                raise AttributeError('No Pushbullet token specified')
+        if not device:
+            device = f'Platypush @ {Config.get_device_id()}'
 
-            self.token = backend.token
-        else:
-            self.token = token
-
+        self.token = token
+        self.device_name = device
+        self.enable_mirroring = enable_mirroring
+        self.listener = None
+        self._initialized = Event()
+        self._device = None
+        self._init_lock = RLock()
+        self._pb = None
+        self._device_id = None
         self._devices = []
         self._devices_by_id = {}
         self._devices_by_name = {}
 
-    @action
-    def get_devices(self):
+    def _initialize(self):
+        from pushbullet import Pushbullet
+
+        if self._initialized.is_set():
+            return
+
+        self._pb = Pushbullet(self.token)
+
+        try:
+            self._device = self._pb.get_device(self.device_name)
+        except Exception as e:
+            self.logger.info(
+                'Device %s does not exist: %s. Creating it',
+                self.device_name,
+                e,
+            )
+            self._device = self._pb.new_device(self.device_name)
+
+        self._device_id = self.get_device_id()
+        self._initialized.set()
+
+    @property
+    def pb(self):
         """
-        Get the list of available devices
+        :return: PushBullet API object.
         """
-        resp = requests.get(
-            'https://api.pushbullet.com/v2/devices',
+        with self._init_lock:
+            self._initialize()
+
+        assert self._pb
+        return self._pb
+
+    @property
+    def device(self):
+        """
+        :return: Current PushBullet device object.
+        """
+        with self._init_lock:
+            self._initialize()
+
+        assert self._device
+        return self._device
+
+    @property
+    def device_id(self):
+        return self.device.device_iden
+
+    def _request(self, method: str, url: str, **kwargs):
+        meth = getattr(requests, method)
+        resp = meth(
+            'https://api.pushbullet.com/v2/' + url.lstrip('/'),
+            timeout=self._timeout,
             headers={
                 'Authorization': 'Bearer ' + self.token,
                 'Content-Type': 'application/json',
             },
+            **kwargs,
         )
 
-        self._devices = resp.json().get('devices', [])
-        self._devices_by_id = {dev['iden']: dev for dev in self._devices}
+        resp.raise_for_status()
+        return resp.json()
 
-        self._devices_by_name = {
-            dev['nickname']: dev for dev in self._devices if 'nickname' in dev
-        }
+    def get_device_id(self):
+        assert self._pb
 
-    @action
-    def get_device(self, device) -> Optional[dict]:
-        """
-        :param device: Device ID or name
-        """
+        try:
+            return self._pb.get_device(self.device_name).device_iden
+        except Exception:
+            device = self.pb.new_device(
+                self.device_name,
+                model='Platypush virtual device',
+                manufacturer='platypush',
+                icon='system',
+            )
+
+            self.logger.info('Created Pushbullet device %s', self.device_name)
+            return device.device_iden
+
+    def _get_latest_push(self):
+        t = int(time.time()) - 10
+        pushes = self.pb.get_pushes(modified_after=str(t), limit=1)
+        if pushes:
+            return pushes[0]
+
+        return None
+
+    def on_open(self, *_, **__):
+        self.logger.info('Pushbullet connected')
+
+    def on_close(self, args=None):
+        err = args[0] if args else None
+        self.close()
+        assert not err or self.should_stop(), 'Pushbullet connection closed: ' + str(
+            err or 'unknown error'
+        )
+
+    def on_error(self, *args):
+        raise RuntimeError('Pushbullet error: ' + str(args))
+
+    def on_push(self, data):
+        try:
+            # Parse the push
+            try:
+                data = json.loads(data) if isinstance(data, str) else data
+            except Exception as e:
+                self.logger.exception(e)
+                return
+
+            # If it's a push, get it
+            push = None
+            if data['type'] == 'tickle' and data['subtype'] == 'push':
+                push = self._get_latest_push()
+            elif data['type'] == 'push':
+                push = data['push']
+
+            if not push:
+                self.logger.debug('Not a push notification.\nMessage: %s', data)
+                return
+
+            push_type = push.pop('type', None)
+            push_event_type = _push_events_by_type.get(push_type)
+            if not push_event_type:
+                self.logger.debug(
+                    'Unknown push type: %s.\nMessage: %s', push_type, data
+                )
+                return
+
+            if (
+                not self.enable_mirroring
+                and push_event_type.type == PushbulletType.MIRROR
+            ):
+                return
+
+            push = dict(PushbulletSchema().dump(push))
+            evt_type = push_event_type.event_class
+            self._bus.post(evt_type(**push))
+        except Exception as e:
+            self.logger.warning(
+                'Error while processing push: %s.\nMessage: %s', e, data
+            )
+            self.logger.exception(e)
+            return
+
+    def _get_device(self, device) -> Optional[dict]:
         output = None
         refreshed = False
 
@@ -78,6 +285,78 @@ class PushbulletPlugin(Plugin):
 
             self.get_devices()
             refreshed = True
+
+        return None
+
+    def close(self):
+        if self.listener:
+            try:
+                self.listener.close()
+            except Exception:
+                pass
+
+            self.listener = None
+
+        if self._pb:
+            self._pb = None
+
+        self._initialized.clear()
+
+    def run_listener(self):
+        from .listener import Listener
+
+        self.listener = Listener(
+            account=self.pb,
+            on_push=self.on_push,
+            on_open=self.on_open,
+            on_close=self.on_close,
+            on_error=self.on_error,
+        )
+
+        self.listener.run_forever()
+
+    @action
+    def get_devices(self):
+        """
+        Get the list of available devices.
+
+        :return: .. schema:: pushbullet.PushbulletDeviceSchema(many=True)
+        """
+        resp = self._request('get', 'devices')
+        self._devices = resp.get('devices', [])
+        self._devices_by_id = {dev['iden']: dev for dev in self._devices}
+        self._devices_by_name = {
+            dev['nickname']: dev for dev in self._devices if 'nickname' in dev
+        }
+
+        return PushbulletDeviceSchema(many=True).dump(self._devices)
+
+    @action
+    def get_device(self, device: str) -> Optional[dict]:
+        """
+        Get a device by ID or name.
+
+        :param device: Device ID or name
+        :return: .. schema:: pushbullet.PushbulletDeviceSchema
+        """
+        dev = self._get_device(device)
+        if not dev:
+            return None
+
+        return dict(PushbulletDeviceSchema().dump(dev))
+
+    @action
+    def get_pushes(self, limit: int = 10):
+        """
+        Get the list of pushes.
+
+        :param limit: Maximum number of pushes to fetch (default: 10).
+        :return: .. schema:: pushbullet.PushbulletSchema(many=True)
+        """
+        return PushbulletSchema().dump(
+            self._request('get', 'pushes', params={'limit': limit}).get('pushes', []),
+            many=True,
+        )
 
     @action
     def send_note(
@@ -96,13 +375,13 @@ class PushbulletPlugin(Plugin):
         :param title: Note title
         :param url: URL attached to the note
         :param kwargs: Push arguments, see https://docs.pushbullet.com/#create-push
+        :return: .. schema:: pushbullet.PushbulletSchema
         """
 
         dev = None
         if device:
-            dev = self.get_device(device).output
-            if not dev:
-                raise RuntimeError(f'No such device: {device}')
+            dev = self._get_device(device)
+            assert dev, f'No such device: {device}'
 
         kwargs['body'] = body
         kwargs['title'] = title
@@ -114,19 +393,8 @@ class PushbulletPlugin(Plugin):
         if dev:
             kwargs['device_iden'] = dev['iden']
 
-        resp = requests.post(
-            'https://api.pushbullet.com/v2/pushes',
-            data=json.dumps(kwargs),
-            headers={
-                'Authorization': 'Bearer ' + self.token,
-                'Content-Type': 'application/json',
-            },
-        )
-
-        if resp.status_code >= 400:
-            raise Exception(
-                f'Pushbullet push failed with status {resp.status_code}: {resp.json()}'
-            )
+        rs = self._request('post', 'pushes', data=json.dumps(kwargs))
+        return dict(PushbulletSchema().dump(rs))
 
     @action
     def send_file(self, filename: str, device: Optional[str] = None):
@@ -139,90 +407,85 @@ class PushbulletPlugin(Plugin):
 
         dev = None
         if device:
-            dev = self.get_device(device).output
-            if not dev:
-                raise RuntimeError(f'No such device: {device}')
+            dev = self._get_device(device)
+            assert dev, f'No such device: {device}'
 
-        resp = requests.post(
-            'https://api.pushbullet.com/v2/upload-request',
+        upload_req = self._request(
+            'post',
+            'upload-request',
             data=json.dumps({'file_name': os.path.basename(filename)}),
-            headers={
-                'Authorization': 'Bearer ' + self.token,
-                'Content-Type': 'application/json',
-            },
         )
 
-        if resp.status_code != 200:
-            raise Exception(
-                f'Pushbullet file upload request failed with status {resp.status_code}'
-            )
-
-        r = resp.json()
         with open(filename, 'rb') as f:
-            resp = requests.post(r['upload_url'], data=r['data'], files={'file': f})
-
-        if resp.status_code != 204:
-            raise Exception(
-                f'Pushbullet file upload failed with status {resp.status_code}'
+            rs = requests.post(
+                upload_req['upload_url'],
+                data=upload_req['data'],
+                files={'file': f},
+                timeout=self._upload_timeout,
             )
 
-        resp = requests.post(
-            'https://api.pushbullet.com/v2/pushes',
-            headers={
-                'Authorization': 'Bearer ' + self.token,
-                'Content-Type': 'application/json',
-            },
+        rs.raise_for_status()
+        self._request(
+            'post',
+            'pushes',
             data=json.dumps(
                 {
                     'type': 'file',
                     'device_iden': dev['iden'] if dev else None,
-                    'file_name': r['file_name'],
-                    'file_type': r['file_type'],
-                    'file_url': r['file_url'],
+                    'file_name': upload_req['file_name'],
+                    'file_type': upload_req.get('file_type'),
+                    'file_url': upload_req['file_url'],
                 }
             ),
         )
 
-        if resp.status_code >= 400:
-            raise Exception(
-                f'Pushbullet file push failed with status {resp.status_code}'
-            )
-
         return {
-            'filename': r['file_name'],
-            'type': r['file_type'],
-            'url': r['file_url'],
+            'filename': upload_req['file_name'],
+            'type': upload_req.get('file_type'),
+            'url': upload_req['file_url'],
         }
 
     @action
     def send_clipboard(self, text: str):
         """
-        Copy text to the clipboard of a device.
+        Send text to the clipboard of other devices.
 
         :param text: Text to be copied.
         """
-        backend = get_backend('pushbullet')
-        device_id = backend.get_device_id() if backend else None
-
-        resp = requests.post(
-            'https://api.pushbullet.com/v2/ephemerals',
+        self._request(
+            'post',
+            'ephemerals',
             data=json.dumps(
                 {
                     'type': 'push',
                     'push': {
                         'body': text,
                         'type': 'clip',
-                        'source_device_iden': device_id,
+                        'source_device_iden': self.device_id,
                     },
                 }
             ),
-            headers={
-                'Authorization': 'Bearer ' + self.token,
-                'Content-Type': 'application/json',
-            },
         )
 
-        resp.raise_for_status()
+    def main(self):
+        while not self.should_stop():
+            while not self._initialized.is_set():
+                try:
+                    self._initialize()
+                except Exception as e:
+                    self.logger.exception(e)
+                    self.logger.error('Pushbullet initialization error: %s', e)
+                    self.wait_stop(10)
+
+            while not self.should_stop():
+                try:
+                    self.run_listener()
+                except Exception as e:
+                    if not self.should_stop():
+                        self.logger.exception(e)
+                        self.logger.error('Pushbullet listener error: %s', e)
+
+                    self.wait_stop(10)
 
 
 # vim:sw=4:ts=4:et:

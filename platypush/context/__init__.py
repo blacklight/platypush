@@ -74,7 +74,7 @@ def register_backends(bus=None, global_scope=False, **kwargs):
     for name, cfg in Config.get_backends().items():
         module = importlib.import_module('platypush.backend.' + name)
 
-        # e.g. backend.pushbullet main class: PushbulletBackend
+        # e.g. backend.http main class: HttpBackend
         cls_name = ''
         for token in module.__name__.title().split('.')[2:]:
             cls_name += token.title()
