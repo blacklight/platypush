@@ -18,8 +18,6 @@ from typing import (
 
 import paho.mqtt.client as mqtt
 
-from platypush.bus import Bus
-from platypush.context import get_bus
 from platypush.entities import (
     DimmerEntityManager,
     Entity,
@@ -2162,13 +2160,6 @@ class ZigbeeMqttPlugin(
                     )
 
         return handler
-
-    @property
-    def _bus(self) -> Bus:
-        """
-        Utility property for the bus.
-        """
-        return get_bus()
 
     def _process_state_message(self, client: MqttClient, msg: str):
         """

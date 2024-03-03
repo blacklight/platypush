@@ -255,6 +255,8 @@ class Event(Message):
         else:
             result.score = 0
 
+        return result
+
     def __str__(self):
         """
         Overrides the str() operator and converts

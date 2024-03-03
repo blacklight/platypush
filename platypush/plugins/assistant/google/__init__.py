@@ -76,6 +76,7 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
         self,
         credentials_file: Optional[str] = None,
         device_model_id: str = 'Platypush',
+        stop_conversation_on_speech_match: bool = True,
         **kwargs,
     ):
         """
@@ -94,9 +95,20 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
         :param device_model_id: The device model ID that identifies the device
             where the assistant is running (default: Platypush). It can be a
             custom string.
+
+        :param stop_conversation_on_speech_match: If set, the plugin will close the
+            conversation if the latest recognized speech matches a registered
+            :class:`platypush.message.event.assistant.SpeechRecognizedEvent` hook
+            with a phrase. This is usually set to ``True`` for
+            :class:`platypush.plugins.assistant.google.GoogleAssistantPlugin`,
+            as it overrides the default assistant response when a speech event is
+            actually handled on the application side.
         """
 
-        super().__init__(**kwargs)
+        super().__init__(
+            stop_conversation_on_speech_match=stop_conversation_on_speech_match,
+            **kwargs,
+        )
         self._credentials_file = credentials_file
         self.device_model_id = device_model_id
         self.credentials = None

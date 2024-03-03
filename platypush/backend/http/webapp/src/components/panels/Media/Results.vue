@@ -1,42 +1,41 @@
 <template>
   <div class="media-results">
-    <div class="no-content" v-if="!results?.length">
-      No search results
+    <Loading v-if="loading" />
+    <div class="grid" ref="grid" v-if="results?.length" @scroll="onScroll">
+      <Item v-for="(item, i) in visibleResults"
+            :key="i"
+            :item="item"
+            :selected="selectedResult === i"
+            :hidden="!!Object.keys(sources || {}).length && !sources[item.type]"
+            @select="$emit('select', i)"
+            @play="$emit('play', item)"
+            @view="$emit('view', item)"
+            @download="$emit('download', item)" />
     </div>
 
-    <div class="row item" :class="{selected: selectedResult === i, hidden: !sources[result.type]}"
-         v-for="(result, i) in results" :key="i" @click="$emit('select', i)">
-      <div class="col-10 left side">
-        <div class="icon">
-          <i :class="typeIcons[result.type]" />
-        </div>
-        <div class="title" v-text="result.title" />
-      </div>
-
-      <div class="col-2 right side">
-        <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" @click="$emit('select', i)">
-          <DropdownItem icon-class="fa fa-play" text="Play" @click="$emit('play', result)"
-                        v-if="result?.type !== 'torrent'" />
-          <DropdownItem icon-class="fa fa-download" text="Download" @click="$emit('download', result)"
-                        v-if="result?.type === 'torrent'" />
-          <DropdownItem icon-class="fa fa-window-maximize" text="View in browser" @click="$emit('view', result)"
-                        v-if="result?.type === 'file'" />
-          <DropdownItem icon-class="fa fa-info" text="Info" @click="$emit('info', result)" />
-        </Dropdown>
-      </div>
-    </div>
+    <Modal ref="infoModal" title="Media info" @close="$emit('select', null)">
+      <Info :item="results[selectedResult]"
+            @play="$emit('play', results[selectedResult])"
+            v-if="selectedResult != null" />
+    </Modal>
   </div>
 </template>
 
 <script>
-import Dropdown from "@/components/elements/Dropdown";
-import DropdownItem from "@/components/elements/DropdownItem";
+import Info from "@/components/panels/Media/Info";
+import Item from "./Item";
+import Loading from "@/components/Loading";
+import Modal from "@/components/Modal";
 
 export default {
-  name: "Results",
-  components: {Dropdown, DropdownItem},
-  emits: ['select', 'info', 'play', 'view', 'download'],
+  components: {Info, Item, Loading, Modal},
+  emits: ['select', 'play', 'view', 'download', 'scroll-end'],
   props: {
+    loading: {
+      type: Boolean,
+      default: false,
+    },
+
     results: {
       type: Array,
       default: () => [],
@@ -50,75 +49,80 @@ export default {
       type: Object,
       default: () => {},
     },
+
+    filter: {
+      type: String,
+      default: null,
+    },
+
+    resultIndexStep: {
+      type: Number,
+      default: 25,
+    },
   },
 
   data() {
     return {
-      typeIcons: {
-        'file': 'fa fa-hdd',
-        'torrent': 'fa fa-magnet',
-        'youtube': 'fab fa-youtube',
-        'plex': 'fa fa-plex',
-        'jellyfin': 'fa fa-jellyfin',
-      },
+      maxResultIndex: this.resultIndexStep,
     }
+  },
+
+  computed: {
+    visibleResults() {
+      return this.results
+        .filter((item) => {
+          if (!this.filter)
+            return true
+
+          return item.title.toLowerCase().includes(this.filter.toLowerCase())
+        })
+        .slice(0, this.maxResultIndex)
+    },
+  },
+
+  methods: {
+    onScroll(e) {
+      const el = e.target
+      if (!el)
+        return
+
+      const bottom = (el.scrollHeight - el.scrollTop) <= el.clientHeight + 150
+      if (!bottom)
+        return
+
+      this.$emit('scroll-end')
+      this.maxResultIndex += this.resultIndexStep
+    },
+  },
+
+  mounted() {
+    this.$watch('selectedResult', (value) => {
+      if (value == null)
+        this.$refs.infoModal?.close()
+      else
+        this.$refs.infoModal?.show()
+    })
   },
 }
 </script>
 
 <style lang="scss" scoped>
 @import "src/style/items";
+@import "vars";
 
 .media-results {
   width: 100%;
   height: 100%;
   background: $background-color;
-  overflow: auto;
 
-  .item {
-    display: flex;
-    align-items: center;
-
-    &.selected {
-      background: $selected-bg;
-    }
-
-    .side {
-      display: inline-flex;
-      align-items: center;
-
-      &.right {
-        justify-content: flex-end;
-        margin-right: .5em;
-      }
-
-      :deep(.dropdown-container) {
-        .item {
-          box-shadow: none;
-        }
-
-        button {
-          border: 0;
-          padding: 0;
-          background: none;
-          opacity: .7;
-
-          &:hover {
-            color: $default-hover-fg-2;
-          }
-        }
-      }
-    }
-  }
-
-  .no-content {
+  .grid {
     height: 100%;
+    overflow: auto;
   }
 
-  .icon {
-    .fa-youtube {
-      color: #d21;
-    }
+  .info-container {
+    width: 100%;
+    cursor: initial;
   }
 }
 </style>

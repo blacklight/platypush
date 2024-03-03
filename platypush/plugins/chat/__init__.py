@@ -5,6 +5,7 @@ class ChatPlugin(Plugin):
     """
     Base class for chat plugins.
     """
+
     @action
-    def send_message(self, *args, **kwargs):
+    def send_message(self, *_, **__):
         raise NotImplementedError()

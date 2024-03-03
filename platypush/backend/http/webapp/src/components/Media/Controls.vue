@@ -1,9 +1,18 @@
 <template>
   <div class="extension fade-in" :class="{hidden: !expanded}">
-    <div class="row">
-      <div class="col-3">
+    <div class="image-container" @click.prevent="onImageClick" v-if="status?.state !== 'stop'">
+      <div class="remote-image-container" v-if="track?.image">
+        <img class="image" :src="track.image" :alt="track.title">
       </div>
-      <div class="col-6">
+
+      <div class="icon-container" v-else>
+        <i class="icon fas fa-compact-disc"
+          :class="{playing: status?.state === 'play'}" />
+      </div>
+    </div>
+
+    <div class="row buttons-container">
+      <div class="buttons">
         <div class="buttons">
           <button @click="$emit('previous')" title="Play previous track" v-if="buttons_.previous">
             <i class="icon fa fa-step-backward"></i>
@@ -16,90 +25,55 @@
           </button>
         </div>
       </div>
-      <div class="col-3">
-      </div>
     </div>
 
     <div class="row">
-      <div class="col-9 volume-container">
-        <div class="col-1">
-          <button :disabled="status.muted == null" @click="$emit(status.muted ? 'unmute' : 'mute')">
-            <i class="icon fa fa-volume-up"></i>
-          </button>
-        </div>
-        <div class="col-11 volume-slider">
-          <Slider :value="status.volume" :range="volumeRange" :disabled="status.volume == null"
-                  @mouseup="$emit('set-volume', $event.target.value)" />
-        </div>
-      </div>
+      <VolumeSlider :value="status.volume" :range="volumeRange" :status="status"
+        @mute="$emit('mute')" @unmute="$emit('unmute')"
+        @set-volume="$emit('set-volume', $event)" />
 
-      <div class="col-3 list-controls">
-        <button @click="$emit('consume', !status.consume)" :class="{enabled: status.consume}"
-                title="Toggle consume mode" v-if="buttons_.consume">
-          <i class="icon fa fa-utensils"></i>
-        </button>
-
-        <button @click="$emit('random', !status.random)" :class="{enabled: status.random}"
-                title="Toggle shuffle" v-if="buttons_.random">
-          <i class="icon fa fa-random"></i>
-        </button>
-
-        <button @click="$emit('repeat', !status.repeat)" :class="{enabled: status.repeat}"
-                title="Toggle repeat" v-if="buttons_.repeat">
-          <i class="icon fa fa-redo"></i>
-        </button>
-      </div>
+      <ExtraControls :status="status" :buttons="buttons_"
+          @consume="$emit('consume', !status.consume)"
+          @random="$emit('random', !status.random)"
+          @repeat="$emit('repeat', !status.repeat)" />
     </div>
 
     <div class="row">
-      <div class="col-s-2 col-m-1 time">
-          <span class="elapsed-time"
-                v-text="elapsed != null && (status.state === 'play' || status.state === 'pause') ? convertTime(elapsed) : '-:--'"></span>
-      </div>
-      <div class="col-s-8 col-m-10 time-bar">
-        <Slider :value="elapsed" :range="[0, duration]" :disabled="!duration || status.state === 'stop'"
-                @mouseup="$emit('seek', $event.target.value)" />
-      </div>
-      <div class="col-s-2 col-m-1 time">
-          <span class="total-time"
-                v-text="duration && status.state !== 'stop' ? convertTime(duration) : '-:--'"></span>
-      </div>
+      <ProgressBar :elapsed="elapsed" :duration="duration" :status="status" @seek="$emit('seek', $event)" />
     </div>
   </div>
 
   <div class="controls">
-    <div class="playback-controls mobile tablet col-2">
-      <button @click="$emit(status.state === 'play' ? 'pause' : 'play')"
-              :title="status.state === 'play' ? 'Pause' : 'Play'">
-        <i class="icon play-pause fa fa-pause" v-if="status.state === 'play'"></i>
-        <i class="icon play-pause fa fa-play" v-else></i>
-      </button>
+    <div class="playback-controls until tablet col-2">
+      <PlayPauseButton :status="status" @play="$emit('play')" @pause="$emit('pause')" />
     </div>
 
-    <div class="track-container col-s-8 col-m-8 col-l-3">
+    <div class="track-container col-s-9 col-m-9 col-l-3">
       <div class="track-info" v-if="track && status?.state !== 'stop'">
-        <div class="title" v-if="status.state === 'play' || status.state === 'pause'">
-          <a :href="$route.fullPath" v-text="track.title?.length ? track.title : '[No Title]'"
-             @click.prevent="$emit('search', {artist: track.artist, album: track.album})" v-if="track.album"></a>
-          <a :href="track.url" v-text="track.title?.length ? track.title : '[No Title]'" v-else-if="track.url"></a>
-          <span v-text="track.title?.length ? track.title : '[No Title]' " v-else></span>
+        <div class="img-container" v-if="track.image">
+          <img class="image from desktop" :src="track.image" :alt="track.title">
         </div>
-        <div class="artist" v-if="track.artist?.length && (status.state === 'play' || status.state === 'pause')">
-          <a :href="$route.fullPath" v-text="track.artist" @click.prevent="$emit('search', {artist: track.artist})"></a>
+
+        <div class="title-container">
+          <div class="title" v-if="status.state === 'play' || status.state === 'pause'">
+            <a :href="$route.fullPath" v-text="track.title?.length ? track.title : '[No Title]'"
+               @click.prevent="$emit('search', {artist: track.artist, album: track.album})" v-if="track.album"></a>
+            <a :href="track.url" v-text="track.title?.length ? track.title : '[No Title]'" v-else-if="track.url"></a>
+            <span v-text="track.title?.length ? track.title : '[No Title]' " v-else></span>
+          </div>
+          <div class="artist" v-if="track.artist?.length && (status.state === 'play' || status.state === 'pause')">
+            <a :href="$route.fullPath" v-text="track.artist" @click.prevent="$emit('search', {artist: track.artist})"></a>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="playback-controls desktop col-6">
+    <div class="playback-controls from desktop col-6">
       <div class="row buttons">
         <button @click="$emit('previous')" title="Play previous track" v-if="buttons_.previous">
           <i class="icon fa fa-step-backward"></i>
         </button>
-        <button @click="$emit(status.state === 'play' ? 'pause' : 'play')"
-                :title="status.state === 'play' ? 'Pause' : 'Play'">
-          <i class="icon play-pause fa fa-pause" v-if="status.state === 'play'"></i>
-          <i class="icon play-pause fa fa-play" v-else></i>
-        </button>
+        <PlayPauseButton :status="status" @play="$emit('play')" @pause="$emit('pause')" />
         <button @click="$emit('stop')" v-if="buttons_.stop && status.state !== 'stop'" title="Stop playback">
           <i class="icon fa fa-stop"></i>
         </button>
@@ -109,51 +83,25 @@
       </div>
 
       <div class="row">
-        <div class="col-1 time">
-          <span class="elapsed-time"
-                v-text="elapsed != null && (status.state === 'play' || status.state === 'pause') ? convertTime(elapsed) : '-:--'"></span>
-        </div>
-        <div class="col-10">
-          <Slider :value="elapsed" :range="[0, duration]" :disabled="!duration || status.state === 'stop'"
-                  @mouseup="$emit('seek', $event.target.value)" />
-        </div>
-        <div class="col-1 time">
-          <span class="total-time"
-                v-text="duration && status.state !== 'stop' ? convertTime(duration) : '-:--'"></span>
-        </div>
+        <ProgressBar :elapsed="elapsed" :duration="duration" :status="status" @seek="$emit('seek', $event)" />
       </div>
     </div>
 
-    <div class="col-2 pull-right mobile tablet right-buttons">
+    <div class="col-1 until tablet right-controls">
       <button @click="expanded = !expanded" :title="expanded ? 'Show more controls' : 'Hide extra controls'">
         <i class="fas" :class="[`fa-chevron-${expanded ? 'down' : 'up'}`]" />
       </button>
     </div>
 
-    <div class="col-3 pull-right desktop">
-      <div class="row list-controls">
-        <button @click="$emit('consume')" :class="{enabled: status.consume}" title="Toggle consume mode" v-if="buttons_.consume">
-          <i class="icon fa fa-utensils"></i>
-        </button>
-        <button @click="$emit('random')" :class="{enabled: status.random}" title="Toggle shuffle" v-if="buttons_.random">
-          <i class="icon fa fa-random"></i>
-        </button>
-        <button @click="$emit('repeat')" :class="{enabled: status.repeat}" title="Toggle repeat" v-if="buttons_.repeat">
-          <i class="icon fa fa-redo"></i>
-        </button>
-      </div>
+    <div class="col-3 from desktop right-controls">
+      <VolumeSlider :value="status.volume" :range="volumeRange" :status="status"
+        @mute="$emit('mute')" @unmute="$emit('unmute')"
+        @set-volume="$emit('set-volume', $event)" />
 
-      <div class="row volume-container">
-        <div class="col-2">
-          <button :disabled="status.muted == null" @click="$emit(status.muted ? 'unmute' : 'mute')">
-            <i class="icon fa fa-volume-up"></i>
-          </button>
-        </div>
-        <div class="col-10">
-          <Slider :value="status.volume" :range="volumeRange" :disabled="status.volume == null"
-                  @mouseup="$emit('set-volume', $event.target.value)" />
-        </div>
-      </div>
+      <ExtraControls :status="status" :buttons="buttons_"
+          @consume="$emit('consume', !status.consume)"
+          @random="$emit('random', !status.random)"
+          @repeat="$emit('repeat', !status.repeat)" />
     </div>
   </div>
 </template>
@@ -161,14 +109,29 @@
 <script>
 import Utils from "@/Utils"
 import MediaUtils from "@/components/Media/Utils";
-import Slider from "@/components/elements/Slider";
+import ExtraControls from "./ExtraControls";
+import PlayPauseButton from "./PlayPauseButton";
+import ProgressBar from "./ProgressBar";
+import VolumeSlider from "./VolumeSlider";
 
 export default {
-  name: "Controls",
-  components: {Slider},
+  components: {ExtraControls, PlayPauseButton, ProgressBar, VolumeSlider},
   mixins: [Utils, MediaUtils],
-  emits: ['search', 'previous', 'next', 'play', 'pause', 'stop', 'seek', 'consume', 'random', 'repeat',
-    'set-volume', 'mute', 'unmute'],
+  emits: [
+    'consume',
+    'mute',
+    'next',
+    'pause',
+    'play',
+    'previous',
+    'random',
+    'repeat',
+    'search',
+    'seek',
+    'set-volume',
+    'stop',
+    'unmute',
+  ],
 
   props: {
     track: {
@@ -229,7 +192,12 @@ export default {
   methods: {
     getTime() {
       return (new Date()).getTime() / 1000
-    }
+    },
+
+    onImageClick() {
+      if (this.track?.artist && this.track?.album)
+        this.$emit('search', {artist: this.track.artist, album: this.track.album})
+    },
   },
 
   mounted() {
@@ -281,48 +249,108 @@ button {
   flex-direction: column;
   display: none;
   overflow: hidden;
+  padding: .5em;
 
   @include until($desktop) {
     display: flex;
-    padding-top: .5em;
+  }
+
+  :deep(.extra-controls-container) {
+    @extend .pull-right;
+    flex: 1;
+  }
+
+  :deep(.progress-bar-container, .volume-slider-container) {
+    font-size: 1.25em;
+  }
+
+  :deep(.volume-slider-container) {
+    margin: 1em 0;
   }
 
   .row {
     display: flex;
   }
 
+  .buttons-container {
+    width: calc(100% + 1em);
+    margin-left: -0.5em;
+    font-size: 2em;
+    justify-content: center;
+    box-shadow: $border-shadow-bottom;
+
+    button {
+      text-align: center;
+
+      &:hover {
+        color: $default-hover-fg;
+      }
+
+      i {
+        margin: auto;
+      }
+    }
+  }
+
   .buttons {
+    display: flex;
     justify-content: center;
     margin: 0;
   }
 
-  .volume-container,
-  .list-controls {
+  .image-container {
+    width: 100%;
     display: flex;
-    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 
-    button {
-      padding: 0 .25em;
-    }
-  }
+    .remote-image-container {
+      height: 30vh;
 
-  .list-controls {
-    margin-top: -.5em;
-    flex-flow: row-reverse;
-  }
-
-  .time {
-    &:first-child {
-      margin-left: .25em;
+      .image {
+        height: 100%;
+      }
     }
 
-    &:last-child {
-      margin-right: .25em;
-    }
-  }
+    .icon-container {
+      padding: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15em;
+      opacity: 0.5;
+      border: $default-border-2;
+      box-shadow: $border-shadow-bottom;
 
-  .volume-slider {
-    flex-grow: 1;
+      &:hover {
+        color: $default-hover-fg;
+        opacity: 1;
+      }
+    }
+
+    .icon {
+      &.playing {
+        animation-duration: 3s;
+        animation-name: rotate;
+        animation-iteration-count: infinite;
+      }
+    }
+
+    @keyframes rotate {
+       0% {
+         transform: rotate(0deg);
+         opacity: 1;
+       }
+
+       50% {
+         opacity: 0.5;
+       }
+
+       100% {
+         transform: rotate(359deg);
+         opacity: 1;
+       }
+    }
   }
 }
 
@@ -332,6 +360,7 @@ button {
   display: flex;
   padding: 1em .5em;
   overflow: hidden;
+  align-items: center;
 
   .row {
     width: 100%;
@@ -340,12 +369,12 @@ button {
 
   .track-container {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    align-items: center;
     margin-left: 0;
 
-    @include until($tablet) {
-      align-items: center;
+    @include until($desktop) {
+      flex-direction: column;
+      text-align: center;
     }
 
     a {
@@ -373,33 +402,37 @@ button {
       letter-spacing: .05em;
       margin-bottom: .25em;
     }
+
+    .image {
+      width: 5em;
+      max-height: 100%;
+      display: inline-flex;
+    }
+  }
+
+  .track-info {
+    display: flex;
+
+    @include until($desktop) {
+      flex-direction: column;
+    }
+
+    @include from($desktop) {
+      flex-direction: row;
+      align-items: center;
+
+      .image {
+        margin-right: 0.75em;
+      }
+    }
   }
 
   .playback-controls {
-    &.mobile {
-      display: none;
-
-      @include until($tablet) {
-        display: flex !important;
-        align-items: center;
-      }
-    }
-
-    &.tablet {
-      display: none;
-
-      @media screen and (min-width: $tablet) and (max-width: $desktop - 1) {
-        display: flex !important;
-        align-items: center;
-      }
-    }
-
     .row {
       justify-content: center;
     }
 
     .buttons {
-      height: 50%;
       margin-bottom: .5em;
       align-items: center;
     }
@@ -419,61 +452,25 @@ button {
     }
   }
 
-  .list-controls {
-    height: 50%;
-    opacity: 0.7;
+  .right-controls {
+    @extend .pull-right;
+
     display: flex;
-    align-items: center;
-    margin-bottom: 1em;
-    flex-flow: row-reverse;
-  }
+    flex-direction: column;
+    flex: 1;
+    align-items: flex-end;
 
-  .mobile.right-buttons {
-    @include until ($desktop) {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      flex: 1;
-    }
-  }
-
-  .pull-right {
     button {
       padding: 0.5em;
     }
 
-    .volume-container {
-      align-items: center;
-      margin-top: -1.25em;
-
-      button {
-        background: none;
-      }
+    :deep(.extra-controls-container) {
+      @extend .pull-right;
     }
   }
 
   .seek-slider {
     width: 75%;
   }
-
-  .volume-slider {
-    width: 75%;
-    margin-right: .5em;
-  }
-}
-
-.time {
-  font-size: .7em;
-  position: relative;
-}
-
-.elapsed-time {
-  text-align: right;
-  float: right;
-}
-
-.time-bar {
-  flex-grow: 1;
-  margin: 0 .5em;
 }
 </style>

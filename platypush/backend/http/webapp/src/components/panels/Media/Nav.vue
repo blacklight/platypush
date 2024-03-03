@@ -1,6 +1,10 @@
 <template>
   <nav>
-    <li v-for="(view, name) in views" :key="name" :title="view.displayName"
+    <button class="menu-button mobile" @click="$emit('toggle')">
+      <i class="fa fa-bars" />
+    </button>
+
+    <li v-for="(view, name) in displayedViews" :key="name" :title="view.displayName"
         :class="{selected: name === selectedView}" @click="$emit('input', name)">
       <i :class="view.iconClass" />
     </li>
@@ -9,8 +13,7 @@
 
 <script>
 export default {
-  name: "Nav",
-  emits: ['input'],
+  emits: ['input', 'toggle'],
   props: {
     selectedView: {
       type: String,
@@ -19,6 +22,10 @@ export default {
     collapsed: {
       type: Boolean,
       default: false,
+    },
+
+    torrentPlugin: {
+      type: String,
     },
 
     views: {
@@ -43,6 +50,16 @@ export default {
       }
     },
   },
+
+  computed: {
+    displayedViews() {
+      const views = {...this.views}
+      if (!this.torrentPlugin?.length)
+        delete views.torrents
+
+      return views
+    },
+  },
 }
 </script>
 
@@ -57,9 +74,30 @@ nav {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  position: relative;
   box-shadow: 2.5px 0 4.5px 2px $nav-collapsed-fg;
   margin-left: 2.5px;
-  overflow: hidden;
+  overflow: auto;
+
+  .menu-button {
+    position: absolute;
+    top: 0.75em;
+    left: 0;
+    width: 100%;
+    display: inline-flex;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    font-size: 1.2em;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    z-index: 1;
+
+    &:hover {
+      color: $default-hover-fg;
+    }
+  }
 
   li {
     display: flex;

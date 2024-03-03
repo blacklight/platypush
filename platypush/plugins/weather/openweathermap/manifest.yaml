@@ -1,5 +1,6 @@
 manifest:
-  events: {}
+  events:
+    - platypush.message.event.weather.NewWeatherConditionEvent
   install:
     pip: []
   package: platypush.plugins.weather.openweathermap

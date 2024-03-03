@@ -1,9 +1,0 @@
-manifest:
-  events:
-    platypush.message.event.weather.NewWeatherConditionEvent: when there is a weather
-      condition update
-  install:
-    pip:
-      - buienradar
-  package: platypush.backend.weather.buienradar
-  type: backend

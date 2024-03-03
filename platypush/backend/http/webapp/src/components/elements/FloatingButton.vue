@@ -45,8 +45,8 @@ export default {
   margin: auto 1em 1em auto;
 
   button {
-    background: $active-glow-bg-2 !important;
-    color: $selected-fg !important;
+    background: $tile-bg !important;
+    color: $tile-fg !important;
     width: 4em;
     height: 4em;
     border-radius: 2em;
@@ -55,8 +55,7 @@ export default {
     box-shadow: $border-shadow-bottom-right;
 
     &:hover {
-      background: $hover-bg-2 !important;
-      color: $hover-fg !important;
+      background: $tile-hover-bg !important;
     }
   }
 

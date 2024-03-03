@@ -2,10 +2,10 @@ from platypush.message.event import Event
 
 
 class MediaEvent(Event):
-    """ Base class for media events """
+    """Base class for media events"""
 
-    def __init__(self, player=None, plugin=None, *args, **kwargs):
-        super().__init__(player=player, plugin=plugin, *args, **kwargs)
+    def __init__(self, player=None, plugin=None, status=None, *args, **kwargs):
+        super().__init__(player=player, plugin=plugin, status=status, *args, **kwargs)
 
 
 class MediaPlayRequestEvent(MediaEvent):
@@ -13,13 +13,22 @@ class MediaPlayRequestEvent(MediaEvent):
     Event triggered when a new media playback request is received
     """
 
-    def __init__(self, player=None, plugin=None, resource=None, title=None, *args, **kwargs):
+    def __init__(
+        self, player=None, plugin=None, resource=None, title=None, *args, **kwargs
+    ):
         """
         :param resource: File name or URI of the played video
         :type resource: str
         """
 
-        super().__init__(*args, player=player, plugin=plugin, resource=resource, title=title, **kwargs)
+        super().__init__(
+            *args,
+            player=player,
+            plugin=plugin,
+            resource=resource,
+            title=title,
+            **kwargs
+        )
 
 
 class MediaPlayEvent(MediaEvent):
@@ -27,13 +36,22 @@ class MediaPlayEvent(MediaEvent):
     Event triggered when a new media content is played
     """
 
-    def __init__(self, player=None, plugin=None, resource=None, title=None, *args, **kwargs):
+    def __init__(
+        self, player=None, plugin=None, resource=None, title=None, *args, **kwargs
+    ):
         """
         :param resource: File name or URI of the played video
         :type resource: str
         """
 
-        super().__init__(*args, player=player, plugin=plugin, resource=resource, title=title, **kwargs)
+        super().__init__(
+            *args,
+            player=player,
+            plugin=plugin,
+            resource=resource,
+            title=title,
+            **kwargs
+        )
 
 
 class MediaStopEvent(MediaEvent):
@@ -69,7 +87,9 @@ class MediaSeekEvent(MediaEvent):
     """
 
     def __init__(self, position, player=None, plugin=None, *args, **kwargs):
-        super().__init__(*args, player=player, plugin=plugin, position=position, **kwargs)
+        super().__init__(
+            *args, player=player, plugin=plugin, position=position, **kwargs
+        )
 
 
 class MediaVolumeChangedEvent(MediaEvent):
@@ -101,7 +121,9 @@ class NewPlayingMediaEvent(MediaEvent):
         :type resource: str
         """
 
-        super().__init__(*args, player=player, plugin=plugin, resource=resource, **kwargs)
+        super().__init__(
+            *args, player=player, plugin=plugin, resource=resource, **kwargs
+        )
 
 
 # vim:sw=4:ts=4:et:

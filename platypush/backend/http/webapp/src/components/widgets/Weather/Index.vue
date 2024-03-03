@@ -116,7 +116,7 @@ export default {
     },
 
     onWeatherChange(event) {
-      if (!this.weather)
+      if (!(this.weather && event && this.weatherPlugins.includes(event.plugin_name)))
         this.weather = {}
 
       this.weather = {...this.weather, ...event}

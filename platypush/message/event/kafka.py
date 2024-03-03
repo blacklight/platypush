@@ -1,3 +1,4 @@
+from typing import Union
 from platypush.message.event import Event
 
 
@@ -7,14 +8,24 @@ class KafkaMessageEvent(Event):
     a new event.
     """
 
-    def __init__(self, msg, *args, **kwargs):
+    def __init__(
+        self,
+        *args,
+        msg: Union[str, list, dict],
+        topic: str,
+        host: str,
+        port: int,
+        **kwargs
+    ):
         """
-        :param msg: Received message
-        :type msg: str or bytes stream
+        :param msg: Received message. If the message is a JSON string, it will
+            be returned as a dict or list. If it's a binary blob, it will be
+            returned as a base64-encoded string.
+        :param topic: Topic where the message was received.
+        :param host: Host where the message was received.
+        :param port: Port where the message was received.
         """
-
-        super().__init__(msg=msg, *args, **kwargs)
+        super().__init__(*args, msg=msg, topic=topic, host=host, port=port, **kwargs)
 
 
 # vim:sw=4:ts=4:et:
-
