@@ -221,7 +221,9 @@ class RunnablePlugin(Plugin):
             except Exception as e:
                 self.logger.warning('Could not join thread on stop: %s', e)
 
-        self.logger.info('%s stopped', self.__class__.__name__)
+        self.logger.info(
+            'Stopped plugin: [%s]', get_plugin_name_by_class(self.__class__)
+        )
 
     def _runner(self):
         """
@@ -231,7 +233,7 @@ class RunnablePlugin(Plugin):
             return
 
         self.logger.info(
-            'Starting plugin [%s]', get_plugin_name_by_class(self.__class__)
+            'Starting plugin: [%s]', get_plugin_name_by_class(self.__class__)
         )
 
         while not self.should_stop():

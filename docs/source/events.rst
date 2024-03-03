@@ -13,7 +13,6 @@ Events
     platypush/events/bluetooth.rst
     platypush/events/camera.rst
     platypush/events/chat.slack.rst
-    platypush/events/chat.telegram.rst
     platypush/events/clipboard.rst
     platypush/events/custom.rst
     platypush/events/dbus.rst
@@ -66,6 +65,7 @@ Events
     platypush/events/sound.rst
     platypush/events/stt.rst
     platypush/events/sun.rst
+    platypush/events/telegram.rst
     platypush/events/tensorflow.rst
     platypush/events/torrent.rst
     platypush/events/trello.rst

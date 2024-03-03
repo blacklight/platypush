@@ -22,7 +22,6 @@ Plugins
     platypush/plugins/camera.ir.mlx90640.rst
     platypush/plugins/camera.pi.rst
     platypush/plugins/camera.pi.legacy.rst
-    platypush/plugins/chat.telegram.rst
     platypush/plugins/clipboard.rst
     platypush/plugins/config.rst
     platypush/plugins/csv.rst
@@ -128,6 +127,7 @@ Plugins
     platypush/plugins/switchbot.rst
     platypush/plugins/system.rst
     platypush/plugins/tcp.rst
+    platypush/plugins/telegram.rst
     platypush/plugins/tensorflow.rst
     platypush/plugins/todoist.rst
     platypush/plugins/torrent.rst
