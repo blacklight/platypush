@@ -48,6 +48,7 @@ setup(
             'install/scripts/**/*',
             'install/requirements/*',
             'install/docker/*',
+            'components.json.gz',
         ],
     },
     entry_points={
@@ -90,7 +91,7 @@ setup(
     extras_require={
         # Support for Kafka backend and plugin
         'kafka': ['kafka-python'],
-        # Support for Pushbullet backend and plugin
+        # Support for Pushbullet
         'pushbullet': [
             'pushbullet.py @ https://github.com/rbrcsk/pushbullet.py/tarball/master'
         ],
@@ -128,8 +129,7 @@ setup(
         # Support for inotify file monitors
         'inotify': ['inotify'],
         # Support for Google Assistant
-        'google-assistant-legacy': ['google-assistant-library', 'google-auth'],
-        'google-assistant': ['google-assistant-sdk[samples]', 'google-auth'],
+        'google-assistant': ['google-assistant-library', 'google-auth'],
         # Support for the Google APIs
         'google': [
             'oauth2client',
@@ -269,8 +269,8 @@ setup(
         ],
         # Support for LCD display integration
         'lcd': ['RPi.GPIO', 'RPLCD'],
-        # Support for IMAP mail integration
-        'imap': ['imapclient'],
+        # Support for email integration
+        'mail': ['imapclient', 'dnspython'],
         # Support for NextCloud integration
         'nextcloud': ['nextcloud-api-wrapper'],
         # Support for VLC integration

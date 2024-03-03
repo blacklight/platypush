@@ -1,15 +1,27 @@
 import re
 import sys
+from typing import Optional
 
+from platypush.context import get_plugin
 from platypush.message.event import Event
 
 
 class AssistantEvent(Event):
     """Base class for assistant events"""
 
-    def __init__(self, *args, assistant=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._assistant = assistant
+    def __init__(self, *args, assistant: Optional[str] = None, **kwargs):
+        """
+        :param assistant: Name of the assistant plugin that triggered the event.
+        """
+        super().__init__(*args, assistant=assistant, **kwargs)
+
+    @property
+    def _assistant(self):
+        return (
+            get_plugin(self.args.get('assistant'))
+            if self.args.get('assistant')
+            else None
+        )
 
 
 class ConversationStartEvent(AssistantEvent):
@@ -26,10 +38,10 @@ class ConversationEndEvent(AssistantEvent):
     Event triggered when a conversation ends
     """
 
-    def __init__(self, *args, with_follow_on_turn=False, **kwargs):
+    def __init__(self, *args, with_follow_on_turn: bool = False, **kwargs):
         """
-        :param with_follow_on_turn: Set to true if the conversation expects a user follow-up, false otherwise
-        :type with_follow_on_turn: str
+        :param with_follow_on_turn: Set to true if the conversation expects a
+            user follow-up, false otherwise
         """
 
         super().__init__(*args, with_follow_on_turn=with_follow_on_turn, **kwargs)
@@ -49,10 +61,9 @@ class ResponseEvent(ConversationEndEvent):
     Event triggered when a response is processed by the assistant
     """
 
-    def __init__(self, response_text, *args, **kwargs):
+    def __init__(self, *args, response_text: str, **kwargs):
         """
         :param response_text: Response text processed by the assistant
-        :type response_text: str
         """
 
         super().__init__(*args, response_text=response_text, **kwargs)
@@ -69,10 +80,9 @@ class SpeechRecognizedEvent(AssistantEvent):
     Event triggered when a speech is recognized
     """
 
-    def __init__(self, phrase, *args, **kwargs):
+    def __init__(self, *args, phrase: str, **kwargs):
         """
         :param phrase: Recognized user phrase
-        :type phrase: str
         """
 
         super().__init__(*args, phrase=phrase, **kwargs)
@@ -81,7 +91,7 @@ class SpeechRecognizedEvent(AssistantEvent):
     def matches_condition(self, condition):
         """
         Overrides matches condition, and stops the conversation to prevent the
-        default assistant response if the event matched some event hook condition
+        default assistant response if the event matched some event hook condition.
         """
 
         result = super().matches_condition(condition)
@@ -167,20 +177,19 @@ class HotwordDetectedEvent(AssistantEvent):
     Event triggered when a custom hotword is detected
     """
 
-    def __init__(self, *args, hotword=None, **kwargs):
+    def __init__(self, *args, hotword: Optional[str] = None, **kwargs):
         """
-        :param hotword: The detected user hotword
-        :type hotword: str
+        :param hotword: The detected user hotword.
         """
         super().__init__(*args, hotword=hotword, **kwargs)
 
 
 class VolumeChangedEvent(AssistantEvent):
     """
-    Event triggered when the volume of the assistant changes
+    Event triggered when the volume of the assistant changes.
     """
 
-    def __init__(self, volume, *args, **kwargs):
+    def __init__(self, *args, volume: float, **kwargs):
         super().__init__(*args, volume=volume, **kwargs)
 
 

@@ -1,3 +1,4 @@
+from dataclasses import asdict
 import enum
 import threading
 from typing import Collection, Optional
@@ -343,7 +344,7 @@ class MediaOmxplayerPlugin(MediaPlugin):
         elif state == 'paused':
             state = PlayerState.PAUSE.value
 
-        return {
+        status = {
             'duration': self._player.duration(),
             'filename': urllib.parse.unquote(self._player.get_source()).split('/')[-1]
             if self._player.get_source().startswith('file://')
@@ -362,6 +363,17 @@ class MediaOmxplayerPlugin(MediaPlugin):
             'volume': self.get_volume(),
             'volume_max': 100,
         }
+
+        if self._latest_resource:
+            status.update(
+                {
+                    k: v
+                    for k, v in asdict(self._latest_resource).items()
+                    if v is not None
+                }
+            )
+
+        return status
 
     def add_handler(self, event_type, callback):
         if event_type not in self._handlers.keys():

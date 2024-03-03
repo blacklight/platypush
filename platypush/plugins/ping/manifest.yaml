@@ -1,5 +1,8 @@
 manifest:
-  events: {}
+  events:
+    - platypush.message.event.ping.HostDownEvent
+    - platypush.message.event.ping.HostUpEvent
+    - platypush.message.event.ping.PingResponseEvent
   install:
     apt:
       - iputils-ping
@@ -7,6 +10,5 @@ manifest:
       - iputils
     pacman:
       - iputils
-
   package: platypush.plugins.ping
   type: plugin

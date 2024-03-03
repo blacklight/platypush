@@ -34,7 +34,7 @@ class EntityManager(ABC):
         return super().__new__(cls)
 
     @abstractmethod
-    def transform_entities(self, entities: Collection[Any]) -> Collection[Entity]:
+    def transform_entities(self, entities: Collection[Any], **_) -> Collection[Entity]:
         """
         This method takes a list of entities in any (plugin-specific)
         format and converts them into a standardized collection of
@@ -86,6 +86,7 @@ class EntityManager(ABC):
         self,
         entities: Optional[Collection[Any]],
         callback: Optional[EntitySavedCallback] = None,
+        **kwargs,
     ) -> Collection[Entity]:
         """
         Publishes a list of entities. The downstream consumers include:
@@ -106,7 +107,7 @@ class EntityManager(ABC):
         from platypush.entities import publish_entities
 
         transformed_entities = self._normalize_entities(
-            self.transform_entities(entities or [])
+            self.transform_entities(entities or [], **kwargs)
         )
 
         publish_entities(transformed_entities, callback=callback)

@@ -1,0 +1,17 @@
+{
+  "File": {
+    "name": "Files",
+    "icon": {
+      "class": "fas fa-folder",
+      "color": "#888888"
+    }
+  },
+
+  "YouTube": {
+    "name": "YouTube",
+    "icon": {
+      "class": "fab fa-youtube",
+      "color": "#FF0000"
+    }
+  }
+}

@@ -72,7 +72,7 @@ class SensorBme280Plugin(SensorPlugin):
 
         super().__init__(**kwargs)
         self.port = port
-        self._bus = None
+        self._smbus = None
         self._device = None
 
     def _get_device(self):
@@ -82,8 +82,8 @@ class SensorBme280Plugin(SensorPlugin):
         if self._device:
             return self._device
 
-        self._bus = SMBus(self.port)
-        self._device = BME280(i2c_dev=self._bus)
+        self._smbus = SMBus(self.port)
+        self._device = BME280(i2c_dev=self._smbus)
         return self._device
 
     @action

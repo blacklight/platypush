@@ -58,6 +58,8 @@ class Message:
                 return obj.isoformat()
 
         def default(self, obj):
+            from platypush.procedure import Procedure
+
             value = self.parse_datetime(obj)
             if value is not None:
                 return value
@@ -75,6 +77,9 @@ class Message:
             if isinstance(obj, JSONAble):
                 return obj.to_json()
 
+            if isinstance(obj, Procedure):
+                return obj.to_dict()
+
             if isinstance(obj, Enum):
                 return obj.value
 
@@ -83,6 +88,9 @@ class Message:
 
             if is_dataclass(obj):
                 return asdict(obj)
+
+            if isinstance(obj, Message):
+                return obj.to_dict(obj)
 
             # Don't serialize I/O wrappers/objects
             if isinstance(obj, io.IOBase):
@@ -167,6 +175,20 @@ class Message:
             msg['_timestamp'] = time.time()
 
         return msg
+
+    @classmethod
+    def to_dict(cls, msg):
+        """
+        Converts a Message object into a dictionary
+
+        :param msg: Message object
+        """
+
+        return {
+            k: v
+            for k, v in cls.parse(msg).items()
+            if k not in ('id', 'token', 'target', 'origin', '_timestamp')
+        }
 
     @classmethod
     def build(cls, msg):

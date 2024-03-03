@@ -21,8 +21,8 @@ class JellyfinSchema(Schema):
     def gen_img_url(self, data: dict, **_) -> dict:
         if 'image' in self.fields:
             data['image'] = (
-                get_plugin('media.jellyfin').server +  # type: ignore
-                f'/Items/{data["id"]}'
+                get_plugin('media.jellyfin').server
+                + f'/Items/{data["id"]}'  # type: ignore
                 '/Images/Primary?fillHeight=333&fillWidth=222&quality=96'
             )
 
@@ -44,7 +44,8 @@ class JellyfinSchema(Schema):
         if not video_format:
             if not available_containers:
                 warnings.warn(
-                    f'The media ID {data["Id"]} has no available video containers'
+                    f'The media ID {data["Id"]} has no available video containers',
+                    stacklevel=2,
                 )
 
                 return data
@@ -53,15 +54,13 @@ class JellyfinSchema(Schema):
 
         plugin = get_plugin('media.jellyfin')
         assert plugin, 'The media.jellyfin plugin is not configured'
-        url = (
+        data['url'] = (
             f'{plugin.server}/Videos/{data["Id"]}'
             f'/stream.{video_format}'
             f'?Static=true&api_key={plugin._api_key}'
         )
 
-        data['url'] = data['file'] = url
         return data
-
 
 
 class JellyfinArtistSchema(JellyfinSchema, MediaArtistSchema):
@@ -75,6 +74,7 @@ class JellyfinCollectionSchema(JellyfinSchema, MediaCollectionSchema):
 
 
 class JellyfinVideoSchema(JellyfinSchema, MediaVideoSchema):
+    duration = fields.Number(attribute='RunTimeTicks')
     community_rating = fields.Number(attribute='CommunityRating')
     critic_rating = fields.Number(attribute='CriticRating')
 
@@ -82,6 +82,18 @@ class JellyfinVideoSchema(JellyfinSchema, MediaVideoSchema):
         super().__init__(*args, **kwargs)
         self.fields['year'].attribute = 'ProductionYear'
         self.fields['has_subtitles'].attribute = 'HasSubtitles'
+
+    @post_dump
+    def _normalize_community_rating(self, data: dict, **_) -> dict:
+        if data.get('community_rating'):
+            data['community_rating'] *= 10
+        return data
+
+    @post_dump
+    def _normalize_duration(self, data: dict, **_) -> dict:
+        if data.get('duration'):
+            data['duration'] //= 1e7
+        return data
 
 
 class JellyfinMovieSchema(JellyfinVideoSchema):
@@ -99,13 +111,10 @@ class JellyfinEpisodeSchema(JellyfinVideoSchema):
         episode_index = data.get('IndexNumber')
         if episode_index:
             season_index = data.get('SeasonIndex', 1)
-            episode_index = 's{:02d}e{:02d}'.format(
-                season_index, episode_index
-            )
+            episode_index = 's{:02d}e{:02d}'.format(season_index, episode_index)
 
         if episode_index:
             prefix += f'{" " if prefix else ""}[{episode_index}] '
 
         data['Name'] = prefix + data.get('Name', '')
         return data
-

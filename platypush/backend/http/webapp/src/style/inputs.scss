@@ -8,6 +8,8 @@
 input[type=text],
 input[type=password],
 input[type=search],
+input[type=time],
+input[type=datetime-local],
 input[type=number] {
   border: $default-border-2;
   border-radius: .5em;

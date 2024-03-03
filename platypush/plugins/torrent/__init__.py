@@ -195,12 +195,12 @@ class TorrentPlugin(Plugin):
                         result.get('title', '[No Title]')
                         + f' [movies][{lang}][{quality}]'
                     ),
-                    'duration': int(result.get('runtime') or 0),
+                    'duration': int(result.get('runtime') or 0) * 60,
                     'year': int(result.get('year') or 0),
                     'synopsis': result.get('synopsis'),
                     'trailer': result.get('trailer'),
                     'genres': result.get('genres', []),
-                    'images': result.get('images', []),
+                    'image': result.get('images', {}).get('poster'),
                     'rating': result.get('rating', {}),
                     'language': lang,
                     'quality': quality,
@@ -235,7 +235,7 @@ class TorrentPlugin(Plugin):
                         + f'[S{episode.get("season", 0):02d}E{episode.get("episode", 0):02d}] '
                         + f'{episode.get("title", "[No Title]")} [tv][{quality}]'
                     ),
-                    'duration': int(result.get('runtime') or 0),
+                    'duration': int(result.get('runtime') or 0) * 60,
                     'year': int(result.get('year') or 0),
                     'synopsis': result.get('synopsis'),
                     'overview': episode.get('overview'),
@@ -246,7 +246,7 @@ class TorrentPlugin(Plugin):
                     'network': result.get('network'),
                     'status': result.get('status'),
                     'genres': result.get('genres', []),
-                    'images': result.get('images', []),
+                    'image': result.get('images', {}).get('fanart'),
                     'rating': result.get('rating', {}),
                     'quality': quality,
                     'provider': item.get('provider'),

@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[6640],{6640:function(t,a,e){e.r(a),e.d(a,{default:function(){return r}});var n=e(8637),p={emits:["back","path-change","play"],mixins:[n.Z],props:{filter:{type:String,default:""}},data(){return{loading:!1}}};const u=p;var r=u}}]);
+//# sourceMappingURL=6640.a6538b3b.js.map

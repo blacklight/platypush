@@ -1,5 +1,8 @@
 manifest:
-  events: {}
+  events:
+    platypush.message.event.nextcloud.NextCloudActivityEvent: |
+      When new activity occurs on the instance - e.g. a file or bookmark is
+      created, a comment is added, a message is received etc.
   install:
     pip:
     - nextcloud-api-wrapper

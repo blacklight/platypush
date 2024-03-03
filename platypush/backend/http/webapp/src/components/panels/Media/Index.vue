@@ -5,42 +5,60 @@
 
       <MediaView :plugin-name="pluginName" :status="selectedPlayer?.status || {}" :track="selectedPlayer?.status || {}"
                  :buttons="mediaButtons" @play="pause" @pause="pause" @stop="stop" @set-volume="setVolume"
-                 @seek="seek" @search="search">
+                 @seek="seek" @search="search" @mute="toggleMute" @unmute="toggleMute">
         <main>
-          <div class="nav-container">
-            <Nav :selected-view="selectedView" @input="selectedView = $event" />
+          <div class="nav-container from tablet" :style="navContainerStyle">
+            <Nav :selected-view="selectedView"
+                 :torrent-plugin="torrentPlugin"
+                 @input="selectedView = $event"
+                 @toggle="forceShowNav = !forceShowNav" />
           </div>
 
           <div class="view-container">
-            <Header :plugin-name="pluginName" :selected-view="selectedView" :has-subtitles-plugin="hasSubtitlesPlugin"
-                    ref="header" :sources="sources" :selected-item="selectedPlayer && selectedPlayer.status &&
-                      (selectedPlayer.status.state === 'play' || selectedPlayer.status.state === 'pause')
-                      ? selectedPlayer.status : results[selectedResult]" :selected-subtitles="selectedSubtitles"
-                    :browser-filter="browserFilter" @search="search" @select-player="selectedPlayer = $event"
-                    @player-status="onStatusUpdate" @torrent-add="downloadTorrent($event)"
-                    @show-subtitles="showSubtitlesModal = !showSubtitlesModal" @play-url="$refs.playUrlModal.show()"
-                    @filter="browserFilter = $event" @source-toggle="sources[$event] = !sources[$event]" />
+            <Header :plugin-name="pluginName"
+                    :selected-view="selectedView"
+                    :has-subtitles-plugin="hasSubtitlesPlugin"
+                    :sources="sources"
+                    :selected-item="selectedItem"
+                    :selected-subtitles="selectedSubtitles"
+                    :browser-filter="browserFilter"
+                    :show-nav-button="!forceShowNav"
+                    ref="header"
+                    @search="search"
+                    @select-player="selectedPlayer = $event"
+                    @player-status="onStatusUpdate"
+                    @torrent-add="downloadTorrent($event)"
+                    @show-subtitles="showSubtitlesModal = !showSubtitlesModal"
+                    @play-url="showPlayUrlModal"
+                    @filter="browserFilter = $event"
+                    @toggle-nav="forceShowNav = !forceShowNav"
+                    @source-toggle="sources[$event] = !sources[$event]" />
 
             <div class="body-container" :class="{'expanded-header': $refs.header?.filterVisible}">
-              <Results :results="results" :selected-result="selectedResult" @select="onResultSelect($event)"
-                       @play="play" @info="$refs.mediaInfo.isVisible = true" @view="view" @download="download"
-                       :sources="sources" v-if="selectedView === 'search'" />
+              <Results :results="results"
+                       :selected-result="selectedResult"
+                       :sources="sources"
+                       :loading="loading"
+                       :filter="browserFilter"
+                       @select="onResultSelect($event)"
+                       @play="play"
+                       @view="view"
+                       @download="download"
+                       v-if="selectedView === 'search'" />
 
-              <TorrentView :plugin-name="torrentPlugin" :is-media="true" @play="play"
+              <TorrentView :plugin-name="torrentPlugin"
+                           :is-media="true"
+                           @play="play"
                            v-else-if="selectedView === 'torrents'" />
 
-              <Browser :plugin-name="torrentPlugin" :is-media="true" :filter="browserFilter"
-                       @path-change="browserFilter = ''" @play="play($event)" v-else-if="selectedView === 'browser'" />
+              <Browser :filter="browserFilter"
+                       @path-change="browserFilter = ''"
+                       @play="play($event)"
+                       v-else-if="selectedView === 'browser'" />
             </div>
           </div>
         </main>
       </MediaView>
-
-      <div class="media-info-container">
-        <Modal title="Media info" ref="mediaInfo">
-          <Info :item="results[selectedResult]" v-if="selectedResult != null" />
-        </Modal>
-      </div>
 
       <div class="subtitles-container">
         <Modal title="Available subtitles" :visible="showSubtitlesModal" ref="subtitlesSelector"
@@ -54,19 +72,8 @@
       </div>
 
       <div class="play-url-container">
-        <Modal title="Play URL" ref="playUrlModal" @open="$refs.playUrlInput.focus()">
-          <form @submit.prevent="playUrl(urlPlay)">
-            <div class="row">
-              <label>
-                Play URL (use the file:// prefix for local files)
-                <input type="text" v-model="urlPlay" ref="playUrlInput" autofocus />
-              </label>
-            </div>
-
-            <div class="row footer">
-              <button type="submit" :disabled="!urlPlay?.length">Play</button>
-            </div>
-          </form>
+        <Modal title="Play URL" ref="playUrlModal" @open="onPlayUrlModalOpen">
+          <UrlPlayer :value="urlPlay" @input="urlPlay = $event.target.value" @play="playUrl($event)" />
         </Modal>
       </div>
     </div>
@@ -77,20 +84,33 @@
 import Loading from "@/components/Loading";
 import Modal from "@/components/Modal";
 import Utils from "@/Utils";
+
+import Browser from "@/components/panels/Media/Browser";
+import Header from "@/components/panels/Media/Header";
 import MediaUtils from "@/components/Media/Utils";
 import MediaView from "@/components/Media/View";
-import Header from "@/components/panels/Media/Header";
-import Info from "@/components/panels/Media/Info";
 import Nav from "@/components/panels/Media/Nav";
 import Results from "@/components/panels/Media/Results";
 import Subtitles from "@/components/panels/Media/Subtitles";
 import TorrentView from "@/components/panels/Torrent/View";
-import Browser from "@/components/File/Browser";
+import UrlPlayer from "@/components/panels/Media/UrlPlayer";
 
 export default {
   name: "Media",
   mixins: [Utils, MediaUtils],
-  components: {Browser, Loading, MediaView, Header, Results, Modal, Info, Nav, TorrentView, Subtitles},
+  components: {
+    Browser,
+    Header,
+    Loading,
+    MediaView,
+    Modal,
+    Nav,
+    Results,
+    Subtitles,
+    TorrentView,
+    UrlPlayer,
+  },
+
   props: {
     pluginName: {
       type: String,
@@ -118,6 +138,7 @@ export default {
       selectedView: 'search',
       selectedSubtitles: null,
       showSubtitlesModal: false,
+      forceShowNav: false,
       awaitingPlayTorrent: null,
       urlPlay: null,
       browserFilter: null,
@@ -139,6 +160,28 @@ export default {
     hasSubtitlesPlugin() {
       return 'media.subtitles' in this.$root.config
     },
+
+    navContainerStyle() {
+      if (this.forceShowNav)
+        return {
+          display: 'flex !important',
+        }
+
+      return {}
+    },
+
+    selectedItem() {
+      if (
+        this.selectedPlayer && this.selectedPlayer.status &&
+        (
+          this.selectedPlayer.status.state === 'play' ||
+          this.selectedPlayer.status.state === 'pause'
+        )
+      )
+        return this.selectedPlayer.status
+
+      return this.results[this.selectedResult]
+    },
   },
 
   methods: {
@@ -155,15 +198,28 @@ export default {
     async play(item) {
       if (item?.type === 'torrent') {
         this.awaitingPlayTorrent = item.url
+        this.notify({
+          text: 'Torrent queued for download',
+          image: {
+            iconClass: 'fa fa-magnet',
+          }
+        })
+
         await this.download(item)
         return
       }
 
-      if (!this.selectedPlayer.component.supports(item))
-        item = await this.startStreaming(item, this.pluginName)
+      this.loading = true
 
-      await this.selectedPlayer.component.play(item, this.selectedSubtitles, this.selectedPlayer)
-      await this.refresh()
+      try {
+        if (!this.selectedPlayer.component.supports(item))
+          item = await this.startStreaming(item, this.pluginName)
+
+        await this.selectedPlayer.component.play(item, this.selectedSubtitles, this.selectedPlayer)
+        await this.refresh()
+      } finally {
+        this.loading = false
+      }
     },
 
     async pause() {
@@ -178,6 +234,11 @@ export default {
 
     async setVolume(volume) {
       await this.selectedPlayer.component.setVolume(volume, this.selectedPlayer)
+      await this.refresh()
+    },
+
+    async toggleMute() {
+      await this.selectedPlayer.component.toggleMute(this.selectedPlayer)
       await this.refresh()
     },
 
@@ -206,6 +267,18 @@ export default {
         return
 
       this.selectedPlayer.status = status
+    },
+
+    onPlayUrlModalOpen() {
+      const modal = this.$refs.playUrlModal
+      this.urlPlay = ''
+      modal.$nextTick(() => {
+        const input = modal.$el.querySelector('input[type=text]')
+        if (input) {
+          input.focus()
+          input.select()
+        }
+      })
     },
 
     onTorrentQueued(event) {
@@ -306,10 +379,17 @@ export default {
       if (this.selectedResult == null || this.selectedResult !== result) {
         this.selectedResult = result
         this.selectedSubtitles = null
+      } else {
+        this.selectedResult = null
       }
     },
 
+    showPlayUrlModal() {
+      this.$refs.playUrlModal.show()
+    },
+
     async playUrl(url) {
+      this.urlPlay = url
       this.loading = true
 
       try {
@@ -402,19 +482,6 @@ export default {
   z-index: 10;
 }
 
-:deep(.media-info-container) {
-  .modal-container {
-    .content {
-      max-width: 75%;
-    }
-
-    .body {
-      padding: 1em .5em;
-      overflow: auto;
-    }
-  }
-}
-
 :deep(.subtitles-container) {
   .body {
     padding: 0 !important;
@@ -422,46 +489,6 @@ export default {
     .item {
       padding: 1em;
     }
-  }
-}
-
-:deep(.play-url-container) {
-  .body {
-    padding: 1em !important;
-  }
-
-  form {
-    padding: 0;
-    margin: 0;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-  }
-
-  input[type=text] {
-    width: 100%;
-  }
-
-  [type=submit] {
-    background: initial;
-    border-color: initial;
-    border-radius: 1.5em;
-
-    &:hover {
-      color: $default-hover-fg-2;
-    }
-  }
-
-  .footer {
-    display: flex;
-    justify-content: right;
-    padding: 0;
-  }
-}
-
-:deep(.media-info-container) {
-  .modal {
-    max-width: 70em;
   }
 }
 </style>

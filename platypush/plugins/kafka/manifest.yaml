@@ -1,7 +1,6 @@
 manifest:
   events:
-    platypush.message.event.kafka.KafkaMessageEvent: when a new message is received
-      on the consumer topic.
+    - platypush.message.event.kafka.KafkaMessageEvent
   install:
     apt:
       - python-kafka

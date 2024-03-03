@@ -1,7 +1,7 @@
 <template>
   <div class="power-switch" :class="{disabled: disabled}" @click.stop="onInput">
     <!--suppress HtmlFormInputWithoutLabel -->
-    <input type="checkbox" :checked="value">
+    <input type="checkbox" :checked="value" :id="id">
     <label>
       <!--suppress HtmlUnknownTag -->
       <div class="switch">
@@ -19,6 +19,10 @@ export default {
   name: "ToggleSwitch",
   emits: ['input'],
   props: {
+    id: {
+      type: String,
+    },
+
     value: {
       type: Boolean,
       default: false,

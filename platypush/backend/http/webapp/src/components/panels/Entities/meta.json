@@ -1,4 +1,12 @@
 {
+  "alarm": {
+    "name": "Alarm",
+    "name_plural": "Alarms",
+    "icon": {
+      "class": "fas fa-stopwatch"
+    }
+  },
+
   "assistant": {
     "name": "Assistant",
     "name_plural": "Assistants",
@@ -12,6 +20,22 @@
     "name_plural": "Batteries",
     "icon": {
       "class": "fas fa-battery-full"
+    }
+  },
+
+  "weather": {
+    "name": "Weather",
+    "name_plural": "Weather",
+    "icon": {
+      "class": "fas fa-cloud-sun-rain"
+    }
+  },
+
+  "weather_forecast": {
+    "name": "Weather Forecast",
+    "name_plural": "Weather Forecast",
+    "icon": {
+      "class": "fas fa-cloud-sun-rain"
     }
   },
 
@@ -308,6 +332,14 @@
     "name_plural": "Sensors",
     "icon": {
       "class": "fas fa-heart-pulse"
+    }
+  },
+
+  "ping_host": {
+    "name": "Host",
+    "name_plural": "Hosts",
+    "icon": {
+      "class": "fas fa-server"
     }
   },
 

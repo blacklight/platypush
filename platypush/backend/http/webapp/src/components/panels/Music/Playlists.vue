@@ -2,87 +2,40 @@
   <Loading v-if="loading" />
 
   <div class="editor-container fade-in" v-else-if="editedPlaylist != null">
-    <div class="header-container">
-      <MusicHeader ref="header">
-        <div class="col-8 filter">
-          <button class="back-btn" title="Back" @click="$emit('playlist-edit', null)">
-            <i class="fas fa-arrow-left" />
-          </button>
-
-          <label class="search-box">
-            <input type="search" placeholder="Filter" v-model="trackFilter">
-          </label>
-        </div>
-
-        <div class="buttons pull-right">
-          <Dropdown title="Players" icon-class="fa fa-volume-up" v-if="Object.keys(devices || {}).length">
-            <DropdownItem v-for="(device, id) in devices" :key="id" v-text="device.name"
-                          :item-class="{active: activeDevice === id, selected: selectedDevice === id}"
-                          icon-class="fa fa-volume-up" @click="$emit('select-device', id)" />
-          </Dropdown>
-
-          <button title="Refresh status" @click="$emit('refresh-status')" v-if="devices != null">
-            <i class="fa fa-sync"></i>
-          </button>
-
-          <button class="add-btn" title="Add track" @click="addTrack">
-            <i class="fas fa-plus" />
-          </button>
-        </div>
-      </MusicHeader>
-    </div>
-
-    <div class="editor" ref="editor">
-      <div class="no-content" v-if="!tracks?.length">
-        No tracks found
-      </div>
-
-      <div class="row track" draggable="true" v-for="(track, i) in tracks" :key="i"
-           :class="{selected: selectedTracksSet.has(i), active: status?.playingPos === i, hidden: !displayedTracks.has(i)}"
-           @dragstart="onTrackDragStart(i)" @dragend="onTrackDragEnd(i)" @dragover="onTrackDragOver(i)"
-           @click="onTrackClick($event, i)" @dblclick="$emit('load-track', {pos: i, play: true})">
-        <div class="col-10">
-          <div class="title">
-            {{ track.title || '[No Title]' }}
-          </div>
-
-          <div class="artist" v-if="track.artist">
-            <a :href="$route.fullPath" v-text="track.artist" @click.prevent="$emit('search', {artist: track.artist})" />
-          </div>
-
-          <div class="album" v-if="track.album">
-            <a :href="$route.fullPath" v-text="track.album"
-               @click.prevent="$emit('search', {artist: track.artist, album: track.album})" />
-          </div>
-        </div>
-
-        <div class="col-2 right-side">
-          <span class="duration" v-text="track.time ? convertTime(track.time) : '-:--'" />
-
-          <span class="actions">
-          <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
-            <DropdownItem text="Play" icon-class="fa fa-play" @click="$emit('load-track', {pos: i, play: true})" />
-            <DropdownItem text="Add to queue" icon-class="fa fa-plus" @click="$emit('load-track', {pos: i, play: false})" />
-            <DropdownItem text="Add to playlist" icon-class="fa fa-list-ul" @click="$emit('add-to-playlist', track)" />
-            <DropdownItem text="Remove" icon-class="fa fa-trash" @click="$emit('remove-track', [...(new Set([...selectedTracks, i]))])" />
-            <DropdownItem text="Info" icon-class="fa fa-info" @click.stop="$emit('info', tracks[i])" />
-          </Dropdown>
-        </span>
-        </div>
-      </div>
-    </div>
+    <Playlist
+      :tracks="tracks || []"
+      :status="status"
+      :devices="devices"
+      :selected-device="selectedDevice"
+      :active-device="activeDevice"
+      :show-nav-button="showNavButton"
+      :with-add-to-queue="true"
+      :with-back="true"
+      @add="$emit('playlist-add', $event)"
+      @add-to-playlist="$emit('add-to-playlist', $event)"
+      @add-to-queue="$emit('load-tracks', {tracks: $event, play: false})"
+      @add-to-queue-and-play="$emit('load-tracks', {tracks: $event, play: true})"
+      @back="$emit('playlist-edit', null)"
+      @info="$emit('info', $event)"
+      @move="$emit('track-move', {...$event, playlist: editedPlaylist})"
+      @play="$emit('load-tracks', {tracks: [$event], play: true})"
+      @refresh-status="$emit('refresh-status')"
+      @remove="$emit('remove-track', $event)"
+      @search="$emit('search', $event)"
+      @select-device="$emit('select-device', $event)"
+      @toggle-nav="$emit('toggle-nav')" />
   </div>
 
   <div class="playlists fade-in" v-else>
     <div class="header-container">
       <MusicHeader ref="header">
-        <div class="col-8 filter">
+        <div class="col-7 filter">
           <label>
             <input type="search" placeholder="Filter" v-model="filter">
           </label>
         </div>
 
-        <div class="col-4 buttons">
+        <div class="col-5 buttons">
           <Dropdown title="Players" icon-class="fa fa-volume-up" v-if="Object.keys(devices || {}).length">
             <DropdownItem v-for="(device, id) in devices" :key="id" v-text="device.name"
                           :item-class="{active: activeDevice === id, selected: selectedDevice === id}"
@@ -91,6 +44,10 @@
 
           <button title="Refresh status" @click="$emit('refresh-status')" v-if="devices != null">
             <i class="fa fa-sync"></i>
+          </button>
+
+          <button class="mobile" title="Menu" @click="$emit('toggle-nav')" v-if="showNavButton">
+            <i class="fas fa-bars" />
           </button>
         </div>
       </MusicHeader>
@@ -129,13 +86,34 @@ import MediaUtils from "@/components/Media/Utils";
 import Dropdown from "@/components/elements/Dropdown";
 import DropdownItem from "@/components/elements/DropdownItem";
 import Loading from "@/components/Loading";
+import Playlist from "./Playlist";
 
 export default {
   name: "Playlists",
   mixins: [MediaUtils],
-  components: {DropdownItem, Dropdown, MusicHeader, Loading},
-  emits: ['play', 'load', 'remove', 'playlist-edit', 'search', 'remove-track', 'load-track', 'info',
-    'playlist-add', 'add-to-playlist', 'track-move', 'refresh-status', 'select-device'],
+  components: {
+    Dropdown,
+    DropdownItem,
+    MusicHeader,
+    Loading,
+    Playlist,
+  },
+
+  emits: [
+    'add-to-playlist',
+    'info',
+    'load',
+    'load-tracks',
+    'play',
+    'playlist-add',
+    'playlist-edit',
+    'refresh-status',
+    'remove',
+    'remove-track',
+    'search',
+    'select-device',
+    'track-move',
+  ],
 
   props: {
     playlists: {
@@ -161,12 +139,22 @@ export default {
       type: Object,
     },
 
+    status: {
+      type: Object,
+      default: () => {},
+    },
+
     selectedDevice: {
       type: String,
     },
 
     activeDevice: {
       type: String,
+    },
+
+    showNavButton: {
+      type: Boolean,
+      default: false,
     },
   },
 
@@ -254,14 +242,6 @@ export default {
       }
     },
 
-    addTrack() {
-      const track = prompt('Track path or URL')
-      if (!track?.length)
-        return
-
-      this.$emit('playlist-add', track)
-    },
-
     onTrackDragStart(track) {
       this.sourcePos = track
     },
@@ -341,6 +321,7 @@ export default {
 
   .header {
     .buttons {
+      display: flex;
       align-items: flex-end;
       justify-content: flex-end;
     }
@@ -360,10 +341,6 @@ export default {
   :deep(.header) {
     .back-btn {
       padding-left: .25em;
-    }
-
-    .add-btn {
-      float: right;
     }
 
     .search-box {
