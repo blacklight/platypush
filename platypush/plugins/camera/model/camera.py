@@ -50,6 +50,7 @@ class Camera:
     info: CameraInfo
     start_event: threading.Event = threading.Event()
     stream_event: threading.Event = threading.Event()
+    stop_stream_event: threading.Event = threading.Event()
     capture_thread: Optional[threading.Thread] = None
     stream_thread: Optional[threading.Thread] = None
     object = None

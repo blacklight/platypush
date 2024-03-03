@@ -3,9 +3,15 @@
     <Loading v-if="loading" />
 
     <MusicHeader>
-      <label class="search-box">
+      <label class="col-10 search-box">
         <input type="search" placeholder="Filter" v-model="filter">
       </label>
+
+      <div class="col-2 buttons">
+        <button class="mobile" title="Menu" @click="$emit('toggle-nav')" v-if="showNavButton">
+          <i class="fas fa-bars" />
+        </button>
+      </div>
     </MusicHeader>
 
     <div class="results">
@@ -67,7 +73,18 @@ export default {
   name: "Library",
   components: {Dropdown, DropdownItem, MusicHeader, Loading},
   mixins: [MediaUtils],
-  emits: ['search', 'play', 'load', 'add-to-playlist', 'info', 'cd', 'refresh-status', 'select-device'],
+  emits: [
+    'add-to-playlist',
+    'cd',
+    'info',
+    'load',
+    'play',
+    'refresh-status',
+    'search',
+    'select-device',
+    'toggle-nav',
+  ],
+
   props: {
     loading: {
       type: Boolean,
@@ -92,6 +109,11 @@ export default {
 
     activeDevice: {
       type: String,
+    },
+
+    showNavButton: {
+      type: Boolean,
+      default: false,
     },
   },
 

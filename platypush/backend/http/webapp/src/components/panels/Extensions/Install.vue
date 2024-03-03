@@ -7,11 +7,11 @@
 
       <div class="body">
         <div class="container install-cmd-container">
-          <CopyButton :text="installCmd" />
-          <pre><code v-html="highlightedInstallCmd" /></pre>
+          <CopyButton :text="installCmd" v-if="installCmd" />
+          <pre><Loading v-if="loading" /><code v-html="highlightedInstallCmd" v-else /></pre>
         </div>
 
-        <div class="buttons install-btn" v-if="installCmd?.length">
+        <div class="buttons install-btn" v-if="installCmd">
           <RestartButton v-if="installDone" />
           <button type="button"
                   class="btn btn-default"
@@ -73,28 +73,32 @@ export default {
       installRunning: false,
       installDone: false,
       installOutput: null,
+      installCmds: [],
       pendingCommands: 0,
       error: null,
+      loading: false,
     }
   },
 
   computed: {
     installCmd() {
-      const cmd = this.extension.deps.install_cmd.join('\n').trim()
-      return cmd?.length ? cmd : null
+      if (this.installCmds.length)
+        return this.installCmds.join('\n').trim()
+
+      return null
     },
 
     highlightedInstallCmd() {
       return (
-        this.installCmd ?
         hljs.highlight(
-          this.extension.deps.install_cmd
+          this.installCmd ?
+          this.installCmds
           .map((cmd) => `$ ${cmd}`)
           .join('\n')
-          .trim()
-        ).value :
-        '# No extra installation steps required',
-        {language: 'bash'}
+          .trim() :
+          '# No extra installation steps required',
+          {language: 'bash'}
+        ).value
       )
     },
   },
@@ -159,12 +163,15 @@ export default {
     },
 
     installExtension() {
+      if (!this.installCmd)
+        return
+
       this.error = null
       this.installRunning = true
       this.installOutput = ''
       this.$emit('install-start', this.extension)
 
-      const cmd = (this.extension.deps.install_cmd || []).join(';\n')
+      const cmd = this.installCmds.join(';\n')
       this.request('shell.exec', {
         cmd: cmd,
         ws: true,
@@ -176,9 +183,25 @@ export default {
         this.$emit('install-end', this.extension)
       })
     },
+
+    async refreshInstallCmds() {
+      this.loading = true
+      try {
+        this.installCmds = await this.request('application.get_install_commands', {
+          extension: this.extension.name,
+        })
+      } finally {
+        this.loading = false
+      }
+    },
   },
 
   mounted() {
+    this.refreshInstallCmds()
+    this.$watch('extension.name', () => {
+      this.refreshInstallCmds()
+    })
+
     this.$watch('installOutput', () => {
       this.$nextTick(() => {
         this.$refs.installOutput.focus()

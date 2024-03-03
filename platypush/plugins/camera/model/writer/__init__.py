@@ -3,7 +3,6 @@ import logging
 import multiprocessing
 import os
 import time
-
 from abc import ABC, abstractmethod
 from typing import Optional, IO
 
@@ -17,12 +16,10 @@ class VideoWriter(ABC):
 
     mimetype: Optional[str] = None
 
-    def __init__(self, camera, plugin, *_, **__):
-        from platypush.plugins.camera import Camera, CameraPlugin
-
+    def __init__(self, *_, **kwargs):
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.camera: Camera = camera
-        self.plugin: CameraPlugin = plugin
+        self.camera = kwargs.get('camera', getattr(self, 'camera', None))
+        self.plugin = kwargs.get('plugin', getattr(self, 'plugin', None))
         self.closed = False
 
     @abstractmethod
@@ -63,8 +60,12 @@ class FileVideoWriter(VideoWriter, ABC):
     """
 
     def __init__(self, *args, output_file: str, **kwargs):
-        super().__init__(self, *args, **kwargs)
-        self.output_file = os.path.abspath(os.path.expanduser(output_file))
+        super().__init__(
+            self,
+            *args,
+            output_file=os.path.abspath(os.path.expanduser(output_file)),
+            **kwargs,
+        )
 
 
 class StreamWriter(VideoWriter, ABC):

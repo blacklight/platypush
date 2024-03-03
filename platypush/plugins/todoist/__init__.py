@@ -30,8 +30,8 @@ class TodoistPlugin(Plugin):
 
     def __init__(self, api_token: str, **kwargs):
         """
-        :param api_token: Todoist API token. You can get it `here
-        <https://todoist.com/prefs/integrations>`_.
+        :param api_token: Todoist API token.
+            You can get it `here <https://todoist.com/prefs/integrations>`_.
         """
 
         super().__init__(**kwargs)

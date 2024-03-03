@@ -396,10 +396,10 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
         :return: The status of a Chromecast (if ``chromecast`` is specified) or
             all the discovered/available Chromecasts. Format:
 
-                .. code-block:: python
+                .. code-block:: javascript
 
                     {
-                      "type": "cast",  # Can be "cast" or "audio"
+                      "type": "cast",  // Can be "cast" or "audio"
                       "name": "Living Room TV",
                       "manufacturer": "Google Inc.",
                       "model_name": "Chromecast",
@@ -481,7 +481,7 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
                         "title": "Some media",
                         "track": null
                       }
-                }
+                    }
 
         """
         return self._status(chromecast=chromecast)

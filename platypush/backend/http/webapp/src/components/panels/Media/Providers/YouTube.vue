@@ -140,7 +140,6 @@ export default {
   .body {
     height: calc(100% - $media-nav-height - 2px);
     margin-top: 2px;
-    overflow: auto;
   }
 }
 </style>

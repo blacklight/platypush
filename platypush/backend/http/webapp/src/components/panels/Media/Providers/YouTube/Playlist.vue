@@ -75,6 +75,5 @@ export default {
 <style lang="scss" scoped>
 .media-youtube-playlist {
   height: 100%;
-  overflow: auto;
 }
 </style>

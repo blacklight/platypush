@@ -42,7 +42,10 @@ class MediaVlcPlugin(MediaPlugin):
 
         super().__init__(**kwargs)
 
-        self._args = args or []
+        self._args = list(args or [])
+        if '--play-and-exit' not in self._args:
+            self._args.append('--play-and-exit')
+
         self._instance = None
         self._player = None
         self._latest_seek = None
@@ -279,7 +282,7 @@ class MediaVlcPlugin(MediaPlugin):
         return status
 
     @action
-    def seek(self, position: float):
+    def seek(self, position: float, **__):
         """
         Seek backward/forward by the specified number of seconds
 

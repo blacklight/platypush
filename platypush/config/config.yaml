@@ -321,6 +321,18 @@ backend.http:
 ###
 
 ###
+# # Example last.fm scrobbler configuration, to synchronize your music
+# # activities to your Last.fm profile. You'll need to register an application
+# # with your account at https://www.last.fm/api.
+#
+# lastfm:
+#     api_key: <API_KEY>
+#     api_secret: <API_SECRET>
+#     username: <USERNAME>
+#     password: <PASSWORD>
+###
+
+###
 # # Plugins with empty configuration can also be explicitly enabled by specifying
 # # `enabled: true` or `disabled: false`. An integration with no items will be
 # # enabled with no configuration.
@@ -594,6 +606,29 @@ backend.http:
 #   horizontal_flip: false
 #   # Whether to flip the image along the horizontal axis (default: False)
 #   vertical_flip: false
+#
+#   # -- Streaming options
+#   # If `stream_on_start` is set to true, then camera streaming will start as
+#   # soon as the application/plugin is started. Otherwise, only when the
+#   # `camera.<plugin>.start_streaming` action is run. The camera will be
+#   # streamed on the specified `bind_address` and `listen_port` in the
+#   # specified `stream_format`. If `stream_format` is a video format (e.g.
+#   # h264 or mkv) then you can play the raw camera stream through e.g.
+#   # `vlc tcp://<address>:<listen_port>`.
+#   # Alternatively, you can access the camera stream over HTTP at
+#   # `http(s)://<address>:<http-port>/camera/<plugin>/video.<format>`.
+#   # For example, for MJPEG stream (usually the fastest option over HTTP):
+#   # `http://localhost:8008/camera/ffmpeg/video.mjpeg`.
+#   # An HTTP stream is the safest option, as it has to go through the standard
+#   # HTTP authentication process, while direct TCP access may expose your
+#   # camera to unauthenticated access. If you decide to directly stream over
+#   # TCP, make sure to carefully select the `bind_address`, add a firewall
+#   # rule for the streaming port, and/or ensure that the device's port is only
+#   # accessible from a safe network.
+#   # stream_on_start: false
+#   # bind_address: 0.0.0.0
+#   # listen_port: 5000
+#   # stream_format: h264
 ###
 
 ### -----------------
@@ -797,6 +832,73 @@ backend.http:
 #
 #     thresholds:
 #         proximity: 10.0
+###
+
+### -----------------------------------------
+### Example configuration of the mail plugin.
+### -----------------------------------------
+#
+# mail:
+#   # Display name to be used for outgoing emails. Default:
+#   # the `from` parameter will be used from :meth:`.send`,
+#   # and, if missing, the username from the account configuration
+#   # will be used.
+#   display_name: My Name
+# 
+#   # How often we should poll for updates (default: 60 seconds)
+#   poll_interval: 60
+# 
+#   # Connection timeout (default: 20 seconds)
+#   # Can be overridden on a per-account basis
+#   timeout: 20
+# 
+#   accounts:
+#     - name: "My Local Account"
+#       username: me@mydomain.com
+#       password: my-password
+# 
+#       # The default flag sets this account as the default one
+#       # for mail retrieval and sending if no account is
+#       # specified on an action. If multiple accounts are set
+#       # and none is set as default, and no account is specified
+#       # on an action, then the first configured account will be
+#       # used.
+#       default: true
+#       # Domain to be used for outgoing emails. Default: inferred
+#       # from the account configuration
+#       domain: example.com
+#
+# 
+#       # Alternatively, you can run an external command
+#       # to get the password
+#       # password_cmd: "pass show mail/example.com"
+# 
+#       # Path to a custom certfile if the mail server uses a
+#       # self-signed certificate
+#       # certfile: /path/to/certfile
+# 
+#       # Path to a custom keyfile if the mail server requires
+#       # client authentication. It requires certfile to be set
+#       # too
+#       # keyfile: /path/to/keyfile
+# 
+#       incoming:
+#         # Supported protocols: imap, imaps
+#         server: imaps://mail.example.com:993
+# 
+#         outgoing:
+#           # The `incoming` and `outgoing` configurations can
+#           # override the global `username` and `password` and
+#           # other authentication parameters of the account
+#           username: me
+#           password: my-smtp-password
+# 
+#           # Supported protocols: smtp, smtps, smtp+starttls,
+#           server: smtps://mail.example.com:465
+# 
+#           # These folders will be monitored for new messages
+#           monitor_folders:
+#             - All Mail
 ###
 
 ### --------------------------------
@@ -1009,6 +1111,23 @@ backend.http:
 #               value: ${msg["value"]}
 #               source: ${msg["source"]}
 ###
+
+###
+# # The example below is a hook that reacts when a `NewPlayingTrackEvent` event
+# # is received and synchronize the listening activity to the users' Last.fm
+# # profile (it requires the `lastfm` plugin and at least a music plugin
+# # enabled, like `music.mpd`).
+# 
+# event.hook.OnNewMusicActivity:
+#     if:
+#         type: platypush.message.event.music.NewPlayingTrackEvent
+#     then:
+#       - if ${track.get('artist') and track.get('title')}:
+#         - action: lastfm.scrobble
+#           args:
+#             artist: ${track['artist']}
+#             title: ${track['title']}
+##
 
 ###
 # # The example below plays the music on mpd/mopidy when your voice assistant

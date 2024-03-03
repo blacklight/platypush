@@ -14,6 +14,10 @@ logger = logging.getLogger('platypush')
 
 
 class Statement(enum.Enum):
+    """
+    Enumerates the possible statements in a procedure.
+    """
+
     BREAK = 'break'
     CONTINUE = 'continue'
     RETURN = 'return'
@@ -42,6 +46,7 @@ class Procedure:
             req.backend = self.backend
 
     @classmethod
+    # pylint: disable=too-many-branches,too-many-statements
     def build(
         cls,
         name,
@@ -49,7 +54,7 @@ class Procedure:
         requests,
         args=None,
         backend=None,
-        id=None,
+        id=None,  # pylint: disable=redefined-builtin
         procedure_class=None,
         **kwargs,
     ):
@@ -185,11 +190,12 @@ class Procedure:
 
         raise AssertionError('break/continue statement found outside of a loop')
 
+    # pylint: disable=too-many-branches,too-many-statements
     def execute(self, n_tries=1, __stack__=None, **context):
         """
-        Execute the requests in the procedure
-        Params:
-            n_tries -- Number of tries in case of failure before raising a RuntimeError
+        Execute the requests in the procedure.
+
+        :param n_tries: Number of tries in case of failure before raising a RuntimeError.
         """
         if not __stack__:
             __stack__ = [self]
@@ -218,31 +224,35 @@ class Procedure:
                 if request == Statement.RETURN:
                     self._should_return = True
                     for proc in __stack__:
-                        proc._should_return = True
+                        proc._should_return = True  # pylint: disable=protected-access
                     break
 
                 if request in [Statement.BREAK, Statement.CONTINUE]:
                     loop = self._find_nearest_loop(__stack__)
                     if request == Statement.BREAK:
-                        loop._should_break = True
+                        loop._should_break = True  # pylint: disable=protected-access
                     else:
-                        loop._should_continue = True
+                        loop._should_continue = True  # pylint: disable=protected-access
                     break
 
-            if isinstance(self, LoopProcedure) and (
-                self._should_continue or self._should_break
-            ):
-                if self._should_continue:
-                    self._should_continue = False
+            should_continue = getattr(self, '_should_continue', False)
+            should_break = getattr(self, '_should_break', False)
+            if isinstance(self, LoopProcedure) and (should_continue or should_break):
+                if should_continue:
+                    self._should_continue = (  # pylint: disable=attribute-defined-outside-init
+                        False
+                    )
 
                 break
 
-            if token:
+            if token and not isinstance(request, Statement):
                 request.token = token
 
             context['_async'] = self._async
             context['n_tries'] = n_tries
-            response = request.execute(__stack__=__stack__, **context)
+            exec_ = getattr(request, 'execute', None)
+            if callable(exec_):
+                response = exec_(__stack__=__stack__, **context)
 
             if not self._async and response:
                 if isinstance(response.output, dict):
@@ -317,14 +327,15 @@ class ForProcedure(LoopProcedure):
         self.iterator_name = iterator_name
         self.iterable = iterable
 
-    def execute(self, _async=None, **context):
+    # pylint: disable=eval-used
+    def execute(self, *_, **context):
         try:
             iterable = eval(self.iterable)
             assert hasattr(
                 iterable, '__iter__'
             ), f'Object of type {type(iterable)} is not iterable: {iterable}'
         except Exception as e:
-            logger.debug(f'Iterable {self.iterable} expansion error: {e}')
+            logger.debug('Iterable %s expansion error: %s', self.iterable, e)
             iterable = Request.expand_value_from_context(self.iterable, **context)
 
         response = Response()
@@ -387,32 +398,34 @@ class WhileProcedure(LoopProcedure):
     def _get_context(**context):
         for k, v in context.items():
             try:
-                context[k] = eval(v)
+                context[k] = eval(v)  # pylint: disable=eval-used
             except Exception as e:
-                logger.debug(f'Evaluation error for {v}: {e}')
+                logger.debug('Evaluation error for %s=%s: %s', k, v, e)
                 if isinstance(v, str):
                     try:
-                        context[k] = eval('"' + re.sub(r'(^|[^\\])"', '\1\\"', v) + '"')
-                    except Exception as e:
+                        context[k] = eval(  # pylint: disable=eval-used
+                            '"' + re.sub(r'(^|[^\\])"', '\1\\"', v) + '"'
+                        )
+                    except Exception as ee:
                         logger.warning(
-                            'Could not parse value for context variable %s=%s', k, v
+                            'Could not parse value for context variable %s=%s: %s',
+                            k,
+                            v,
+                            ee,
                         )
                         logger.warning('Context: %s', context)
                         logger.exception(e)
 
         return context
 
-    def execute(self, _async=None, **context):
+    def execute(self, *_, **context):
         response = Response()
         context = self._get_context(**context)
         for k, v in context.items():
-            try:
-                exec(f'{k}={v}')
-            except Exception as e:
-                logger.debug('Evaluation error: %s=%s: %s', k, v, e)
+            locals()[k] = v
 
         while True:
-            condition_true = eval(self.condition)
+            condition_true = eval(self.condition)  # pylint: disable=eval-used
             if not condition_true:
                 break
 
@@ -435,10 +448,7 @@ class WhileProcedure(LoopProcedure):
             if response.output and isinstance(response.output, dict):
                 new_context = self._get_context(**response.output)
                 for k, v in new_context.items():
-                    try:
-                        exec(f'{k}={v}')
-                    except Exception as e:
-                        logger.debug(f'Evaluation error: {k}={v}: {e}')
+                    locals()[k] = v
 
         return response
 
@@ -447,25 +457,23 @@ class IfProcedure(Procedure):
     """
     Models an if-else construct.
 
-    Example:
+    Example::
 
         procedure.sync.process_results:
-            -
-                action: http.get
+            - action: http.get
+              args:
+                url: https://some-service/some/json/endpoint
+                # Example response: { "sensors": [ {"temperature": 18 } ] }
+
+            - if ${sensors['temperature'] < 20}:
+              - action: shell.exec
                 args:
-                    url: https://some-service/some/json/endpoint
-                    # Example response: { "sensors": [ {"temperature": 18 } ] }
-            -
-                if ${sensors['temperature'] < 20}:
-                    -
-                        action: shell.exec
-                        args:
-                            cmd: '/path/turn_on_heating.sh'
-                else:
-                    -
-                        action: shell.exec
-                        args:
-                            cmd: '/path/turn_off_heating.sh'
+                  cmd: '/path/turn_on_heating.sh'
+            - else:
+              - action: shell.exec
+                args:
+                  cmd: '/path/turn_off_heating.sh'
+
     """
 
     def __init__(
@@ -476,7 +484,7 @@ class IfProcedure(Procedure):
         else_branch=None,
         args=None,
         backend=None,
-        id=None,
+        id=None,  # pylint: disable=redefined-builtin
         **kwargs,
     ):
         kwargs['_async'] = False
@@ -498,15 +506,17 @@ class IfProcedure(Procedure):
         super().__init__(name=name, requests=reqs, args=args, backend=backend, **kwargs)
 
     @classmethod
+    # pylint: disable=arguments-differ
     def build(
         cls,
         name,
+        *_,
         condition,
         requests,
-        else_branch=None,
         args=None,
         backend=None,
-        id=None,
+        id=None,  # pylint: disable=redefined-builtin
+        else_branch=None,
         **kwargs,
     ):
         kwargs['_async'] = False
@@ -532,22 +542,11 @@ class IfProcedure(Procedure):
             **kwargs,
         )
 
-    def execute(self, **context):
+    def execute(self, *_, **context):
         for k, v in context.items():
-            try:
-                exec(f'{k}={v}')
-            except Exception as e:
-                logger.debug(f'Evaluation error: {k}={v}: {e}')
-                if isinstance(v, str):
-                    try:
-                        exec('{k}="' + re.sub(r'(^|[^\\])"', '\1\\"', v) + '"')
-                    except Exception as e:
-                        logger.debug(
-                            'Could not set context variable %s=%s: %s', k, v, e
-                        )
-                        logger.debug('Context: %s', context)
+            locals()[k] = v
 
-        condition_true = eval(self.condition)
+        condition_true = eval(self.condition)  # pylint: disable=eval-used
         response = Response()
 
         if condition_true:
@@ -559,6 +558,10 @@ class IfProcedure(Procedure):
 
 
 def procedure(f):
+    """
+    Public decorator to mark a function as a procedure.
+    """
+
     f.procedure = True
 
     @wraps(f)

@@ -52,7 +52,13 @@ a {
 }
 
 ::-webkit-scrollbar {
-  width: 0.75em;
+  width: 0.5em;
+  height: 0.5em;
+
+  @include until($tablet) {
+    width: 0.3333em;
+    height: 0.3333em;
+  }
 }
 
 ::-webkit-scrollbar-track {

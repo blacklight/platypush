@@ -1,7 +1,7 @@
 <template>
-  <div class="media-results" @scroll="onScroll">
+  <div class="media-results">
     <Loading v-if="loading" />
-    <div class="grid" ref="grid" v-if="results?.length">
+    <div class="grid" ref="grid" v-if="results?.length" @scroll="onScroll">
       <Item v-for="(item, i) in visibleResults"
             :key="i"
             :item="item"
@@ -114,7 +114,11 @@ export default {
   width: 100%;
   height: 100%;
   background: $background-color;
-  overflow: auto;
+
+  .grid {
+    height: 100%;
+    overflow: auto;
+  }
 
   .info-container {
     width: 100%;

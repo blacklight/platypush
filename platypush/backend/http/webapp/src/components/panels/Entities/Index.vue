@@ -235,7 +235,7 @@ export default {
       delete this.selector.selectedGroups[group.name]
     },
 
-    async refresh(group) {
+    async refresh(group, setLoading=true) {
       const entities = (group ? group.entities : this.entities) || {}
       const args = {}
       if (group)
@@ -244,29 +244,30 @@ export default {
           return obj
         }, {})
 
-      this.loadingEntities = Object.values(entities).reduce((obj, entity) => {
-          if (this._shouldSkipLoading(entity))
+      if (setLoading)
+        this.loadingEntities = Object.values(entities).reduce((obj, entity) => {
+            if (this._shouldSkipLoading(entity))
+              return obj
+
+            const self = this
+            const id = entity.id
+            if (this.entityTimeouts[id])
+              clearTimeout(this.entityTimeouts[id])
+
+            this.addEntity(entity)
+            this.entityTimeouts[id] = setTimeout(() => {
+                if (self.loadingEntities[id])
+                  delete self.loadingEntities[id]
+                if (self.entityTimeouts[id])
+                  delete self.entityTimeouts[id]
+
+                self.errorEntities[id] = entity
+                console.warn(`Scan timeout for ${entity.name}`)
+            }, this.entityScanTimeout * 1000)
+
+            obj[id] = true
             return obj
-
-          const self = this
-          const id = entity.id
-          if (this.entityTimeouts[id])
-            clearTimeout(this.entityTimeouts[id])
-
-          this.addEntity(entity)
-          this.entityTimeouts[id] = setTimeout(() => {
-              if (self.loadingEntities[id])
-                delete self.loadingEntities[id]
-              if (self.entityTimeouts[id])
-                delete self.entityTimeouts[id]
-
-              self.errorEntities[id] = entity
-              console.warn(`Scan timeout for ${entity.name}`)
-          }, this.entityScanTimeout * 1000)
-
-          obj[id] = true
-          return obj
-      }, {})
+        }, {})
 
       this.request('entities.scan', args)
     },
@@ -426,14 +427,9 @@ export default {
       'platypush.message.event.entities.EntityDeleteEvent'
     )
 
-    if (!this.loadCachedEntities()) {
-      await this.sync()
-      this.refresh()
-    } else {
-      await this.request('entities.scan')
-      this.sync()
-    }
-
+    const hasCachedEntities = this.loadCachedEntities()
+    await this.sync(!hasCachedEntities)
+    await this.refresh(null, !hasCachedEntities)
     setInterval(() => this.refreshEntitiesCache(), 10000)
   },
 

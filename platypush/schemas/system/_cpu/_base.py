@@ -18,8 +18,12 @@ class CpuInfoBaseSchema(SystemBaseSchema):
 
         for key, value in data.items():
             if key.endswith("_cache_size") and isinstance(value, str):
-                value, unit = value.split(" ")
-                value = int(value)
+                tokens = value.split(" ")
+                unit = None
+                if len(tokens) > 1:
+                    unit = tokens[1]
+
+                value = int(tokens[0])
                 if unit == "KiB":
                     value *= 1024
                 elif unit == "MiB":

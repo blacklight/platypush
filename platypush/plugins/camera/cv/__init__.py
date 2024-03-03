@@ -43,7 +43,7 @@ class CameraCvPlugin(CameraPlugin):
         if video_writer == 'cv':
             self._video_writer_class = CvFileWriter
 
-    def prepare_device(self, device: Camera):
+    def prepare_device(self, device: Camera, **_):
         import cv2
 
         cam = cv2.VideoCapture(device.info.device)

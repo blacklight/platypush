@@ -389,42 +389,42 @@ class MediaPlugin(Plugin, ABC):
 
     @action
     @abstractmethod
-    def play(self, resource, *args, **kwargs):
+    def play(self, resource, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def pause(self, *args, **kwargs):
+    def pause(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def stop(self, *args, **kwargs):
+    def stop(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def quit(self, *args, **kwargs):
+    def quit(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def voldown(self, *args, **kwargs):
+    def voldown(self, step: Optional[float] = 5.0, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def volup(self, *args, **kwargs):
+    def volup(self, step: Optional[float] = 5.0, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def back(self, *args, **kwargs):
+    def back(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def forward(self, *args, **kwargs):
+    def forward(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
@@ -440,42 +440,42 @@ class MediaPlugin(Plugin, ABC):
 
     @action
     @abstractmethod
-    def toggle_subtitles(self, *args, **kwargs):
+    def toggle_subtitles(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def set_subtitles(self, filename, *args, **kwargs):
+    def set_subtitles(self, filename, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def remove_subtitles(self, *args, **kwargs):
+    def remove_subtitles(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def is_playing(self, *args, **kwargs):
+    def is_playing(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def load(self, resource, *args, **kwargs):
+    def load(self, resource, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def mute(self, *args, **kwargs):
+    def mute(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def seek(self, *args, **kwargs):
+    def seek(self, position, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def set_position(self, *args, **kwargs):
+    def set_position(self, position, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action

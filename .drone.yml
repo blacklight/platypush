@@ -62,7 +62,8 @@ steps:
 
     # Backup the original git configuration before changing attributes
     - export GIT_CONF=$PWD/.git/config
-    - cp $GIT_CONF /tmp/git.config.orig
+    - export TMP_GIT_CONF=/tmp/git.config.orig
+    - cp $GIT_CONF $TMP_GIT_CONF
     - git config --global --add safe.directory $PWD
 
     # Install the SSH and PGP keys
@@ -95,7 +96,7 @@ steps:
     - git checkout master
 
     # Restore the original git configuration
-    - mv /tmp/git.config.orig $GIT_CONF
+    - mv $TMP_GIT_CONF $GIT_CONF
 
   when:
     event:
@@ -181,11 +182,14 @@ steps:
     - tests
 
   commands:
+    - export SKIPCI="$PWD/.skipci"
+    - rm -rf "$SKIPCI"
     - apk add --update --no-cache git
 
     # Backup the original git configuration before changing attributes
     - export GIT_CONF=$PWD/.git/config
-    - cp $GIT_CONF /tmp/git.config.orig
+    - export TMP_GIT_CONF=/tmp/git.config.orig
+    - cp $GIT_CONF $TMP_GIT_CONF
 
     - git config --global --add safe.directory $PWD
     - cd platypush/backend/http/webapp
@@ -201,7 +205,7 @@ steps:
         exit 0
       fi
 
-    - rm -rf node_modules
+    - rm -rf dist node_modules
     - npm install
     - npm run build
     - |
@@ -209,6 +213,10 @@ steps:
         echo "No build files have been changed"
         exit 0
       fi
+
+    # Create a .skipci file to mark the fact that the next steps should be skipped
+    # (we're going to do another push anyway, so another pipeline will be triggered)
+    - touch "$SKIPCI"
 
     - apk add --update --no-cache bash gnupg openssh
     - mkdir -p ~/.ssh
@@ -236,7 +244,95 @@ steps:
     - git push -f origin master
 
     # Restore the original git configuration
-    - mv /tmp/git.config.orig $GIT_CONF
+    - mv $TMP_GIT_CONF $GIT_CONF
+
+###
+### Regenerate the components.json cache
+###
+
+- name: update-components-cache
+  image: alpine
+
+  environment:
+    SSH_PUBKEY:
+      from_secret: ssh_pubkey
+    SSH_PRIVKEY:
+      from_secret: ssh_privkey
+    PGP_KEY:
+      from_secret: pgp_key
+    PGP_KEY_ID:
+      from_secret: pgp_key_id
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+
+  depends_on:
+    - build-ui
+
+  commands:
+    - export SKIPCI="$PWD/.skipci"
+    - export CACHEFILE="$PWD/platypush/components.json.gz"
+    - |
+      [ -f "$SKIPCI" ] && exit 0
+
+    # Only regenerate the components cache if either the plugins, backends,
+    # events or schemas folders have some changes (excluding the webapp files).
+    - apk add --update --no-cache git
+    - |
+      if [ -z "$(git log --pretty=oneline $DRONE_COMMIT_AFTER...$DRONE_COMMIT_BEFORE -- platypush/backend platypush/plugins platypush/schemas platypush/message/event ':(exclude)platypush/backend/http/webapp')" ]; then
+        echo 'No changes to the components file'
+        exit 0
+      fi
+
+    - echo 'Updating components cache'
+    - apk add --update --no-cache bash gnupg openssh $(cat platypush/install/requirements/alpine.txt)
+    - pip install . --break-system-packages
+    - |
+      python - <<EOF
+      from platypush import get_plugin
+
+      get_plugin('inspect').refresh_cache(force=True)
+      EOF
+
+    # Backup the original git configuration before changing attributes
+    - export GIT_CONF=$PWD/.git/config
+    - export TMP_GIT_CONF=/tmp/git.config.orig
+    - cp $GIT_CONF $TMP_GIT_CONF
+    - git config --global --add safe.directory $PWD
+
+    # Create a .skipci file to mark the fact that the next steps should be skipped
+    # (we're going to do another push anyway, so another pipeline will be triggered)
+    - touch "$SKIPCI"
+
+    - mkdir -p ~/.ssh
+    - |
+      cat <<EOF | gpg --import --armor
+      $PGP_KEY
+      EOF
+
+    - echo $SSH_PUBKEY > ~/.ssh/id_rsa.pub
+    - |
+      cat <<EOF > ~/.ssh/id_rsa
+      $SSH_PRIVKEY
+      EOF
+    - chmod 0600 ~/.ssh/id_rsa
+    - ssh-keyscan git.platypush.tech >> ~/.ssh/known_hosts 2>/dev/null
+
+    - git config user.name "Platypush CI/CD Automation"
+    - git config user.email "admin@platypush.tech"
+    - git config commit.gpgsign true
+    - git config user.signingkey $PGP_KEY_ID
+    - git add "$CACHEFILE"
+    - git commit "$CACHEFILE" -S -m "[Automatic] Updated components cache" --no-verify
+    - git remote rm origin
+    - git remote add origin git@git.platypush.tech:platypush/platypush.git
+    - git push -f origin master
+
+    # Restore the original git configuration
+    - mv $TMP_GIT_CONF $GIT_CONF
 
 ###
 ### Update the Arch packages
@@ -258,9 +354,12 @@ steps:
       - push
 
   depends_on:
-    - build-ui
+    - update-components-cache
 
   commands:
+    - |
+      [ -f .skipci ] && exit 0
+
     - echo "-- Installing dependencies"
     - apk add --update --no-cache curl git openssh pacman sudo
 
@@ -269,7 +368,7 @@ steps:
     - git pull --rebase origin master --tags
     - export VERSION=$(python setup.py --version)
     - export HEAD=$(git log --pretty=format:%h HEAD...HEAD~1 | head -1)
-    - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).$HEAD"
+    - export GIT_VERSION="$VERSION.r$(git log --pretty=oneline HEAD...v$VERSION | wc -l).g$${HEAD}"
     - export TAG_URL="https://git.platypush.tech/platypush/platypush/archive/v$VERSION.tar.gz"
 
     - echo "--- Preparing environment"
@@ -355,9 +454,12 @@ steps:
       - push
 
   depends_on:
-    - build-ui
+    - update-components-cache
 
   commands:
+    - |
+      [ -f .skipci ] && exit 0
+
     - echo "-- Installing dependencies"
     - apt update
     - apt install -y curl dpkg-dev gpg git python3 python3-pip
@@ -451,9 +553,12 @@ steps:
       - push
 
   depends_on:
-    - build-ui
+    - update-components-cache
 
   commands:
+    - |
+      [ -f .skipci ] && exit 0
+
     - echo "-- Copying source directory"
     - mkdir -p "$WORKDIR"
     - export SRCDIR="$WORKDIR/src"
@@ -553,6 +658,9 @@ steps:
     - update-debian-oldstable-packages
 
   commands:
+    - |
+      [ -f .skipci ] && exit 0
+
     - echo "-- Installing dependencies"
     - apt update
     - apt install -y dpkg-dev gpg
@@ -756,9 +864,12 @@ steps:
       - push
 
   depends_on:
-    - build-ui
+    - update-components-cache
 
   commands:
+    - |
+      [ -f .skipci ] && exit 0
+
     - echo "-- Installing dependencies"
     - yum install -y createrepo rpm-build rpm-sign gpg wget yum-utils git python python-pip
 

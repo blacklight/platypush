@@ -4,17 +4,28 @@
   <div class="playlist fade-in" v-else>
     <div class="header-container">
       <MusicHeader ref="header">
-        <div class="col-8 filter">
+        <div class="col-7 filter">
+          <button class="back-btn" title="Back" @click="$emit('back')" v-if="withBack">
+            <i class="fas fa-arrow-left" />
+          </button>
+
           <label>
             <input type="search" placeholder="Filter" v-model="filter">
           </label>
         </div>
 
-        <div class="col-4 buttons">
+        <div class="col-5 buttons">
+          <button class="mobile" title="Menu" @click="$emit('toggle-nav')" v-if="showNavButton">
+            <i class="fas fa-bars" />
+          </button>
+
           <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
+            <DropdownItem text="Add track" icon-class="fa fa-plus" @click="addTrack" />
+            <DropdownItem text="Refresh status" icon-class="fa fa-sync" @click="$emit('refresh-status')" v-if="devices != null" />
             <DropdownItem text="Save as playlist" icon-class="fa fa-save" :disabled="!tracks?.length"
-                          @click="playlistSave" />
-            <DropdownItem text="Swap tracks" icon-class="fa fa-retweet" v-if="selectedTracks?.length === 2"
+                          @click="playlistSave" v-if="withSave" />
+            <DropdownItem text="Swap tracks" icon-class="fa fa-retweet"
+                          v-if="withSwap && selectedTracks?.length === 2"
                           @click="$emit('swap', selectedTracks)" />
             <DropdownItem :text="selectionMode ? 'End selection' : 'Start selection'" icon-class="far fa-check-square"
                           :disabled="!tracks?.length" @click="selectionMode = !selectionMode" />
@@ -24,16 +35,9 @@
             <DropdownItem :text="'Remove track' + (selectedTracks.length > 1 ? 's' : '')"
                           icon-class="fa fa-trash" v-if="selectedTracks.length > 0"
                           @click="$emit('remove', [...(new Set(selectedTracks))])" />
-            <DropdownItem text="Clear playlist" icon-class="fa fa-ban" :disabled="!tracks?.length" @click="$emit('clear')" />
+            <DropdownItem text="Clear playlist" icon-class="fa fa-ban"
+                          :disabled="!tracks?.length" @click="$emit('clear')" v-if="withClear" />
           </Dropdown>
-
-          <button title="Add track" @click="addTrack">
-            <i class="fa fa-plus"></i>
-          </button>
-
-          <button title="Refresh status" @click="$emit('refresh-status')" v-if="devices != null">
-            <i class="fa fa-sync"></i>
-          </button>
 
           <Dropdown title="Players" icon-class="fa fa-volume-up" v-if="Object.keys(devices || {}).length">
             <DropdownItem v-for="(device, id) in devices" :key="id" v-text="device.name"
@@ -44,7 +48,7 @@
       </MusicHeader>
     </div>
 
-    <div class="body" ref="body">
+    <div class="body" ref="body" @scroll="onScroll">
       <div class="no-content" v-if="!tracks?.length">
         No tracks are loaded
       </div>
@@ -57,6 +61,7 @@
            v-for="i in displayedTrackIndices"
            :set="track = tracks[i]"
            :key="i"
+           :data-index="i"
            :class="trackClass(i)"
            @click="onTrackClick($event, i)"
            @dblclick="$emit('play', {pos: i})">
@@ -85,7 +90,9 @@
 
           <span class="actions">
             <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
-              <DropdownItem text="Play" icon-class="fa fa-play" @click="$emit('play', {pos: i})" />
+              <DropdownItem text="Play" icon-class="fa fa-play" @click="onMenuPlay" />
+              <DropdownItem text="Add to queue" icon-class="fa fa-plus"
+                @click="$emit('add-to-queue', [...(new Set([...selectedTracks, i]))])" v-if="withAddToQueue" />
               <DropdownItem text="Add to playlist" icon-class="fa fa-list-ul" @click="$emit('add-to-playlist', track)" />
               <DropdownItem text="Remove" icon-class="fa fa-trash" @click="$emit('remove', [...(new Set([...selectedTracks, i]))])" />
               <DropdownItem text="Info" icon-class="fa fa-info" @click="$emit('info', tracks[i])" />
@@ -108,8 +115,25 @@ export default {
   name: "Playlist",
   mixins: [MediaUtils],
   components: {DropdownItem, Dropdown, MusicHeader, Loading},
-  emits: ['play', 'clear', 'add', 'remove', 'swap', 'search', 'move', 'save', 'info', 'refresh-status',
-    'select-device'],
+  emits: [
+    'add',
+    'add-to-playlist',
+    'add-to-queue',
+    'add-to-queue-and-play',
+    'back',
+    'clear',
+    'info',
+    'move',
+    'play',
+    'refresh-status',
+    'remove',
+    'save',
+    'search',
+    'select-device',
+    'swap',
+    'toggle-nav',
+  ],
+
   props: {
     tracks: {
       type: Array,
@@ -137,6 +161,41 @@ export default {
     activeDevice: {
       type: String,
     },
+
+    maxVisibleTracks: {
+      type: Number,
+      default: 100,
+    },
+
+    showNavButton: {
+      type: Boolean,
+      default: false,
+    },
+
+    withAddToQueue: {
+      type: Boolean,
+      default: false,
+    },
+
+    withBack: {
+      type: Boolean,
+      default: false,
+    },
+
+    withClear: {
+      type: Boolean,
+      default: false,
+    },
+
+    withSave: {
+      type: Boolean,
+      default: false,
+    },
+
+    withSwap: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
@@ -147,6 +206,9 @@ export default {
       infoTrack: null,
       sourcePos: null,
       targetPos: null,
+      centerPos: 0,
+      mounted: false,
+      scrollTimeout: null,
     }
   },
 
@@ -155,20 +217,45 @@ export default {
       return new Set(this.selectedTracks)
     },
 
+    trackIndicesByToken() {
+      const indices = {}
+      this.tracks.forEach((track, i) => {
+        const token = [track?.artist, track?.album, track?.title]
+          .filter((field) => field?.trim()?.length)
+          .map((field) => field.trim().toLowerCase())
+          .join(' ')
+
+        if (!indices[token])
+          indices[token] = new Set()
+        indices[token].add(i)
+      })
+
+      return indices
+    },
+
     displayedTrackIndices() {
-      const positions = [...Array(this.tracks.length).keys()]
-      if (!this.filter?.length)
-        return positions
+      let positions = [...Array(this.tracks.length).keys()]
 
-      const self = this
-      const filter = (self.filter || '').toLowerCase()
+      if (this.filter?.length) {
+        const filter = this.filter?.trim()?.replace(/\s+/g, ' ').toLowerCase()
+        const matchingPositions = new Set()
+        Object.entries(this.trackIndicesByToken).forEach(([key, positions]) => {
+          if (key.indexOf(filter) < 0)
+            return
 
-      return positions.filter((pos) => {
-          const track = this.tracks[pos]
-          return (track?.artist || '').toLowerCase().indexOf(filter) >= 0
-              || (track?.title || '').toLowerCase().indexOf(filter) >= 0
-              || (track?.album || '').toLowerCase().indexOf(filter) >= 0
+          matchingPositions.add(...positions)
         })
+
+        positions = [...matchingPositions]
+        positions.sort()
+      }
+
+      if (positions.length > this.maxVisibleTracks) {
+        const offset = Math.max(0, this.centerPos - Math.floor(this.maxVisibleTracks / 2))
+        positions = positions.slice(offset, offset + this.maxVisibleTracks)
+      }
+
+      return positions
     },
   },
 
@@ -209,7 +296,7 @@ export default {
     trackClass(i) {
       return {
         selected: this.selectedTracksSet.has(i),
-        active: this.status?.playingPos === i,
+        active: !this.withAddToQueue && this.status?.playingPos === i,
       }
     },
 
@@ -219,6 +306,13 @@ export default {
         return
 
       this.$emit('add', track)
+    },
+
+    onMenuPlay(i) {
+      if (this.withAddToQueue)
+        this.$emit('add-to-queue-and-play', [...(new Set([...this.selectedTracks, i]))])
+      else
+        this.$emit('play', {pos: i})
     },
 
     onTrackDragStart(track) {
@@ -242,6 +336,31 @@ export default {
       [...tracks][track].classList.add('dragover')
     },
 
+    onScroll() {
+      const offset = this.$refs.body.scrollTop
+      const bodyHeight = parseFloat(getComputedStyle(this.$refs.body).height)
+      const scrollHeight = this.$refs.body.scrollHeight
+
+      if (offset < 5) {
+        if (this.scrollTimeout)
+          return
+
+        this.scrollTimeout = setTimeout(() => {
+          this.centerPos = Math.max(0, parseInt(this.centerPos - (this.maxVisibleTracks / 1.5)))
+          this.$refs.body.scrollTop = 6
+          this.scrollTimeout = null
+        }, 250)
+      } else if (offset >= (scrollHeight - bodyHeight - 5)) {
+        if (this.scrollTimeout)
+          return
+
+        this.scrollTimeout = setTimeout(() => {
+          this.centerPos = Math.min(this.tracks.length - 1, parseInt(this.centerPos + (this.maxVisibleTracks / 1.5)))
+          this.scrollTimeout = null
+        }, 250)
+      }
+    },
+
     playlistSave() {
       const name = prompt('Playlist name')
       if (!name?.length)
@@ -249,17 +368,34 @@ export default {
 
       this.$emit('save', name)
     },
+
+    scrollToTrack(pos) {
+      this.centerPos = pos || this.status?.playingPos || 0
+      this.$nextTick(() => {
+        if (!this.$refs.body) {
+          this.$watch(() => this.$refs.body, () => {
+            if (!this.mounted)
+              this.scrollToTrack(pos)
+          })
+
+          return
+        }
+
+        [...this.$refs.body.querySelectorAll('.track')]
+          .filter((track) => track.classList.contains('active'))
+          .forEach((track) => track.scrollIntoView({block: 'center', behavior: 'smooth'}))
+
+        this.mounted = true
+      })
+    },
   },
 
   mounted() {
-    const self = this
-    this.$watch(() => self.status?.playingPos, (pos) => {
-      if (pos == null)
-        return
-
-      const trackElement = [...self.$refs.body.querySelectorAll('.track')][pos]
-      const offset = trackElement.offsetTop - parseFloat(getComputedStyle(self.$refs.header.$el).height)
-      self.$refs.body.scrollTo(0, offset)
+    this.scrollToTrack()
+    this.$watch(() => this.status, () => this.scrollToTrack())
+    this.$watch(() => this.filter, (filter) => {
+      if (!filter?.length)
+        this.scrollToTrack()
     })
   },
 }
@@ -272,6 +408,7 @@ export default {
 
 .playlist {
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
 
@@ -282,8 +419,16 @@ export default {
     }
 
     .filter {
-      input {
-        width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+
+      label {
+        flex-grow: 1;
+
+        input[type="search"] {
+          width: 100%;
+        }
       }
     }
 
@@ -293,6 +438,12 @@ export default {
       .dropdown-container {
         direction: ltr;
       }
+    }
+  }
+
+  :deep(.header) {
+    .back-btn {
+      padding-left: .25em;
     }
   }
 

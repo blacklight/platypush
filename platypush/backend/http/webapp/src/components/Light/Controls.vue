@@ -8,7 +8,7 @@
       </div>
       <div class="col-11 control">
         <Slider :range="colorConverter.ranges.bri" :disabled="loading" :value="state.bri"
-                @mouseup.stop="$emit(light ? 'set-light' : 'set-group', {brightness: parseInt($event.target.value)})" />
+                @change.stop="$emit(light ? 'set-light' : 'set-group', {brightness: parseInt($event.target.value)})" />
       </div>
     </div>
 
@@ -18,7 +18,7 @@
       </div>
       <div class="col-11 control">
         <Slider :range="colorConverter.ranges.ct" :disabled="loading" :value="state.ct"
-                @mouseup.stop="$emit(light ? 'set-light' : 'set-group', {temperature: parseInt($event.target.value)})" />
+                @change.stop="$emit(light ? 'set-light' : 'set-group', {temperature: parseInt($event.target.value)})" />
       </div>
     </div>
 
