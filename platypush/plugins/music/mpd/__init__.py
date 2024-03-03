@@ -1,13 +1,15 @@
 import re
 import threading
-import time
 from typing import Collection, Optional, Union
 
-from platypush.plugins import action
+from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.music import MusicPlugin
 
+from ._conf import MpdConfig
+from ._listener import MpdListener
 
-class MusicMpdPlugin(MusicPlugin):
+
+class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
     """
     This plugin allows you to interact with an MPD/Mopidy music server.
 
@@ -21,22 +23,29 @@ class MusicMpdPlugin(MusicPlugin):
 
     .. note:: As of Mopidy 3.0 MPD is an optional interface provided by the
         ``mopidy-mpd`` extension. Make sure that you have the extension
-        installed and enabled on your instance to use this plugin with your
-        server.
+        installed and enabled on your instance to use this plugin if you want to
+        use it with Mopidy instead of MPD.
 
     """
 
     _client_lock = threading.RLock()
 
-    def __init__(self, host: str, port: int = 6600):
+    def __init__(
+        self,
+        host: str,
+        port: int = 6600,
+        poll_interval: Optional[float] = 5.0,
+        **kwargs,
+    ):
         """
-        :param host: MPD IP/hostname
-        :param port: MPD port (default: 6600)
+        :param host: MPD IP/hostname.
+        :param port: MPD port (default: 6600).
+        :param poll_interval: Polling interval in seconds. If set, the plugin
+            will poll the MPD server for status updates and trigger change
+            events when required. Default: 5 seconds.
         """
-
-        super().__init__()
-        self.host = host
-        self.port = port
+        super().__init__(poll_interval=poll_interval, **kwargs)
+        self.conf = MpdConfig(host=host, port=port)
         self.client = None
 
     def _connect(self, n_tries: int = 2):
@@ -51,7 +60,7 @@ class MusicMpdPlugin(MusicPlugin):
                 try:
                     n_tries -= 1
                     self.client = mpd.MPDClient()
-                    self.client.connect(self.host, self.port)
+                    self.client.connect(self.conf.host, self.conf.port)
                     return self.client
                 except Exception as e:
                     error = e
@@ -60,7 +69,7 @@ class MusicMpdPlugin(MusicPlugin):
                         e,
                         (': Retrying' if n_tries > 0 else ''),
                     )
-                    time.sleep(0.5)
+                    self.wait_stop(0.5)
 
         self.client = None
         if error:
@@ -83,7 +92,8 @@ class MusicMpdPlugin(MusicPlugin):
                     response = getattr(self.client, method)(*args, **kwargs)
 
                 if return_status:
-                    return self.status().output
+                    return self._status()
+
                 return response
             except Exception as e:
                 error = str(e)
@@ -145,7 +155,7 @@ class MusicMpdPlugin(MusicPlugin):
         return self._exec('play') if status in ('pause', 'stop') else None
 
     @action
-    def stop(self, *_, **__):
+    def stop(self, *_, **__):  # type: ignore
         """Stop playback"""
         return self._exec('stop')
 
@@ -185,6 +195,9 @@ class MusicMpdPlugin(MusicPlugin):
 
         :param vol: Volume value (range: 0-100).
         """
+        self.logger.warning(
+            'music.mpd.setvol is deprecated, use music.mpd.set_volume instead'
+        )
         return self.set_volume(vol)
 
     @action
@@ -404,6 +417,9 @@ class MusicMpdPlugin(MusicPlugin):
         :param value: Seek position in seconds, or delta string (e.g. '+15' or
             '-15') to indicate a seek relative to the current position
         """
+        self.logger.warning(
+            'music.mpd.seekcur is deprecated, use music.mpd.seek instead'
+        )
         return self.seek(value)
 
     @action
@@ -472,6 +488,24 @@ class MusicMpdPlugin(MusicPlugin):
         """
         return self._status()
 
+    def _current_track(self):
+        track = self._exec('currentsong', return_status=False)
+        if not isinstance(track, dict):
+            return None
+
+        if 'title' in track and (
+            'artist' not in track
+            or not track['artist']
+            or re.search('^https?://', track['file'])
+            or re.search('^tunein:', track['file'])
+        ):
+            m = re.match(r'^\s*(.+?)\s+-\s+(.*)\s*$', track['title'])
+            if m and m.group(1) and m.group(2):
+                track['artist'] = m.group(1)
+                track['title'] = m.group(2)
+
+        return track
+
     @action
     def currentsong(self):
         """
@@ -500,23 +534,7 @@ class MusicMpdPlugin(MusicPlugin):
                 "x-albumuri": "spotify:album:6q5KhDhf9BZkoob7uAnq19"
             }
         """
-
-        track = self._exec('currentsong', return_status=False)
-        if not isinstance(track, dict):
-            return None
-
-        if 'title' in track and (
-            'artist' not in track
-            or not track['artist']
-            or re.search('^https?://', track['file'])
-            or re.search('^tunein:', track['file'])
-        ):
-            m = re.match(r'^\s*(.+?)\s+-\s+(.*)\s*$', track['title'])
-            if m and m.group(1) and m.group(2):
-                track['artist'] = m.group(1)
-                track['title'] = m.group(2)
-
-        return track
+        return self._current_track()
 
     @action
     def playlistinfo(self):
@@ -589,6 +607,9 @@ class MusicMpdPlugin(MusicPlugin):
         """
         Deprecated alias for :meth:`.playlists`.
         """
+        self.logger.warning(
+            'music.mpd.listplaylists is deprecated, use music.mpd.get_playlists instead'
+        )
         return self.get_playlists()
 
     @action
@@ -611,6 +632,9 @@ class MusicMpdPlugin(MusicPlugin):
         """
         Deprecated alias for :meth:`.playlist`.
         """
+        self.logger.warning(
+            'music.mpd.listplaylist is deprecated, use music.mpd.get_playlist instead'
+        )
         return self._exec('listplaylist', name, return_status=False)
 
     @action
@@ -618,10 +642,15 @@ class MusicMpdPlugin(MusicPlugin):
         """
         Deprecated alias for :meth:`.playlist` with ``with_tracks=True``.
         """
+        self.logger.warning(
+            'music.mpd.listplaylistinfo is deprecated, use music.mpd.get_playlist instead'
+        )
         return self.get_playlist(name, with_tracks=True)
 
     @action
-    def add_to_playlist(self, playlist: str, resources: Union[str, Collection[str]]):
+    def add_to_playlist(
+        self, playlist: str, resources: Union[str, Collection[str]], **_
+    ):
         """
         Add one or multiple resources to a playlist.
 
@@ -640,6 +669,9 @@ class MusicMpdPlugin(MusicPlugin):
         """
         Deprecated alias for :meth:`.add_to_playlist`.
         """
+        self.logger.warning(
+            'music.mpd.playlistadd is deprecated, use music.mpd.add_to_playlist instead'
+        )
         return self.add_to_playlist(name, uri)
 
     @action
@@ -677,6 +709,9 @@ class MusicMpdPlugin(MusicPlugin):
         """
         Deprecated alias for :meth:`.remove_from_playlist`.
         """
+        self.logger.warning(
+            'music.mpd.playlistdelete is deprecated, use music.mpd.remove_from_playlist instead'
+        )
         return self.remove_from_playlist(name, pos)
 
     @action
@@ -684,6 +719,9 @@ class MusicMpdPlugin(MusicPlugin):
         """
         Deprecated alias for :meth:`.playlist_move`.
         """
+        self.logger.warning(
+            'music.mpd.playlistmove is deprecated, use music.mpd.playlist_move instead'
+        )
         return self.playlist_move(name, from_pos=from_pos, to_pos=to_pos)
 
     @action
@@ -816,7 +854,9 @@ class MusicMpdPlugin(MusicPlugin):
         )
 
     @action
-    def searchadd(self, filter: dict, *args, **kwargs):
+    def searchadd(
+        self, filter: dict, *args, **kwargs  # pylint: disable=redefined-builtin
+    ):
         """
         Free search by filter and add the results to the current playlist.
 
@@ -827,6 +867,17 @@ class MusicMpdPlugin(MusicPlugin):
         return self._exec(
             'searchadd', *filter_list, *args, return_status=False, **kwargs
         )
+
+    def main(self):
+        listener = None
+        if self.poll_interval is not None:
+            listener = MpdListener(self)
+            listener.start()
+
+        self.wait_stop()
+
+        if listener:
+            listener.join()
 
 
 # vim:sw=4:ts=4:et:

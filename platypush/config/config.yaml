@@ -321,6 +321,18 @@ backend.http:
 ###
 
 ###
+# # Example last.fm scrobbler configuration, to synchronize your music
+# # activities to your Last.fm profile. You'll need to register an application
+# # with your account at https://www.last.fm/api.
+#
+# lastfm:
+#     api_key: <API_KEY>
+#     api_secret: <API_SECRET>
+#     username: <USERNAME>
+#     password: <PASSWORD>
+###
+
+###
 # # Plugins with empty configuration can also be explicitly enabled by specifying
 # # `enabled: true` or `disabled: false`. An integration with no items will be
 # # enabled with no configuration.
@@ -1099,6 +1111,23 @@ backend.http:
 #               value: ${msg["value"]}
 #               source: ${msg["source"]}
 ###
+
+###
+# # The example below is a hook that reacts when a `NewPlayingTrackEvent` event
+# # is received and synchronize the listening activity to the users' Last.fm
+# # profile (it requires the `lastfm` plugin and at least a music plugin
+# # enabled, like `music.mpd`).
+# 
+# event.hook.OnNewMusicActivity:
+#     if:
+#         type: platypush.message.event.music.NewPlayingTrackEvent
+#     then:
+#       - if ${track.get('artist') and track.get('title')}:
+#         - action: lastfm.scrobble
+#           args:
+#             artist: ${track['artist']}
+#             title: ${track['title']}
+##
 
 ###
 # # The example below plays the music on mpd/mopidy when your voice assistant
