@@ -37,7 +37,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
     """
 
-    _supported_media_plugins = {
+    supported_media_plugins = {
         'media.mplayer',
         'media.omxplayer',
         'media.mpv',
@@ -103,7 +103,7 @@ class MediaWebtorrentPlugin(MediaPlugin):
     def _init_media_player(self):
         self._media_plugin = None
 
-        for plugin_name in self._supported_media_plugins:
+        for plugin_name in self.supported_media_plugins:
             try:
                 if Config.get(plugin_name):
                     self._media_plugin = get_plugin(plugin_name)
@@ -113,11 +113,9 @@ class MediaWebtorrentPlugin(MediaPlugin):
 
         if not self._media_plugin:
             raise RuntimeError(
-                (
-                    'No media player specified and no '
-                    + 'compatible media plugin configured - '
-                    + 'supported media plugins: {}'
-                ).format(self._supported_media_plugins)
+                'No media player specified and no '
+                + 'compatible media plugin configured - '
+                + f'supported media plugins: {self.supported_media_plugins}'
             )
 
     def _read_process_line(self):

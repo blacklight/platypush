@@ -274,6 +274,10 @@ class Application:
             backend.stop()
 
         for plugin in runnable_plugins:
+            # This is required because some plugins may redefine the `stop` method.
+            # In that case, at the very least the _should_stop event should be
+            # set to notify the plugin to stop.
+            plugin._should_stop.set()  # pylint: disable=protected-access
             plugin.stop()
 
         for backend in backends:

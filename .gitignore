@@ -26,3 +26,5 @@ Session.vim
 /package.json
 /Dockerfile
 /docs/source/wiki
+/.skipci
+dump.rdb

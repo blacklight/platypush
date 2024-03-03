@@ -1,40 +1,39 @@
-from typing import Optional
-
 from platypush.message.event import Event
-from platypush.plugins.mail import Mail
 
 
 class MailEvent(Event):
-    def __init__(self, mailbox: str, message: Optional[Mail] = None, *args, **kwargs):
-        super().__init__(*args, mailbox=mailbox, message=message or {}, **kwargs)
-
-
-class MailReceivedEvent(MailEvent):
     """
-    Triggered when a new email is received.
+    Base class for mail events.
     """
-    pass
+
+    def __init__(self, *args, account: str, folder: str, message, **kwargs):
+        super().__init__(
+            *args, account=account, folder=folder, message=message, **kwargs
+        )
 
 
-class MailSeenEvent(MailEvent):
+class UnseenMailEvent(MailEvent):
+    """
+    Triggered when a new email is received or marked as unseen.
+    """
+
+
+class SeenMailEvent(MailEvent):
     """
     Triggered when a previously unseen email is seen.
     """
-    pass
 
 
-class MailFlaggedEvent(MailEvent):
+class FlaggedMailEvent(MailEvent):
     """
     Triggered when a message is marked as flagged/starred.
     """
-    pass
 
 
-class MailUnflaggedEvent(MailEvent):
+class UnflaggedMailEvent(MailEvent):
     """
     Triggered when a message previously marked as flagged/starred is unflagged.
     """
-    pass
 
 
 # vim:sw=4:ts=4:et:

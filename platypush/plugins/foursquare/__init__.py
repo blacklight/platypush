@@ -1,13 +1,18 @@
 import datetime
-import requests
 from typing import List, Dict, Any, Optional, Union, Tuple
 
-from platypush.plugins import Plugin, action
+import requests
+
+from platypush.context import Variable
+from platypush.message.event.foursquare import FoursquareCheckinEvent
+from platypush.plugins import RunnablePlugin, action
 
 
-class FoursquarePlugin(Plugin):
+class FoursquarePlugin(RunnablePlugin):
     """
     Plugin to interact with the `Foursquare Places API <https://developer.foursquare.com/docs/api>`_.
+
+    It also raises events when a new check-in occurs on the user's account.
 
     In order to enable the Foursquare API on your account you need to:
 
@@ -24,20 +29,36 @@ class FoursquarePlugin(Plugin):
     """
 
     api_base_url = 'https://api.foursquare.com/v2'
+    _last_created_at_varname = '_foursquare_checkin_last_created_at'
+    _http_timeout = 10
 
-    def __init__(self, access_token: str, **kwargs):
+    def __init__(self, access_token: str, poll_interval: float = 120, **kwargs):
         """
         :param access_token: The access token to use to authenticate to the Foursquare API.
         """
-        super().__init__(**kwargs)
+        super().__init__(poll_interval=poll_interval, **kwargs)
         self.access_token = access_token
+        self._last_created_at = Variable(self._last_created_at_varname)
 
     def _get_url(self, endpoint):
-        return '{url}/{endpoint}?oauth_token={token}&v={version}'.format(
-            url=self.api_base_url,
-            endpoint=endpoint,
-            token=self.access_token,
-            version=datetime.date.today().strftime('%Y%m%d'),
+        return (
+            self.api_base_url
+            + '/'
+            + endpoint
+            + '?oauth_token='
+            + self.access_token
+            + '&v='
+            + datetime.date.today().strftime('%Y%m%d')
+        )
+
+    def _get_checkins(self) -> List[Dict[str, Any]]:
+        url = self._get_url('users/self/checkins')
+        return (
+            requests.get(url, timeout=self._http_timeout)
+            .json()
+            .get('response', {})
+            .get('checkins', {})
+            .get('items', [])
         )
 
     @action
@@ -46,16 +67,8 @@ class FoursquarePlugin(Plugin):
         Get the list of check-ins of the current user.
         :return: A list of checkins, as returned by the Foursquare API.
         """
-        url = self._get_url('users/self/checkins')
-        return (
-            requests.get(url)
-            .json()
-            .get('response', {})
-            .get('checkins', {})
-            .get('items', [])
-        )
+        return self._get_checkins()
 
-    # noinspection DuplicatedCode
     @action
     def search(
         self,
@@ -67,7 +80,7 @@ class FoursquarePlugin(Plugin):
         near: Optional[str] = None,
         query: Optional[str] = None,
         limit: Optional[int] = None,
-        url: Optional[int] = None,
+        url: Optional[str] = None,
         categories: Optional[List[str]] = None,
         radius: Optional[int] = None,
         sw: Optional[Union[Tuple[float], List[float]]] = None,
@@ -123,12 +136,15 @@ class FoursquarePlugin(Plugin):
         if ne:
             args['ne'] = ne
 
-        url = self._get_url('venues/search')
         return (
-            requests.get(url, params=args).json().get('response', {}).get('venues', [])
+            requests.get(
+                self._get_url('venues/search'), params=args, timeout=self._http_timeout
+            )
+            .json()
+            .get('response', {})
+            .get('venues', [])
         )
 
-    # noinspection DuplicatedCode
     @action
     def explore(
         self,
@@ -223,7 +239,10 @@ class FoursquarePlugin(Plugin):
 
         url = self._get_url('venues/explore')
         return (
-            requests.get(url, params=args).json().get('response', {}).get('venues', [])
+            requests.get(url, params=args, timeout=self._http_timeout)
+            .json()
+            .get('response', {})
+            .get('venues', [])
         )
 
     @action
@@ -263,7 +282,10 @@ class FoursquarePlugin(Plugin):
 
         url = self._get_url('venues/trending')
         return (
-            requests.get(url, params=args).json().get('response', {}).get('venues', [])
+            requests.get(url, params=args, timeout=self._http_timeout)
+            .json()
+            .get('response', {})
+            .get('venues', [])
         )
 
     @staticmethod
@@ -275,7 +297,7 @@ class FoursquarePlugin(Plugin):
 
         assert isinstance(
             t, datetime.datetime
-        ), 'Cannot parse object of type {} into datetime: {}'.format(type(t), t)
+        ), f'Cannot parse object of type {type(t)} into datetime: {t}'
         return t
 
     @action
@@ -306,7 +328,10 @@ class FoursquarePlugin(Plugin):
 
         url = self._get_url('venues/timeseries')
         return (
-            requests.get(url, params=args).json().get('response', {}).get('venues', [])
+            requests.get(url, params=args, timeout=self._http_timeout)
+            .json()
+            .get('response', {})
+            .get('venues', [])
         )
 
     @action
@@ -326,13 +351,16 @@ class FoursquarePlugin(Plugin):
         :return: A list of venues, as returned by the Foursquare API.
         """
         args = {
-            'startAt': self._parse_time(start_at),
-            'endAt': self._parse_time(end_at),
+            'startAt': self._parse_time(start_at).isoformat(),
+            'endAt': self._parse_time(end_at).isoformat(),
         }
 
-        url = self._get_url('venues/{}/stats'.format(venue_id))
+        url = self._get_url(f'venues/{venue_id}/stats')
         return (
-            requests.get(url, params=args).json().get('response', {}).get('venues', [])
+            requests.get(url, params=args, timeout=self._http_timeout)
+            .json()
+            .get('response', {})
+            .get('venues', [])
         )
 
     @action
@@ -343,7 +371,7 @@ class FoursquarePlugin(Plugin):
         """
         url = self._get_url('venues/managed')
         return (
-            requests.get(url)
+            requests.get(url, timeout=self._http_timeout)
             .json()
             .get('response', {})
             .get('venues', [])
@@ -386,11 +414,11 @@ class FoursquarePlugin(Plugin):
         if latitude and longitude:
             args['ll'] = ','.join([str(latitude), str(longitude)])
         if altitude:
-            args['alt'] = altitude
+            args['alt'] = str(altitude)
         if latlng_accuracy:
-            args['llAcc'] = latlng_accuracy
+            args['llAcc'] = str(latlng_accuracy)
         if altitude_accuracy:
-            args['altAcc'] = altitude_accuracy
+            args['altAcc'] = str(altitude_accuracy)
         if shout:
             args['shout'] = shout
         if broadcast:
@@ -400,8 +428,27 @@ class FoursquarePlugin(Plugin):
 
         url = self._get_url('checkins/add')
         return (
-            requests.post(url, data=args).json().get('response', {}).get('checkin', {})
+            requests.post(url, data=args, timeout=self._http_timeout)
+            .json()
+            .get('response', {})
+            .get('checkin', {})
         )
+
+    def main(self):
+        while not self.should_stop():
+            checkins = self._get_checkins()
+            if not checkins:
+                return
+
+            last_checkin = checkins[0]
+            last_checkin_created_at = last_checkin.get('createdAt', 0)
+            last_created_at = float(self._last_created_at.get() or 0)
+            if last_created_at and last_checkin_created_at <= last_created_at:
+                return
+
+            self._bus.post(FoursquareCheckinEvent(checkin=last_checkin))
+            self._last_created_at.set(last_checkin_created_at)
+            self.wait_stop(self.poll_interval)
 
 
 # vim:sw=4:ts=4:et:

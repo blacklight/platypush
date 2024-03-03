@@ -33,6 +33,7 @@ export default {
 
 <style lang="scss" scoped>
 .tab {
+  height: $tab-height;
   background: $tab-bg;
   display: flex;
   padding: 1em;

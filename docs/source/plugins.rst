@@ -21,8 +21,7 @@ Plugins
     platypush/plugins/camera.gstreamer.rst
     platypush/plugins/camera.ir.mlx90640.rst
     platypush/plugins/camera.pi.rst
-    platypush/plugins/chat.irc.rst
-    platypush/plugins/chat.telegram.rst
+    platypush/plugins/camera.pi.legacy.rst
     platypush/plugins/clipboard.rst
     platypush/plugins/config.rst
     platypush/plugins/csv.rst
@@ -33,7 +32,10 @@ Plugins
     platypush/plugins/esp.rst
     platypush/plugins/ffmpeg.rst
     platypush/plugins/file.rst
+    platypush/plugins/file.monitor.rst
+    platypush/plugins/flic.rst
     platypush/plugins/foursquare.rst
+    platypush/plugins/github.rst
     platypush/plugins/google.calendar.rst
     platypush/plugins/google.drive.rst
     platypush/plugins/google.fit.rst
@@ -44,23 +46,26 @@ Plugins
     platypush/plugins/gotify.rst
     platypush/plugins/gpio.rst
     platypush/plugins/gpio.zeroborg.rst
+    platypush/plugins/gps.rst
     platypush/plugins/graphite.rst
     platypush/plugins/hid.rst
-    platypush/plugins/http.request.rst
+    platypush/plugins/http.rst
     platypush/plugins/http.webpage.rst
     platypush/plugins/ifttt.rst
     platypush/plugins/inspect.rst
+    platypush/plugins/irc.rst
     platypush/plugins/joystick.rst
     platypush/plugins/kafka.rst
     platypush/plugins/lastfm.rst
     platypush/plugins/lcd.gpio.rst
     platypush/plugins/lcd.i2c.rst
+    platypush/plugins/leap.rst
     platypush/plugins/light.hue.rst
     platypush/plugins/linode.rst
+    platypush/plugins/log.http.rst
     platypush/plugins/logger.rst
     platypush/plugins/luma.oled.rst
-    platypush/plugins/mail.imap.rst
-    platypush/plugins/mail.smtp.rst
+    platypush/plugins/mail.rst
     platypush/plugins/mailgun.rst
     platypush/plugins/mastodon.rst
     platypush/plugins/matrix.rst
@@ -84,6 +89,7 @@ Plugins
     platypush/plugins/music.spotify.rst
     platypush/plugins/music.tidal.rst
     platypush/plugins/nextcloud.rst
+    platypush/plugins/nfc.rst
     platypush/plugins/ngrok.rst
     platypush/plugins/nmap.rst
     platypush/plugins/ntfy.rst
@@ -121,6 +127,7 @@ Plugins
     platypush/plugins/switchbot.rst
     platypush/plugins/system.rst
     platypush/plugins/tcp.rst
+    platypush/plugins/telegram.rst
     platypush/plugins/tensorflow.rst
     platypush/plugins/todoist.rst
     platypush/plugins/torrent.rst
@@ -138,7 +145,6 @@ Plugins
     platypush/plugins/weather.buienradar.rst
     platypush/plugins/weather.openweathermap.rst
     platypush/plugins/websocket.rst
-    platypush/plugins/wiimote.rst
     platypush/plugins/xmpp.rst
     platypush/plugins/youtube.rst
     platypush/plugins/zeroconf.rst

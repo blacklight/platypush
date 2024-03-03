@@ -35,9 +35,8 @@
           :title="name" @click="onItemClick(name)">
         <a :href="`/#${name}`">
         <span class="icon">
-          <i :class="icons[name].class" v-if="icons[name]?.class" />
-          <img :src="icons[name].imgUrl" v-else-if="icons[name]?.imgUrl"  alt="name"/>
-          <i class="fas fa-puzzle-piece" v-else />
+          <i :class="icons[name].class" v-if="specialPlugins.includes(name)" />
+          <ExtensionIcon :name="name" size="1.5em" v-else />
         </span>
         <span class="name" v-if="!collapsed" v-text="displayName(name)" />
         </a>
@@ -77,6 +76,7 @@
 
 <script>
 import icons from '@/assets/icons.json'
+import ExtensionIcon from "@/components/elements/ExtensionIcon"
 import Utils from "@/Utils";
 import configSections from '@/components/panels/Settings/sections.json';
 import { bus } from "@/bus";
@@ -85,6 +85,10 @@ export default {
   name: "Nav",
   emits: ['select', 'select-config'],
   mixins: [Utils],
+  components: {
+    ExtensionIcon,
+  },
+
   props: {
     panels: {
       type: Object,
@@ -105,6 +109,10 @@ export default {
   },
 
   computed: {
+    specialPlugins() {
+      return ['execute', 'entities']
+    },
+
     panelNames() {
       const prepend = (names, name) => {
         const idx = panelNames.indexOf(name)
@@ -297,6 +305,15 @@ nav {
   .plugins {
     height: calc(100% - #{$toggler-height} - #{$footer-expanded-height} - 1.5em);
     overflow: auto;
+
+    :deep(.icon) {
+      display: inline-flex;
+
+      .extension-icon {
+        margin-left: 0;
+        display: inline-flex;
+      }
+    }
   }
 
   .footer {

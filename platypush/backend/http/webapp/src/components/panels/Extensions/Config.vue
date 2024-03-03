@@ -49,9 +49,9 @@ export default {
   computed: {
     highlightedConfigSnippet() {
       return hljs.highlight(
-        'yaml',
         `# Configuration template. You can add it to ${this.configFile}\n` +
         this.extension.config_snippet,
+        {language: 'yaml'}
       ).value.trim()
     },
 

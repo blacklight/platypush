@@ -352,7 +352,7 @@ class MatrixClient(AsyncClient):
 
     def get_devices_by_user(
         self, user_id: Optional[str] = None
-    ) -> Dict[str, Dict[str, OlmDevice]] | Dict[str, OlmDevice]:
+    ) -> Union[Dict[str, Dict[str, OlmDevice]], Dict[str, OlmDevice]]:
         devices = dict(self.device_store.items())
 
         if user_id:
@@ -371,7 +371,7 @@ class MatrixClient(AsyncClient):
 
     def get_devices_by_room(
         self, room_id: Optional[str] = None
-    ) -> Dict[str, Dict[str, OlmDevice]] | Dict[str, OlmDevice]:
+    ) -> Union[Dict[str, Dict[str, OlmDevice]], Dict[str, OlmDevice]]:
         devices = {
             room_id: {
                 device_id: device

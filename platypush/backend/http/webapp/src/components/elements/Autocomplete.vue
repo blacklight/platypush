@@ -10,7 +10,7 @@
         :value="value"
         @focus="onFocus"
         @input="onInput"
-        @blur="onInput"
+        @blur="onBlur"
         @keydown="onInputKeyDown"
         @keyup="onInputKeyUp"
        >
@@ -23,8 +23,7 @@
         :key="item"
         :data-item="item"
         v-for="(item, i) in visibleItems"
-        @click="onItemSelect(item)"
-      >
+        @click="onItemSelect(item)">
         <span class="matching" v-if="value?.length">{{ item.substr(0, value.length) }}</span>
         <span class="normal">{{ item.substr(value?.length || 0) }}</span>
       </div>
@@ -148,6 +147,14 @@ export default {
       this.$emit("input", val)
       this.curIndex = -1
       this.visible = true
+    },
+
+    onBlur(e) {
+      this.onInput(e)
+      this.$nextTick(() => {
+        if (this.valueIsInItems())
+          this.visible = false
+      })
     },
 
     onItemSelect(item) {
