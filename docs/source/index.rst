@@ -39,6 +39,7 @@ Wiki
     wiki/Configuration
     wiki/Installing-extensions
     wiki/A-configuration-example
+    wiki/The-Web-interface
 
 Reference
 =========

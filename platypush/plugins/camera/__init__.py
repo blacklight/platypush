@@ -4,7 +4,6 @@ import pathlib
 import socket
 import threading
 import time
-
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from dataclasses import asdict
@@ -20,7 +19,7 @@ from platypush.message.event.camera import (
     CameraRecordingStoppedEvent,
     CameraVideoRenderedEvent,
 )
-from platypush.plugins import Plugin, action
+from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.camera.model.camera import CameraInfo, Camera
 from platypush.plugins.camera.model.exceptions import (
     CameraException,
@@ -32,7 +31,7 @@ from platypush.plugins.camera.model.writer.preview import (
     PreviewWriter,
     PreviewWriterFactory,
 )
-from platypush.utils import get_plugin_name_by_class
+from platypush.utils import get_plugin_name_by_class, wait_for_either
 
 __all__ = [
     'Camera',
@@ -46,7 +45,7 @@ __all__ = [
 ]
 
 
-class CameraPlugin(Plugin, ABC):
+class CameraPlugin(RunnablePlugin, ABC):
     """
     Abstract plugin to control camera devices.
 
@@ -87,6 +86,7 @@ class CameraPlugin(Plugin, ABC):
         stream_format: str = 'mjpeg',
         listen_port: Optional[int] = 5000,
         bind_address: str = '0.0.0.0',
+        stream_on_start: bool = False,
         ffmpeg_bin: str = 'ffmpeg',
         input_codec: Optional[str] = None,
         output_codec: Optional[str] = None,
@@ -95,41 +95,57 @@ class CameraPlugin(Plugin, ABC):
         """
         :param device: Identifier of the default capturing device.
         :param resolution: Default resolution, as a tuple of two integers.
-        :param frames_dir: Directory where the camera frames will be stored (default:
-            ``~/.local/share/platypush/<plugin.name>/frames``)
+        :param frames_dir: Directory where the camera frames will be stored
+            (default: ``~/.local/share/platypush/<plugin.name>/frames``)
         :param warmup_frames: Cameras usually take a while to adapt their
             luminosity and focus to the environment when taking a picture.
             This parameter allows you to specify the number of "warmup" frames
             to capture upon picture command before actually capturing a frame
             (default: 5 but you may want to calibrate this parameter for your
             camera)
-        :param warmup_seconds: Number of seconds to wait before a picture is taken or the first frame of a
-            video/sequence is captured (default: 0).
-        :param capture_timeout: Maximum number of seconds to wait between the programmed termination of a capture
-            session and the moment the device is released.
-        :param scale_x: If set, the images will be scaled along the x axis by the specified factor
-        :param scale_y: If set, the images will be scaled along the y axis by the specified factor
+        :param warmup_seconds: Number of seconds to wait before a picture is
+            taken or the first frame of a video/sequence is captured (default:
+            0).
+        :param capture_timeout: Maximum number of seconds to wait between the
+            programmed termination of a capture session and the moment the
+            device is released.
+        :param scale_x: If set, the images will be scaled along the x-axis by
+            the specified factor
+        :param scale_y: If set, the images will be scaled along the y-axis by
+            the specified factor
         :param color_transform: Color transformation to apply to the images.
         :param grayscale: Whether the output should be converted to grayscale.
-        :param rotate: If set, the images will be rotated by the specified number of degrees
+        :param rotate: If set, the images will be rotated by the specified
+            number of degrees
         :param fps: Frames per second (default: 25).
-        :param horizontal_flip: If set, the images will be flipped on the horizontal axis.
-        :param vertical_flip: If set, the images will be flipped on the vertical axis.
-        :param listen_port: Default port to be used for streaming over TCP (default: 5000).
-        :param bind_address: Default bind address for TCP streaming (default: 0.0.0.0, accept any connections).
-        :param input_codec: Specify the ffmpeg video codec (``-vcodec``) used for the input.
-        :param output_codec: Specify the ffmpeg video codec (``-vcodec``) to be used for encoding the output. For some
-            ffmpeg output formats (e.g. ``h264`` and ``rtp``) this may default to ``libxvid``.
+        :param horizontal_flip: If set, the images will be flipped on the
+            horizontal axis.
+        :param vertical_flip: If set, the images will be flipped on the vertical
+            axis.
+        :param listen_port: Default port to be used for streaming over TCP
+            (default: 5000).
+        :param bind_address: Default bind address for TCP streaming (default:
+            0.0.0.0, accept connections on any network interface).
+        :param stream_on_start: If set, the camera will start streaming on the
+            specified ``bind_address`` and ``listen_port`` as soon as the plugin
+            is started. Otherwise, the stream will be started only when the
+            :meth:`.start_streaming` method is called. Default: False.
+        :param input_codec: Specify the ffmpeg video codec (``-vcodec``) used
+            for the input.
+        :param output_codec: Specify the ffmpeg video codec (``-vcodec``) to be
+            used for encoding the output. For some ffmpeg output formats (e.g.
+            ``h264`` and ``rtp``) this may default to ``libxvid``.
         :param input_format: Plugin-specific format/type for the input stream.
         :param output_format: Plugin-specific format/type for the output videos.
         :param ffmpeg_bin: Path to the ffmpeg binary (default: ``ffmpeg``).
-        :param stream_format: Default format for the output when streamed to a network device. Available:
+        :param stream_format: Default format for the output when streamed to a
+            network device. Available:
 
-            - ``MJPEG`` (default)
-            - ``H264`` (over ``ffmpeg``)
-            - ``H265`` (over ``ffmpeg``)
-            - ``MKV`` (over ``ffmpeg``)
-            - ``MP4`` (over ``ffmpeg``)
+                - ``mjpeg`` (default)
+                - ``h264`` (over ``ffmpeg``)
+                - ``h265`` (over ``ffmpeg``)
+                - ``mkv`` (over ``ffmpeg``)
+                - ``mp4`` (over ``ffmpeg``)
 
         """
         super().__init__(**kwargs)
@@ -138,6 +154,7 @@ class CameraPlugin(Plugin, ABC):
         plugin_name = get_plugin_name_by_class(self)
         assert isinstance(workdir, str) and plugin_name
         self.workdir = os.path.join(workdir, plugin_name)
+        self._stream_on_start = stream_on_start
         pathlib.Path(self.workdir).mkdir(mode=0o755, exist_ok=True, parents=True)
 
         self.camera_info = self._camera_info_class(
@@ -177,9 +194,10 @@ class CameraPlugin(Plugin, ABC):
 
     def open_device(
         self,
-        device: Optional[Union[int, str]],
+        device: Optional[Union[int, str]] = None,
         stream: bool = False,
         redis_queue: Optional[str] = None,
+        ctx: Optional[dict] = None,
         **params,
     ) -> Camera:
         """
@@ -211,14 +229,13 @@ class CameraPlugin(Plugin, ABC):
         else:
             camera = self._camera_class(info=info)
 
+        ctx = ctx or {}
+        ctx['stream'] = stream
         camera.info.set(**params)
-        camera.object = self.prepare_device(camera)
+        camera.object = self.prepare_device(camera, **ctx)
 
         if stream and camera.info.stream_format:
-            writer_class = StreamWriter.get_class_by_name(camera.info.stream_format)
-            camera.stream = writer_class(
-                camera=camera, plugin=self, redis_queue=redis_queue
-            )
+            self._prepare_stream_writer(camera, redis_queue=redis_queue)
 
         if camera.info.frames_dir:
             pathlib.Path(
@@ -227,6 +244,13 @@ class CameraPlugin(Plugin, ABC):
 
         self._devices[device] = camera
         return camera
+
+    def _prepare_stream_writer(self, camera: Camera, redis_queue: Optional[str] = None):
+        assert camera.info.stream_format, 'No stream format specified'
+        writer_class = StreamWriter.get_class_by_name(camera.info.stream_format)
+        camera.stream = writer_class(
+            camera=camera, plugin=self, redis_queue=redis_queue
+        )
 
     def close_device(self, camera: Camera, wait_capture: bool = True) -> None:
         """
@@ -289,7 +313,7 @@ class CameraPlugin(Plugin, ABC):
                 self.close_device(camera)
 
     @abstractmethod
-    def prepare_device(self, device: Camera):
+    def prepare_device(self, device: Camera, **_):
         """
         Prepare a device using the plugin-specific logic - to be implemented by the derived classes.
 
@@ -316,7 +340,9 @@ class CameraPlugin(Plugin, ABC):
         raise NotImplementedError()
 
     @staticmethod
-    def store_frame(frame, filepath: str, format: Optional[str] = None):
+    def store_frame(  # pylint: disable=redefined-builtin
+        frame, filepath: str, format: Optional[str] = None
+    ):
         """
         Capture a frame to the filesystem using the ``PIL`` library - it can be overridden by derived classes.
 
@@ -340,9 +366,9 @@ class CameraPlugin(Plugin, ABC):
     def _store_frame(
         self,
         frame,
+        *args,
         frames_dir: Optional[str] = None,
         image_file: Optional[str] = None,
-        *args,
         **kwargs,
     ) -> str:
         """
@@ -526,7 +552,7 @@ class CameraPlugin(Plugin, ABC):
         if video_file:
             self.fire_event(CameraVideoRenderedEvent(filename=video_file))
 
-    def start_camera(self, camera: Camera, preview: bool = False, *args, **kwargs):
+    def start_camera(self, camera: Camera, *args, preview: bool = False, **kwargs):
         """
         Start a camera capture session.
 
@@ -548,6 +574,7 @@ class CameraPlugin(Plugin, ABC):
     @action
     def capture_video(
         self,
+        device: Optional[Union[int, str]] = None,
         duration: Optional[float] = None,
         video_file: Optional[str] = None,
         preview: bool = False,
@@ -556,6 +583,7 @@ class CameraPlugin(Plugin, ABC):
         """
         Capture a video.
 
+        :param device: Name/path/ID of the device to capture from (default: None, use the default device).
         :param duration: Record duration in seconds (default: None, record until ``stop_capture``).
         :param video_file: If set, the stream will be recorded to the specified video file (default: None).
         :param camera: Camera parameters override - see constructors parameters.
@@ -563,7 +591,7 @@ class CameraPlugin(Plugin, ABC):
         :return: If duration is specified, the method will wait until the recording is done and return the local path
             to the recorded resource. Otherwise, it will return the status of the camera device after starting it.
         """
-        camera = self.open_device(**camera)
+        camera = self.open_device(device=device, **camera)
         self.start_camera(
             camera,
             duration=duration,
@@ -595,17 +623,24 @@ class CameraPlugin(Plugin, ABC):
             self.close_device(dev)
 
     @action
-    def capture_image(self, image_file: str, preview: bool = False, **camera) -> str:
+    def capture_image(
+        self,
+        image_file: str,
+        device: Optional[Union[int, str]] = None,
+        preview: bool = False,
+        **camera,
+    ) -> str:
         """
         Capture an image.
 
         :param image_file: Path where the output image will be stored.
+        :param device: Name/path/ID of the device to capture from (default: None, use the default device).
         :param camera: Camera parameters override - see constructors parameters.
         :param preview: Show a preview of the camera frames.
         :return: The local path to the saved image.
         """
 
-        with self.open(**camera) as camera:
+        with self.open(device=device, **camera) as camera:
             warmup_frames = (
                 camera.info.warmup_frames if camera.info.warmup_frames else 1
             )
@@ -617,20 +652,23 @@ class CameraPlugin(Plugin, ABC):
         return image_file
 
     @action
-    def take_picture(self, image_file: str, **camera) -> str:
+    def take_picture(
+        self, image_file: str, device: Optional[Union[int, str]] = None, **camera
+    ) -> str:
         """
         Alias for :meth:`.capture_image`.
 
         :param image_file: Path where the output image will be stored.
+        :param device: Name/path/ID of the device to capture from (default: None, use the default device).
         :param camera: Camera parameters override - see constructors parameters.
-        :param preview: Show a preview of the camera frames.
         :return: The local path to the saved image.
         """
-        return str(self.capture_image(image_file, **camera).output)
+        return str(self.capture_image(image_file, device=device, **camera).output)
 
     @action
     def capture_sequence(
         self,
+        device: Optional[Union[int, str]] = None,
         duration: Optional[float] = None,
         n_frames: Optional[int] = None,
         preview: bool = False,
@@ -639,6 +677,7 @@ class CameraPlugin(Plugin, ABC):
         """
         Capture a sequence of frames from a camera and store them to a directory.
 
+        :param device: Name/path/ID of the device to capture from (default: None, use the default device).
         :param duration: Duration of the sequence in seconds (default: until :meth:`.stop_capture` is called).
         :param n_frames: Number of images to be captured (default: until :meth:`.stop_capture` is called).
         :param camera: Camera parameters override - see constructors parameters. ``frames_dir`` and ``fps`` in
@@ -646,7 +685,7 @@ class CameraPlugin(Plugin, ABC):
         :param preview: Show a preview of the camera frames.
         :return: The directory where the image files have been stored.
         """
-        with self.open(**camera) as camera:
+        with self.open(device=device, **camera) as camera:
             self.start_camera(
                 camera, duration=duration, n_frames=n_frames, preview=preview
             )
@@ -655,76 +694,111 @@ class CameraPlugin(Plugin, ABC):
 
     @action
     def capture_preview(
-        self, duration: Optional[float] = None, n_frames: Optional[int] = None, **camera
+        self,
+        device: Optional[Union[int, str]] = None,
+        duration: Optional[float] = None,
+        n_frames: Optional[int] = None,
+        **camera,
     ) -> dict:
         """
         Start a camera preview session.
 
+        :param device: Name/path/ID of the device to capture from (default: None, use the default device).
         :param duration: Preview duration (default: until :meth:`.stop_capture` is called).
         :param n_frames: Number of frames to display before closing (default: until :meth:`.stop_capture` is called).
         :param camera: Camera object properties.
         :return: The status of the device.
         """
-        camera = self.open_device(frames_dir=None, **camera)
+        camera = self.open_device(device=device, frames_dir=None, **camera)
         self.start_camera(camera, duration=duration, n_frames=n_frames, preview=True)
         return self.status(camera.info.device)  # type: ignore
 
     @staticmethod
-    def _prepare_server_socket(camera: Camera) -> socket.socket:
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.bind(
-            (  # lgtm [py/bind-socket-all-network-interfaces]
-                camera.info.bind_address or '0.0.0.0',
-                camera.info.listen_port,
+    @contextmanager
+    def _prepare_server_socket(camera: Camera) -> Generator[socket.socket, None, None]:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as srv_sock:
+            srv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            srv_sock.bind(
+                (  # lgtm [py/bind-socket-all-network-interfaces]
+                    camera.info.bind_address or '0.0.0.0',
+                    camera.info.listen_port,
+                )
             )
-        )
-        server_socket.listen(1)
-        server_socket.settimeout(1)
-        return server_socket
+            srv_sock.listen(1)
+            srv_sock.settimeout(1)
+            yield srv_sock
 
-    def _accept_client(self, server_socket: socket.socket) -> Optional[IO]:
+    def _accept_client(
+        self, server_socket: socket.socket
+    ) -> Tuple[Optional[socket.socket], Optional[IO]]:
         try:
             sock = server_socket.accept()[0]
             self.logger.info('Accepted client connection from %s', sock.getpeername())
-            return sock.makefile('wb')
+            return sock, sock.makefile('wb')
         except socket.timeout:
-            return
+            return None, None
 
     def streaming_thread(
         self, camera: Camera, stream_format: str, duration: Optional[float] = None
     ):
-        streaming_started_time = time.time()
-        server_socket = self._prepare_server_socket(camera)
-        sock = None
-        self.logger.info('Starting streaming on port %s', camera.info.listen_port)
+        with self._prepare_server_socket(camera) as srv_sock:
+            streaming_started_time = time.time()
+            sock, fp = None, None
+            self.logger.info('Starting streaming on port %s', camera.info.listen_port)
 
+            try:
+                while (
+                    camera.stream_event.is_set()
+                    and not camera.stop_stream_event.is_set()
+                    and not self.should_stop()
+                ):
+                    if duration and time.time() - streaming_started_time >= duration:
+                        break
+
+                    sock, fp = self._accept_client(srv_sock)
+                    if not (sock and fp):
+                        continue
+
+                    if duration and time.time() - streaming_started_time >= duration:
+                        break
+
+                    self._streaming_loop(
+                        camera, stream_format, sock=fp, duration=duration
+                    )
+            finally:
+                self._cleanup_stream(camera, srv_sock, fp)
+
+        self.logger.info('Stopped camera stream')
+
+    def _wait_stream_stop(self, camera: Camera):
         try:
-            while camera.stream_event.is_set():
-                if duration and time.time() - streaming_started_time >= duration:
-                    break
+            wait_for_either(self._should_stop, camera.stop_stream_event)
+        except Exception as e:
+            self.logger.debug('Error on streaming poll: %s', e)
 
-                sock = self._accept_client(server_socket)
-                if not sock:
-                    continue
+    def _streaming_loop(
+        self,
+        camera: Camera,
+        stream_format: str,
+        sock: IO,
+        duration: Optional[float] = None,
+    ):
+        if camera.info.device not in self._devices:
+            info = asdict(camera.info)
+            info['stream_format'] = stream_format
+            camera = self.open_device(stream=True, **info)
 
-                if camera.info.device not in self._devices:
-                    info = asdict(camera.info)
-                    info['stream_format'] = stream_format
-                    camera = self.open_device(stream=True, **info)
-
-                assert camera.stream, 'No camera stream available'
-                camera.stream.sock = sock
-                self.start_camera(
-                    camera, duration=duration, frames_dir=None, image_file=None
-                )
-        finally:
-            self._cleanup_stream(camera, server_socket, sock)
-            self.logger.info('Stopped camera stream')
+        assert camera.stream, 'No camera stream available'
+        camera.stream.sock = sock
+        self.start_camera(camera, duration=duration, frames_dir=None, image_file=None)
+        self._wait_stream_stop(camera)
 
     def _cleanup_stream(
         self, camera: Camera, server_socket: socket.socket, client: Optional[IO]
     ):
+        camera.stream_event.clear()
+        camera.stop_stream_event.set()
+
         if client:
             try:
                 client.close()
@@ -744,18 +818,43 @@ class CameraPlugin(Plugin, ABC):
 
     @action
     def start_streaming(
-        self, duration: Optional[float] = None, stream_format: str = 'mkv', **camera
+        self,
+        device: Optional[Union[int, str]] = None,
+        duration: Optional[float] = None,
+        stream_format: Optional[str] = None,
+        **camera,
     ) -> dict:
         """
         Expose the video stream of a camera over a TCP connection.
 
-        :param duration: Streaming thread duration (default: until :meth:`.stop_streaming` is called).
-        :param stream_format: Format of the output stream - e.g. ``h264``, ``mjpeg``, ``mkv`` etc. (default: ``mkv``).
+        When the streaming is started, the plugin will listen on the specified
+        ``bind_address`` and ``listen_port`` and stream camera frames to
+        connected clients. If ``stream_format`` is a video format (H264, H265,
+        MKV, MP4 etc.) then the camera stream can be viewed using a video
+        player - for example, using ``vlc``:
+
+            .. code-block:: bash
+
+                vlc tcp://<host>:<port>
+
+        :param device: Name/path/ID of the device to capture from (default:
+            None, use the default device).
+        :param duration: Streaming thread duration (default: until
+            :meth:`.stop_streaming` is called).
+        :param stream_format: Format of the output stream - e.g. ``h264``,
+            ``mjpeg``, ``mkv`` etc. If not specified, the ``stream_format``
+            configured on the plugin will be used.
         :param camera: Camera object properties - see constructor parameters.
         :return: The status of the device.
         """
-        camera = self.open_device(stream=True, stream_format=stream_format, **camera)
-        return self._start_streaming(camera, duration, stream_format)  # type: ignore
+        camera = self.open_device(
+            device=device,
+            stream=True,
+            stream_format=stream_format or self.camera_info.stream_format,
+            **camera,
+        )
+
+        return self._start_streaming(camera, duration, camera.info.stream_format)  # type: ignore
 
     def _start_streaming(
         self, camera: Camera, duration: Optional[float], stream_format: str
@@ -764,10 +863,11 @@ class CameraPlugin(Plugin, ABC):
         assert (
             not camera.stream_event.is_set() and camera.info.device not in self._streams
         ), f'A streaming session is already running for device {camera.info.device}'
-        assert camera.info.device, 'No device name available'
+        assert camera.info.device is not None, 'No device name available'
 
         self._streams[camera.info.device] = camera
         camera.stream_event.set()
+        camera.stop_stream_event.clear()
 
         camera.stream_thread = threading.Thread(
             target=self.streaming_thread,
@@ -797,6 +897,8 @@ class CameraPlugin(Plugin, ABC):
 
     def _stop_streaming(self, camera: Camera):
         camera.stream_event.clear()
+        camera.stop_stream_event.set()
+
         if camera.stream_thread and camera.stream_thread.is_alive():
             camera.stream_thread.join(timeout=5.0)
 
@@ -900,7 +1002,7 @@ class CameraPlugin(Plugin, ABC):
             return frame
 
         size = (int(frame.size[0] * scale_x), int(frame.size[1] * scale_y))
-        return frame.resize(size, Image.ANTIALIAS)
+        return frame.resize(size, Image.BICUBIC)
 
     @staticmethod
     def encode_frame(frame, encoding: str = 'jpeg') -> bytes:
@@ -924,6 +1026,31 @@ class CameraPlugin(Plugin, ABC):
         if camera.info.warmup_frames and camera.info.fps:
             return camera.info.warmup_frames / camera.info.fps
         return 0
+
+    def main(self):
+        if not self._stream_on_start:
+            self.wait_stop()
+            return
+
+        while not self.should_stop():
+            if self._stream_on_start:
+                self.start_streaming()
+
+            cameras = list(self._streams.values())
+            if not cameras:
+                self.logger.warning('No camera devices could be streamed')
+                self.wait_stop()
+                break
+
+            camera = cameras[0]
+
+            try:
+                wait_for_either(self._should_stop, camera.stop_stream_event)
+                self.stop_streaming()
+            except Exception as e:
+                self.logger.warning('Error while stopping the camera stream: %s', e)
+            finally:
+                self.wait_stop(timeout=2)
 
 
 # vim:sw=4:ts=4:et:

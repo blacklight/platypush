@@ -224,15 +224,25 @@ export default {
     },
 
     async addToTracklistFromEditedPlaylist(event) {
-      const track = this.editedPlaylistTracks[event.pos]
-      if (!track)
+      const tracks = event?.tracks?.map(
+        (pos) => this.editedPlaylistTracks[pos]
+      )?.filter((track) => track?.file)?.map((track) => track.file)
+
+      if (!tracks?.length)
         return
 
-      const method = event.play ? 'play' : 'add'
-      await this.request(`music.spotify.${method}`, {
-        device: this.selectedDevice,
-        resource: track.uri
-      })
+      if (event.play && tracks.length === 1) {
+        await this.request('music.spotify.play', {
+          device: this.selectedDevice,
+          resource: tracks[0],
+        })
+      } else {
+        await Promise.all(tracks.map((track) => this.request('music.spotify.add', {
+          device: this.selectedDevice,
+          resource: track,
+        })))
+      }
+
       await this.refresh(true)
     },
 

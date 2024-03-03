@@ -151,14 +151,14 @@ class MediaPlugin(Plugin, ABC):
         'f4b',
     }
 
-    _supported_media_plugins = {
+    supported_media_plugins = [
         'media.mplayer',
         'media.omxplayer',
         'media.mpv',
         'media.vlc',
         'media.chromecast',
         'media.gstreamer',
-    }
+    ]
 
     _supported_media_types = ['file', 'jellyfin', 'plex', 'torrent', 'youtube']
     _default_search_timeout = 60  # 60 seconds
@@ -217,7 +217,7 @@ class MediaPlugin(Plugin, ABC):
         if self.__class__.__name__ == 'MediaPlugin':
             # Abstract class, initialize with the default configured player
             for plugin_name in Config.get_plugins().keys():
-                if plugin_name in self._supported_media_plugins:
+                if plugin_name in self.supported_media_plugins:
                     player = get_plugin(plugin_name)
                     if player and player.is_local():
                         # Local players have priority as default if configured
@@ -326,11 +326,11 @@ class MediaPlugin(Plugin, ABC):
         """
 
         if resource.startswith('file://'):
-            resource = resource[len('file://') :]
-            assert os.path.isfile(resource), f'File {resource} not found'
+            path = resource[len('file://') :]
+            assert os.path.isfile(path), f'File {path} not found'
             self._latest_resource = MediaResource(
                 resource=resource,
-                url=f'file://{resource}',
+                url=resource,
                 title=os.path.basename(resource),
                 filename=os.path.basename(resource),
             )
@@ -389,42 +389,42 @@ class MediaPlugin(Plugin, ABC):
 
     @action
     @abstractmethod
-    def play(self, resource, *args, **kwargs):
+    def play(self, resource, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def pause(self, *args, **kwargs):
+    def pause(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def stop(self, *args, **kwargs):
+    def stop(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def quit(self, *args, **kwargs):
+    def quit(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def voldown(self, *args, **kwargs):
+    def voldown(self, step: Optional[float] = 5.0, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def volup(self, *args, **kwargs):
+    def volup(self, step: Optional[float] = 5.0, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def back(self, *args, **kwargs):
+    def back(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def forward(self, *args, **kwargs):
+    def forward(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
@@ -440,42 +440,42 @@ class MediaPlugin(Plugin, ABC):
 
     @action
     @abstractmethod
-    def toggle_subtitles(self, *args, **kwargs):
+    def toggle_subtitles(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def set_subtitles(self, filename, *args, **kwargs):
+    def set_subtitles(self, filename, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def remove_subtitles(self, *args, **kwargs):
+    def remove_subtitles(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def is_playing(self, *args, **kwargs):
+    def is_playing(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def load(self, resource, *args, **kwargs):
+    def load(self, resource, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def mute(self, *args, **kwargs):
+    def mute(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def seek(self, *args, **kwargs):
+    def seek(self, position, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
     @abstractmethod
-    def set_position(self, *args, **kwargs):
+    def set_position(self, position, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
@@ -635,7 +635,11 @@ class MediaPlugin(Plugin, ABC):
             }
 
         """
+        return self._start_streaming(media, subtitles=subtitles, download=download)
 
+    def _start_streaming(
+        self, media: str, subtitles: Optional[str] = None, download: bool = False
+    ):
         http = get_backend('http')
         assert http, f'Unable to stream {media}: HTTP backend not configured'
 
@@ -715,6 +719,7 @@ class MediaPlugin(Plugin, ABC):
 
     @action
     def get_youtube_info(self, url):
+        # Legacy conversion for Mopidy YouTube URIs
         m = re.match('youtube:video:(.*)', url)
         if m:
             url = f'https://www.youtube.com/watch?v={m.group(1)}'
@@ -759,7 +764,7 @@ class MediaPlugin(Plugin, ABC):
                             .pop()
                             .strip(),
                         )
-                        .group(1)
+                        .group(1)  # type: ignore
                         .split(':')[::-1]
                     )
                 ],
@@ -797,7 +802,7 @@ class MediaPlugin(Plugin, ABC):
         return self._is_local
 
     @staticmethod
-    def get_subtitles_file(subtitles):
+    def get_subtitles_file(subtitles: Optional[str] = None):
         if not subtitles:
             return None
 

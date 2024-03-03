@@ -1,9 +1,18 @@
 <template>
   <div class="extension fade-in" :class="{hidden: !expanded}">
-    <div class="row">
-      <div class="col-3">
+    <div class="image-container" @click.prevent="onImageClick" v-if="status?.state !== 'stop'">
+      <div class="remote-image-container" v-if="track?.image">
+        <img class="image" :src="track.image" :alt="track.title">
       </div>
-      <div class="col-6 buttons">
+
+      <div class="icon-container" v-else>
+        <i class="icon fas fa-compact-disc"
+          :class="{playing: status?.state === 'play'}" />
+      </div>
+    </div>
+
+    <div class="row buttons-container">
+      <div class="buttons">
         <div class="buttons">
           <button @click="$emit('previous')" title="Play previous track" v-if="buttons_.previous">
             <i class="icon fa fa-step-backward"></i>
@@ -15,8 +24,6 @@
             <i class="icon fa fa-step-forward"></i>
           </button>
         </div>
-      </div>
-      <div class="col-3">
       </div>
     </div>
 
@@ -43,14 +50,20 @@
 
     <div class="track-container col-s-9 col-m-9 col-l-3">
       <div class="track-info" v-if="track && status?.state !== 'stop'">
-        <div class="title" v-if="status.state === 'play' || status.state === 'pause'">
-          <a :href="$route.fullPath" v-text="track.title?.length ? track.title : '[No Title]'"
-             @click.prevent="$emit('search', {artist: track.artist, album: track.album})" v-if="track.album"></a>
-          <a :href="track.url" v-text="track.title?.length ? track.title : '[No Title]'" v-else-if="track.url"></a>
-          <span v-text="track.title?.length ? track.title : '[No Title]' " v-else></span>
+        <div class="img-container" v-if="track.image">
+          <img class="image from desktop" :src="track.image" :alt="track.title">
         </div>
-        <div class="artist" v-if="track.artist?.length && (status.state === 'play' || status.state === 'pause')">
-          <a :href="$route.fullPath" v-text="track.artist" @click.prevent="$emit('search', {artist: track.artist})"></a>
+
+        <div class="title-container">
+          <div class="title" v-if="status.state === 'play' || status.state === 'pause'">
+            <a :href="$route.fullPath" v-text="track.title?.length ? track.title : '[No Title]'"
+               @click.prevent="$emit('search', {artist: track.artist, album: track.album})" v-if="track.album"></a>
+            <a :href="track.url" v-text="track.title?.length ? track.title : '[No Title]'" v-else-if="track.url"></a>
+            <span v-text="track.title?.length ? track.title : '[No Title]' " v-else></span>
+          </div>
+          <div class="artist" v-if="track.artist?.length && (status.state === 'play' || status.state === 'pause')">
+            <a :href="$route.fullPath" v-text="track.artist" @click.prevent="$emit('search', {artist: track.artist})"></a>
+          </div>
         </div>
       </div>
     </div>
@@ -179,7 +192,12 @@ export default {
   methods: {
     getTime() {
       return (new Date()).getTime() / 1000
-    }
+    },
+
+    onImageClick() {
+      if (this.track?.artist && this.track?.album)
+        this.$emit('search', {artist: this.track.artist, album: this.track.album})
+    },
   },
 
   mounted() {
@@ -242,14 +260,97 @@ button {
     flex: 1;
   }
 
+  :deep(.progress-bar-container, .volume-slider-container) {
+    font-size: 1.25em;
+  }
+
+  :deep(.volume-slider-container) {
+    margin: 1em 0;
+  }
+
   .row {
     display: flex;
+  }
+
+  .buttons-container {
+    width: calc(100% + 1em);
+    margin-left: -0.5em;
+    font-size: 2em;
+    justify-content: center;
+    box-shadow: $border-shadow-bottom;
+
+    button {
+      text-align: center;
+
+      &:hover {
+        color: $default-hover-fg;
+      }
+
+      i {
+        margin: auto;
+      }
+    }
   }
 
   .buttons {
     display: flex;
     justify-content: center;
     margin: 0;
+  }
+
+  .image-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+
+    .remote-image-container {
+      height: 30vh;
+
+      .image {
+        height: 100%;
+      }
+    }
+
+    .icon-container {
+      padding: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15em;
+      opacity: 0.5;
+      border: $default-border-2;
+      box-shadow: $border-shadow-bottom;
+
+      &:hover {
+        color: $default-hover-fg;
+        opacity: 1;
+      }
+    }
+
+    .icon {
+      &.playing {
+        animation-duration: 3s;
+        animation-name: rotate;
+        animation-iteration-count: infinite;
+      }
+    }
+
+    @keyframes rotate {
+       0% {
+         transform: rotate(0deg);
+         opacity: 1;
+       }
+
+       50% {
+         opacity: 0.5;
+       }
+
+       100% {
+         transform: rotate(359deg);
+         opacity: 1;
+       }
+    }
   }
 }
 
@@ -268,12 +369,12 @@ button {
 
   .track-container {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    align-items: center;
     margin-left: 0;
 
-    @include until($tablet) {
-      align-items: center;
+    @include until($desktop) {
+      flex-direction: column;
+      text-align: center;
     }
 
     a {
@@ -300,6 +401,29 @@ button {
       font-size: 1em;
       letter-spacing: .05em;
       margin-bottom: .25em;
+    }
+
+    .image {
+      width: 5em;
+      max-height: 100%;
+      display: inline-flex;
+    }
+  }
+
+  .track-info {
+    display: flex;
+
+    @include until($desktop) {
+      flex-direction: column;
+    }
+
+    @include from($desktop) {
+      flex-direction: row;
+      align-items: center;
+
+      .image {
+        margin-right: 0.75em;
+      }
     }
   }
 

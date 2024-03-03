@@ -42,7 +42,10 @@ class MediaVlcPlugin(MediaPlugin):
 
         super().__init__(**kwargs)
 
-        self._args = args or []
+        self._args = list(args or [])
+        if '--play-and-exit' not in self._args:
+            self._args.append('--play-and-exit')
+
         self._instance = None
         self._player = None
         self._latest_seek = None
@@ -238,7 +241,10 @@ class MediaVlcPlugin(MediaPlugin):
     def quit(self, *_, **__):
         """Quit the player (same as `stop`)"""
         with self._stop_lock:
-            assert self._player, 'No vlc instance is running'
+            if not self._player:
+                self.logger.warning('No vlc instance is running')
+                return self.status()
+
             self._player.stop()
             self._on_stop_event.wait(timeout=5)
             self._reset_state()
@@ -276,7 +282,7 @@ class MediaVlcPlugin(MediaPlugin):
         return status
 
     @action
-    def seek(self, position: float):
+    def seek(self, position: float, **__):
         """
         Seek backward/forward by the specified number of seconds
 

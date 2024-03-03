@@ -51,7 +51,9 @@ class DeviceManager:
         if type:
             devices = [dev for dev in devices if dev.get(f'max_{type.value}_channels')]
 
-        return [AudioDevice(index=idx, **info) for idx, info in enumerate(devices)]
+        return [
+            AudioDevice(**{'index': idx, **info}) for idx, info in enumerate(devices)
+        ]
 
     def get_device(
         self,

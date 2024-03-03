@@ -8,8 +8,10 @@
                  @seek="seek" @search="search" @mute="toggleMute" @unmute="toggleMute">
         <main>
           <div class="nav-container from tablet" :style="navContainerStyle">
-            <Nav :selected-view="selectedView" @input="selectedView = $event"
-              @toggle="forceShowNav = !forceShowNav" />
+            <Nav :selected-view="selectedView"
+                 :torrent-plugin="torrentPlugin"
+                 @input="selectedView = $event"
+                 @toggle="forceShowNav = !forceShowNav" />
           </div>
 
           <div class="view-container">
@@ -37,6 +39,7 @@
                        :selected-result="selectedResult"
                        :sources="sources"
                        :loading="loading"
+                       :filter="browserFilter"
                        @select="onResultSelect($event)"
                        @play="play"
                        @view="view"
@@ -48,9 +51,7 @@
                            @play="play"
                            v-else-if="selectedView === 'torrents'" />
 
-              <Browser :plugin-name="torrentPlugin"
-                       :is-media="true"
-                       :filter="browserFilter"
+              <Browser :filter="browserFilter"
                        @path-change="browserFilter = ''"
                        @play="play($event)"
                        v-else-if="selectedView === 'browser'" />
@@ -84,7 +85,7 @@ import Loading from "@/components/Loading";
 import Modal from "@/components/Modal";
 import Utils from "@/Utils";
 
-import Browser from "@/components/File/Browser";
+import Browser from "@/components/panels/Media/Browser";
 import Header from "@/components/panels/Media/Header";
 import MediaUtils from "@/components/Media/Utils";
 import MediaView from "@/components/Media/View";
@@ -197,15 +198,28 @@ export default {
     async play(item) {
       if (item?.type === 'torrent') {
         this.awaitingPlayTorrent = item.url
+        this.notify({
+          text: 'Torrent queued for download',
+          image: {
+            iconClass: 'fa fa-magnet',
+          }
+        })
+
         await this.download(item)
         return
       }
 
-      if (!this.selectedPlayer.component.supports(item))
-        item = await this.startStreaming(item, this.pluginName)
+      this.loading = true
 
-      await this.selectedPlayer.component.play(item, this.selectedSubtitles, this.selectedPlayer)
-      await this.refresh()
+      try {
+        if (!this.selectedPlayer.component.supports(item))
+          item = await this.startStreaming(item, this.pluginName)
+
+        await this.selectedPlayer.component.play(item, this.selectedSubtitles, this.selectedPlayer)
+        await this.refresh()
+      } finally {
+        this.loading = false
+      }
     },
 
     async pause() {

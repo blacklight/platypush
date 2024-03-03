@@ -203,10 +203,10 @@ class MKVStreamWriter(FFmpegStreamWriter):
 class H264StreamWriter(FFmpegStreamWriter):
     mimetype = 'video/h264'
 
-    def __init__(self, camera: Camera, *args, **kwargs):
+    def __init__(self, *args, camera: Camera, **kwargs):
         if not camera.info.output_codec:
             camera.info.output_codec = 'libxvid'
-        super().__init__(camera, *args, output_format='h264', **kwargs)
+        super().__init__(*args, camera=camera, output_format='h264', **kwargs)
 
 
 class H265StreamWriter(FFmpegStreamWriter):

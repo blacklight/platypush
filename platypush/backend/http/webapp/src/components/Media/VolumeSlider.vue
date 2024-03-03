@@ -12,7 +12,7 @@
 
     <div class="col-11 volume-slider">
       <Slider :value="status.volume" :range="volumeRange" :disabled="status.volume == null"
-              @input="$emit('set-volume', $event.target.value)" />
+              @change="$emit('set-volume', $event.target.value)" />
     </div>
   </div>
 </template>

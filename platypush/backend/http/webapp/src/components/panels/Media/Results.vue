@@ -1,16 +1,12 @@
 <template>
   <div class="media-results">
     <Loading v-if="loading" />
-    <NoItems v-else-if="!results?.length" :with-shadow="false">
-      No search results
-    </NoItems>
-
-    <div class="grid" v-else>
-      <Item v-for="(item, i) in results"
+    <div class="grid" ref="grid" v-if="results?.length" @scroll="onScroll">
+      <Item v-for="(item, i) in visibleResults"
             :key="i"
             :item="item"
             :selected="selectedResult === i"
-            :hidden="!sources[item.type]"
+            :hidden="!!Object.keys(sources || {}).length && !sources[item.type]"
             @select="$emit('select', i)"
             @play="$emit('play', item)"
             @view="$emit('view', item)"
@@ -30,11 +26,10 @@ import Info from "@/components/panels/Media/Info";
 import Item from "./Item";
 import Loading from "@/components/Loading";
 import Modal from "@/components/Modal";
-import NoItems from "@/components/elements/NoItems";
 
 export default {
-  components: {Info, Item, Loading, Modal, NoItems},
-  emits: ['select', 'play', 'view', 'download'],
+  components: {Info, Item, Loading, Modal},
+  emits: ['select', 'play', 'view', 'download', 'scroll-end'],
   props: {
     loading: {
       type: Boolean,
@@ -53,6 +48,50 @@ export default {
     sources: {
       type: Object,
       default: () => {},
+    },
+
+    filter: {
+      type: String,
+      default: null,
+    },
+
+    resultIndexStep: {
+      type: Number,
+      default: 25,
+    },
+  },
+
+  data() {
+    return {
+      maxResultIndex: this.resultIndexStep,
+    }
+  },
+
+  computed: {
+    visibleResults() {
+      return this.results
+        .filter((item) => {
+          if (!this.filter)
+            return true
+
+          return item.title.toLowerCase().includes(this.filter.toLowerCase())
+        })
+        .slice(0, this.maxResultIndex)
+    },
+  },
+
+  methods: {
+    onScroll(e) {
+      const el = e.target
+      if (!el)
+        return
+
+      const bottom = (el.scrollHeight - el.scrollTop) <= el.clientHeight + 150
+      if (!bottom)
+        return
+
+      this.$emit('scroll-end')
+      this.maxResultIndex += this.resultIndexStep
     },
   },
 
@@ -75,7 +114,11 @@ export default {
   width: 100%;
   height: 100%;
   background: $background-color;
-  overflow: auto;
+
+  .grid {
+    height: 100%;
+    overflow: auto;
+  }
 
   .info-container {
     width: 100%;

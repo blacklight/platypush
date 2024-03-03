@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import hashlib
 import logging
+import os
 from typing import Generator, Optional
 
 from platypush.message import JSONAble
@@ -55,6 +56,9 @@ class MediaHandler(JSONAble, ABC):
             except Exception as e:
                 logging.exception(e)
                 errors[hndl_class.__name__] = str(e)
+
+        if os.path.exists(source):
+            source = f'file://{source}'
 
         raise AttributeError(
             f'The source {source} has no handlers associated. Errors: {errors}'

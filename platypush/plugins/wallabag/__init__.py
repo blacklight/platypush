@@ -1,12 +1,12 @@
 import json
 import os
 import pathlib
-import requests
 import time
-
 from datetime import datetime, timedelta
 from typing import Iterable, List, Optional
 from urllib.parse import urljoin
+
+import requests
 
 from platypush.config import Config
 from platypush.plugins import Plugin, action
@@ -22,6 +22,8 @@ class WallabagPlugin(Plugin):
     _default_credentials_file = os.path.join(
         str(Config.get('workdir')), 'wallabag', 'credentials.json'
     )
+
+    _api_timeout = 15
 
     def __init__(
         self,
@@ -39,12 +41,24 @@ class WallabagPlugin(Plugin):
         :param client_secret: Client secret for your application - you can
             create one at ``<server_url>/developer``.
         :param server_url: Base URL of the Wallabag server (default: ``https://wallabag.it``).
-        :param username: Wallabag username. Only needed for the first login,
-            you can remove it afterwards. Alternatively, you can provide it
-            on the :meth:`.login` method.
-        :param password: Wallabag password. Only needed for the first login,
-            you can remove it afterwards. Alternatively, you can provide it
-            on the :meth:`.login` method.
+        :param username: Wallabag username. This configuration attribute is
+            required for the first login. You can delete afterwards. However,
+            note that, without username and password, the session is valid only
+            as long as the ``refresh_token`` returned by the API is valid
+            (that's usually a couple of months by default). When the
+            ``refresh_token`` expires, you will have to either add again this
+            attribute to the configuration and restart the app (so the service
+            can create a new session), or manually provide your credentials
+            through the :meth:`.login` action.
+        :param password: Wallabag password. This configuration attribute is
+            required for the first login. You can delete afterwards. However,
+            note that, without username and password, the session is valid only
+            as long as the ``refresh_token`` returned by the API is valid
+            (that's usually a couple of months by default). When the
+            ``refresh_token`` expires, you will have to either add again this
+            attribute to the configuration and restart the app (so the service
+            can create a new session), or manually provide your credentials
+            through the :meth:`.login` action.
         :param credentials_file: Path to the file where the OAuth session
             parameters will be stored (default:
             ``<WORKDIR>/wallabag/credentials.json``).
@@ -80,18 +94,41 @@ class WallabagPlugin(Plugin):
 
     def _oauth_refresh_token(self):
         url = urljoin(self._server_url, '/oauth/v2/token')
+        payload = {
+            'grant_type': 'refresh_token',
+            'client_id': self._client_id,
+            'client_secret': self._client_secret,
+            'access_token': self._session['access_token'],
+            'refresh_token': self._session['refresh_token'],
+        }
+
+        if self._username and self._password:
+            payload['username'] = self._username
+            payload['password'] = self._password
+
         rs = requests.post(
             url,
-            json={
-                'grant_type': 'refresh_token',
-                'client_id': self._client_id,
-                'client_secret': self._client_secret,
-                'access_token': self._session['access_token'],
-                'refresh_token': self._session['refresh_token'],
-            },
+            timeout=self._api_timeout,
+            json=payload,
         )
 
-        rs.raise_for_status()
+        try:
+            rs.raise_for_status()
+        except Exception as e:
+            self.logger.warning(
+                'Failure occurred when refreshing the OAuth token, creating a new session: %s',
+                e,
+            )
+
+            assert self._username and self._password, (
+                "Can't refresh the OAuth session: username and password have not been provided. "
+                "Please either provide them in the configuration and restart "
+                "the service, or call the `wallabag.login` action"
+            )
+
+            self._oauth_create_new_session(self._username, self._password)
+            return
+
         rs = rs.json()
         self._session.update(
             {
@@ -115,6 +152,7 @@ class WallabagPlugin(Plugin):
         url = urljoin(self._server_url, '/oauth/v2/token')
         rs = requests.post(
             url,
+            timeout=self._api_timeout,
             json={
                 'grant_type': 'password',
                 'client_id': self._client_id,
@@ -260,7 +298,7 @@ class WallabagPlugin(Plugin):
         )
 
     @action
-    def get(self, id: int) -> Optional[dict]:
+    def get(self, id: int) -> Optional[dict]:  # pylint: disable=redefined-builtin
         """
         Get the content and metadata of a link by ID.
 
@@ -268,10 +306,18 @@ class WallabagPlugin(Plugin):
         :return: .. schema:: wallabag.WallabagEntrySchema
         """
         rs = self._request(f'/entries/{id}.json', method='get')
-        return WallabagEntrySchema().dump(rs)  # type: ignore
+        if not rs:
+            return None
+
+        return dict(WallabagEntrySchema().dump(rs))
 
     @action
-    def export(self, id: int, file: str, format: str = 'txt'):
+    def export(
+        self,
+        id: int,  # pylint: disable=redefined-builtin
+        file: str,
+        format: str = 'txt',  # pylint: disable=redefined-builtin
+    ):
         """
         Export a saved entry to a file in the specified format.
 
@@ -345,7 +391,7 @@ class WallabagPlugin(Plugin):
     @action
     def update(
         self,
-        id: int,
+        id: int,  # pylint: disable=redefined-builtin
         title: Optional[str] = None,
         content: Optional[str] = None,
         tags: Optional[Iterable[str]] = None,
@@ -387,10 +433,13 @@ class WallabagPlugin(Plugin):
             },
         )
 
-        return WallabagEntrySchema().dump(rs)  # type: ignore
+        if not rs:
+            return None
+
+        return dict(WallabagEntrySchema().dump(rs))
 
     @action
-    def delete(self, id: int) -> Optional[dict]:
+    def delete(self, id: int) -> Optional[dict]:  # pylint: disable=redefined-builtin
         """
         Delete an entry by ID.
 
