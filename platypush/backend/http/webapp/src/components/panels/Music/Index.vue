@@ -6,41 +6,103 @@
              @set-volume="$emit('set-volume', $event)" @seek="$emit('seek', $event)" @consume="$emit('consume', $event)"
              @repeat="$emit('repeat', $event)" @random="$emit('random', $event)" @search="search" v-else>
     <main>
-      <div class="nav-container">
-        <Nav :selected-view="selectedView" @input="selectedView = $event" />
+      <div class="nav-container mobile" v-if="navVisible">
+        <Nav :selected-view="selectedView"
+             @input="selectedView = $event"
+             @toggle="navVisible = !navVisible" />
+      </div>
+
+      <div class="nav-container from tablet">
+        <Nav :selected-view="selectedView"
+             @input="selectedView = $event"
+             @toggle="navVisible = !navVisible" />
       </div>
 
       <div class="view-container">
-        <Playlist :tracks="tracks" :status="status" :loading="loading" :devices="devices"
-                  :selected-device="selectedDevice" :active-device="activeDevice" v-if="selectedView === 'playing'"
-                  @play="$emit('play', $event)" @clear="$emit('clear')" @swap="$emit('swap-tracks', $event)"
-                  @add="$emit('add-to-tracklist', $event)" @remove="$emit('remove-from-tracklist', $event)"
-                  @move="$emit('tracklist-move', $event)" @save="$emit('tracklist-save', $event)"
-                  @info="$emit('info', $event)" @add-to-playlist="openAddToPlaylist" @search="search"
-                  @refresh-status="refreshStatus" @select-device="selectDevice" />
+        <Playlist :tracks="tracks"
+                  :status="status"
+                  :loading="loading"
+                  :devices="devices"
+                  :selected-device="selectedDevice"
+                  :active-device="activeDevice"
+                  :show-nav-button="!navVisible"
+                  :with-clear="true"
+                  :with-save="true"
+                  :with-swap="true"
+                  v-if="selectedView === 'playing'"
+                  @play="$emit('play', $event)"
+                  @clear="$emit('clear')"
+                  @swap="$emit('swap-tracks', $event)"
+                  @add="$emit('add-to-tracklist', $event)"
+                  @remove="$emit('remove-from-tracklist', $event)"
+                  @move="$emit('tracklist-move', $event)"
+                  @save="$emit('tracklist-save', $event)"
+                  @info="$emit('info', $event)"
+                  @add-to-playlist="openAddToPlaylist"
+                  @search="search"
+                  @toggle-nav="navVisible = !navVisible"
+                  @refresh-status="refreshStatus"
+                  @select-device="selectDevice" />
 
-        <Playlists :playlists="playlists" :loading="loading" :devices="devices"
-                   :selected-device="selectedDevice" :active-device="activeDevice" v-else-if="selectedView === 'playlists'"
-                   :edited-playlist="editedPlaylist" :tracks="editedPlaylistTracks"
-                   @play="$emit('play-playlist', $event)" @load="$emit('load-playlist', $event)"
-                   @remove="$emit('remove-playlist', $event)" @playlist-edit="$emit('playlist-edit', $event)"
-                   @load-track="$emit('add-to-tracklist-from-edited-playlist', $event)"
-                   @remove-track="$emit('remove-from-playlist', $event)" @info="$emit('info', $event)"
-                   @playlist-add="$emit('playlist-add', $event)" @add-to-playlist="openAddToPlaylist"
-                   @track-move="$emit('playlist-track-move', $event)" @search="search"
-                   @refresh-status="refreshStatus" @select-device="selectDevice" />
+        <Playlists :playlists="playlists"
+                   :loading="loading"
+                   :devices="devices"
+                   :status="status"
+                   :selected-device="selectedDevice"
+                   :active-device="activeDevice"
+                   :edited-playlist="editedPlaylist"
+                   :tracks="editedPlaylistTracks"
+                   :show-nav-button="!navVisible"
+                   v-else-if="selectedView === 'playlists'"
+                   @play="$emit('play-playlist', $event)"
+                   @load="$emit('load-playlist', $event)"
+                   @remove="$emit('remove-playlist', $event)"
+                   @playlist-edit="$emit('playlist-edit', $event)"
+                   @load-tracks="$emit('add-to-tracklist-from-edited-playlist', $event)"
+                   @remove-track="$emit('remove-from-playlist', $event)"
+                   @info="$emit('info', $event)"
+                   @playlist-add="$emit('playlist-add', $event)"
+                   @add-to-playlist="openAddToPlaylist"
+                   @track-move="$emit('playlist-track-move', $event)"
+                   @search="search"
+                   @toggle-nav="navVisible = !navVisible"
+                   @refresh-status="refreshStatus"
+                   @select-device="selectDevice" />
 
-        <Search :loading="loading" v-else-if="selectedView === 'search'" :devices="devices"
-                :selected-device="selectedDevice" :active-device="activeDevice" @search="search"
-                :results="searchResults" @clear="$emit('search-clear')" @info="$emit('info', $event)"
-                @play="$emit('play', $event)" @load="$emit('add-to-tracklist', $event)"
-                @add-to-playlist="openAddToPlaylist" @refresh-status="refreshStatus" @select-device="selectDevice" />
+        <Search :loading="loading"
+                :results="searchResults"
+                :devices="devices"
+                :selected-device="selectedDevice"
+                :active-device="activeDevice"
+                :show-nav-button="!navVisible"
+                v-else-if="selectedView === 'search'"
+                @search="search"
+                @clear="$emit('search-clear')"
+                @info="$emit('info', $event)"
+                @play="$emit('play', $event)"
+                @load="$emit('add-to-tracklist', $event)"
+                @add-to-playlist="openAddToPlaylist"
+                @refresh-status="refreshStatus"
+                @toggle-nav="navVisible = !navVisible"
+                @select-device="selectDevice" />
 
-        <Library :loading="loading" v-else-if="selectedView === 'library'" :devices="devices"
-                 :selected-device="selectedDevice" :active-device="activeDevice" @search="search"
-                 :results="libraryResults" :path="path" @clear="$emit('search-clear')" @info="$emit('info', $event)"
-                 @play="$emit('play', $event)" @load="$emit('add-to-tracklist', $event)"
-                 @add-to-playlist="openAddToPlaylist" @cd="$emit('cd', $event)" @refresh-status="refreshStatus"
+        <Library :loading="loading"
+                 :results="libraryResults"
+                 :path="path"
+                 :devices="devices"
+                 :selected-device="selectedDevice"
+                 :active-device="activeDevice"
+                :show-nav-button="!navVisible"
+                 v-else-if="selectedView === 'library'"
+                 @search="search"
+                 @clear="$emit('search-clear')"
+                 @info="$emit('info', $event)"
+                 @play="$emit('play', $event)"
+                 @load="$emit('add-to-tracklist', $event)"
+                 @add-to-playlist="openAddToPlaylist"
+                 @cd="$emit('cd', $event)"
+                 @toggle-nav="navVisible = !navVisible"
+                 @refresh-status="refreshStatus"
                  @select-device="selectDevice" />
       </div>
     </main>
@@ -260,6 +322,7 @@ export default {
       selectedPlaylists: [],
       addToPlaylistTrack: null,
       playlistFilter: '',
+      navVisible: false,
     }
   },
 

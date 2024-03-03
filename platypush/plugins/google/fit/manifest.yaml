@@ -1,5 +1,6 @@
 manifest:
-  events: {}
+  events:
+    - platypush.message.event.google.fit.GoogleFitEvent
   install:
     apk:
       - py3-google-api-python-client

@@ -29,6 +29,9 @@
   "camera.pi": {
     "class": "fas fa-camera"
   },
+  "camera.pi.legacy": {
+    "class": "fas fa-camera"
+  },
   "entities": {
     "class": "fa fa-home"
   },

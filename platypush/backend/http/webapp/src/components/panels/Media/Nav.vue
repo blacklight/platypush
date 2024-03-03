@@ -4,7 +4,7 @@
       <i class="fa fa-bars" />
     </button>
 
-    <li v-for="(view, name) in views" :key="name" :title="view.displayName"
+    <li v-for="(view, name) in displayedViews" :key="name" :title="view.displayName"
         :class="{selected: name === selectedView}" @click="$emit('input', name)">
       <i :class="view.iconClass" />
     </li>
@@ -22,6 +22,10 @@ export default {
     collapsed: {
       type: Boolean,
       default: false,
+    },
+
+    torrentPlugin: {
+      type: String,
     },
 
     views: {
@@ -44,6 +48,16 @@ export default {
           },
         }
       }
+    },
+  },
+
+  computed: {
+    displayedViews() {
+      const views = {...this.views}
+      if (!this.torrentPlugin?.length)
+        delete views.torrents
+
+      return views
     },
   },
 }

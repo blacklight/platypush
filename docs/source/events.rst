@@ -11,16 +11,15 @@ Events
     platypush/events/application.rst
     platypush/events/assistant.rst
     platypush/events/bluetooth.rst
-    platypush/events/button.flic.rst
     platypush/events/camera.rst
     platypush/events/chat.slack.rst
-    platypush/events/chat.telegram.rst
     platypush/events/clipboard.rst
     platypush/events/custom.rst
     platypush/events/dbus.rst
     platypush/events/distance.rst
     platypush/events/entities.rst
     platypush/events/file.rst
+    platypush/events/flic.rst
     platypush/events/foursquare.rst
     platypush/events/geo.rst
     platypush/events/github.rst
@@ -66,6 +65,7 @@ Events
     platypush/events/sound.rst
     platypush/events/stt.rst
     platypush/events/sun.rst
+    platypush/events/telegram.rst
     platypush/events/tensorflow.rst
     platypush/events/torrent.rst
     platypush/events/trello.rst

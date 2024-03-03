@@ -4,17 +4,28 @@
   <div class="playlist fade-in" v-else>
     <div class="header-container">
       <MusicHeader ref="header">
-        <div class="col-8 filter">
+        <div class="col-7 filter">
+          <button class="back-btn" title="Back" @click="$emit('back')" v-if="withBack">
+            <i class="fas fa-arrow-left" />
+          </button>
+
           <label>
             <input type="search" placeholder="Filter" v-model="filter">
           </label>
         </div>
 
-        <div class="col-4 buttons">
+        <div class="col-5 buttons">
+          <button class="mobile" title="Menu" @click="$emit('toggle-nav')" v-if="showNavButton">
+            <i class="fas fa-bars" />
+          </button>
+
           <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
+            <DropdownItem text="Add track" icon-class="fa fa-plus" @click="addTrack" />
+            <DropdownItem text="Refresh status" icon-class="fa fa-sync" @click="$emit('refresh-status')" v-if="devices != null" />
             <DropdownItem text="Save as playlist" icon-class="fa fa-save" :disabled="!tracks?.length"
-                          @click="playlistSave" />
-            <DropdownItem text="Swap tracks" icon-class="fa fa-retweet" v-if="selectedTracks?.length === 2"
+                          @click="playlistSave" v-if="withSave" />
+            <DropdownItem text="Swap tracks" icon-class="fa fa-retweet"
+                          v-if="withSwap && selectedTracks?.length === 2"
                           @click="$emit('swap', selectedTracks)" />
             <DropdownItem :text="selectionMode ? 'End selection' : 'Start selection'" icon-class="far fa-check-square"
                           :disabled="!tracks?.length" @click="selectionMode = !selectionMode" />
@@ -24,16 +35,9 @@
             <DropdownItem :text="'Remove track' + (selectedTracks.length > 1 ? 's' : '')"
                           icon-class="fa fa-trash" v-if="selectedTracks.length > 0"
                           @click="$emit('remove', [...(new Set(selectedTracks))])" />
-            <DropdownItem text="Clear playlist" icon-class="fa fa-ban" :disabled="!tracks?.length" @click="$emit('clear')" />
+            <DropdownItem text="Clear playlist" icon-class="fa fa-ban"
+                          :disabled="!tracks?.length" @click="$emit('clear')" v-if="withClear" />
           </Dropdown>
-
-          <button title="Add track" @click="addTrack">
-            <i class="fa fa-plus"></i>
-          </button>
-
-          <button title="Refresh status" @click="$emit('refresh-status')" v-if="devices != null">
-            <i class="fa fa-sync"></i>
-          </button>
 
           <Dropdown title="Players" icon-class="fa fa-volume-up" v-if="Object.keys(devices || {}).length">
             <DropdownItem v-for="(device, id) in devices" :key="id" v-text="device.name"
@@ -86,7 +90,9 @@
 
           <span class="actions">
             <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
-              <DropdownItem text="Play" icon-class="fa fa-play" @click="$emit('play', {pos: i})" />
+              <DropdownItem text="Play" icon-class="fa fa-play" @click="onMenuPlay" />
+              <DropdownItem text="Add to queue" icon-class="fa fa-plus"
+                @click="$emit('add-to-queue', [...(new Set([...selectedTracks, i]))])" v-if="withAddToQueue" />
               <DropdownItem text="Add to playlist" icon-class="fa fa-list-ul" @click="$emit('add-to-playlist', track)" />
               <DropdownItem text="Remove" icon-class="fa fa-trash" @click="$emit('remove', [...(new Set([...selectedTracks, i]))])" />
               <DropdownItem text="Info" icon-class="fa fa-info" @click="$emit('info', tracks[i])" />
@@ -109,8 +115,25 @@ export default {
   name: "Playlist",
   mixins: [MediaUtils],
   components: {DropdownItem, Dropdown, MusicHeader, Loading},
-  emits: ['play', 'clear', 'add', 'remove', 'swap', 'search', 'move', 'save', 'info', 'refresh-status',
-    'select-device'],
+  emits: [
+    'add',
+    'add-to-playlist',
+    'add-to-queue',
+    'add-to-queue-and-play',
+    'back',
+    'clear',
+    'info',
+    'move',
+    'play',
+    'refresh-status',
+    'remove',
+    'save',
+    'search',
+    'select-device',
+    'swap',
+    'toggle-nav',
+  ],
+
   props: {
     tracks: {
       type: Array,
@@ -143,6 +166,36 @@ export default {
       type: Number,
       default: 100,
     },
+
+    showNavButton: {
+      type: Boolean,
+      default: false,
+    },
+
+    withAddToQueue: {
+      type: Boolean,
+      default: false,
+    },
+
+    withBack: {
+      type: Boolean,
+      default: false,
+    },
+
+    withClear: {
+      type: Boolean,
+      default: false,
+    },
+
+    withSave: {
+      type: Boolean,
+      default: false,
+    },
+
+    withSwap: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
@@ -155,6 +208,7 @@ export default {
       targetPos: null,
       centerPos: 0,
       mounted: false,
+      scrollTimeout: null,
     }
   },
 
@@ -242,7 +296,7 @@ export default {
     trackClass(i) {
       return {
         selected: this.selectedTracksSet.has(i),
-        active: this.status?.playingPos === i,
+        active: !this.withAddToQueue && this.status?.playingPos === i,
       }
     },
 
@@ -252,6 +306,13 @@ export default {
         return
 
       this.$emit('add', track)
+    },
+
+    onMenuPlay(i) {
+      if (this.withAddToQueue)
+        this.$emit('add-to-queue-and-play', [...(new Set([...this.selectedTracks, i]))])
+      else
+        this.$emit('play', {pos: i})
     },
 
     onTrackDragStart(track) {
@@ -280,10 +341,24 @@ export default {
       const bodyHeight = parseFloat(getComputedStyle(this.$refs.body).height)
       const scrollHeight = this.$refs.body.scrollHeight
 
-      if (offset < 5)
-        this.centerPos = Math.max(0, parseInt(this.centerPos - (this.maxVisibleTracks / 1.5)))
-      else if (offset === scrollHeight - bodyHeight)
-        this.centerPos = Math.min(this.tracks.length - 1, parseInt(this.centerPos + (this.maxVisibleTracks / 1.5)))
+      if (offset < 5) {
+        if (this.scrollTimeout)
+          return
+
+        this.scrollTimeout = setTimeout(() => {
+          this.centerPos = Math.max(0, parseInt(this.centerPos - (this.maxVisibleTracks / 1.5)))
+          this.$refs.body.scrollTop = 6
+          this.scrollTimeout = null
+        }, 250)
+      } else if (offset >= (scrollHeight - bodyHeight - 5)) {
+        if (this.scrollTimeout)
+          return
+
+        this.scrollTimeout = setTimeout(() => {
+          this.centerPos = Math.min(this.tracks.length - 1, parseInt(this.centerPos + (this.maxVisibleTracks / 1.5)))
+          this.scrollTimeout = null
+        }, 250)
+      }
     },
 
     playlistSave() {
@@ -333,6 +408,7 @@ export default {
 
 .playlist {
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
 
@@ -343,8 +419,16 @@ export default {
     }
 
     .filter {
-      input {
-        width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+
+      label {
+        flex-grow: 1;
+
+        input[type="search"] {
+          width: 100%;
+        }
       }
     }
 
@@ -354,6 +438,12 @@ export default {
       .dropdown-container {
         direction: ltr;
       }
+    }
+  }
+
+  :deep(.header) {
+    .back-btn {
+      padding-left: .25em;
     }
   }
 

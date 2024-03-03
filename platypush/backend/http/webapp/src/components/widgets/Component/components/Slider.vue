@@ -7,7 +7,7 @@
     <div :class="{'col-6': hasIcon, 'col-7': !hasIcon}" v-text="name" />
     <div class="col-5 slider-container">
       <div class="slider">
-        <SliderElement :value="value" :range="[parseFloat(min), parseFloat(max)]" @mouseup="run" />
+        <SliderElement :value="value" :range="[parseFloat(min), parseFloat(max)]" @change="run" />
       </div>
     </div>
   </div>

@@ -279,7 +279,10 @@ class Dependencies:
             'packages': list(self.packages),
             'pip': self.pip,
             'after': self.after,
-            'install_cmd': list(self.to_install_commands()),
+            'by_pkg_manager': {
+                pkg_manager.value.executable: list(pkgs)
+                for pkg_manager, pkgs in self.by_pkg_manager.items()
+            },
         }
 
     @property

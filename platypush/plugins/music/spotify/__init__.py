@@ -139,39 +139,45 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
         return self.status.output.get('volume')
 
     @action
-    def volup(self, delta: int = 5, device: Optional[str] = None):
+    def volup(
+        self, step: Optional[float] = None, device: Optional[str] = None, **kwargs
+    ):
         """
-        Set the volume up by a certain delta.
+        Set the volume up by a certain step.
 
-        :param delta: Increase the volume by this percentage amount (between 0 and 100).
+        :param step: Increase the volume by this percentage amount (between 0 and 100).
         :param device: Device ID or name. If none is specified then the currently active device will be used.
         """
+        step = step or kwargs.get('delta') or 5
         if device:
             device = self._get_device(device)['id']
 
         self.spotify_user_call(
             '/v1/me/player/volume',
             params={
-                'volume_percent': min(100, (self._get_volume() or 0) + delta),
+                'volume_percent': min(100, (self._get_volume() or 0) + step),
                 **({'device_id': device} if device else {}),
             },
         )
 
     @action
-    def voldown(self, delta: int = 5, device: Optional[str] = None):
+    def voldown(
+        self, step: Optional[float] = None, device: Optional[str] = None, **kwargs
+    ):
         """
-        Set the volume down by a certain delta.
+        Set the volume down by a certain step.
 
-        :param delta: Decrease the volume by this percentage amount (between 0 and 100).
+        :param step: Decrease the volume by this percentage amount (between 0 and 100). Default: 5%.
         :param device: Device ID or name. If none is specified then the currently active device will be used.
         """
+        step = step or kwargs.get('delta') or 5
         if device:
             device = self._get_device(device)['id']
 
         self.spotify_user_call(
             '/v1/me/player/volume',
             params={
-                'volume_percent': max(0, (self._get_volume() or 0) - delta),
+                'volume_percent': max(0, (self._get_volume() or 0) - step),
                 **({'device_id': device} if device else {}),
             },
         )

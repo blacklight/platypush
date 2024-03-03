@@ -16,5 +16,5 @@ manifest:
     - platypush.message.event.github.GithubSponsorshipEvent
     - platypush.message.event.github.GithubWatchEvent
     - platypush.message.event.github.GithubWikiEvent
-  package: platypush.plugin.github
+  package: platypush.plugins.github
   type: plugin

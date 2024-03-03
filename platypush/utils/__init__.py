@@ -18,8 +18,8 @@ from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader, module_from_spec
 from multiprocessing import Lock as PLock
 from tempfile import gettempdir
-from threading import Lock as TLock
-from typing import Generator, Optional, Tuple, Type, Union
+from threading import Event, Lock as TLock
+from typing import Callable, Generator, Optional, Tuple, Type, Union
 
 from dateutil import parser, tz
 from redis import Redis
@@ -778,6 +778,19 @@ def get_default_downloads_dir() -> str:
     :return: The default downloads directory.
     """
     return os.path.join(os.path.expanduser('~'), 'Downloads')
+
+
+def wait_for_either(*events, timeout: Optional[float] = None, cls: Type = Event):
+    """
+    Wait for any of the given events to be set.
+
+    :param events: The events to be checked.
+    :param timeout: The maximum time to wait for the event to be set. Default: None.
+    :param cls: The class to be used for the event. Default: threading.Event.
+    """
+    from .threads import OrEvent
+
+    return OrEvent(*events, cls=cls).wait(timeout=timeout)
 
 
 # vim:sw=4:ts=4:et:

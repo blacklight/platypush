@@ -20,6 +20,7 @@
                  :class="{selected: name === selectedExtension}"
                  :data-name="name"
                  @click="onClick(name, false)">
+              <ExtensionIcon :name="name" size="1.75em" />
               <span class="name">{{ extensions[name].name }}</span>
               <span class="enabled icon" title="Enabled" v-if="enabledExtensions[name]">
                 <i class="enabled icon fas fa-circle-check" v-if="enabledExtensions[name]" />
@@ -47,9 +48,10 @@
 </template>
 
 <script>
+import Extension from "./Extension"
+import ExtensionIcon from "@/components/elements/ExtensionIcon"
 import Loading from "@/components/Loading"
 import Utils from "@/Utils"
-import Extension from "./Extension"
 import { bus } from "@/bus"
 
 export default {
@@ -57,6 +59,7 @@ export default {
   mixins: [Utils],
   components: {
     Extension,
+    ExtensionIcon,
     Loading,
   },
 
@@ -253,6 +256,12 @@ $header-height: 3.25em;
     .extension {
       display: flex;
       flex-direction: column;
+
+      :deep(.item) {
+        .extension-icon {
+          margin-right: 0.5em;
+        }
+      }
 
       .item {
         width: 100%;

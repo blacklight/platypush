@@ -15,13 +15,9 @@
              :disabled="disabled"
              :value="value"
              ref="range"
-             @input.stop="onUpdate"
-             @change.stop="onUpdate">
+             @input.stop="$emit('input', $event)"
+             @change.stop="$emit('change', $event)">
 
-      <div class="track" :class="{'with-label': withLabel}">
-        <div class="track-inner" ref="track"></div>
-      </div>
-      <div class="thumb" ref="thumb"></div>
       <span class="label" v-if="withLabel" v-text="value" ref="label"></span>
     </span>
   </label>
@@ -29,8 +25,7 @@
 
 <script>
 export default {
-  name: "Slider",
-  emits: ['input', 'change', 'mouseup', 'mousedown', 'touchstart', 'touchend', 'keyup', 'keydown'],
+  emits: ['input', 'change'],
   props: {
     value: {
       type: Number,
@@ -61,41 +56,13 @@ export default {
       default: false,
     }
   },
-
-  methods: {
-    onUpdate(event) {
-      this.update(event.target.value)
-      this.$emit(event.type, {
-        ...event,
-        target: {
-          ...event.target,
-          value: this.$refs.range.value,
-        }
-      })
-    },
-
-    update(value) {
-      const sliderWidth = this.$refs.range.clientWidth
-      const percent = (value - this.range[0]) / (this.range[1] - this.range[0])
-      const innerWidth = percent * sliderWidth
-      const thumb = this.$refs.thumb
-
-      thumb.style.left = `${innerWidth - thumb.clientWidth / 2}px`
-      this.$refs.thumb.style.transform = `translate(-${percent}%, -50%)`
-      this.$refs.track.style.width = `${innerWidth}px`
-    },
-  },
-
-  mounted() {
-    if (this.value != null)
-      this.update(this.value)
-    this.$watch(() => this.value, (newValue) => this.update(newValue))
-  },
 }
 </script>
 
 <style lang="scss" scoped>
 $label-width: 3em;
+$thumb-height: 1em;
+$slider-height: 0.5em;
 
 .slider-wrapper {
   width: 100%;
@@ -109,23 +76,120 @@ $label-width: 3em;
     position: relative;
   }
 
-  .slider {
+  input.slider {
     width: 100%;
+    background: none;
+    height: 1.5em;
+    position: relative;
+    border-radius: 0.5em;
     cursor: pointer;
-    opacity: 0;
+    outline: none;
+    overflow: hidden;
+    transition: all ease 100ms;
+    @include appearance(none);
 
-    &::-ms-tooltip {
-      display: none;
+    &:active {
+      filter: brightness(80%);
+      cursor: grabbing;
+    }
+
+    &:hover {
+      filter: saturate(130%);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+      filter: grayscale(1);
+    }
+
+    /* Chrome and friends */
+    &::-webkit-slider-runnable-track {
+      position: relative;
+      border-radius: $slider-height;
+      background: linear-gradient($slider-bg 0 0) scroll no-repeat center /
+        100% calc(#{$slider-height} + 1px);
+    }
+
+    &::-webkit-slider-runnable-track,
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      transition: all ease 100ms;
+      height: $thumb-height;
+    }
+
+    &::-webkit-slider-thumb {
+      --clip-top: calc((#{$thumb-height} - #{$slider-height}) * 0.5);
+      --clip-bottom: calc(#{$thumb-height} - var(--clip-top));
+      --clip-further: calc(100% + 1px);
+
+      width: $thumb-height;
+      background: $slider-progress-bg;
+      box-shadow: calc(-100vmax - #{$thumb-height} + 2.5px) #{$slider-height} #{$slider-height} 100vmax #{$slider-progress-bg};
+      border-radius: $thumb-height;
+      cursor: grab;
+
+      &:hover {
+        filter: brightness(130%) blur(1px);
+        cursor: grab;
+      }
+
+      clip-path: polygon(
+        100% -1px,
+        #{$slider-height} -1px,
+        0 var(--clip-top),
+        -100vmax var(--clip-top),
+        -100vmax var(--clip-bottom),
+        0 var(--clip-bottom),
+        #{$slider-height} 100%,
+        var(--clip-further) var(--clip-further)
+      );
+    }
+
+    /* Firefox */
+    &::-moz-range-track {
+      background: $slider-bg;
+      position: relative;
+      height: $slider-height;
+      border-radius: 0.5em;
+      box-shadow: inset 1px 0px 3px 0 $slider-track-shadow;
+    }
+
+    &::-moz-range-thumb {
+      $thumb-height: 1.125em;
+      width: $thumb-height;
+      height: $thumb-height;
+      position: relative;
+      background: $slider-thumb-bg;
+      border-radius: 50%;
+      border: none;
+      cursor: grabbing;
+      transition: all ease 100ms;
+      @include appearance(none);
+
+      &:hover {
+        filter: brightness(130%) blur(1px);
+        cursor: grab;
+      }
+
+      &:disabled {
+        background: $slider-thumb-disabled-bg;
+        cursor: not-allowed;
+      }
+    }
+
+    &::-moz-range-progress {
+      width: 100%;
+      height: $slider-height;
+      cursor: pointer;
+      background: $slider-progress-bg;
+      border-radius: 0.5em 0 0 0.5em;
     }
   }
 
   .range-labels {
     width: 100%;
     display: flex;
-
-    &.with-label {
-      width: calc(100% - $label-width);
-    }
 
     .left {
       text-align: left;
@@ -137,47 +201,15 @@ $label-width: 3em;
     }
   }
 
-  .track {
-    width: 100%;
-    height: 0.75em;
-    background: $slider-bg;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    border-radius: 0.5em;
-    box-shadow: inset 1px 0px 3px 0 $slider-track-shadow;
-    pointer-events: none;
-
-    .track-inner {
-      width: 0;
-      height: 100%;
-      background: $slider-progress-bg;
-      border-radius: 0.5em 0 0 0.5em;
-    }
-
-    &.with-label {
-      width: calc(100% - $label-width);
-    }
-  }
-
-  .thumb {
-    width: 1.25em;
-    height: 1.25em;
-    background: $slider-thumb-bg;
-    position: absolute;
-    top: 50%;
-    left: 0;
-    transform: translate(0%, -50%);
-    border-radius: 50%;
-    box-shadow: 1px 0px 2px 0 $slider-thumb-shadow;
-    pointer-events: none;
-  }
-
   .label {
     width: $label-width;
     position: relative;
     font-weight: normal;
     text-align: center;
+  }
+
+  .with-label {
+    width: calc(100% - $label-width);
   }
 }
 </style>

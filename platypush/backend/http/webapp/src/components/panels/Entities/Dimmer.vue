@@ -25,7 +25,7 @@
         <div class="input" v-if="value?.min != null && value?.max != null">
           <div class="col-10">
             <Slider :range="[value.min, value.max]" with-range
-              :value="value.value" @input="setValue" />
+              :value="value.value" @change="setValue" />
           </div>
           <div class="col-2 value">
             <input type="number" :value="value.value" @change="setValue">

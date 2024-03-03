@@ -6,7 +6,7 @@
     </div>
     <div class="col-s-8 col-m-10 time-bar">
       <Slider :value="elapsed" :range="[0, duration]" :disabled="!duration || status.state === 'stop'"
-              @input="$emit('seek', $event.target.value)" />
+              @change="$emit('seek', $event.target.value)" />
     </div>
     <div class="col-s-2 col-m-1 time">
         <span class="total-time"

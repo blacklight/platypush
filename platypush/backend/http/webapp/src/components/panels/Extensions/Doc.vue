@@ -3,8 +3,8 @@
     <header>
       <h2>
         <a class="title" :href="extension.doc_url" target="_blank">
-          <i class="icon fas fa-book" />
-          {{ extension.name }}
+          <ExtensionIcon :name="extension.name" size="2em" with-docs-link />
+          <span class="name" v-text="extension.name" />
         </a>
       </h2>
     </header>
@@ -46,12 +46,17 @@
 </template>
 
 <script>
+import ExtensionIcon from "@/components/elements/ExtensionIcon"
 import Utils from "@/Utils"
 import { bus } from "@/bus";
 
 export default {
   name: "Doc",
   mixins: [Utils],
+  components: {
+    ExtensionIcon,
+  },
+
   props: {
     extension: {
       type: Object,
@@ -132,7 +137,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-$header-height: 3em;
+$header-height: 3.5em;
 
 section {
   height: 100%;
@@ -146,6 +151,15 @@ section {
       margin: 0;
       padding: 0;
       font-size: 1.25em;
+    }
+
+    .title {
+      display: flex;
+      align-items: center;
+
+      .name {
+        margin-left: 0.5em;
+      }
     }
   }
 
