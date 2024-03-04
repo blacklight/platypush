@@ -230,10 +230,11 @@ nav {
     list-style: none;
 
     a {
-      display: block;
+      display: flex;
       color: $nav-fg;
       padding: 1em 0.5em;
       text-decoration: none;
+      align-items: center;
 
       &:hover {
         color: $nav-fg;
@@ -334,7 +335,11 @@ nav {
 
         & img, i {
           width: 1.5em;
-          height: 1.5em;
+          height: 1em;
+        }
+
+        i {
+          padding-left: 0.25em;
         }
       }
     }
@@ -364,6 +369,12 @@ nav {
 
     @media screen and (max-width: #{$tablet - 1px}) {
       height: auto;
+    }
+
+    li {
+      a {
+        display: block;
+      }
     }
 
     a {
