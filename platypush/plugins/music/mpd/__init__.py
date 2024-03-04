@@ -34,7 +34,7 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
         self,
         host: str,
         port: int = 6600,
-        poll_interval: Optional[float] = 5.0,
+        poll_interval: Optional[float] = 20.0,
         **kwargs,
     ):
         """
@@ -42,7 +42,7 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
         :param port: MPD port (default: 6600).
         :param poll_interval: Polling interval in seconds. If set, the plugin
             will poll the MPD server for status updates and trigger change
-            events when required. Default: 5 seconds.
+            events when required. Default: 20 seconds.
         """
         super().__init__(poll_interval=poll_interval, **kwargs)
         self.conf = MpdConfig(host=host, port=port)
