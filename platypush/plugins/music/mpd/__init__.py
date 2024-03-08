@@ -168,15 +168,6 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
         return self._exec('play')
 
     @action
-    def playid(self, track_id: str):
-        """
-        Play a track by ID.
-
-        :param track_id: Track ID.
-        """
-        return self._exec('playid', track_id)
-
-    @action
     def next(self, *_, **__):
         """Play the next track"""
         return self._exec('next')
@@ -185,20 +176,6 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
     def previous(self, **__):
         """Play the previous track"""
         return self._exec('previous')
-
-    @action
-    def setvol(self, vol: int):
-        """
-        Set the volume.
-
-        ..warning :: **DEPRECATED**, use :meth:`.set_volume` instead.
-
-        :param vol: Volume value (range: 0-100).
-        """
-        self.logger.warning(
-            'music.mpd.setvol is deprecated, use music.mpd.set_volume instead'
-        )
-        return self.set_volume(vol)
 
     @action
     def set_volume(self, volume: int, **__):
@@ -219,7 +196,7 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
         step = step or kwargs.get('delta') or 5
         volume = int(self._status()['volume'])
         new_volume = min(volume + step, 100)
-        return self.setvol(new_volume)
+        return self.set_volume(new_volume)
 
     @action
     def voldown(self, step: Optional[float] = None, **kwargs):
@@ -231,7 +208,7 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
         step = step or kwargs.get('delta') or 5
         volume = int(self._status()['volume'])
         new_volume = max(volume - step, 0)
-        return self.setvol(new_volume)
+        return self.set_volume(new_volume)
 
     def _toggle(self, key: str, value: Optional[bool] = None):
         if value is None:
@@ -334,20 +311,18 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
 
         :return: The modified playlist
         """
-
         for pos in sorted(positions, key=int, reverse=True):
             self._exec('delete', pos)
-        return self.playlistinfo()
+        return self.get_tracks()
 
     @action
-    def rm(self, playlist):
+    def delete_playlist(self, playlist: Union[str, Collection[str]]):
         """
         Permanently remove playlist(s) by name
 
         :param playlist: Name or list of playlist names to remove
         :type playlist: str or list[str]
         """
-
         if isinstance(playlist, str):
             playlist = [playlist]
         elif not isinstance(playlist, list):
@@ -408,19 +383,6 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
     def clear(self, **__):
         """Clear the current playlist"""
         return self._exec('clear')
-
-    @action
-    def seekcur(self, value: float):
-        """
-        Seek to the specified position (DEPRECATED, use :meth:`.seek` instead).
-
-        :param value: Seek position in seconds, or delta string (e.g. '+15' or
-            '-15') to indicate a seek relative to the current position
-        """
-        self.logger.warning(
-            'music.mpd.seekcur is deprecated, use music.mpd.seek instead'
-        )
-        return self.seek(value)
 
     @action
     def seek(self, position: float, **__):
@@ -537,7 +499,7 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
         return self._current_track()
 
     @action
-    def playlistinfo(self):
+    def get_tracks(self, *_, **__):
         """
         :returns: The tracks in the current playlist as a list of dicts.
 
@@ -572,7 +534,6 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
                 },
             ]
         """
-
         return self._exec('playlistinfo', return_status=False)
 
     @action
@@ -603,19 +564,9 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
         return sorted(playlists, key=lambda p: p['playlist'])
 
     @action
-    def listplaylists(self):
-        """
-        Deprecated alias for :meth:`.playlists`.
-        """
-        self.logger.warning(
-            'music.mpd.listplaylists is deprecated, use music.mpd.get_playlists instead'
-        )
-        return self.get_playlists()
-
-    @action
     def get_playlist(self, playlist: str, *_, with_tracks: bool = False, **__):
         """
-        List the items in the specified playlist.
+        List the information (and, optionally, the items) for the specified playlist.
 
         :param playlist: Name of the playlist
         :param with_tracks: If True then the list of tracks in the playlist will
@@ -626,26 +577,6 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
             playlist,
             return_status=False,
         )
-
-    @action
-    def listplaylist(self, name: str):
-        """
-        Deprecated alias for :meth:`.playlist`.
-        """
-        self.logger.warning(
-            'music.mpd.listplaylist is deprecated, use music.mpd.get_playlist instead'
-        )
-        return self._exec('listplaylist', name, return_status=False)
-
-    @action
-    def listplaylistinfo(self, name: str):
-        """
-        Deprecated alias for :meth:`.playlist` with ``with_tracks=True``.
-        """
-        self.logger.warning(
-            'music.mpd.listplaylistinfo is deprecated, use music.mpd.get_playlist instead'
-        )
-        return self.get_playlist(name, with_tracks=True)
 
     @action
     def add_to_playlist(
@@ -663,16 +594,6 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
 
         for res in resources:
             self._exec('playlistadd', playlist, res)
-
-    @action
-    def playlistadd(self, name: str, uri: str):
-        """
-        Deprecated alias for :meth:`.add_to_playlist`.
-        """
-        self.logger.warning(
-            'music.mpd.playlistadd is deprecated, use music.mpd.add_to_playlist instead'
-        )
-        return self.add_to_playlist(name, uri)
 
     @action
     def remove_from_playlist(
@@ -705,27 +626,7 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
         self._exec('playlistmove', playlist, from_pos, to_pos)
 
     @action
-    def playlistdelete(self, name: str, pos: int):
-        """
-        Deprecated alias for :meth:`.remove_from_playlist`.
-        """
-        self.logger.warning(
-            'music.mpd.playlistdelete is deprecated, use music.mpd.remove_from_playlist instead'
-        )
-        return self.remove_from_playlist(name, pos)
-
-    @action
-    def playlistmove(self, name: str, from_pos: int, to_pos: int):
-        """
-        Deprecated alias for :meth:`.playlist_move`.
-        """
-        self.logger.warning(
-            'music.mpd.playlistmove is deprecated, use music.mpd.playlist_move instead'
-        )
-        return self.playlist_move(name, from_pos=from_pos, to_pos=to_pos)
-
-    @action
-    def playlistclear(self, name: str):
+    def playlist_clear(self, name: str):
         """
         Clears all the elements from the specified playlist.
 
@@ -734,14 +635,14 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
         self._exec('playlistclear', name)
 
     @action
-    def rename(self, name: str, new_name: str):
+    def rename_playlist(self, playlist: str, new_name: str):
         """
         Rename a playlist.
 
-        :param name: Original playlist name
+        :param playlist: Original playlist name or URI
         :param new_name: New playlist name
         """
-        self._exec('rename', name, new_name)
+        self._exec('rename', playlist, new_name)
 
     @action
     def lsinfo(self, uri: Optional[str] = None):
