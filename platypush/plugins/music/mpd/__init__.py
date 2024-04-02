@@ -21,6 +21,18 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
     the original protocol and with support for multiple music sources through
     plugins (e.g. Spotify, TuneIn, Soundcloud, local files etc.).
 
+    .. note:: If you use Mopidy, and unless you have quite specific use-cases
+        (like you don't want to expose the Mopidy HTTP interface, or you have
+        some legacy automation that uses the MPD interface), you should use the
+        :class:`platypush.plugins.music.mopidy.MusicMopidyPlugin` plugin instead
+        of this. The Mopidy plugin provides a more complete and feature-rich
+        experience, as not all the features of Mopidy are available through the
+        MPD interface, and its API is 100% compatible with this plugin. Also,
+        this plugin operates a synchronous/polling logic because of the
+        limitations of the MPD protocol, while the Mopidy plugin, as it uses the
+        Mopidy Websocket API, can operate in a more efficient way and provide
+        real-time updates.
+
     .. note:: As of Mopidy 3.0 MPD is an optional interface provided by the
         ``mopidy-mpd`` extension. Make sure that you have the extension
         installed and enabled on your instance to use this plugin if you want to
@@ -645,11 +657,12 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
         self._exec('rename', playlist, new_name)
 
     @action
-    def lsinfo(self, uri: Optional[str] = None):
+    def browse(self, uri: Optional[str] = None):
         """
-        Returns the list of playlists and directories on the server.
-        """
+        Browse the items under the specified URI.
 
+        :param uri: URI to browse (default: root directory).
+        """
         return (
             self._exec('lsinfo', uri, return_status=False)
             if uri

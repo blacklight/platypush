@@ -84,6 +84,7 @@ Plugins
     platypush/plugins/ml.cv.rst
     platypush/plugins/mobile.join.rst
     platypush/plugins/mqtt.rst
+    platypush/plugins/music.mopidy.rst
     platypush/plugins/music.mpd.rst
     platypush/plugins/music.snapcast.rst
     platypush/plugins/music.spotify.rst

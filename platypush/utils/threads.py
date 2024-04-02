@@ -35,8 +35,11 @@ def OrEvent(*events, cls: Type = threading.Event):
         e.changed()
 
     def _or_set(e):
-        e._set()
-        e.changed()
+        try:
+            e._set()
+            e.changed()
+        except RecursionError:
+            pass
 
     for e in events:
         _to_or(e, changed)
