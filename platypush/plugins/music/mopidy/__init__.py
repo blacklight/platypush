@@ -333,6 +333,15 @@ class MusicMopidyPlugin(RunnablePlugin):
 
         :return: .. schema:: mopidy.MopidyStatusSchema
         """
+        # Note: stop could be interpreted both as "stop the playback" and "stop
+        # the plugin". If the stop event is set, we assume that the user wants
+        # to stop the plugin.
+        if self.should_stop():
+            if self._client:
+                self._client.stop()
+
+            return None
+
         return self._exec_with_status({'method': 'core.playback.stop'})
 
     @action
