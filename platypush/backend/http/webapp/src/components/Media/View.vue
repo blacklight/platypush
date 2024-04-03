@@ -4,11 +4,23 @@
       <slot />
     </div>
     <div class="controls-container">
-      <Controls :status="status" :track="track" :buttons="buttons" @play="$emit('play', $event)"
-                @pause="$emit('pause', $event)" @stop="$emit('stop')" @previous="$emit('previous')"
-                @next="$emit('next')" @seek="$emit('seek', $event)" @set-volume="$emit('set-volume', $event)"
-                @consume="$emit('consume', $event)" @repeat="$emit('repeat', $event)" @random="$emit('random', $event)"
-                @search="$emit('search', $event)" @mute="$emit('mute')" @unmute="$emit('unmute')" />
+      <Controls :buttons="buttons"
+                :image="image"
+                :status="status"
+                :track="track"
+                @consume="$emit('consume', $event)"
+                @mute="$emit('mute')"
+                @next="$emit('next')"
+                @pause="$emit('pause', $event)"
+                @play="$emit('play', $event)"
+                @previous="$emit('previous')"
+                @random="$emit('random', $event)"
+                @repeat="$emit('repeat', $event)"
+                @search="$emit('search', $event)"
+                @seek="$emit('seek', $event)"
+                @set-volume="$emit('set-volume', $event)"
+                @stop="$emit('stop')"
+                @unmute="$emit('unmute')" />
     </div>
   </div>
 </template>
@@ -48,6 +60,11 @@ export default {
 
     track: {
       type: Object,
+    },
+
+    image: {
+      type: String,
+      default: null,
     },
 
     buttons: {

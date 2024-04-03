@@ -1,59 +1,86 @@
 <template>
   <Loading v-if="loading" />
   <div class="music" v-else>
-    <div class="track">
-      <div class="unknown" v-if="!status">[Unknown state]</div>
-      <div class="no-track" v-if="status && status.state === 'stop'">No media is being played</div>
-      <div class="artist" v-if="status && status.state !== 'stop' && track && track.artist" v-text="track.artist"></div>
-      <div class="title" v-if="status && status.state !== 'stop' && track && track.title" v-text="track.title"></div>
+    <div class="background" v-if="image">
+      <div class="image" :style="{backgroundImage: 'url(' + image + ')'}" />
     </div>
 
-    <div class="time"  v-if="status && status.state === 'play'">
-      <div class="row">
-        <div class="progress-bar">
-          <div class="elapsed" :style="{width: track.time ? 100*(status.elapsed/track.time) + '%' : '100%'}"></div>
-          <div class="total"></div>
+    <div class="foreground">
+      <div class="top">
+        <div class="section" :class="{'has-image': !!image, 'has-progress': status?.state === 'play'}">
+          <div class="track">
+            <div class="unknown" v-if="!status">[Unknown state]</div>
+            <div class="no-track" v-if="status && status.state === 'stop'">No media is being played</div>
+            <div class="artist" v-if="status && status.state !== 'stop' && track && track.artist" v-text="track.artist"></div>
+            <div class="title" v-if="status && status.state !== 'stop' && track && track.title" v-text="track.title"></div>
+          </div>
+
+          <div class="progress-bar" v-if="status?.state === 'play'">
+            <div class="row">
+              <ProgressBar
+                :duration="track.time"
+                :elapsed="status.elapsed"
+                :status="status"
+                @seek="seek" />
+            </div>
+          </div>
+
+          <div class="controls" v-if="_withControls && status">
+            <button title="Previous" @click="prev">
+              <i class="fa fa-step-backward" />
+            </button>
+            <button class="play-pause" @click="playPause"
+                :title="status.state === 'play' ? 'Pause' : 'Play'">
+              <i class="fa fa-pause" v-if="status.state === 'play'" />
+              <i class="fa fa-play" v-else />
+            </button>
+            <button title="Stop" @click="stop" v-if="status.state !== 'stop'">
+              <i class="fa fa-stop" />
+            </button>
+            <button title="Next" @click="next">
+              <i class="fa fa-step-forward" />
+            </button>
+          </div>
         </div>
       </div>
 
-      <div class="row">
-        <div class="col-6 time-elapsed" v-text="convertTime(status.elapsed)"></div>
-        <div class="col-6 time-total" v-if="track.time" v-text="convertTime(track.time)"></div>
-      </div>
-    </div>
+      <div class="bottom">
+        <div class="playback-status section" :class="{'has-image': !!image}" v-if="status">
+          <div class="status-property col-4 volume fade-in" v-if="!showVolumeBar">
+            <button title="Volume" @click="showVolumeBar = true">
+              <i class="fa fa-volume-up" />
+              &nbsp; {{ status.volume }}%
+            </button>
+          </div>
 
-    <div class="controls" v-if="_withControls && status">
-      <button @click="prev">
-        <i class="fa fa-step-backward" />
-      </button>
-      <button class="play-pause" @click="playPause">
-        <i class="fa fa-pause" v-if="status.state === 'play'" />
-        <i class="fa fa-play" v-else />
-      </button>
-      <button @click="stop" v-if="status.state !== 'stop'">
-        <i class="fa fa-stop" />
-      </button>
-      <button @click="next">
-        <i class="fa fa-step-forward" />
-      </button>
-    </div>
+          <div class="status-property col-4 volume fade-in" v-else>
+            <div class="row">
+              <i class="fa fa-volume-up" /> &nbsp;
+              <Slider :range="[0, 100]" :value="status.volume" @change="setVolume" />
+            </div>
+          </div>
 
-    <div class="playback-status" v-if="status">
-      <div class="status-property col-4">
-        <i class="fa fa-volume-up"></i>&nbsp; <span v-text="status.volume + '%'"></span>
-      </div>
-
-      <div class="status-property col-2">
-        <i class="fas fa-random" :class="{active: status.random}"></i>
-      </div>
-      <div class="status-property col-2">
-        <i class="fas fa-redo" :class="{active: status.repeat}"></i>
-      </div>
-      <div class="status-property col-2">
-        <i class="fa fa-bullseye" :class="{active: status.single}"></i>
-      </div>
-      <div class="status-property col-2">
-        <i class="fa fa-utensils" :class="{active: status.consume}"></i>
+          <div class="status-property col-2">
+            <button title="Random" @click="random">
+              <i class="fas fa-random" :class="{active: status.random}"></i>
+            </button>
+          </div>
+          <div class="status-property col-2">
+            <button title="Repeat" @click="repeat">
+              <i class="fas fa-redo" :class="{active: status.repeat}"></i>
+            </button>
+          </div>
+          <div class="status-property col-2">
+            <button title="Single" @click="single">
+              <i class="fa fa-bullseye" :class="{active: status.single}"></i>
+            </button>
+          </div>
+          <div class="status-property col-2">
+            <button title="Consume" @click="consume">
+              <i class="fa fa-utensils" :class="{active: status.consume}"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -62,12 +89,21 @@
 <script>
 import Utils from "@/Utils";
 import Loading from "@/components/Loading";
+import Status from "@/mixins/Music/Status";
+import ProgressBar from "@/components/Media/ProgressBar";
+import Slider from "@/components/elements/Slider";
 
 export default {
   name: "Music",
-  components: {Loading},
-  mixins: [Utils],
+  components: {Loading, ProgressBar, Slider},
+  mixins: [Status, Utils],
   props: {
+    // Music plugin to use (default: music.mopidy).
+    plugin: {
+      type: String,
+      default: 'music.mopidy',
+    },
+
     // Refresh interval in seconds.
     refreshSeconds: {
       type: Number,
@@ -78,16 +114,18 @@ export default {
     withControls: {
       type: Boolean,
       default: true,
-    }
+    },
   },
 
   data() {
     return {
-      track: undefined,
-      status: undefined,
-      timer: undefined,
+      track: null,
+      status: {},
+      timer: null,
       loading: false,
-      musicPlugin: 'music.mpd',
+      showVolumeBar: false,
+      images: {},
+      maxImages: 100,
 
       syncTime: {
         timestamp: null,
@@ -100,6 +138,21 @@ export default {
     _withControls() {
       return this.parseBoolean(this.withControls)
     },
+    
+    _refreshSeconds() {
+      return parseFloat(this.refreshSeconds)
+    },
+
+    trackUri() {
+      return this.track?.uri || this.track?.file
+    },
+
+    image() {
+      if (this.status?.state === 'stop')
+        return null
+
+      return this.images[this.trackUri] || this.track?.image || this.status?.image
+    },
   },
 
   methods: {
@@ -107,8 +160,8 @@ export default {
       this.loading = true
 
       try {
-        let status = await this.request(`${this.musicPlugin}.status`)
-        let track = await this.request(`${this.musicPlugin}.current_track`)
+        let status = await this.request(`${this.plugin}.status`) || {}
+        let track = await this.request(`${this.plugin}.current_track`)
 
         this._parseStatus(status)
         this._parseTrack(track)
@@ -117,62 +170,49 @@ export default {
           this.startTimer()
         else if (status.state !== 'play' && this.timer)
           this.stopTimer()
+
+        if (status.state !== 'stop' && !this.image)
+          await this.refreshImage()
       } finally {
         this.loading = false
       }
     },
 
-    convertTime(time) {
-      time = parseFloat(time)   // Normalize strings
-      const t = {}
-      t.h = parseInt(time/3600)
-      t.m = parseInt(time/60 - t.h*60)
-      t.s = parseInt(time - (t.h*3600 + t.m*60))
+    async refreshImage() {
+      if (!this.trackUri)
+        return
 
-      for (const attr of ['m','s']) {
-        t[attr] = '' + t[attr]
-      }
+      if (!this.images[this.trackUri]) {
+         const trackImage = (
+          await this.request(`${this.plugin}.get_images`, {resources: [this.trackUri]})
+        )[this.trackUri]
 
-      for (const attr of ['m','s']) {
-        if (parseInt(t[attr]) < 10) {
-          t[attr] = '0' + t[attr]
+        if (Object.keys(this.images).length > this.maxImages) {
+          delete this.images[Object.keys(this.images)[0]]
         }
+
+        this.images[this.trackUri] = trackImage
       }
 
-      const ret = []
-      if (parseInt(t.h)) {
-        ret.push(t.h)
-      }
-
-      ret.push(t.m, t.s)
-      return ret.join(':')
+      return this.images[this.trackUri]
     },
 
     async _parseStatus(status) {
-      if (!status || status.length === 0)
-        status = await this.request(`${this.musicPlugin}.status`)
-      if (status?.pluginName)
-        this.musicPlugin = status.pluginName
+      const statusPlugin = status.pluginName
+      if (statusPlugin && this.plugin && statusPlugin !== this.plugin)
+        return  // Ignore status updates from other plugins
+
+      if (!status || Object.keys(status).length === 0)
+        status = await this.request(`${this.plugin}.status`) || {}
       if (!this.status)
         this.status = {}
 
-      for (const [attr, value] of Object.entries(status)) {
-        if (['consume','random','repeat','single','bitrate'].indexOf(attr) >= 0) {
-          this.status[attr] = !!parseInt(value)
-        } else if (['nextsong','nextsongid','playlist','playlistlength',
-          'volume','xfade','song','songid'].indexOf(attr) >= 0) {
-          this.status[attr] = parseInt(value)
-        } else if (['elapsed'].indexOf(attr) >= 0) {
-          this.status[attr] = parseFloat(value)
-        } else {
-          this.status[attr] = value
-        }
-      }
+      this.status = this.parseStatus(status)
     },
 
     async _parseTrack(track) {
       if (!track || track.length === 0) {
-        track = await this.request(`${this.musicPlugin}.current_track`)
+        track = await this.request(`${this.plugin}.current_track`)
       }
 
       if (!this.track)
@@ -197,8 +237,33 @@ export default {
       })
     },
 
+    async seek(position) {
+      await this.request(`${this.plugin}.seek`, {position: position})
+    },
+
+    async setVolume(event) {
+      await this.request(`${this.plugin}.set_volume`, {volume: event.target.value})
+      this.showVolumeBar = false
+    },
+
+    async random() {
+      await this.request(`${this.plugin}.random`)
+    },
+
+    async repeat() {
+      await this.request(`${this.plugin}.repeat`)
+    },
+
+    async consume() {
+      await this.request(`${this.plugin}.consume`)
+    },
+
+    async single() {
+      await this.request(`${this.plugin}.single`)
+    },
+
     async onNewPlayingTrack(event) {
-      let previousTrack = undefined
+      let previousTrack = null
 
       if (this.track) {
         previousTrack = {
@@ -213,7 +278,7 @@ export default {
       this.track = {}
       this._parseTrack(event.track)
 
-      let status = event.status ? event.status : await this.request(`${this.musicPlugin}.status`)
+      let status = event.status ? event.status : await this.request(`${this.plugin}.status`)
       this._parseStatus(status)
       this.startTimer()
 
@@ -222,6 +287,9 @@ export default {
           || this.track.title !== previousTrack.title)) {
         this.showNewTrackNotification()
       }
+
+      if (!this.image)
+        await this.refreshImage()
     },
 
     onMusicStop(event) {
@@ -232,20 +300,26 @@ export default {
       this.stopTimer()
     },
 
-    onMusicPlay(event) {
+    async onMusicPlay(event) {
       this.status.state = 'play'
       this._parseStatus(event.status)
       this._parseTrack(event.track)
       this.startTimer()
+
+      if (!this.image)
+        await this.refreshImage()
     },
 
-    onMusicPause(event) {
+    async onMusicPause(event) {
       this.status.state = 'pause'
       this._parseStatus(event.status)
       this._parseTrack(event.track)
 
       this.syncTime.timestamp = new Date()
       this.syncTime.elapsed = this.status.elapsed
+
+      if (!this.image)
+        await this.refreshImage()
     },
 
     onSeekChange(event) {
@@ -336,8 +410,8 @@ export default {
 
   mounted() {
     this.refresh()
-    if (this.refreshSeconds) {
-      setInterval(this.refresh, parseInt((this.refreshSeconds*1000).toFixed(0)))
+    if (this._refreshSeconds) {
+      setInterval(this.refresh, this._refreshSeconds * 1000)
     }
 
     this.subscribe(this.onNewPlayingTrack, 'widget-music-on-new-track', 'platypush.message.event.music.NewPlayingTrackEvent')
@@ -355,8 +429,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-$progress-bar-bg: #ddd;
 $playback-status-color: #757f70;
+$bottom-height: 2em;
 
 .music {
   width: 100%;
@@ -366,6 +440,82 @@ $playback-status-color: #757f70;
   align-items: center;
   justify-content: center;
   position: relative;
+
+  .background {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.4);
+
+    .image {
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      filter: brightness(0.25);
+    }
+  }
+
+  @mixin top {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+
+  .foreground {
+    @include top;
+    height: 100%;
+  }
+
+  .top {
+    @include top;
+    height: calc(100% - #{$bottom-height});
+
+    .section {
+      flex-direction: column;
+
+      &.has-image {
+        padding: 1em;
+        border-radius: 1em;
+
+        button {
+          color: white;
+        }
+      }
+
+      &.has-progress {
+        width: calc(100% - 1em);
+        padding: 0.25em;
+      }
+    }
+  }
+
+  .bottom {
+    width: 100%;
+    height: $bottom-height;
+
+    .section {
+      border-top: $default-border-2;
+
+      &.has-image {
+        border-top: none;
+      }
+    }
+  }
+
+  .section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &.has-image {
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+    }
+  }
 
   .track {
     text-align: center;
@@ -387,53 +537,18 @@ $playback-status-color: #757f70;
     }
   }
 
-  .time {
+  .progress-bar {
     width: 100%;
-    margin-top: 1em;
+    height: 1em;
     font-size: 1.2em;
-
-    .row {
-      padding: 0 .5em;
-    }
-
-    .time-total {
-      text-align: right;
-    }
-
-    .progress-bar {
-      width: 100%;
-      height: 1em;
-      position: relative;
-      margin-bottom: .75em;
-
-      .total {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        background: $progress-bar-bg;
-        border-radius: 0.5em;
-      }
-
-      .elapsed {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        background: $selected-bg;
-        border-radius: 0.5em;
-        z-index: 1;
-      }
-    }
+    position: relative;
+    margin-top: 1.5em;
+    margin-bottom: .75em;
+    padding: 0 .5em;
   }
 
   .playback-status {
-    position: absolute;
-    bottom: 0;
-    border-top: $default-border-2;
     color: $playback-status-color;
-    width: 100%;
-    height: 2em;
 
     .status-property {
       display: flex;
@@ -444,25 +559,51 @@ $playback-status-color: #757f70;
 
     .active {
       color: $default-hover-fg;
+
+      &:hover {
+        color: $playback-status-color !important;
+      }
+    }
+
+    button {
+      color: $playback-status-color;
+      padding: 0.25em 0.5em;
+      border-top: 1px solid transparent;
+
+      &:hover {
+        border-top: 1px solid $default-hover-fg;
+      }
     }
   }
 
   .controls {
+    display: flex;
     margin-top: .5em;
     font-size: 1.2em;
+  }
 
-    button {
-      background: none;
-      border: none;
+  button {
+    background: none;
+    border: none;
+    cursor: pointer;
 
-      &:hover {
-        color: $default-hover-fg;
-      }
+    &:hover {
+      color: $default-hover-fg !important;
+    }
 
-      &.play-pause {
-        color: $selected-fg;
-        font-size: 1.5em;
-      }
+    &.play-pause {
+      color: $selected-fg !important;
+      font-size: 1.5em;
+    }
+  }
+
+  .volume {
+    .row {
+      width: calc(100% - 1em);
+      margin: 0 .5em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
   }
 }
