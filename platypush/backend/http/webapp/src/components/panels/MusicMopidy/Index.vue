@@ -1,5 +1,5 @@
 <template>
-  <MusicPlugin plugin-name="music.mpd" />
+  <MusicPlugin plugin-name="music.mopidy" :fetch-status-on-update="false" />
 </template>
 
 <script>

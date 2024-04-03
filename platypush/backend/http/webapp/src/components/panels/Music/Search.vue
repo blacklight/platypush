@@ -64,12 +64,24 @@
       <div class="row track" :class="{selected: selectedResults.has(i), hidden: !displayedTracks.has(i)}"
            v-for="(result, i) in results" :key="i" @click="resultClick(i, $event)">
         <div class="col-10">
-          <div class="title">
-            {{ result.title || '[No Title]' }}
+          <div class="title-container">
+            <div class="type" :title="result.type" v-if="result.type">
+              <i class="fa fa-user" v-if="result.type === 'artist'" />
+              <i class="fa fa-compact-disc" v-else-if="result.type === 'album'" />
+              <i class="fa fa-list" v-else-if="result.type === 'playlist'" />
+              <i class="fa fa-music" v-else />
+            </div>
+
+            <div class="title">
+              <span v-if="result.type === 'playlist'">{{ result.name || result.title || '[No Name]' }}</span>
+              <span v-else-if="result.type === 'artist'">{{ result.name || result.title || result.artist || '[No Name]' }}</span>
+              <span v-else-if="result.type === 'album'">{{ result.name || result.title || result.album || '[No Title]' }}</span>
+              <span v-else>{{ result.title || '[No Title]' }}</span>
+            </div>
           </div>
 
-          <div class="artist" v-text="result.artist" v-if="result.artist?.length" />
-          <div class="album" v-text="result.album" v-if="result.album?.length" />
+          <div class="artist" v-text="result.artist" v-if="result.artist?.length && result.type !== 'artist'" />
+          <div class="album" v-text="result.album" v-if="result.album?.length && result.type !== 'album'" />
         </div>
 
         <div class="col-2 right-side">
@@ -298,6 +310,16 @@ export default {
     height: calc(100% - #{$music-header-height});
     flex-grow: 1;
     overflow: auto;
+
+    .title-container {
+      display: flex;
+      align-items: center;
+      
+      .type {
+        opacity: .85;
+        margin-right: .5em;
+      }
+    }
   }
 
   :deep(.header) {

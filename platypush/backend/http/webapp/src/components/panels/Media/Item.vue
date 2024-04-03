@@ -1,5 +1,9 @@
 <template>
-  <div class="item media-item" :class="{selected: selected}" v-if="!hidden">
+  <div
+    class="item media-item"
+    :class="{selected: selected}"
+    @click.right.prevent="$refs.dropdown.toggle()"
+    v-if="!hidden">
     <div class="thumbnail">
       <MediaImage :item="item" @play="$emit('play')" />
     </div>
@@ -8,7 +12,7 @@
       <div class="row title">
         <div class="col-11 left side" v-text="item.title" @click="$emit('select')" />
         <div class="col-1 right side">
-          <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
+          <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" ref="dropdown">
             <DropdownItem icon-class="fa fa-play" text="Play" @click="$emit('play')"
                           v-if="item.type !== 'torrent'" />
             <DropdownItem icon-class="fa fa-download" text="Download" @click="$emit('download')"
@@ -71,7 +75,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "vars";
+@import "~@/components/Media/vars";
 
 .media-item {
   display: flex;

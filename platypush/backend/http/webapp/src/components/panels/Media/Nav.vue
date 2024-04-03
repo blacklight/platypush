@@ -64,7 +64,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import 'vars.scss';
+@import "~@/components/Media/vars";
 
 nav {
   width: $media-nav-width;

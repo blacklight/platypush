@@ -107,8 +107,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "src/style/items";
-@import "vars";
+@import "~@/style/items";
+@import "~@/components/Media/vars";
 
 .media-results {
   width: 100%;
