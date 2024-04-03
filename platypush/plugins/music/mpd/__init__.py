@@ -116,6 +116,33 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
 
         return None, error
 
+    @staticmethod
+    def _dump_directory(item: dict):
+        item['type'] = 'directory'
+        item['uri'] = item['name'] = item['directory']
+        return item
+
+    @staticmethod
+    def _dump_playlist(item: dict):
+        item['type'] = 'playlist'
+        item['uri'] = item['name'] = item['playlist']
+        item['last_modified'] = item.pop('last-modified', None)
+        return item
+
+    @staticmethod
+    def _dump_track(item: dict, pos: Optional[int] = None):
+        item['type'] = 'track'
+        item['uri'] = item['file']
+        for attr in ('time', 'track', 'disc'):
+            item[attr] = int(item[attr]) if item.get(attr) is not None else None
+
+        if 'pos' in item:
+            item['playlist_pos'] = int(item.pop('pos'))
+        elif pos is not None:
+            item['playlist_pos'] = pos
+
+        return item
+
     @action
     def play(self, resource: Optional[str] = None, **__):
         """
@@ -169,6 +196,15 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
     @action
     def stop(self, *_, **__):  # type: ignore
         """Stop playback"""
+        # Note: stop could be interpreted both as "stop the playback" and "stop
+        # the plugin". If the stop event is set, we assume that the user wants
+        # to stop the plugin.
+        if self.should_stop():
+            if self.client:
+                self.client.disconnect()
+
+            return None
+
         return self._exec('stop')
 
     @action
@@ -344,17 +380,44 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
             self._exec('rm', p)
 
     @action
-    def move(self, from_pos, to_pos):
+    def move(
+        self,
+        start: Optional[int] = None,
+        end: Optional[int] = None,
+        position: Optional[int] = None,
+        from_pos: Optional[int] = None,
+        to_pos: Optional[int] = None,
+    ):
         """
-        Move the playlist item in position <from_pos> to position <to_pos>
+        Move the playlist items from the positions ``start`` to ``end`` to the
+        new position ``position``.
 
-        :param from_pos: Track current position
-        :type from_pos: int
+        You can pass either:
 
-        :param to_pos: Track new position
-        :type to_pos: int
+            - ``start``, ``end`` and ``position`` to move a slice of tracks
+              from ``start`` to ``end`` to the new position ``position``.
+            - ``from_pos`` and ``to_pos`` to move a single track from
+              ``from_pos`` to ``to_pos``.
+
+        .. note: Positions are 0-based (i.e. the first track has position 0).
+
+        :param start: Start position of the selection.
+        :param end: End position of the selection.
+        :param position: New position.
+        :param from_pos: Alias for ``start`` - it only works with one track at
+            the time.
+        :param to_pos: Alias for ``position`` - it only works with one track at
+            the time.
         """
-        return self._exec('move', from_pos, to_pos)
+        assert (start is not None and end is not None and position is not None) or (
+            from_pos is not None and to_pos is not None
+        ), 'Specify either (start, end, position) or (from_pos, to_pos)'
+
+        if from_pos is not None and to_pos is not None:
+            return self._exec('move', from_pos, to_pos)
+
+        chunk = start if start == end else f'{start}:{end}'
+        return self._exec('move', chunk, position)
 
     @classmethod
     def _parse_resource(cls, resource):
@@ -546,7 +609,10 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
                 },
             ]
         """
-        return self._exec('playlistinfo', return_status=False)
+        return [
+            self._dump_track(track, pos=i)  # type: ignore
+            for i, track in enumerate(self._exec('playlistinfo', return_status=False))
+        ]
 
     @action
     def get_playlists(self, *_, **__):
@@ -558,11 +624,11 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
             output = [
                 {
                     "playlist": "Rock",
-                    "last-modified": "2018-06-25T21:28:19Z"
+                    "last_modified": "2018-06-25T21:28:19Z"
                 },
                 {
                     "playlist": "Jazz",
-                    "last-modified": "2018-06-24T22:28:29Z"
+                    "last_modified": "2018-06-24T22:28:29Z"
                 },
                 {
                     # ...
@@ -573,22 +639,27 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
         playlists: list = self._exec(  # type: ignore
             'listplaylists', return_status=False
         )
-        return sorted(playlists, key=lambda p: p['playlist'])
+
+        return sorted(
+            [self._dump_playlist(pl) for pl in playlists], key=lambda p: p['playlist']
+        )
 
     @action
-    def get_playlist(self, playlist: str, *_, with_tracks: bool = False, **__):
+    def get_playlist(self, playlist: str, *_, **__):
         """
-        List the information (and, optionally, the items) for the specified playlist.
+        Get the tracks in a playlist.
 
         :param playlist: Name of the playlist
-        :param with_tracks: If True then the list of tracks in the playlist will
-            be returned as well (default: False).
         """
-        return self._exec(
-            'listplaylistinfo' if with_tracks else 'listplaylist',
-            playlist,
-            return_status=False,
-        )
+        return [
+            self._dump_track(track)  # type: ignore
+            for track in self._exec(
+                'listplaylistinfo',  # if with_tracks else 'listplaylist',
+                playlist,
+                return_status=False,
+            )
+            if track
+        ]
 
     @action
     def add_to_playlist(
@@ -663,11 +734,26 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
 
         :param uri: URI to browse (default: root directory).
         """
-        return (
+        resp: dict = (  # type: ignore
             self._exec('lsinfo', uri, return_status=False)
             if uri
             else self._exec('lsinfo', return_status=False)
         )
+
+        ret = []
+        for item in resp:
+            if item.get('directory'):
+                item = self._dump_directory(item)
+            elif item.get('playlist'):
+                item = self._dump_playlist(item)
+            elif item.get('file'):
+                item = self._dump_track(item)
+            else:
+                continue
+
+            ret.append(item)
+
+        return ret
 
     @action
     def plchanges(self, version: int):
