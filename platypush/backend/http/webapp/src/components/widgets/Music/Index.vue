@@ -445,14 +445,13 @@ $bottom-height: 2em;
     width: 100%;
     height: 100%;
     position: absolute;
-    background-color: rgba(0, 0, 0, 0.4);
 
     .image {
       width: 100%;
       height: 100%;
       background-size: cover;
       background-position: center;
-      filter: brightness(0.25);
+      filter: contrast(0.5) opacity(0.2);
     }
   }
 
@@ -475,19 +474,16 @@ $bottom-height: 2em;
     height: calc(100% - #{$bottom-height});
 
     .section {
+      border-radius: 1em;
       flex-direction: column;
 
       &.has-image {
         padding: 1em;
         border-radius: 1em;
-
-        button {
-          color: white;
-        }
       }
 
       &.has-progress {
-        width: calc(100% - 1em);
+        width: 100%;
         padding: 0.25em;
       }
     }
@@ -512,8 +508,8 @@ $bottom-height: 2em;
     justify-content: center;
 
     &.has-image {
-      background: rgba(0, 0, 0, 0.6);
-      color: white;
+      background: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 0 0.25em rgba(0, 0, 0, 0.15);
     }
   }
 
