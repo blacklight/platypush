@@ -150,6 +150,12 @@ class MopidyClient(Thread):
         if self._refresh_in_progress.is_set():
             return
 
+        # Unless we are also retrieving the tracks, we don't need a high timeout here.
+        # A high timeout may result in event lagging if some of the responses aren't received.
+        # In this case, better to timeout early and retry.
+        if not with_tracks:
+            timeout = 5
+
         events = []
 
         try:
