@@ -8,7 +8,6 @@ Backends
 
     platypush/backend/http.rst
     platypush/backend/midi.rst
-    platypush/backend/music.spotify.rst
     platypush/backend/nodered.rst
     platypush/backend/redis.rst
     platypush/backend/stt.deepspeech.rst
