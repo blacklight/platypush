@@ -97,6 +97,7 @@ class Config:
         cfgfile: Optional[str] = None,
         workdir: Optional[str] = None,
         cachedir: Optional[str] = None,
+        db: Optional[str] = None,
     ):
         """
         Constructor. Always use the class as a singleton (i.e. through
@@ -106,6 +107,7 @@ class Config:
             location in _cfgfile_locations).
         :param workdir: Overrides the default working directory.
         :param cachedir: Overrides the default cache directory.
+        :param db: Overrides the default database connection string.
         """
 
         self.backends = {}
@@ -124,7 +126,7 @@ class Config:
 
         self._init_secrets()
         self._init_dirs(workdir=workdir, cachedir=cachedir)
-        self._init_db()
+        self._init_db(db=db)
         self._init_logging()
         self._init_device_id()
         self._init_environment()
@@ -175,7 +177,14 @@ class Config:
 
         self._config['logging'] = logging_config
 
-    def _init_db(self):
+    def _init_db(self, db: Optional[str] = None):
+        # If the db connection string is passed as an argument, use it
+        if db:
+            self._config['db'] = {
+                'engine': db,
+            }
+            return
+
         # Initialize the default db connection string
         db_engine = self._config.get('main.db', '')
         if db_engine:
@@ -474,6 +483,7 @@ class Config:
         cfgfile: Optional[str] = None,
         workdir: Optional[str] = None,
         cachedir: Optional[str] = None,
+        db: Optional[str] = None,
         force_reload: bool = False,
     ) -> "Config":
         """
@@ -481,7 +491,7 @@ class Config:
         """
         if force_reload or cls._instance is None:
             cfg_args = [cfgfile] if cfgfile else []
-            cls._instance = Config(*cfg_args, workdir=workdir, cachedir=cachedir)
+            cls._instance = Config(*cfg_args, workdir=workdir, cachedir=cachedir, db=db)
         return cls._instance
 
     @classmethod
@@ -546,6 +556,7 @@ class Config:
         device_id: Optional[str] = None,
         workdir: Optional[str] = None,
         cachedir: Optional[str] = None,
+        db: Optional[str] = None,
         ctrl_sock: Optional[str] = None,
         **_,
     ):
@@ -556,10 +567,11 @@ class Config:
         :param device_id: Override the configured device_id.
         :param workdir: Override the configured working directory.
         :param cachedir: Override the configured cache directory.
+        :param db: Override the configured database connection string.
         :param ctrl_sock: Override the configured control socket.
         """
         cfg = cls._get_instance(
-            cfgfile, workdir=workdir, cachedir=cachedir, force_reload=True
+            cfgfile, workdir=workdir, cachedir=cachedir, db=db, force_reload=True
         )
         if device_id:
             cfg.set('device_id', device_id)
@@ -567,6 +579,8 @@ class Config:
             cfg.set('workdir', workdir)
         if cachedir:
             cfg.set('cachedir', cachedir)
+        if db:
+            cfg.set('db', db)
         if ctrl_sock:
             cfg.set('ctrl_sock', ctrl_sock)
 

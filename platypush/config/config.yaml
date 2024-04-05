@@ -87,15 +87,20 @@
 # # `workdir`. You can specify any other engine string here - the application has
 # # been tested against SQLite, Postgres and MariaDB/MySQL >= 8.
 # #
+# # You can also specify a custom database engine at runtime (SQLAlchemy syntax
+# # supported) through the `--db` argument otherwise.
+# #
 # # NOTE: If you want to use a DBMS other than SQLite, then you will also need to
 # # ensure that a compatible Python driver is installed on the system where
 # # Platypush is running. For example, Postgres will require the Python pg8000,
 # # psycopg or another compatible driver.
 #
 # main.db:
-#   engine: sqlite:///home/user/.local/share/platypush/main.db
+#   engine: sqlite:////home/user/.local/share/platypush/main.db
 #   # OR, if you want to use e.g. Postgres with the pg8000 driver:
 #   engine: postgresql+pg8000://dbuser:dbpass@dbhost/dbname
+#
+# # NOTE: The short syntax `main.db: <engine_string>` is also supported.
 ###
 
 ### ---------------------

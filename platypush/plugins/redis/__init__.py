@@ -7,6 +7,9 @@ from platypush.utils import get_redis_conf
 class RedisPlugin(Plugin):
     """
     Plugin to send messages on Redis queues.
+
+    See https://redis-py.readthedocs.io/en/latest/connections.html#redis.Redis
+    for supported parameters.
     """
 
     def __init__(self, *args, **kwargs):
@@ -18,24 +21,19 @@ class RedisPlugin(Plugin):
         return Redis(*self.args, **self.kwargs)
 
     @action
-    def send_message(self, queue, msg, *args, **kwargs):
+    def send_message(self, queue: str, msg, *args, **kwargs):
         """
         Send a message to a Redis queue.
 
         :param queue: Queue name
-        :type queue: str
-
         :param msg: Message to be sent
-        :type msg: str, bytes, list, dict, Message object
+        :type msg: str, bytes, list, dict, :class:`platypush.message.Message`
 
-        :param args: Args passed to the Redis constructor (see https://redis-py.readthedocs.io/en/latest/#redis.Redis)
-        :type args: list
-
+        :param args: Args passed to the Redis constructor (see
+            https://redis-py.readthedocs.io/en/latest/connections.html#redis.Redis)
         :param kwargs: Kwargs passed to the Redis constructor (see
-            https://redis-py.readthedocs.io/en/latest/#redis.Redis)
-        :type kwargs: dict
+            https://redis-py.readthedocs.io/en/latest/connections.html#redis.Redis)
         """
-
         if args or kwargs:
             redis = Redis(*args, **kwargs)
         else:
@@ -48,7 +46,6 @@ class RedisPlugin(Plugin):
         """
         :returns: The values specified in keys as a key/value dict (wraps MGET)
         """
-
         return {
             keys[i]: value.decode() if isinstance(value, bytes) else value
             for (i, value) in enumerate(self._get_redis().mget(keys, *args))
@@ -59,7 +56,6 @@ class RedisPlugin(Plugin):
         """
         Set key/values based on mapping (wraps MSET)
         """
-
         try:
             return self._get_redis().mset(**kwargs)
         except TypeError:
@@ -80,7 +76,6 @@ class RedisPlugin(Plugin):
         :param expiration: Expiration timeout (in seconds)
         :type expiration: int
         """
-
         return self._get_redis().expire(key, expiration)
 
     @action
@@ -90,7 +85,6 @@ class RedisPlugin(Plugin):
 
         :param args: Keys to delete
         """
-
         return self._get_redis().delete(*args)
 
 
