@@ -346,7 +346,7 @@ class MopidyClient(Thread):
 
     def on_volume_change(self, msg: dict, *_, **__):
         volume = msg.get('volume')
-        if volume is None:
+        if volume is None or volume == self._status.volume:
             return
 
         self._status.volume = volume
@@ -354,7 +354,7 @@ class MopidyClient(Thread):
 
     def on_mute_change(self, msg: dict, *_, **__):
         mute = msg.get('mute')
-        if mute is None:
+        if mute is None or mute == self._status.mute:
             return
 
         self._status.mute = mute
@@ -365,7 +365,11 @@ class MopidyClient(Thread):
         if position is None:
             return
 
-        self._status.time = position / 1000
+        t = position / 1000
+        if t == self._status.time:
+            return
+
+        self._status.time = t
         self._post_event(SeekChangeEvent, position=self._status.time)
 
     def on_tracklist_change(self, *_, **__):
@@ -402,7 +406,11 @@ class MopidyClient(Thread):
             return
 
         if msg.get('tl_track'):
-            track = self._status.track = MopidyTrack.parse(msg['tl_track'])
+            track = MopidyTrack.parse(msg['tl_track'])
+            is_new_track = track and track != self._status.track
+            self._status.track = track
+            if is_new_track:
+                self._post_event(NewPlayingTrackEvent)
 
         hndl = self._msg_handlers.get(event)
         if not hndl:

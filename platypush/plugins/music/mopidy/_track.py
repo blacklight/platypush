@@ -41,3 +41,15 @@ class MopidyTrack:
         Convert the Mopidy track to a dictionary.
         """
         return dict(MopidyTrackSchema().dump(self))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, MopidyTrack):
+            return False
+
+        return (
+            self.uri == other.uri
+            and self.artist == other.artist
+            and self.title == other.title
+            and self.album == other.album
+            and self.time == other.time
+        )
