@@ -451,7 +451,7 @@ $bottom-height: 2em;
       height: 100%;
       background-size: cover;
       background-position: center;
-      filter: contrast(0.5) opacity(0.2);
+      filter: contrast(0.15) opacity(0.5);
     }
   }
 
@@ -474,7 +474,6 @@ $bottom-height: 2em;
     height: calc(100% - #{$bottom-height});
 
     .section {
-      border-radius: 1em;
       flex-direction: column;
 
       &.has-image {
@@ -483,8 +482,8 @@ $bottom-height: 2em;
       }
 
       &.has-progress {
-        width: 100%;
-        padding: 0.25em;
+        width: calc(100% - 0.5em);
+        padding: 1.5em 0.25em;
       }
     }
   }
@@ -498,6 +497,7 @@ $bottom-height: 2em;
 
       &.has-image {
         border-top: none;
+        box-shadow: 0 0 0.25em rgba(0, 0, 0, 0.15);
       }
     }
   }
@@ -508,7 +508,7 @@ $bottom-height: 2em;
     justify-content: center;
 
     &.has-image {
-      background: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.4);
       box-shadow: 0 0 0.25em rgba(0, 0, 0, 0.15);
     }
   }
