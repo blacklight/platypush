@@ -1,7 +1,0 @@
-manifest:
-  events: {}
-  install:
-    pip:
-    - cheetah
-  package: platypush.plugins.stt.picovoice.speech
-  type: plugin
