@@ -324,13 +324,13 @@ class MopidyClient(Thread):
 
     def on_state_change(self, msg: dict, *_, **__):
         state = msg.get('new_state')
-        if state == PlayerState.PLAY:
+        if state == 'playing':
             self._status.state = PlayerState.PLAY
             self._post_event(MusicPlayEvent)
-        elif state == PlayerState.PAUSE:
+        elif state == 'paused':
             self._status.state = PlayerState.PAUSE
             self._post_event(MusicPauseEvent)
-        elif state == PlayerState.STOP:
+        elif state == 'stopped':
             self._status.state = PlayerState.STOP
             self._post_event(MusicStopEvent)
 
