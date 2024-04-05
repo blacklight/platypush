@@ -119,7 +119,6 @@ Plugins
     platypush/plugins/smartthings.rst
     platypush/plugins/sound.rst
     platypush/plugins/ssh.rst
-    platypush/plugins/stt.deepspeech.rst
     platypush/plugins/stt.picovoice.hotword.rst
     platypush/plugins/stt.picovoice.speech.rst
     platypush/plugins/sun.rst

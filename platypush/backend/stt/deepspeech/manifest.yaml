@@ -1,6 +1,0 @@
-manifest:
-  events: {}
-  install:
-    pip: []
-  package: platypush.backend.stt.deepspeech
-  type: backend
