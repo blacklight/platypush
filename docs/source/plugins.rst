@@ -95,6 +95,7 @@ Plugins
     platypush/plugins/nmap.rst
     platypush/plugins/ntfy.rst
     platypush/plugins/otp.rst
+    platypush/plugins/picovoice.rst
     platypush/plugins/pihole.rst
     platypush/plugins/ping.rst
     platypush/plugins/printer.cups.rst
@@ -119,8 +120,6 @@ Plugins
     platypush/plugins/smartthings.rst
     platypush/plugins/sound.rst
     platypush/plugins/ssh.rst
-    platypush/plugins/stt.picovoice.hotword.rst
-    platypush/plugins/stt.picovoice.speech.rst
     platypush/plugins/sun.rst
     platypush/plugins/switch.tplink.rst
     platypush/plugins/switch.wemo.rst

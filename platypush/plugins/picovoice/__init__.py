@@ -51,27 +51,34 @@ class PicovoicePlugin(AssistantPlugin, RunnablePlugin):
         keywords: Optional[Sequence[str]] = None,
         keyword_paths: Optional[Sequence[str]] = None,
         keyword_model_path: Optional[str] = None,
+        speech_model_path: Optional[str] = None,
+        endpoint_duration: Optional[float] = 0.5,
+        enable_automatic_punctuation: bool = False,
+        start_conversation_on_hotword: bool = True,
+        audio_queue_size: int = 100,
+        conversation_timeout: Optional[float] = 5.0,
         **kwargs,
     ):
         """
         :param access_key: Your Picovoice access key. You can get it by signing
             up at the `Picovoice console <https://console.picovoice.ai/>`.
         :param hotword_enabled: Enable the wake-word engine (default: True).
-            .. note:: The wake-word engine requires you to add Porcupine to the
-                products available in your Picovoice account.
+            **Note**: The wake-word engine requires you to add Porcupine to the
+            products available in your Picovoice account.
         :param stt_enabled: Enable the speech-to-text engine (default: True).
-            .. note:: The speech-to-text engine requires you to add Cheetah to
-                the products available in your Picovoice account.
+            **Note**: The speech-to-text engine requires you to add Cheetah to
+            the products available in your Picovoice account.
         :param intent_enabled: Enable the intent recognition engine (default:
             False).
-            .. note:: The intent recognition engine requires you to add Rhino
-                to the products available in your Picovoice account.
+            **Note**: The intent recognition engine requires you to add Rhino
+            to the products available in your Picovoice account.
         :param keywords: List of keywords to listen for (e.g. ``alexa``, ``ok
-            google``...). Either ``keywords`` or ``keyword_paths`` must be
-            provided if the wake-word engine is enabled. This list can include
-            any of the default Picovoice keywords (available on the `Picovoice
-            repository
+            google``...). This is required if the wake-word engine is enabled.
+            See the `Picovoice repository
             <https://github.com/Picovoice/porcupine/tree/master/resources/keyword_files>`_).
+            for a list of the stock keywords available. If you have a custom
+            model, you can pass its path to the ``keyword_paths`` parameter and
+            its filename (without the path and the platform extension) here.
         :param keyword_paths: List of paths to the keyword files to listen for.
             Custom keyword files can be created using the `Picovoice console
             <https://console.picovoice.ai/ppn>`_ and downloaded from the
@@ -81,6 +88,35 @@ class PicovoicePlugin(AssistantPlugin, RunnablePlugin):
             for its language. Model files are available for all the supported
             languages through the `Picovoice repository
             <https://github.com/Picovoice/porcupine/tree/master/lib/common>`_.
+        :param speech_model_path: Path to the speech model file. If you are
+            using a language other than English, you can provide the path to the
+            model file for that language. Model files are available for all the
+            supported languages through the `Picovoice repository
+            <https://github.com/Picovoice/porcupine/tree/master/lib/common>`_.
+        :param endpoint_duration: If set, the assistant will stop listening when
+            no speech is detected for the specified duration (in seconds) after
+            the end of an utterance.
+        :param enable_automatic_punctuation: Enable automatic punctuation
+            insertion.
+        :param start_conversation_on_hotword: If set to True (default), a speech
+            detection session will be started when the hotword is detected. If
+            set to False, you may want to start the conversation programmatically
+            by calling the :meth:`.start_conversation` method instead, or run any
+            custom logic hotword detection logic. This can be particularly useful
+            when you want to run the assistant in a push-to-talk mode, or when you
+            want different hotwords to trigger conversations with different models
+            or languages.
+        :param audio_queue_size: Maximum number of audio frames to hold in the
+            processing queue. You may want to increase this value if you are
+            running this integration on a slow device and/or the logs report
+            audio frame drops too often. Keep in mind that increasing this value
+            will increase the memory usage of the integration. Also, a higher
+            value may result in higher accuracy at the cost of higher latency.
+        :param conversation_timeout: Maximum time to wait for some speech to be
+            detected after the hotword is detected. If no speech is detected
+            within this time, the conversation will time out and the plugin will
+            go back into hotword detection mode, if the mode is enabled. Default:
+            5 seconds.
         """
         super().__init__(**kwargs)
         self._assistant_args = {
@@ -92,6 +128,12 @@ class PicovoicePlugin(AssistantPlugin, RunnablePlugin):
             'keywords': keywords,
             'keyword_paths': keyword_paths,
             'keyword_model_path': keyword_model_path,
+            'speech_model_path': speech_model_path,
+            'endpoint_duration': endpoint_duration,
+            'enable_automatic_punctuation': enable_automatic_punctuation,
+            'start_conversation_on_hotword': start_conversation_on_hotword,
+            'audio_queue_size': audio_queue_size,
+            'conversation_timeout': conversation_timeout,
         }
 
     @action
@@ -151,6 +193,7 @@ class PicovoicePlugin(AssistantPlugin, RunnablePlugin):
                 try:
                     for event in assistant:
                         if event:
+                            event.args['assistant'] = 'picovoice'
                             get_bus().post(event)
                 except KeyboardInterrupt:
                     break

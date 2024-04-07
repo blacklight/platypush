@@ -26,7 +26,7 @@ class AudioRecorder:
         frame_size: int,
         channels: int,
         dtype: str = 'int16',
-        queue_size: int = 20,
+        queue_size: int = 100,
     ):
         self.logger = getLogger(__name__)
         self._audio_queue: Queue[AudioFrame] = Queue(maxsize=queue_size)
@@ -48,7 +48,6 @@ class AudioRecorder:
 
     def __exit__(self, *_):
         self.stop()
-        # self.stream.close()
 
     def _audio_callback(self, indata, *_):
         if self.should_stop():
