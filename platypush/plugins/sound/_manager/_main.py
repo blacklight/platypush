@@ -247,9 +247,11 @@ class AudioManager:
         wait_start = time()
         for audio_thread in streams_to_stop:
             audio_thread.join(
-                timeout=max(0, timeout - (time() - wait_start))
-                if timeout is not None
-                else None
+                timeout=(
+                    max(0, timeout - (time() - wait_start))
+                    if timeout is not None
+                    else None
+                )
             )
 
         # Remove references
