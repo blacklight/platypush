@@ -257,26 +257,29 @@ class Event(Message):
 
         return result
 
+    def as_dict(self):
+        """
+        Converts the event into a dictionary
+        """
+        args = copy.deepcopy(self.args)
+        flatten(args)
+        return {
+            'type': 'event',
+            'target': self.target,
+            'origin': self.origin if hasattr(self, 'origin') else None,
+            'id': self.id if hasattr(self, 'id') else None,
+            '_timestamp': self.timestamp,
+            'args': {'type': self.type, **args},
+        }
+
     def __str__(self):
         """
         Overrides the str() operator and converts
         the message into a UTF-8 JSON string
         """
-
         args = copy.deepcopy(self.args)
         flatten(args)
-
-        return json.dumps(
-            {
-                'type': 'event',
-                'target': self.target,
-                'origin': self.origin if hasattr(self, 'origin') else None,
-                'id': self.id if hasattr(self, 'id') else None,
-                '_timestamp': self.timestamp,
-                'args': {'type': self.type, **args},
-            },
-            cls=self.Encoder,
-        )
+        return json.dumps(self.as_dict(), cls=self.Encoder)
 
 
 @dataclass
