@@ -1,10 +1,10 @@
 from typing import Optional, Sequence
 
-from platypush.context import get_bus
 from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.assistant import AssistantPlugin
 
 from ._assistant import Assistant
+from ._state import AssistantState
 
 
 # pylint: disable=too-many-ancestors
@@ -56,7 +56,7 @@ class PicovoicePlugin(AssistantPlugin, RunnablePlugin):
         enable_automatic_punctuation: bool = False,
         start_conversation_on_hotword: bool = True,
         audio_queue_size: int = 100,
-        conversation_timeout: Optional[float] = 5.0,
+        conversation_timeout: Optional[float] = 7.5,
         **kwargs,
     ):
         """
@@ -116,9 +116,10 @@ class PicovoicePlugin(AssistantPlugin, RunnablePlugin):
             detected after the hotword is detected. If no speech is detected
             within this time, the conversation will time out and the plugin will
             go back into hotword detection mode, if the mode is enabled. Default:
-            5 seconds.
+            7.5 seconds.
         """
         super().__init__(**kwargs)
+        self._assistant = None
         self._assistant_args = {
             'stop_event': self._should_stop,
             'access_key': access_key,
@@ -134,6 +135,11 @@ class PicovoicePlugin(AssistantPlugin, RunnablePlugin):
             'start_conversation_on_hotword': start_conversation_on_hotword,
             'audio_queue_size': audio_queue_size,
             'conversation_timeout': conversation_timeout,
+            'on_conversation_start': self._on_conversation_start,
+            'on_conversation_end': self._on_conversation_end,
+            'on_conversation_timeout': self._on_conversation_timeout,
+            'on_speech_recognized': self._on_speech_recognized,
+            'on_hotword_detected': self._on_hotword_detected,
         }
 
     @action
@@ -141,12 +147,25 @@ class PicovoicePlugin(AssistantPlugin, RunnablePlugin):
         """
         Programmatically start a conversation with the assistant
         """
+        if not self._assistant:
+            self.logger.warning('Assistant not initialized')
+            return
+
+        self._assistant.state = AssistantState.DETECTING_SPEECH
 
     @action
     def stop_conversation(self, *_, **__):
         """
         Programmatically stop a running conversation with the assistant
         """
+        if not self._assistant:
+            self.logger.warning('Assistant not initialized')
+            return
+
+        if self._assistant.hotword_enabled:
+            self._assistant.state = AssistantState.DETECTING_HOTWORD
+        else:
+            self._assistant.state = AssistantState.IDLE
 
     @action
     def mute(self, *_, **__):
@@ -189,12 +208,10 @@ class PicovoicePlugin(AssistantPlugin, RunnablePlugin):
     def main(self):
         while not self.should_stop():
             self.logger.info('Starting Picovoice assistant')
-            with Assistant(**self._assistant_args) as assistant:
+            with Assistant(**self._assistant_args) as self._assistant:
                 try:
-                    for event in assistant:
-                        if event:
-                            event.args['assistant'] = 'picovoice'
-                            get_bus().post(event)
+                    for event in self._assistant:
+                        self.logger.debug('Picovoice assistant event: %s', event)
                 except KeyboardInterrupt:
                     break
                 except Exception as e:

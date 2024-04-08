@@ -9,16 +9,13 @@ import pvleopard
 import pvporcupine
 import pvrhino
 
-from platypush.context import get_bus
 from platypush.message.event.assistant import (
-    ConversationStartEvent,
-    ConversationEndEvent,
     ConversationTimeoutEvent,
     HotwordDetectedEvent,
     SpeechRecognizedEvent,
 )
 
-from ._context import SpeechDetectionContext
+from ._context import ConversationContext
 from ._recorder import AudioRecorder
 from ._state import AssistantState
 
@@ -27,6 +24,9 @@ class Assistant:
     """
     A facade class that wraps the Picovoice engines under an assistant API.
     """
+
+    def _default_callback(*_, **__):
+        pass
 
     def __init__(
         self,
@@ -45,6 +45,11 @@ class Assistant:
         start_conversation_on_hotword: bool = False,
         audio_queue_size: int = 100,
         conversation_timeout: Optional[float] = None,
+        on_conversation_start=_default_callback,
+        on_conversation_end=_default_callback,
+        on_conversation_timeout=_default_callback,
+        on_speech_recognized=_default_callback,
+        on_hotword_detected=_default_callback,
     ):
         self._access_key = access_key
         self._stop_event = stop_event
@@ -62,10 +67,16 @@ class Assistant:
         self.start_conversation_on_hotword = start_conversation_on_hotword
         self.audio_queue_size = audio_queue_size
 
+        self._on_conversation_start = on_conversation_start
+        self._on_conversation_end = on_conversation_end
+        self._on_conversation_timeout = on_conversation_timeout
+        self._on_speech_recognized = on_speech_recognized
+        self._on_hotword_detected = on_hotword_detected
+
         self._recorder = None
         self._state = AssistantState.IDLE
         self._state_lock = RLock()
-        self._speech_ctx = SpeechDetectionContext(timeout=conversation_timeout)
+        self._ctx = ConversationContext(timeout=conversation_timeout)
 
         if hotword_enabled:
             if not keywords:
@@ -119,11 +130,11 @@ class Assistant:
             return
 
         if prev_state == AssistantState.DETECTING_SPEECH:
-            self._speech_ctx.stop()
-            self._post_event(ConversationEndEvent())
+            self._ctx.stop()
+            self._on_conversation_end()
         elif new_state == AssistantState.DETECTING_SPEECH:
-            self._speech_ctx.start()
-            self._post_event(ConversationStartEvent())
+            self._ctx.start()
+            self._on_conversation_start()
 
     @property
     def porcupine(self) -> Optional[pvporcupine.Porcupine]:
@@ -239,11 +250,6 @@ class Assistant:
 
         raise StopIteration
 
-    def _post_event(self, event):
-        if event:
-            event.args['assistant'] = 'picovoice'
-            get_bus().post(event)
-
     def _process_hotword(self, frame):
         if not self.porcupine:
             return None
@@ -256,6 +262,7 @@ class Assistant:
             if self.start_conversation_on_hotword:
                 self.state = AssistantState.DETECTING_SPEECH
 
+            self._on_hotword_detected(hotword=self.keywords[keyword_index])
             return HotwordDetectedEvent(hotword=self.keywords[keyword_index])
 
         return None
@@ -265,26 +272,36 @@ class Assistant:
             return None
 
         event = None
-        (
-            self._speech_ctx.partial_transcript,
-            self._speech_ctx.is_final,
-        ) = self.cheetah.process(frame)
+        partial_transcript, self._ctx.is_final = self.cheetah.process(frame)
 
-        if self._speech_ctx.partial_transcript:
+        if partial_transcript:
+            self._ctx.partial_transcript += partial_transcript
             self.logger.info(
                 'Partial transcript: %s, is_final: %s',
-                self._speech_ctx.partial_transcript,
-                self._speech_ctx.is_final,
+                self._ctx.partial_transcript,
+                self._ctx.is_final,
             )
 
-        if self._speech_ctx.is_final or self._speech_ctx.timed_out:
-            event = (
-                ConversationTimeoutEvent()
-                if self._speech_ctx.timed_out
-                else SpeechRecognizedEvent(phrase=self.cheetah.flush())
-            )
+        if self._ctx.is_final or self._ctx.timed_out:
+            phrase = ''
+            if self.cheetah:
+                phrase = self.cheetah.flush()
 
-            if self.porcupine:
+            if not self._ctx.is_final:
+                self._ctx.partial_transcript += phrase
+                phrase = self._ctx.partial_transcript
+
+            phrase = phrase[:1].lower() + phrase[1:]
+
+            if self._ctx.is_final or phrase:
+                event = SpeechRecognizedEvent(phrase=phrase)
+                self._on_speech_recognized(phrase=phrase)
+            else:
+                event = ConversationTimeoutEvent()
+                self._on_conversation_timeout()
+
+            self._ctx.reset()
+            if self.hotword_enabled:
                 self.state = AssistantState.DETECTING_HOTWORD
 
         return event

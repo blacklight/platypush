@@ -4,9 +4,9 @@ from typing import Optional
 
 
 @dataclass
-class SpeechDetectionContext:
+class ConversationContext:
     """
-    Context of the speech detection process.
+    Context of the conversation process.
     """
 
     partial_transcript: str = ''
