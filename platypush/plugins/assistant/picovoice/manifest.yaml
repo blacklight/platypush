@@ -1,5 +1,5 @@
 manifest:
-  package: platypush.plugins.picovoice
+  package: platypush.plugins.assistant.picovoice
   type: plugin
   events:
     - platypush.message.event.assistant.ConversationEndEvent
@@ -17,6 +17,7 @@ manifest:
     pip:
       - pvcheetah
       - pvleopard
+      - pvorca
       - pvporcupine
       - pvrhino
       - sounddevice
