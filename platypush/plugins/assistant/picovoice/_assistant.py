@@ -287,10 +287,8 @@ class Assistant:
             if self.cheetah:
                 phrase = self.cheetah.flush()
 
-            if not self._ctx.is_final:
-                self._ctx.partial_transcript += phrase
-                phrase = self._ctx.partial_transcript
-
+            self._ctx.partial_transcript += phrase
+            phrase = self._ctx.partial_transcript
             phrase = phrase[:1].lower() + phrase[1:]
 
             if self._ctx.is_final or phrase:

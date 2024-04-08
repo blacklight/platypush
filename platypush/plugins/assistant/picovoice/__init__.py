@@ -40,6 +40,10 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         * **Leopard**: speech-to-text engine aimed at offline transcription of
           audio files rather than real-time transcription.
 
+        * **Orca**: text-to-speech engine, if you want to create your custom
+          logic to respond to user's voice commands and render the responses as
+          audio.
+
     """
 
     def __init__(
