@@ -9,21 +9,22 @@ from platypush.context import get_bus, get_plugin
 from platypush.entities.assistants import Assistant
 from platypush.entities.managers.assistants import AssistantEntityManager
 from platypush.message.event.assistant import (
-    AssistantEvent,
-    ConversationStartEvent,
-    ConversationEndEvent,
-    ConversationTimeoutEvent,
-    ResponseEvent,
-    NoResponseEvent,
-    SpeechRecognizedEvent,
-    AlarmStartedEvent,
     AlarmEndEvent,
-    TimerStartedEvent,
-    TimerEndEvent,
-    AlertStartedEvent,
+    AlarmStartedEvent,
     AlertEndEvent,
+    AlertStartedEvent,
+    AssistantEvent,
+    ConversationEndEvent,
+    ConversationStartEvent,
+    ConversationTimeoutEvent,
+    HotwordDetectedEvent,
     MicMutedEvent,
     MicUnmutedEvent,
+    NoResponseEvent,
+    ResponseEvent,
+    SpeechRecognizedEvent,
+    TimerEndEvent,
+    TimerStartedEvent,
 )
 from platypush.plugins import Plugin, action
 from platypush.utils import get_plugin_name_by_class
@@ -234,6 +235,9 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         if tts and text:
             self.stop_conversation()
             tts.say(text=text, **self.tts_plugin_args)
+
+    def _on_hotword_detected(self, hotword: Optional[str]):
+        self._send_event(HotwordDetectedEvent, hotword=hotword)
 
     def _on_speech_recognized(self, phrase: Optional[str]):
         phrase = (phrase or '').lower().strip()
