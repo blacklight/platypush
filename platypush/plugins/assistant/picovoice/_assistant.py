@@ -275,10 +275,10 @@ class Assistant:
         partial_transcript, self._ctx.is_final = self.cheetah.process(frame)
 
         if partial_transcript:
-            self._ctx.partial_transcript += partial_transcript
+            self._ctx.transcript += partial_transcript
             self.logger.info(
                 'Partial transcript: %s, is_final: %s',
-                self._ctx.partial_transcript,
+                self._ctx.transcript,
                 self._ctx.is_final,
             )
 
@@ -287,8 +287,8 @@ class Assistant:
             if self.cheetah:
                 phrase = self.cheetah.flush()
 
-            self._ctx.partial_transcript += phrase
-            phrase = self._ctx.partial_transcript
+            self._ctx.transcript += phrase
+            phrase = self._ctx.transcript
             phrase = phrase[:1].lower() + phrase[1:]
 
             if self._ctx.is_final or phrase:
