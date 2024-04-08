@@ -37,7 +37,17 @@ class MqttClient(mqtt.Client, threading.Thread):
         **kwargs,
     ):
         self.client_id = client_id or str(Config.get('device_id'))
-        mqtt.Client.__init__(self, mqtt.CallbackAPIVersion.VERSION1, *args, client_id=self.client_id, **kwargs)
+        kwargs['client_id'] = self.client_id
+
+        # Breaking change in paho.mqtt >= 2.0.0: the callback API version
+        # parameter should be passed, see
+        # https://github.com/eclipse/paho.mqtt.python/blob/28aa2e6b26a86e4b29126323892fb5f43637d6d6/ChangeLog.txt#L6
+        cbApiVersion = getattr(mqtt, 'CallbackAPIVersion', None)
+        if cbApiVersion:
+            kwargs['callback_api_version'] = cbApiVersion.VERSION1
+
+        mqtt.Client.__init__(self, *args, **kwargs)
+
         threading.Thread.__init__(self, name=f'MQTTClient:{self.client_id}')
 
         self.logger = logging.getLogger(self.__class__.__name__)
