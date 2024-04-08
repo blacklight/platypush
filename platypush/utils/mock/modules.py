@@ -84,6 +84,7 @@ mock_imports = [
     "psutil",
     "pvcheetah",
     "pvleopard",
+    "pvorca",
     "pvporcupine",
     "pvrhino",
     "pyHS100",

@@ -8,7 +8,7 @@ from ._state import AssistantState
 
 
 # pylint: disable=too-many-ancestors
-class PicovoicePlugin(AssistantPlugin, RunnablePlugin):
+class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
     """
     A voice assistant that runs on your device, based on the `Picovoice
     <https://picovoice.ai/>`_ engine.
