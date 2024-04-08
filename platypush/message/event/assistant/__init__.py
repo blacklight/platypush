@@ -1,27 +1,53 @@
 import re
 import sys
-from typing import Optional
+from typing import Optional, Union
 
 from platypush.context import get_plugin
 from platypush.message.event import Event
+from platypush.plugins.assistant import AssistantPlugin
+from platypush.utils import get_plugin_name_by_class
 
 
 class AssistantEvent(Event):
     """Base class for assistant events"""
 
-    def __init__(self, *args, assistant: Optional[str] = None, **kwargs):
+    def __init__(
+        self, *args, assistant: Optional[Union[str, AssistantPlugin]] = None, **kwargs
+    ):
         """
         :param assistant: Name of the assistant plugin that triggered the event.
         """
-        super().__init__(*args, assistant=assistant, **kwargs)
+        assistant = assistant or kwargs.get('assistant')
+        if assistant:
+            assistant = (
+                assistant
+                if isinstance(assistant, str)
+                else get_plugin_name_by_class(assistant.__class__)
+            )
+
+            kwargs['_assistant'] = assistant
+
+        super().__init__(*args, **kwargs)
 
     @property
-    def _assistant(self):
-        return (
-            get_plugin(self.args.get('assistant'))
-            if self.args.get('assistant')
-            else None
-        )
+    def assistant(self) -> Optional[AssistantPlugin]:
+        assistant = self.args.get('_assistant')
+        if not assistant:
+            return None
+
+        return get_plugin(assistant)
+
+    def as_dict(self):
+        evt_dict = super().as_dict()
+        evt_args = {**evt_dict['args']}
+        assistant = evt_args.pop('_assistant', None)
+        if assistant:
+            evt_args['assistant'] = assistant
+
+        return {
+            **evt_dict,
+            'args': evt_args,
+        }
 
 
 class ConversationStartEvent(AssistantEvent):
@@ -95,8 +121,8 @@ class SpeechRecognizedEvent(AssistantEvent):
         """
 
         result = super().matches_condition(condition)
-        if result.is_match and self._assistant and 'phrase' in condition.args:
-            self._assistant.stop_conversation()
+        if result.is_match and self.assistant and 'phrase' in condition.args:
+            self.assistant.stop_conversation()
 
         return result
 
