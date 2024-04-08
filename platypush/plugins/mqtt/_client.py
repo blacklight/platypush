@@ -37,7 +37,7 @@ class MqttClient(mqtt.Client, threading.Thread):
         **kwargs,
     ):
         self.client_id = client_id or str(Config.get('device_id'))
-        mqtt.Client.__init__(self, *args, client_id=self.client_id, **kwargs)
+        mqtt.Client.__init__(self, mqtt.CallbackAPIVersion.VERSION1, *args, client_id=self.client_id, **kwargs)
         threading.Thread.__init__(self, name=f'MQTTClient:{self.client_id}')
 
         self.logger = logging.getLogger(self.__class__.__name__)
