@@ -12,7 +12,14 @@ manifest:
     - platypush.message.event.assistant.ResponseEvent
     - platypush.message.event.assistant.SpeechRecognizedEvent
   install:
+    apk:
+      - ffmpeg
+    apt:
+      - ffmpeg
+    dnf:
+      - ffmpeg
     pacman:
+      - ffmpeg
       - python-sounddevice
     pip:
       - pvcheetah
