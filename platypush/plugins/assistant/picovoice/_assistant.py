@@ -9,11 +9,13 @@ import pvleopard
 import pvporcupine
 import pvrhino
 
+from platypush.context import get_plugin
 from platypush.message.event.assistant import (
     ConversationTimeoutEvent,
     HotwordDetectedEvent,
     SpeechRecognizedEvent,
 )
+from platypush.plugins.tts.picovoice import TtsPicovoicePlugin
 
 from ._context import ConversationContext
 from ._recorder import AudioRecorder
@@ -25,6 +27,7 @@ class Assistant:
     A facade class that wraps the Picovoice engines under an assistant API.
     """
 
+    @staticmethod
     def _default_callback(*_, **__):
         pass
 
@@ -61,11 +64,12 @@ class Assistant:
         self.keyword_paths = None
         self.keyword_model_path = None
         self.frame_expiration = frame_expiration
-        self.speech_model_path = speech_model_path
         self.endpoint_duration = endpoint_duration
         self.enable_automatic_punctuation = enable_automatic_punctuation
         self.start_conversation_on_hotword = start_conversation_on_hotword
         self.audio_queue_size = audio_queue_size
+        self._speech_model_path = speech_model_path
+        self._speech_model_path_override = None
 
         self._on_conversation_start = on_conversation_start
         self._on_conversation_end = on_conversation_end
@@ -103,10 +107,21 @@ class Assistant:
 
                 self.keyword_model_path = keyword_model_path
 
-        self._cheetah: Optional[pvcheetah.Cheetah] = None
+        # Model path -> model instance cache
+        self._cheetah = {}
         self._leopard: Optional[pvleopard.Leopard] = None
         self._porcupine: Optional[pvporcupine.Porcupine] = None
         self._rhino: Optional[pvrhino.Rhino] = None
+
+    @property
+    def speech_model_path(self):
+        return self._speech_model_path_override or self._speech_model_path
+
+    @property
+    def tts(self) -> TtsPicovoicePlugin:
+        p = get_plugin('tts.picovoice')
+        assert p, 'Picovoice TTS plugin not configured/found'
+        return p
 
     def should_stop(self):
         return self._stop_event.is_set()
@@ -130,11 +145,17 @@ class Assistant:
             return
 
         if prev_state == AssistantState.DETECTING_SPEECH:
+            self.tts.stop()
             self._ctx.stop()
+            self._speech_model_path_override = None
             self._on_conversation_end()
         elif new_state == AssistantState.DETECTING_SPEECH:
             self._ctx.start()
             self._on_conversation_start()
+
+        if new_state == AssistantState.DETECTING_HOTWORD:
+            self.tts.stop()
+            self._ctx.reset()
 
     @property
     def porcupine(self) -> Optional[pvporcupine.Porcupine]:
@@ -159,7 +180,7 @@ class Assistant:
         if not self.stt_enabled:
             return None
 
-        if not self._cheetah:
+        if not self._cheetah.get(self.speech_model_path):
             args: Dict[str, Any] = {'access_key': self._access_key}
             if self.speech_model_path:
                 args['model_path'] = self.speech_model_path
@@ -168,9 +189,9 @@ class Assistant:
             if self.enable_automatic_punctuation:
                 args['enable_automatic_punctuation'] = self.enable_automatic_punctuation
 
-            self._cheetah = pvcheetah.create(**args)
+            self._cheetah[self.speech_model_path] = pvcheetah.create(**args)
 
-        return self._cheetah
+        return self._cheetah[self.speech_model_path]
 
     def __enter__(self):
         if self.should_stop():
@@ -178,10 +199,9 @@ class Assistant:
 
         if self._recorder:
             self.logger.info('A recording stream already exists')
-        elif self.porcupine or self.cheetah:
+        elif self.hotword_enabled or self.stt_enabled:
             sample_rate = (self.porcupine or self.cheetah).sample_rate  # type: ignore
             frame_length = (self.porcupine or self.cheetah).frame_length  # type: ignore
-
             self._recorder = AudioRecorder(
                 stop_event=self._stop_event,
                 sample_rate=sample_rate,
@@ -189,6 +209,9 @@ class Assistant:
                 queue_size=self.audio_queue_size,
                 channels=1,
             )
+
+            if self.stt_enabled:
+                self._cheetah[self.speech_model_path] = self.cheetah
 
             self._recorder.__enter__()
 
@@ -205,10 +228,10 @@ class Assistant:
             self._recorder = None
 
         self.state = AssistantState.IDLE
-
-        if self._cheetah:
-            self._cheetah.delete()
-            self._cheetah = None
+        for model in [*self._cheetah.keys()]:
+            cheetah = self._cheetah.pop(model, None)
+            if cheetah:
+                cheetah.delete()
 
         if self._leopard:
             self._leopard.delete()
@@ -242,10 +265,10 @@ class Assistant:
                 )
                 continue  # The audio frame is too old
 
-            if self.porcupine and self.state == AssistantState.DETECTING_HOTWORD:
+            if self.hotword_enabled and self.state == AssistantState.DETECTING_HOTWORD:
                 return self._process_hotword(frame)
 
-            if self.cheetah and self.state == AssistantState.DETECTING_SPEECH:
+            if self.stt_enabled and self.state == AssistantState.DETECTING_SPEECH:
                 return self._process_speech(frame)
 
         raise StopIteration
@@ -283,15 +306,12 @@ class Assistant:
             )
 
         if self._ctx.is_final or self._ctx.timed_out:
-            phrase = ''
-            if self.cheetah:
-                phrase = self.cheetah.flush()
-
+            phrase = self.cheetah.flush() or ''
             self._ctx.transcript += phrase
             phrase = self._ctx.transcript
             phrase = phrase[:1].lower() + phrase[1:]
 
-            if self._ctx.is_final or phrase:
+            if self._ctx.is_final and phrase:
                 event = SpeechRecognizedEvent(phrase=phrase)
                 self._on_speech_recognized(phrase=phrase)
             else:
@@ -303,6 +323,9 @@ class Assistant:
                 self.state = AssistantState.DETECTING_HOTWORD
 
         return event
+
+    def override_speech_model(self, model_path: Optional[str]):
+        self._speech_model_path_override = model_path
 
 
 # vim:sw=4:ts=4:et:
