@@ -7,10 +7,13 @@ Platypush
 
 from .app import Application
 from .config import Config
-from .context import get_backend, get_bus, get_plugin
+from .context import Variable, get_backend, get_bus, get_plugin
+from .cron import cron
+from .event.hook import hook
 from .message.event import Event
 from .message.request import Request
 from .message.response import Response
+from .procedure import procedure
 from .runner import main
 from .utils import run
 
@@ -19,14 +22,18 @@ __author__ = 'Fabio Manganiello <fabio@manganiello.tech>'
 __version__ = '0.50.3'
 __all__ = [
     'Application',
+    'Variable',
     'Config',
     'Event',
     'Request',
     'Response',
+    'cron',
     'get_backend',
     'get_bus',
     'get_plugin',
+    'hook',
     'main',
+    'procedure',
     'run',
 ]
 
