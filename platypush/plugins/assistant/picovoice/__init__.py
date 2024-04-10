@@ -1,7 +1,10 @@
+import os
 from typing import Optional, Sequence
 
+from platypush.context import get_plugin
 from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.assistant import AssistantPlugin
+from platypush.plugins.tts.picovoice import TtsPicovoicePlugin
 
 from ._assistant import Assistant
 from ._state import AssistantState
@@ -96,7 +99,12 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             using a language other than English, you can provide the path to the
             model file for that language. Model files are available for all the
             supported languages through the `Picovoice repository
-            <https://github.com/Picovoice/porcupine/tree/master/lib/common>`_.
+            <https://github.com/Picovoice/cheetah/tree/master/lib/common>`_.
+            You can also use the `Picovoice console
+            <https://console.picovoice.ai/cat>`_
+            to train your custom models. You can use a base model and fine-tune
+            it by boosting the detection of your own words and phrases and edit
+            the phonetic representation of the words you want to detect.
         :param endpoint_duration: If set, the assistant will stop listening when
             no speech is detected for the specified duration (in seconds) after
             the end of an utterance.
@@ -146,15 +154,47 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             'on_hotword_detected': self._on_hotword_detected,
         }
 
+    @property
+    def tts(self) -> TtsPicovoicePlugin:
+        p = get_plugin('tts.picovoice')
+        assert p, 'Picovoice TTS plugin not configured/found'
+        return p
+
+    def _get_tts_plugin(self) -> TtsPicovoicePlugin:
+        return self.tts
+
+    def _on_response_render_start(self, text: Optional[str]):
+        if self._assistant:
+            self._assistant.state = AssistantState.RESPONDING
+        return super()._on_response_render_start(text)
+
+    def _on_response_render_end(self):
+        if self._assistant:
+            self._assistant.state = (
+                AssistantState.DETECTING_HOTWORD
+                if self._assistant.hotword_enabled
+                else AssistantState.IDLE
+            )
+
+        return super()._on_response_render_end()
+
     @action
-    def start_conversation(self, *_, **__):
+    def start_conversation(self, *_, model_file: Optional[str] = None, **__):
         """
-        Programmatically start a conversation with the assistant
+        Programmatically start a conversation with the assistant.
+
+        :param model_file: Override the model file to be used to detect speech
+            in this conversation. If not set, the configured
+            ``speech_model_path`` will be used.
         """
         if not self._assistant:
             self.logger.warning('Assistant not initialized')
             return
 
+        if model_file:
+            model_file = os.path.expanduser(model_file)
+
+        self._assistant.override_speech_model(model_file)
         self._assistant.state = AssistantState.DETECTING_SPEECH
 
     @action
@@ -165,6 +205,8 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         if not self._assistant:
             self.logger.warning('Assistant not initialized')
             return
+
+        self._assistant.override_speech_model(None)
 
         if self._assistant.hotword_enabled:
             self._assistant.state = AssistantState.DETECTING_HOTWORD
