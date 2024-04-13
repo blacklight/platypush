@@ -2,7 +2,6 @@ import os
 from typing import Optional, Sequence
 
 from platypush.context import get_plugin
-from platypush.message.event.assistant import MicMutedEvent, MicUnmutedEvent
 from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.assistant import AssistantPlugin
 from platypush.plugins.tts.picovoice import TtsPicovoicePlugin
@@ -239,11 +238,10 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
 
         :param muted: Set to True or False.
         """
-        self._is_muted = muted
         if self._assistant:
             self._assistant.set_mic_mute(muted)
 
-        self._send_event(MicMutedEvent if muted else MicUnmutedEvent)
+        super()._on_mute_changed(muted)
 
     @action
     def toggle_mute(self, *_, **__):
