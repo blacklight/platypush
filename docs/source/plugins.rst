@@ -11,6 +11,7 @@ Plugins
     platypush/plugins/application.rst
     platypush/plugins/arduino.rst
     platypush/plugins/assistant.google.rst
+    platypush/plugins/assistant.picovoice.rst
     platypush/plugins/autoremote.rst
     platypush/plugins/bluetooth.rst
     platypush/plugins/calendar.rst
@@ -95,7 +96,6 @@ Plugins
     platypush/plugins/nmap.rst
     platypush/plugins/ntfy.rst
     platypush/plugins/otp.rst
-    platypush/plugins/picovoice.rst
     platypush/plugins/pihole.rst
     platypush/plugins/ping.rst
     platypush/plugins/printer.cups.rst
@@ -134,6 +134,7 @@ Plugins
     platypush/plugins/tts.rst
     platypush/plugins/tts.google.rst
     platypush/plugins/tts.mimic3.rst
+    platypush/plugins/tts.picovoice.rst
     platypush/plugins/tv.samsung.ws.rst
     platypush/plugins/twilio.rst
     platypush/plugins/udp.rst

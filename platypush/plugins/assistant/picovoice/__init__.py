@@ -82,26 +82,26 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             to the products available in your Picovoice account.
         :param keywords: List of keywords to listen for (e.g. ``alexa``, ``ok
             google``...). This is required if the wake-word engine is enabled.
-            See the `Picovoice repository
+            See the `Porcupine keywords repository
             <https://github.com/Picovoice/porcupine/tree/master/resources/keyword_files>`_).
             for a list of the stock keywords available. If you have a custom
             model, you can pass its path to the ``keyword_paths`` parameter and
             its filename (without the path and the platform extension) here.
         :param keyword_paths: List of paths to the keyword files to listen for.
-            Custom keyword files can be created using the `Picovoice console
+            Custom keyword files can be created using the `Porcupine console
             <https://console.picovoice.ai/ppn>`_ and downloaded from the
             console itself.
         :param keyword_model_path: If you are using a keyword file in a
             non-English language, you can provide the path to the model file
             for its language. Model files are available for all the supported
-            languages through the `Picovoice repository
+            languages through the `Porcupine lib repository
             <https://github.com/Picovoice/porcupine/tree/master/lib/common>`_.
         :param speech_model_path: Path to the speech model file. If you are
             using a language other than English, you can provide the path to the
             model file for that language. Model files are available for all the
-            supported languages through the `Picovoice repository
+            supported languages through the `Cheetah repository
             <https://github.com/Picovoice/cheetah/tree/master/lib/common>`_.
-            You can also use the `Picovoice console
+            You can also use the `Speech console
             <https://console.picovoice.ai/cat>`_
             to train your custom models. You can use a base model and fine-tune
             it by boosting the detection of your own words and phrases and edit
@@ -214,6 +214,90 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             self._assistant.state = AssistantState.DETECTING_HOTWORD
         else:
             self._assistant.state = AssistantState.IDLE
+
+    @action
+    def say(self, text: str, *args, **kwargs):
+        """
+        Proxy to
+        :class:`platypush.plugins.tts.picovoice.TtsPicovoicePlugin.say` to
+        render some text as speech through the Picovoice TTS engine.
+
+        Extra arguments to
+        :class:`platypush.plugins.tts.picovoice.TtsPicovoicePlugin.say` can be
+        passed over ``args`` and ``kwargs``.
+
+        :param text: Text to be rendered as speech.
+        """
+        return self.tts.say(text, *args, **kwargs)
+
+    @action
+    def transcribe(self, audio_file: str, *_, model_file: Optional[str] = None, **__):
+        """
+        Transcribe an audio file to text using the `Leopard
+        <https://picovoice.ai/docs/leopard/>`_ engine.
+
+        :param text: Text to be transcribed.
+        :param model_file: Override the model file to be used to detect speech
+            in this conversation. If not set, the configured
+            ``speech_model_path`` will be used.
+        :return: dict
+
+          .. code-block:: json
+
+            {
+              "transcription": "This is a test",
+              "words": [
+                {
+                  "word": "this",
+                  "start": 0.06400000303983688,
+                  "end": 0.19200000166893005,
+                  "confidence": 0.9626294374465942
+                },
+                {
+                  "word": "is",
+                  "start": 0.2879999876022339,
+                  "end": 0.35199999809265137,
+                  "confidence": 0.9781675934791565
+                },
+                {
+                  "word": "a",
+                  "start": 0.41600000858306885,
+                  "end": 0.41600000858306885,
+                  "confidence": 0.9764975309371948
+                },
+                {
+                  "word": "test",
+                  "start": 0.5120000243186951,
+                  "end": 0.8320000171661377,
+                  "confidence": 0.9511580467224121
+                }
+              ]
+            }
+
+        """
+        import pvleopard
+
+        audio_file = os.path.expanduser(audio_file)
+        if model_file:
+            model_file = os.path.expanduser(model_file)
+
+        leopard = pvleopard.create(
+            access_key=self._assistant_args['access_key'], model_path=model_file
+        )
+
+        transcript, words = leopard.process_file(audio_file)
+        return {
+            'transcription': transcript,
+            'words': [
+                {
+                    'word': word.word,
+                    'start': word.start_sec,
+                    'end': word.end_sec,
+                    'confidence': word.confidence,
+                }
+                for word in words
+            ],
+        }
 
     @action
     def mute(self, *_, **__):
