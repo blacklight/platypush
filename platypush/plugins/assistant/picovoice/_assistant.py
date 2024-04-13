@@ -63,6 +63,7 @@ class Assistant:
         self.keywords = list(keywords or [])
         self.keyword_paths = None
         self.keyword_model_path = None
+        self._responding = Event()
         self.frame_expiration = frame_expiration
         self.endpoint_duration = endpoint_duration
         self.enable_automatic_punctuation = enable_automatic_punctuation
@@ -114,6 +115,10 @@ class Assistant:
         self._rhino: Optional[pvrhino.Rhino] = None
 
     @property
+    def is_responding(self):
+        return self._responding.is_set()
+
+    @property
     def speech_model_path(self):
         return self._speech_model_path_override or self._speech_model_path
 
@@ -122,6 +127,12 @@ class Assistant:
         p = get_plugin('tts.picovoice')
         assert p, 'Picovoice TTS plugin not configured/found'
         return p
+
+    def set_responding(self, responding: bool):
+        if responding:
+            self._responding.set()
+        else:
+            self._responding.clear()
 
     def should_stop(self):
         return self._stop_event.is_set()
@@ -194,6 +205,9 @@ class Assistant:
         return self._cheetah[self.speech_model_path]
 
     def __enter__(self):
+        """
+        Get the assistant ready to start processing audio frames.
+        """
         if self.should_stop():
             return self
 
@@ -223,6 +237,9 @@ class Assistant:
         return self
 
     def __exit__(self, *_):
+        """
+        Stop the assistant and release all resources.
+        """
         if self._recorder:
             self._recorder.__exit__(*_)
             self._recorder = None
@@ -246,9 +263,15 @@ class Assistant:
             self._rhino = None
 
     def __iter__(self):
+        """
+        Iterate over processed assistant events.
+        """
         return self
 
     def __next__(self):
+        """
+        Process the next audio frame and return the corresponding event.
+        """
         has_data = False
         if self.should_stop() or not self._recorder:
             raise StopIteration
@@ -285,6 +308,7 @@ class Assistant:
             if self.start_conversation_on_hotword:
                 self.state = AssistantState.DETECTING_SPEECH
 
+            self.tts.stop()
             self._on_hotword_detected(hotword=self.keywords[keyword_index])
             return HotwordDetectedEvent(hotword=self.keywords[keyword_index])
 
@@ -311,7 +335,7 @@ class Assistant:
             phrase = self._ctx.transcript
             phrase = phrase[:1].lower() + phrase[1:]
 
-            if self._ctx.is_final and phrase:
+            if phrase:
                 event = SpeechRecognizedEvent(phrase=phrase)
                 self._on_speech_recognized(phrase=phrase)
             else:

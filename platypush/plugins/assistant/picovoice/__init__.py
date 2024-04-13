@@ -165,16 +165,12 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
 
     def _on_response_render_start(self, text: Optional[str]):
         if self._assistant:
-            self._assistant.state = AssistantState.RESPONDING
+            self._assistant.set_responding(True)
         return super()._on_response_render_start(text)
 
     def _on_response_render_end(self):
         if self._assistant:
-            self._assistant.state = (
-                AssistantState.DETECTING_HOTWORD
-                if self._assistant.hotword_enabled
-                else AssistantState.IDLE
-            )
+            self._assistant.set_responding(False)
 
         return super()._on_response_render_end()
 
@@ -257,7 +253,8 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             with Assistant(**self._assistant_args) as self._assistant:
                 try:
                     for event in self._assistant:
-                        self.logger.debug('Picovoice assistant event: %s', event)
+                        if event is not None:
+                            self.logger.debug('Picovoice assistant event: %s', event)
                 except KeyboardInterrupt:
                     break
                 except Exception as e:
