@@ -23,19 +23,19 @@ class TextConversionUtils:
     """
 
     _logger = logging.getLogger(__name__)
-    _number_re = re.compile(r'(([0-9]+)|([0-9]+\.[0-9]+)|([0-9]+\,[0-9]+))')
+    _number_re = re.compile(r'(([0-9]+\.[0-9]+)|([0-9]+\,[0-9]+)|([0-9]+))')
     _conversions_map = {
         (re.compile(r'[(){}\[\]<>]'), ','),
-        (re.compile(r'[:;]'), '.'),
+        (re.compile(r'[;]'), '.'),
         (re.compile(r'[@#]'), ' at '),
         (re.compile(r'[$]'), ' dollar '),
         (re.compile(r'[%]'), ' percent '),
-        (re.compile(r'[&]'), ', and'),
+        (re.compile(r'[&]'), ' and '),
         (re.compile(r'[+]'), ' plus '),
         (re.compile(r'[=]'), ' equals '),
         (re.compile(r'[|]'), ' or '),
         (re.compile(r'[~]'), ' tilde '),
-        (re.compile(r'[`\'"]'), ': quote:'),
+        (re.compile(r'[`]'), ''),
         (re.compile(r'[*]'), ' star '),
         (re.compile(r'[\\/]'), ' slash '),
         (re.compile(r'[_]'), '  underscore '),
@@ -51,7 +51,7 @@ class TextConversionUtils:
 
         while match := cls._number_re.search(text):
             number = match.group(1).replace(',', '')
-            text = text.replace(number, num2words(int(number)))
+            text = text.replace(number, num2words(float(number)))
 
         return text
 
