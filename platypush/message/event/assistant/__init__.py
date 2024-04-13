@@ -69,7 +69,6 @@ class ConversationEndEvent(AssistantEvent):
         :param with_follow_on_turn: Set to true if the conversation expects a
             user follow-up, false otherwise
         """
-
         super().__init__(*args, with_follow_on_turn=with_follow_on_turn, **kwargs)
 
 
@@ -82,17 +81,25 @@ class ConversationTimeoutEvent(ConversationEndEvent):
         super().__init__(*args, **kwargs)
 
 
-class ResponseEvent(ConversationEndEvent):
+class ResponseEvent(AssistantEvent):
     """
     Event triggered when a response is processed by the assistant
     """
 
-    def __init__(self, *args, response_text: str, **kwargs):
+    def __init__(
+        self, *args, response_text: str, with_follow_on_turn: bool = False, **kwargs
+    ):
         """
         :param response_text: Response text processed by the assistant
+        :param with_follow_on_turn: Set to true if the conversation expects a
+            user follow-up, false otherwise
         """
-
-        super().__init__(*args, response_text=response_text, **kwargs)
+        super().__init__(
+            *args,
+            response_text=response_text,
+            with_follow_on_turn=with_follow_on_turn,
+            **kwargs,
+        )
 
 
 class NoResponseEvent(ConversationEndEvent):

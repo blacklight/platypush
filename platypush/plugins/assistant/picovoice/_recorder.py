@@ -1,7 +1,8 @@
 from collections import namedtuple
+from dataclasses import dataclass, field
 from logging import getLogger
 from queue import Full, Queue
-from threading import Event
+from threading import Event, RLock
 from time import time
 from typing import Optional
 
@@ -11,6 +12,61 @@ from platypush.utils import wait_for_either
 
 
 AudioFrame = namedtuple('AudioFrame', ['data', 'timestamp'])
+
+
+@dataclass
+class PauseState:
+    """
+    Data class to hold the boilerplate (state + synchronization events) for the
+    audio recorder pause API.
+    """
+
+    _paused_event: Event = field(default_factory=Event)
+    _recording_event: Event = field(default_factory=Event)
+    _state_lock: RLock = field(default_factory=RLock)
+
+    @property
+    def paused(self):
+        with self._state_lock:
+            return self._paused_event.is_set()
+
+    def pause(self):
+        """
+        Pause the audio recorder.
+        """
+        with self._state_lock:
+            self._paused_event.set()
+            self._recording_event.clear()
+
+    def resume(self):
+        """
+        Resume the audio recorder.
+        """
+        with self._state_lock:
+            self._paused_event.clear()
+            self._recording_event.set()
+
+    def toggle(self):
+        """
+        Toggle the audio recorder pause state.
+        """
+        with self._state_lock:
+            if self.paused:
+                self.resume()
+            else:
+                self.pause()
+
+    def wait_paused(self, timeout: Optional[float] = None):
+        """
+        Wait until the audio recorder is paused.
+        """
+        self._paused_event.wait(timeout=timeout)
+
+    def wait_recording(self, timeout: Optional[float] = None):
+        """
+        Wait until the audio recorder is resumed.
+        """
+        self._recording_event.wait(timeout=timeout)
 
 
 class AudioRecorder:
@@ -25,6 +81,7 @@ class AudioRecorder:
         sample_rate: int,
         frame_size: int,
         channels: int,
+        paused: bool = False,
         dtype: str = 'int16',
         queue_size: int = 100,
     ):
@@ -33,6 +90,12 @@ class AudioRecorder:
         self.frame_size = frame_size
         self._stop_event = Event()
         self._upstream_stop_event = stop_event
+        self._paused_state = PauseState()
+        if paused:
+            self._paused_state.pause()
+        else:
+            self._paused_state.resume()
+
         self.stream = sd.InputStream(
             samplerate=sample_rate,
             channels=channels,
@@ -40,6 +103,10 @@ class AudioRecorder:
             blocksize=frame_size,
             callback=self._audio_callback,
         )
+
+    @property
+    def paused(self):
+        return self._paused_state.paused
 
     def __enter__(self):
         """
@@ -56,7 +123,7 @@ class AudioRecorder:
         self.stop()
 
     def _audio_callback(self, indata, *_):
-        if self.should_stop():
+        if self.should_stop() or self.paused:
             return
 
         try:
@@ -84,6 +151,24 @@ class AudioRecorder:
         """
         self._stop_event.set()
         self.stream.stop()
+
+    def pause(self):
+        """
+        Pause the audio stream.
+        """
+        self._paused_state.pause()
+
+    def resume(self):
+        """
+        Resume the audio stream.
+        """
+        self._paused_state.resume()
+
+    def toggle(self):
+        """
+        Toggle the audio stream pause state.
+        """
+        self._paused_state.toggle()
 
     def should_stop(self):
         return self._stop_event.is_set() or self._upstream_stop_event.is_set()
