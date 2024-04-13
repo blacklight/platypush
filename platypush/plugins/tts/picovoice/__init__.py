@@ -1,4 +1,6 @@
+import logging
 import os
+import re
 from threading import RLock
 from typing import Optional
 
@@ -9,6 +11,56 @@ import sounddevice as sd
 from platypush.config import Config
 from platypush.plugins import action
 from platypush.plugins.tts import TtsPlugin
+
+
+class TextConversionUtils:
+    """
+    Utility class to convert text to a format that is supported by the Orca TTS
+    engine.
+
+    This pre-processing step is necessary until the issue is fixed:
+    https://github.com/Picovoice/orca/issues/10.
+    """
+
+    _logger = logging.getLogger(__name__)
+    _number_re = re.compile(r'(([0-9]+)|([0-9]+\.[0-9]+)|([0-9]+\,[0-9]+))')
+    _conversions_map = {
+        (re.compile(r'[(){}\[\]<>]'), ','),
+        (re.compile(r'[:;]'), '.'),
+        (re.compile(r'[@#]'), ' at '),
+        (re.compile(r'[$]'), ' dollar '),
+        (re.compile(r'[%]'), ' percent '),
+        (re.compile(r'[&]'), ', and'),
+        (re.compile(r'[+]'), ' plus '),
+        (re.compile(r'[=]'), ' equals '),
+        (re.compile(r'[|]'), ' or '),
+        (re.compile(r'[~]'), ' tilde '),
+        (re.compile(r'[`\'"]'), ': quote:'),
+        (re.compile(r'[*]'), ' star '),
+        (re.compile(r'[\\/]'), ' slash '),
+        (re.compile(r'[_]'), '  underscore '),
+    }
+
+    @classmethod
+    def _convert_digits(cls, text: str) -> str:
+        try:
+            from num2words import num2words
+        except ImportError:
+            cls._logger.warning('num2words is not installed, skipping digit conversion')
+            return text
+
+        while match := cls._number_re.search(text):
+            number = match.group(1).replace(',', '')
+            text = text.replace(number, num2words(int(number)))
+
+        return text
+
+    @classmethod
+    def convert(cls, text: str) -> str:
+        for pattern, replacement in TextConversionUtils._conversions_map:
+            text = pattern.sub(replacement, text)
+
+        return cls._convert_digits(text)
 
 
 class TtsPicovoicePlugin(TtsPlugin):
@@ -108,7 +160,11 @@ class TtsPicovoicePlugin(TtsPlugin):
         :param model_path: Path of the TTS model file (default: use the default
             configured model).
         """
+        # This is a temporary workaround until this issue is fixed:
+        # https://github.com/Picovoice/orca/issues/10.
+        text = TextConversionUtils.convert(text)
         orca = self.get_orca(model_path=model_path)
+
         if output_file:
             orca.synthesize_to_file(
                 text, os.path.expanduser(output_file), speech_rate=speech_rate

@@ -19,6 +19,7 @@ manifest:
       - python-numpy
       - python-sounddevice
     pip:
+      - num2words
       - numpy
       - sounddevice
   package: platypush.plugins.tts
