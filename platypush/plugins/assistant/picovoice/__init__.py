@@ -2,6 +2,7 @@ import os
 from typing import Optional, Sequence
 
 from platypush.context import get_plugin
+from platypush.message.event.assistant import MicMutedEvent, MicUnmutedEvent
 from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.assistant import AssistantPlugin
 from platypush.plugins.tts.picovoice import TtsPicovoicePlugin
@@ -64,6 +65,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         start_conversation_on_hotword: bool = True,
         audio_queue_size: int = 100,
         conversation_timeout: Optional[float] = 7.5,
+        muted: bool = False,
         **kwargs,
     ):
         """
@@ -129,6 +131,10 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             within this time, the conversation will time out and the plugin will
             go back into hotword detection mode, if the mode is enabled. Default:
             7.5 seconds.
+        :param muted: Set to True to start the assistant in a muted state. You will
+            need to call the :meth:`.unmute` method to start the assistant listening
+            for commands, or programmatically call the :meth:`.start_conversation`
+            to start a conversation.
         """
         super().__init__(**kwargs)
         self._assistant = None
@@ -147,6 +153,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             'start_conversation_on_hotword': start_conversation_on_hotword,
             'audio_queue_size': audio_queue_size,
             'conversation_timeout': conversation_timeout,
+            'muted': muted,
             'on_conversation_start': self._on_conversation_start,
             'on_conversation_end': self._on_conversation_end,
             'on_conversation_timeout': self._on_conversation_timeout,
@@ -215,6 +222,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         Mute the microphone. Alias for :meth:`.set_mic_mute` with
         ``muted=True``.
         """
+        return self.set_mic_mute(muted=True)
 
     @action
     def unmute(self, *_, **__):
@@ -222,6 +230,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         Unmute the microphone. Alias for :meth:`.set_mic_mute` with
         ``muted=False``.
         """
+        return self.set_mic_mute(muted=False)
 
     @action
     def set_mic_mute(self, muted: bool):
@@ -230,12 +239,18 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
 
         :param muted: Set to True or False.
         """
+        self._is_muted = muted
+        if self._assistant:
+            self._assistant.set_mic_mute(muted)
+
+        self._send_event(MicMutedEvent if muted else MicUnmutedEvent)
 
     @action
     def toggle_mute(self, *_, **__):
         """
         Toggle the mic mute state.
         """
+        return self.set_mic_mute(not self._is_muted)
 
     @action
     def send_text_query(self, *_, query: str, **__):

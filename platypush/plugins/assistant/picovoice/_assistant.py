@@ -47,6 +47,7 @@ class Assistant:
         enable_automatic_punctuation: bool = False,
         start_conversation_on_hotword: bool = False,
         audio_queue_size: int = 100,
+        muted: bool = False,
         conversation_timeout: Optional[float] = None,
         on_conversation_start=_default_callback,
         on_conversation_end=_default_callback,
@@ -69,6 +70,7 @@ class Assistant:
         self.enable_automatic_punctuation = enable_automatic_punctuation
         self.start_conversation_on_hotword = start_conversation_on_hotword
         self.audio_queue_size = audio_queue_size
+        self._muted = muted
         self._speech_model_path = speech_model_path
         self._speech_model_path_override = None
 
@@ -221,6 +223,7 @@ class Assistant:
                 sample_rate=sample_rate,
                 frame_size=frame_length,
                 queue_size=self.audio_queue_size,
+                paused=self._muted,
                 channels=1,
             )
 
@@ -295,6 +298,28 @@ class Assistant:
                 return self._process_speech(frame)
 
         raise StopIteration
+
+    def mute(self):
+        self._muted = True
+        if self._recorder:
+            self._recorder.pause()
+
+    def unmute(self):
+        self._muted = False
+        if self._recorder:
+            self._recorder.resume()
+
+    def set_mic_mute(self, mute: bool):
+        if mute:
+            self.mute()
+        else:
+            self.unmute()
+
+    def toggle_mic_mute(self):
+        if self._muted:
+            self.unmute()
+        else:
+            self.mute()
 
     def _process_hotword(self, frame):
         if not self.porcupine:
