@@ -259,6 +259,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
 
         :param query: Query to be sent.
         """
+        self._on_speech_recognized(query)
 
     def main(self):
         while not self.should_stop():
