@@ -42,11 +42,17 @@ class AudioRecorder:
         )
 
     def __enter__(self):
+        """
+        Start the audio stream.
+        """
         self._stop_event.clear()
         self.stream.start()
         return self
 
     def __exit__(self, *_):
+        """
+        Stop the audio stream.
+        """
         self.stop()
 
     def _audio_callback(self, indata, *_):
@@ -59,6 +65,13 @@ class AudioRecorder:
             self.logger.warning('Audio queue is full, dropping audio frame')
 
     def read(self, timeout: Optional[float] = None):
+        """
+        Read an audio frame from the queue.
+
+        :param timeout: Timeout in seconds. If None, the method will block until
+            an audio frame is available.
+        :return: Audio frame or None if the timeout has expired.
+        """
         try:
             return self._audio_queue.get(timeout=timeout)
         except TimeoutError:
@@ -66,6 +79,9 @@ class AudioRecorder:
             return None
 
     def stop(self):
+        """
+        Stop the audio stream.
+        """
         self._stop_event.set()
         self.stream.stop()
 
@@ -73,4 +89,7 @@ class AudioRecorder:
         return self._stop_event.is_set() or self._upstream_stop_event.is_set()
 
     def wait(self, timeout: Optional[float] = None):
+        """
+        Wait until the audio stream is stopped.
+        """
         wait_for_either(self._stop_event, self._upstream_stop_event, timeout=timeout)
