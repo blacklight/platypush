@@ -242,7 +242,9 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
             tts.say(text=text, **self.tts_plugin_args)
 
     def _on_response_render_end(self):
-        pass
+        from platypush.message.event.assistant import ResponseEndEvent
+
+        self._send_event(ResponseEndEvent)
 
     def _on_hotword_detected(self, hotword: Optional[str]):
         from platypush.message.event.assistant import HotwordDetectedEvent
@@ -255,6 +257,11 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         phrase = (phrase or '').lower().strip()
         self._last_query = phrase
         self._send_event(SpeechRecognizedEvent, phrase=phrase)
+
+    def _on_intent_matched(self, intent: str, slots: Optional[Dict[str, Any]] = None):
+        from platypush.message.event.assistant import IntentMatchedEvent
+
+        self._send_event(IntentMatchedEvent, intent=intent, slots=slots)
 
     def _on_alarm_start(self):
         from platypush.message.event.assistant import AlarmStartedEvent

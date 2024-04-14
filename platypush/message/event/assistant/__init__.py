@@ -1,9 +1,9 @@
 import re
 import sys
-from typing import Optional, Union
+from typing import Any, Mapping, Optional, Union
 
 from platypush.context import get_plugin
-from platypush.message.event import Event
+from platypush.message.event import Event, EventMatchResult
 from platypush.plugins.assistant import AssistantPlugin
 from platypush.utils import get_plugin_name_by_class
 
@@ -97,6 +97,23 @@ class ResponseEvent(AssistantEvent):
         super().__init__(
             *args,
             response_text=response_text,
+            with_follow_on_turn=with_follow_on_turn,
+            **kwargs,
+        )
+
+
+class ResponseEndEvent(ConversationEndEvent):
+    """
+    Event triggered when a response has been rendered on the assistant.
+    """
+
+    def __init__(self, *args, with_follow_on_turn: bool = False, **kwargs):
+        """
+        :param with_follow_on_turn: Set to true if the conversation expects a
+            user follow-up, false otherwise.
+        """
+        super().__init__(
+            *args,
             with_follow_on_turn=with_follow_on_turn,
             **kwargs,
         )
@@ -202,6 +219,42 @@ class SpeechRecognizedEvent(AssistantEvent):
 
         # It's a match if all the tokens in the condition string have been satisfied
         result.is_match = len(condition_tokens) == 0
+        return result
+
+
+class IntentMatchedEvent(AssistantEvent):
+    """
+    Event triggered when an intent is matched by a speech command.
+    """
+
+    def __init__(
+        self, *args, intent: str, slots: Optional[Mapping[str, Any]] = None, **kwargs
+    ):
+        """
+        :param intent: The intent that has been matched.
+        :param slots: The slots extracted from the intent, as a key-value mapping.
+        """
+        super().__init__(*args, intent=intent, slots=slots or {}, **kwargs)
+
+    def _matches_argument(
+        self, argname, condition_value, event_args, result: EventMatchResult
+    ):
+        if argname != 'slots':
+            return super()._matches_argument(
+                argname, condition_value, event_args, result
+            )
+
+        event_slots = set(event_args.get(argname, {}).items())
+        slots = set(self.args.get(argname, {}).items())
+
+        # All the slots in the condition must be in the event
+        if slots.difference(event_slots) == 0:
+            result.is_match = True
+            result.score += 1
+        else:
+            result.is_match = False
+            result.score = 0
+
         return result
 
 
