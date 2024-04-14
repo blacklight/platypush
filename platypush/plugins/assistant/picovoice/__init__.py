@@ -59,6 +59,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         keyword_paths: Optional[Sequence[str]] = None,
         keyword_model_path: Optional[str] = None,
         speech_model_path: Optional[str] = None,
+        intent_model_path: Optional[str] = None,
         endpoint_duration: Optional[float] = 0.5,
         enable_automatic_punctuation: bool = False,
         start_conversation_on_hotword: bool = True,
@@ -106,6 +107,54 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             to train your custom models. You can use a base model and fine-tune
             it by boosting the detection of your own words and phrases and edit
             the phonetic representation of the words you want to detect.
+        :param intent_model_path: Path to the Rhino context model. This is
+            required if you want to use the intent recognition engine through
+            Rhino. The context model is a file that contains a list of intents
+            that can be recognized by the engine. An intent is an action or a
+            class of actions that the assistant can recognize, and it can
+            contain an optional number of slots to model context variables -
+            e.g. temperature, lights group, location, device state etc.
+            You can create your own context model using the `Rhino console
+            <https://console.picovoice.ai/rhn>`_. For example, you can define a
+            context file to control smart home devices by defining the
+            following slots:
+
+                - ``device_type``: The device to control (e.g. lights, music)
+                - ``device_state``: The target state of the device (e.g. on,
+                  off)
+                - ``location``: The location of the device (e.g. living
+                  room, kitchen, bedroom)
+                - ``media_type``: The type of media to play (e.g. music, video)
+                - ``media_state``: The state of the media (e.g. play, pause,
+                  stop)
+
+            You can then define the following intents:
+
+                - ``device_ctrl``: Control a device state. Supported phrases:
+                    - "turn ``$device_state:state`` the ``$location:location``
+                      ``$device_type:device``"
+                    - "turn ``$device_state:state`` the ``$device_type:device``"
+
+                - ``media_ctrl``: Control media state. Supported phrases:
+                    - "``$media_state:state`` the ``$media_type:media``"
+                    - "``$media_state:state`` the ``$media_type:media`` in the
+                      ``$location:location``"
+
+            Then a phrase like "turn on the lights in the living room" would
+            trigger a
+            :class:`platypush.message.event.assistant.IntentMatchedEvent` with:
+
+                .. code-block:: json
+
+                  {
+                    "intent": "device_ctrl",
+                    "slots": {
+                      "type": "lights",
+                      "state": "on",
+                      "location": "living room"
+                    }
+                  }
+
         :param endpoint_duration: If set, the assistant will stop listening when
             no speech is detected for the specified duration (in seconds) after
             the end of an utterance.
@@ -144,9 +193,19 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             'stt_enabled': stt_enabled,
             'intent_enabled': intent_enabled,
             'keywords': keywords,
-            'keyword_paths': keyword_paths,
-            'keyword_model_path': keyword_model_path,
-            'speech_model_path': speech_model_path,
+            'keyword_paths': (
+                os.path.expanduser(keyword_path)
+                for keyword_path in (keyword_paths or [])
+            ),
+            'keyword_model_path': (
+                os.path.expanduser(keyword_model_path) if keyword_model_path else None
+            ),
+            'speech_model_path': (
+                os.path.expanduser(speech_model_path) if speech_model_path else None
+            ),
+            'intent_model_path': (
+                os.path.expanduser(intent_model_path) if intent_model_path else None
+            ),
             'endpoint_duration': endpoint_duration,
             'enable_automatic_punctuation': enable_automatic_punctuation,
             'start_conversation_on_hotword': start_conversation_on_hotword,
@@ -193,6 +252,8 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             self.logger.warning('Assistant not initialized')
             return
 
+        if not model_file:
+            model_file = self._assistant_args['speech_model_path']
         if model_file:
             model_file = os.path.expanduser(model_file)
 
@@ -278,6 +339,8 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         import pvleopard
 
         audio_file = os.path.expanduser(audio_file)
+        if not model_file:
+            model_file = self._assistant_args['speech_model_path']
         if model_file:
             model_file = os.path.expanduser(model_file)
 
@@ -286,18 +349,22 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         )
 
         transcript, words = leopard.process_file(audio_file)
-        return {
-            'transcription': transcript,
-            'words': [
-                {
-                    'word': word.word,
-                    'start': word.start_sec,
-                    'end': word.end_sec,
-                    'confidence': word.confidence,
-                }
-                for word in words
-            ],
-        }
+
+        try:
+            return {
+                'transcription': transcript,
+                'words': [
+                    {
+                        'word': word.word,
+                        'start': word.start_sec,
+                        'end': word.end_sec,
+                        'confidence': word.confidence,
+                    }
+                    for word in words
+                ],
+            }
+        finally:
+            leopard.delete()
 
     @action
     def mute(self, *_, **__):
