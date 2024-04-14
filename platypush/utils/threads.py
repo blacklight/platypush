@@ -24,8 +24,11 @@ def OrEvent(*events, cls: Type = threading.Event):
             or_event.clear()
 
     def _to_or(e, changed_callback: Callable[[], None]):
-        e._set = e.set
-        e._clear = e.clear
+        if not hasattr(e, "_set"):
+            e._set = e.set
+        if not hasattr(e, "_clear"):
+            e._clear = e.clear
+
         e.changed = changed_callback
         e.set = lambda: _or_set(e)
         e.clear = lambda: _clear_or(e)
