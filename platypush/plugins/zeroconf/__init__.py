@@ -46,9 +46,7 @@ class ZeroconfListener(ServiceListener):
             'properties': {
                 k.decode()
                 if isinstance(k, bytes)
-                else k: v.decode()
-                if isinstance(v, bytes)
-                else v
+                else k: (v.decode() if isinstance(v, bytes) else v)
                 for k, v in info.properties.items()
             },
             'server': info.server,
@@ -166,9 +164,7 @@ class ZeroconfPlugin(Plugin):
                     get_bus().post(evt)
                 except queue.Empty:
                     if not services:
-                        self.logger.warning(
-                            'No such service discovered: {}'.format(service)
-                        )
+                        self.logger.warning('No such service discovered: %s', service)
         finally:
             if browser:
                 browser.cancel()
