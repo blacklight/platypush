@@ -105,7 +105,7 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
         :param callback: If blocking is false, then you can provide a callback
             function that will be invoked when a new device is discovered
         """
-        self.chromecasts = {
+        casts = {
             self._get_device_property(cast, 'friendly_name'): cast
             for cast in self._get_chromecasts(
                 tries=tries,
@@ -116,11 +116,18 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
             )
         }
 
-        for name, cast in self.chromecasts.items():
-            self._update_listeners(name, cast)
+        for name, cast in casts.copy().items():
+            if not self.chromecasts.get(name):
+                self.logger.info('Discovered new Chromecast: %s', name)
+                self.chromecasts[name] = cast
+                self._update_listeners(name, cast)
+                cast.wait()
+            else:
+                casts.pop(name)
 
-        for cast in self.chromecasts.values():
+        for name, cast in casts.items():
             cast.wait()
+            self.logger.info('Refreshed Chromecast state: %s', name)
 
     def _event_callback(self, _, cast: pychromecast.Chromecast):
         with self._refresh_lock:
@@ -133,6 +140,7 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
                 name=name, cast=cast, callback=self._event_callback
             )
             cast.media_controller.register_status_listener(self._media_listeners[name])
+            self.logger.debug('Started media listener for %s', name)
 
     def get_chromecast(self, chromecast=None, n_tries=2):
         if isinstance(chromecast, pychromecast.Chromecast):
