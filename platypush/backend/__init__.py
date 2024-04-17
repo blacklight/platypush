@@ -402,6 +402,13 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
             )
             return
 
+        if self.zeroconf:
+            self.logger.info(
+                'Zeroconf service already registered for %s, removing the previous instance',
+                self.__class__.__name__,
+            )
+            self.unregister_service()
+
         self.zeroconf = Zeroconf()
         srv_desc = {
             'name': 'Platypush',
