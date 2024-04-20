@@ -216,6 +216,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             'on_conversation_end': self._on_conversation_end,
             'on_conversation_timeout': self._on_conversation_timeout,
             'on_speech_recognized': self._on_speech_recognized,
+            'on_intent_matched': self._on_intent_matched,
             'on_hotword_detected': self._on_hotword_detected,
         }
 

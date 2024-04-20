@@ -1,28 +1,28 @@
 import logging
 import os
-from threading import Event, RLock
+from queue import Full, Queue
+from threading import Event, RLock, Thread
 from time import time
 from typing import Any, Dict, Optional, Sequence
 
-import pvcheetah
-import pvleopard
 import pvporcupine
-import pvrhino
 
 from platypush.context import get_plugin
 from platypush.message.event.assistant import (
+    AssistantEvent,
     ConversationTimeoutEvent,
     HotwordDetectedEvent,
+    IntentMatchedEvent,
     SpeechRecognizedEvent,
 )
 from platypush.plugins.tts.picovoice import TtsPicovoicePlugin
 
-from ._context import ConversationContext
 from ._recorder import AudioRecorder
+from ._speech import SpeechProcessor
 from ._state import AssistantState
 
 
-class Assistant:
+class Assistant(Thread):
     """
     A facade class that wraps the Picovoice engines under an assistant API.
     """
@@ -43,6 +43,7 @@ class Assistant:
         keyword_model_path: Optional[str] = None,
         frame_expiration: float = 3.0,  # Don't process audio frames older than this
         speech_model_path: Optional[str] = None,
+        intent_model_path: Optional[str] = None,
         endpoint_duration: Optional[float] = None,
         enable_automatic_punctuation: bool = False,
         start_conversation_on_hotword: bool = False,
@@ -53,8 +54,13 @@ class Assistant:
         on_conversation_end=_default_callback,
         on_conversation_timeout=_default_callback,
         on_speech_recognized=_default_callback,
+        on_intent_matched=_default_callback,
         on_hotword_detected=_default_callback,
     ):
+        super().__init__(name='picovoice:Assistant')
+        if intent_enabled:
+            assert intent_model_path, 'Intent model path not provided'
+
         self._access_key = access_key
         self._stop_event = stop_event
         self.logger = logging.getLogger(__name__)
@@ -64,26 +70,40 @@ class Assistant:
         self.keywords = list(keywords or [])
         self.keyword_paths = None
         self.keyword_model_path = None
-        self._responding = Event()
         self.frame_expiration = frame_expiration
         self.endpoint_duration = endpoint_duration
         self.enable_automatic_punctuation = enable_automatic_punctuation
         self.start_conversation_on_hotword = start_conversation_on_hotword
         self.audio_queue_size = audio_queue_size
+        self._responding = Event()
         self._muted = muted
         self._speech_model_path = speech_model_path
         self._speech_model_path_override = None
+        self._intent_model_path = intent_model_path
+        self._intent_model_path_override = None
+        self._in_ctx = False
+
+        self._speech_processor = SpeechProcessor(
+            stop_event=stop_event,
+            stt_enabled=stt_enabled,
+            intent_enabled=intent_enabled,
+            conversation_timeout=conversation_timeout,
+            model_path=speech_model_path,
+            get_cheetah_args=self._get_speech_engine_args,
+            get_rhino_args=self._get_speech_engine_args,
+        )
 
         self._on_conversation_start = on_conversation_start
         self._on_conversation_end = on_conversation_end
         self._on_conversation_timeout = on_conversation_timeout
         self._on_speech_recognized = on_speech_recognized
+        self._on_intent_matched = on_intent_matched
         self._on_hotword_detected = on_hotword_detected
 
         self._recorder = None
         self._state = AssistantState.IDLE
         self._state_lock = RLock()
-        self._ctx = ConversationContext(timeout=conversation_timeout)
+        self._evt_queue = Queue(maxsize=100)
 
         if hotword_enabled:
             if not keywords:
@@ -110,11 +130,7 @@ class Assistant:
 
                 self.keyword_model_path = keyword_model_path
 
-        # Model path -> model instance cache
-        self._cheetah = {}
-        self._leopard: Optional[pvleopard.Leopard] = None
         self._porcupine: Optional[pvporcupine.Porcupine] = None
-        self._rhino: Optional[pvrhino.Rhino] = None
 
     @property
     def is_responding(self):
@@ -123,6 +139,10 @@ class Assistant:
     @property
     def speech_model_path(self):
         return self._speech_model_path_override or self._speech_model_path
+
+    @property
+    def intent_model_path(self):
+        return self._intent_model_path_override or self._intent_model_path
 
     @property
     def tts(self) -> TtsPicovoicePlugin:
@@ -157,18 +177,23 @@ class Assistant:
         if prev_state == new_state:
             return
 
+        self.logger.info('Assistant state transition: %s -> %s', prev_state, new_state)
         if prev_state == AssistantState.DETECTING_SPEECH:
             self.tts.stop()
-            self._ctx.stop()
             self._speech_model_path_override = None
+            self._intent_model_path_override = None
+            self._speech_processor.on_conversation_end()
             self._on_conversation_end()
         elif new_state == AssistantState.DETECTING_SPEECH:
-            self._ctx.start()
+            self._speech_processor.on_conversation_start()
             self._on_conversation_start()
 
         if new_state == AssistantState.DETECTING_HOTWORD:
             self.tts.stop()
-            self._ctx.reset()
+            self._speech_processor.on_conversation_reset()
+
+        # Put a null event on the event queue to unblock next_event
+        self._evt_queue.put(None)
 
     @property
     def porcupine(self) -> Optional[pvporcupine.Porcupine]:
@@ -188,23 +213,16 @@ class Assistant:
 
         return self._porcupine
 
-    @property
-    def cheetah(self) -> Optional[pvcheetah.Cheetah]:
-        if not self.stt_enabled:
-            return None
+    def _get_speech_engine_args(self) -> dict:
+        args: Dict[str, Any] = {'access_key': self._access_key}
+        if self.speech_model_path:
+            args['model_path'] = self.speech_model_path
+        if self.endpoint_duration:
+            args['endpoint_duration_sec'] = self.endpoint_duration
+        if self.enable_automatic_punctuation:
+            args['enable_automatic_punctuation'] = self.enable_automatic_punctuation
 
-        if not self._cheetah.get(self.speech_model_path):
-            args: Dict[str, Any] = {'access_key': self._access_key}
-            if self.speech_model_path:
-                args['model_path'] = self.speech_model_path
-            if self.endpoint_duration:
-                args['endpoint_duration_sec'] = self.endpoint_duration
-            if self.enable_automatic_punctuation:
-                args['enable_automatic_punctuation'] = self.enable_automatic_punctuation
-
-            self._cheetah[self.speech_model_path] = pvcheetah.create(**args)
-
-        return self._cheetah[self.speech_model_path]
+        return args
 
     def __enter__(self):
         """
@@ -213,11 +231,14 @@ class Assistant:
         if self.should_stop():
             return self
 
+        assert not self.is_alive(), 'The assistant is already running'
+        self._in_ctx = True
+
         if self._recorder:
             self.logger.info('A recording stream already exists')
-        elif self.hotword_enabled or self.stt_enabled:
-            sample_rate = (self.porcupine or self.cheetah).sample_rate  # type: ignore
-            frame_length = (self.porcupine or self.cheetah).frame_length  # type: ignore
+        elif self.hotword_enabled or self.stt_enabled or self.intent_enabled:
+            sample_rate = (self.porcupine or self._speech_processor).sample_rate
+            frame_length = (self.porcupine or self._speech_processor).frame_length
             self._recorder = AudioRecorder(
                 stop_event=self._stop_event,
                 sample_rate=sample_rate,
@@ -227,9 +248,7 @@ class Assistant:
                 channels=1,
             )
 
-            if self.stt_enabled:
-                self._cheetah[self.speech_model_path] = self.cheetah
-
+            self._speech_processor.__enter__()
             self._recorder.__enter__()
 
             if self.porcupine:
@@ -237,33 +256,25 @@ class Assistant:
             else:
                 self.state = AssistantState.DETECTING_SPEECH
 
+        self.start()
         return self
 
     def __exit__(self, *_):
         """
         Stop the assistant and release all resources.
         """
+        self._in_ctx = False
         if self._recorder:
             self._recorder.__exit__(*_)
             self._recorder = None
 
         self.state = AssistantState.IDLE
-        for model in [*self._cheetah.keys()]:
-            cheetah = self._cheetah.pop(model, None)
-            if cheetah:
-                cheetah.delete()
-
-        if self._leopard:
-            self._leopard.delete()
-            self._leopard = None
 
         if self._porcupine:
             self._porcupine.delete()
             self._porcupine = None
 
-        if self._rhino:
-            self._rhino.delete()
-            self._rhino = None
+        self._speech_processor.__exit__(*_)
 
     def __iter__(self):
         """
@@ -275,29 +286,36 @@ class Assistant:
         """
         Process the next audio frame and return the corresponding event.
         """
-        has_data = False
         if self.should_stop() or not self._recorder:
             raise StopIteration
 
-        while not (self.should_stop() or has_data):
-            data = self._recorder.read()
-            if data is None:
-                continue
+        if self.hotword_enabled and self.state == AssistantState.DETECTING_HOTWORD:
+            return self._evt_queue.get()
 
-            frame, t = data
-            if time() - t > self.frame_expiration:
-                self.logger.info(
-                    'Skipping audio frame older than %ss', self.frame_expiration
-                )
-                continue  # The audio frame is too old
+        evt = None
+        if (
+            self._speech_processor.enabled
+            and self.state == AssistantState.DETECTING_SPEECH
+        ):
+            evt = self._speech_processor.next_event()
 
-            if self.hotword_enabled and self.state == AssistantState.DETECTING_HOTWORD:
-                return self._process_hotword(frame)
+        if isinstance(evt, SpeechRecognizedEvent):
+            self._on_speech_recognized(phrase=evt.args['phrase'])
+        if isinstance(evt, IntentMatchedEvent):
+            self._on_intent_matched(
+                intent=evt.args['intent'], slots=evt.args.get('slots', {})
+            )
+        if isinstance(evt, ConversationTimeoutEvent):
+            self._on_conversation_timeout()
 
-            if self.stt_enabled and self.state == AssistantState.DETECTING_SPEECH:
-                return self._process_speech(frame)
+        if (
+            evt
+            and self.state == AssistantState.DETECTING_SPEECH
+            and self.hotword_enabled
+        ):
+            self.state = AssistantState.DETECTING_HOTWORD
 
-        raise StopIteration
+        return evt
 
     def mute(self):
         self._muted = True
@@ -321,7 +339,7 @@ class Assistant:
         else:
             self.mute()
 
-    def _process_hotword(self, frame):
+    def _process_hotword(self, frame) -> Optional[HotwordDetectedEvent]:
         if not self.porcupine:
             return None
 
@@ -333,48 +351,61 @@ class Assistant:
             if self.start_conversation_on_hotword:
                 self.state = AssistantState.DETECTING_SPEECH
 
-            self.tts.stop()
+            self.tts.stop()  # Stop any ongoing TTS when the hotword is detected
             self._on_hotword_detected(hotword=self.keywords[keyword_index])
             return HotwordDetectedEvent(hotword=self.keywords[keyword_index])
 
         return None
 
-    def _process_speech(self, frame):
-        if not self.cheetah:
-            return None
-
-        event = None
-        partial_transcript, self._ctx.is_final = self.cheetah.process(frame)
-
-        if partial_transcript:
-            self._ctx.transcript += partial_transcript
-            self.logger.info(
-                'Partial transcript: %s, is_final: %s',
-                self._ctx.transcript,
-                self._ctx.is_final,
-            )
-
-        if self._ctx.is_final or self._ctx.timed_out:
-            phrase = self.cheetah.flush() or ''
-            self._ctx.transcript += phrase
-            phrase = self._ctx.transcript
-            phrase = phrase[:1].lower() + phrase[1:]
-
-            if phrase:
-                event = SpeechRecognizedEvent(phrase=phrase)
-                self._on_speech_recognized(phrase=phrase)
-            else:
-                event = ConversationTimeoutEvent()
-                self._on_conversation_timeout()
-
-            self._ctx.reset()
-            if self.hotword_enabled:
-                self.state = AssistantState.DETECTING_HOTWORD
-
-        return event
-
     def override_speech_model(self, model_path: Optional[str]):
         self._speech_model_path_override = model_path
+
+    def override_intent_model(self, model_path: Optional[str]):
+        self._intent_model_path_override = model_path
+
+    def _put_event(self, evt: AssistantEvent):
+        try:
+            self._evt_queue.put_nowait(evt)
+        except Full:
+            self.logger.warning('The assistant event queue is full')
+
+    def run(self):
+        assert (
+            self._in_ctx
+        ), 'The assistant can only be started through a context manager'
+
+        super().run()
+
+        while not self.should_stop() and self._recorder:
+            self._recorder.wait_start()
+            if self.should_stop():
+                break
+
+            data = self._recorder.read()
+            if data is None:
+                continue
+
+            frame, t = data
+            if time() - t > self.frame_expiration:
+                self.logger.info(
+                    'Skipping audio frame older than %ss', self.frame_expiration
+                )
+                continue  # The audio frame is too old
+
+            if self.hotword_enabled and self.state == AssistantState.DETECTING_HOTWORD:
+                evt = self._process_hotword(frame)
+                if evt:
+                    self._put_event(evt)
+
+                continue
+
+            if (
+                self._speech_processor.enabled
+                and self.state == AssistantState.DETECTING_SPEECH
+            ):
+                self._speech_processor.process(frame, block=False)
+
+        self.logger.info('Assistant stopped')
 
 
 # vim:sw=4:ts=4:et:

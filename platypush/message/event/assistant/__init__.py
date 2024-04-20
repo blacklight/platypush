@@ -107,13 +107,17 @@ class ResponseEndEvent(ConversationEndEvent):
     Event triggered when a response has been rendered on the assistant.
     """
 
-    def __init__(self, *args, with_follow_on_turn: bool = False, **kwargs):
+    def __init__(
+        self, *args, response_text: str, with_follow_on_turn: bool = False, **kwargs
+    ):
         """
+        :param response_text: Response text rendered on the assistant.
         :param with_follow_on_turn: Set to true if the conversation expects a
             user follow-up, false otherwise.
         """
         super().__init__(
             *args,
+            response_text=response_text,
             with_follow_on_turn=with_follow_on_turn,
             **kwargs,
         )
