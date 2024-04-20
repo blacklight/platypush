@@ -178,3 +178,14 @@ class AudioRecorder:
         Wait until the audio stream is stopped.
         """
         wait_for_either(self._stop_event, self._upstream_stop_event, timeout=timeout)
+
+    def wait_start(self, timeout: Optional[float] = None):
+        """
+        Wait until the audio stream is started.
+        """
+        wait_for_either(
+            self._stop_event,
+            self._upstream_stop_event,
+            self._paused_state._recording_event,
+            timeout=timeout,
+        )

@@ -244,7 +244,7 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
     def _on_response_render_end(self):
         from platypush.message.event.assistant import ResponseEndEvent
 
-        self._send_event(ResponseEndEvent)
+        self._send_event(ResponseEndEvent, response_text=self._last_response)
 
     def _on_hotword_detected(self, hotword: Optional[str]):
         from platypush.message.event.assistant import HotwordDetectedEvent
