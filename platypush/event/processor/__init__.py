@@ -1,4 +1,5 @@
 import sys
+from typing import Callable, List, Union
 
 from ..hook import EventHook
 
@@ -20,10 +21,23 @@ class EventProcessor:
         if hooks is None:
             hooks = Config.get_event_hooks()
 
-        self.hooks = []
+        self._hooks_by_name = {}
+        self._hooks_by_value_id = {}
         for name, hook in hooks.items():
-            h = EventHook.build(name=name, hook=hook)
-            self.hooks.append(h)
+            self.add_hook(name, hook)
+
+    @property
+    def hooks(self) -> List[EventHook]:
+        return list(self._hooks_by_name.values())
+
+    def add_hook(self, name: str, desc: Union[dict, Callable]):
+        hook_id = id(desc)
+        if hook_id in self._hooks_by_value_id:
+            return  # Don't add the same hook twice
+
+        hook = EventHook.build(name=name, hook=desc)
+        self._hooks_by_name[name] = hook
+        self._hooks_by_value_id[hook_id] = hook
 
     @staticmethod
     def notify_web_clients(event):
