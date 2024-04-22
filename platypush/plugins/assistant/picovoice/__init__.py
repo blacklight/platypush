@@ -54,7 +54,6 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         access_key: str,
         hotword_enabled: bool = True,
         stt_enabled: bool = True,
-        intent_enabled: bool = False,
         keywords: Optional[Sequence[str]] = None,
         keyword_paths: Optional[Sequence[str]] = None,
         keyword_model_path: Optional[str] = None,
@@ -77,10 +76,6 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         :param stt_enabled: Enable the speech-to-text engine (default: True).
             **Note**: The speech-to-text engine requires you to add Cheetah to
             the products available in your Picovoice account.
-        :param intent_enabled: Enable the intent recognition engine (default:
-            False).
-            **Note**: The intent recognition engine requires you to add Rhino
-            to the products available in your Picovoice account.
         :param keywords: List of keywords to listen for (e.g. ``alexa``, ``ok
             google``...). This is required if the wake-word engine is enabled.
             See the `Porcupine keywords repository
@@ -142,7 +137,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
 
             Then a phrase like "turn on the lights in the living room" would
             trigger a
-            :class:`platypush.message.event.assistant.IntentMatchedEvent` with:
+            :class:`platypush.message.event.assistant.IntentRecognizedEvent` with:
 
                 .. code-block:: json
 
@@ -155,6 +150,8 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
                     }
                   }
 
+            **Note**: The intent recognition engine requires you to add Rhino
+            to the products available in your Picovoice account.
         :param endpoint_duration: If set, the assistant will stop listening when
             no speech is detected for the specified duration (in seconds) after
             the end of an utterance.
@@ -191,7 +188,6 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             'access_key': access_key,
             'hotword_enabled': hotword_enabled,
             'stt_enabled': stt_enabled,
-            'intent_enabled': intent_enabled,
             'keywords': keywords,
             'keyword_paths': (
                 os.path.expanduser(keyword_path)
@@ -208,7 +204,11 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             ),
             'endpoint_duration': endpoint_duration,
             'enable_automatic_punctuation': enable_automatic_punctuation,
-            'start_conversation_on_hotword': start_conversation_on_hotword,
+            'start_conversation_on_hotword': (
+                start_conversation_on_hotword
+                if (intent_model_path or stt_enabled)
+                else False
+            ),
             'audio_queue_size': audio_queue_size,
             'conversation_timeout': conversation_timeout,
             'muted': muted,
@@ -420,7 +420,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
                 try:
                     for event in self._assistant:
                         if event is not None:
-                            self.logger.debug('Picovoice assistant event: %s', event)
+                            self.logger.debug('Dequeued assistant event: %s', event)
                 except KeyboardInterrupt:
                     break
                 except Exception as e:

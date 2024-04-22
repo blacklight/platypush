@@ -6,7 +6,7 @@ manifest:
     - platypush.message.event.assistant.ConversationStartEvent
     - platypush.message.event.assistant.ConversationTimeoutEvent
     - platypush.message.event.assistant.HotwordDetectedEvent
-    - platypush.message.event.assistant.IntentMatchedEvent
+    - platypush.message.event.assistant.IntentRecognizedEvent
     - platypush.message.event.assistant.MicMutedEvent
     - platypush.message.event.assistant.MicUnmutedEvent
     - platypush.message.event.assistant.NoResponseEvent

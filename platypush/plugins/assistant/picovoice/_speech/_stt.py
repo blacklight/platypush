@@ -37,16 +37,19 @@ class SttProcessor(BaseProcessor):
         return self._get_cheetah().frame_length
 
     def _get_cheetah(self) -> pvcheetah.Cheetah:
-        if not self._cheetah.get(self._model_path):
-            self.logger.debug(
-                'Creating Cheetah instance for model %s', self._model_path
-            )
-            self._cheetah[self._model_path] = pvcheetah.create(
-                **self._get_cheetah_args()
-            )
-            self.logger.debug('Cheetah instance created for model %s', self._model_path)
+        with self._state_lock:
+            if not self._cheetah.get(self._model_path):
+                self.logger.debug(
+                    'Creating Cheetah instance for model %s', self._model_path
+                )
+                self._cheetah[self._model_path] = pvcheetah.create(
+                    **self._get_cheetah_args()
+                )
+                self.logger.debug(
+                    'Cheetah instance created for model %s', self._model_path
+                )
 
-        return self._cheetah[self._model_path]
+            return self._cheetah[self._model_path]
 
     def process(
         self, audio: Sequence[int]
@@ -54,6 +57,7 @@ class SttProcessor(BaseProcessor):
         event = None
         cheetah = self._get_cheetah()
         partial_transcript, self._ctx.is_final = cheetah.process(audio)
+        last_transcript = self._ctx.transcript
 
         # Concatenate the partial transcript to the context
         if partial_transcript:
@@ -69,24 +73,38 @@ class SttProcessor(BaseProcessor):
         if self._ctx.is_final or self._ctx.timed_out:
             phrase = cheetah.flush() or ''
             self._ctx.transcript += phrase
+            if self._ctx.transcript and self._ctx.transcript != last_transcript:
+                self.logger.debug('Processed STT transcript: %s', self._ctx.transcript)
+                last_transcript = self._ctx.transcript
+
             phrase = self._ctx.transcript
-            phrase = phrase[:1].lower() + phrase[1:]
+            phrase = (phrase[:1].lower() + phrase[1:]).strip()
             event = (
                 SpeechRecognizedEvent(phrase=phrase)
                 if phrase
                 else ConversationTimeoutEvent()
             )
 
-            self._ctx.reset()
-
-        if event:
-            self.logger.debug('STT event: %s', event)
+            self.reset()
 
         return event
 
+    def reset(self):
+        if not self._enabled:
+            return
+
+        with self._state_lock:
+            super().reset()
+            self._get_cheetah().flush()
+
     def stop(self):
+        if not self._enabled:
+            return
+
         super().stop()
-        objs = self._cheetah.copy()
-        for key, obj in objs.items():
-            obj.delete()
-            self._cheetah.pop(key)
+
+        with self._state_lock:
+            objs = self._cheetah.copy()
+            for key, obj in objs.items():
+                obj.delete()
+                self._cheetah.pop(key)

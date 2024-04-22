@@ -259,9 +259,9 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         self._send_event(SpeechRecognizedEvent, phrase=phrase)
 
     def _on_intent_matched(self, intent: str, slots: Optional[Dict[str, Any]] = None):
-        from platypush.message.event.assistant import IntentMatchedEvent
+        from platypush.message.event.assistant import IntentRecognizedEvent
 
-        self._send_event(IntentMatchedEvent, intent=intent, slots=slots)
+        self._send_event(IntentRecognizedEvent, intent=intent, slots=slots)
 
     def _on_alarm_start(self):
         from platypush.message.event.assistant import AlarmStartedEvent

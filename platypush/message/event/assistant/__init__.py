@@ -226,7 +226,7 @@ class SpeechRecognizedEvent(AssistantEvent):
         return result
 
 
-class IntentMatchedEvent(AssistantEvent):
+class IntentRecognizedEvent(AssistantEvent):
     """
     Event triggered when an intent is matched by a speech command.
     """
