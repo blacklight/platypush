@@ -1,8 +1,8 @@
 import logging
 from abc import ABC, abstractmethod
 from queue import Empty, Queue
-from threading import Event, Thread, get_ident
-from typing import Optional, Sequence
+from threading import Event, RLock, Thread, get_ident
+from typing import Any, Optional, Sequence
 
 from platypush.message.event.assistant import AssistantEvent
 
@@ -19,12 +19,14 @@ class BaseProcessor(ABC, Thread):
         self,
         *args,
         stop_event: Event,
+        enabled: bool = True,
         conversation_timeout: Optional[float] = None,
         **kwargs,
     ):
         super().__init__(*args, name=f'picovoice:{self.__class__.__name__}', **kwargs)
 
         self.logger = logging.getLogger(self.name)
+        self._enabled = enabled
         self._audio_queue = Queue()
         self._stop_event = stop_event
         self._ctx = ConversationContext(timeout=conversation_timeout)
@@ -36,6 +38,7 @@ class BaseProcessor(ABC, Thread):
         # processing and it's ready to accept a new audio frame
         self._processing_done = Event()
         self._processing_done.set()
+        self._state_lock = RLock()
 
     def should_stop(self) -> bool:
         return self._stop_event.is_set()
@@ -44,9 +47,25 @@ class BaseProcessor(ABC, Thread):
         return self._stop_event.wait(timeout)
 
     def enqueue(self, audio: Sequence[int]):
+        if not self._enabled:
+            return
+
         self._event_wait.set()
         self._processing_done.clear()
         self._audio_queue.put_nowait(audio)
+
+    def reset(self) -> Optional[Any]:
+        """
+        Reset any pending context.
+        """
+        if not self._enabled:
+            return
+
+        with self._state_lock:
+            self._ctx.reset()
+            self._event_queue.queue.clear()
+            self._event_wait.clear()
+            self._processing_done.set()
 
     @property
     def processing_done(self) -> Event:
@@ -77,20 +96,18 @@ class BaseProcessor(ABC, Thread):
         """
         :return: The latest event that was processed by the processor.
         """
-        evt = None
-        try:
-            while True:
-                evt = self._event_queue.get_nowait()
-        except Empty:
-            pass
+        with self._state_lock:
+            evt = None
+            try:
+                while True:
+                    evt = self._event_queue.get_nowait()
+            except Empty:
+                pass
 
-        if evt:
-            self._event_wait.clear()
+            if evt:
+                self._event_wait.clear()
 
-        return evt
-
-    def clear_wait(self):
-        self._event_wait.clear()
+            return evt
 
     @abstractmethod
     def process(self, audio: Sequence[int]) -> Optional[AssistantEvent]:
@@ -100,7 +117,10 @@ class BaseProcessor(ABC, Thread):
 
     def run(self):
         super().run()
-        self._ctx.reset()
+        if not self._enabled:
+            self.wait_stop()
+
+        self.reset()
         self._processing_done.clear()
         self.logger.info('Processor started: %s', self.name)
 
@@ -119,7 +139,11 @@ class BaseProcessor(ABC, Thread):
             try:
                 self._processing_done.clear()
                 event = self.process(audio)
+
                 if event:
+                    self.logger.debug(
+                        'Dispatching event processed from %s: %s', self.name, event
+                    )
                     self._event_queue.put_nowait(event)
                     self._processing_done.set()
             except Exception as e:
@@ -133,10 +157,14 @@ class BaseProcessor(ABC, Thread):
                 self._processing_done.set()
                 continue
 
-        self._ctx.reset()
+        self._processing_done.set()
+        self.reset()
         self.logger.info('Processor stopped: %s', self.name)
 
     def stop(self):
+        if not self._enabled:
+            return
+
         self._audio_queue.put_nowait(None)
         if self.is_alive() and self.ident != get_ident():
             self.logger.debug('Stopping %s', self.name)
@@ -146,7 +174,7 @@ class BaseProcessor(ABC, Thread):
         self._ctx.start()
 
     def on_conversation_end(self):
-        self._ctx.stop()
+        self.reset()
 
     def on_conversation_reset(self):
-        self._ctx.reset()
+        self.reset()

@@ -4,7 +4,7 @@ import pvrhino
 
 from platypush.message.event.assistant import (
     ConversationTimeoutEvent,
-    IntentMatchedEvent,
+    IntentRecognizedEvent,
 )
 
 from ._base import BaseProcessor
@@ -44,9 +44,9 @@ class IntentProcessor(BaseProcessor):
 
     def process(
         self, audio: Sequence[int]
-    ) -> Optional[Union[IntentMatchedEvent, ConversationTimeoutEvent]]:
+    ) -> Optional[Union[IntentRecognizedEvent, ConversationTimeoutEvent]]:
         """
-        Process the audio and return an ``IntentMatchedEvent`` if the intent was
+        Process the audio and return an ``IntentRecognizedEvent`` if the intent was
         understood, or a ``ConversationTimeoutEvent`` if the conversation timed
         out, or ``None`` if the intent processing is not yet finalized.
         """
@@ -62,25 +62,32 @@ class IntentProcessor(BaseProcessor):
             )
 
             if inference.is_understood:
-                event = IntentMatchedEvent(
+                event = IntentRecognizedEvent(
                     intent=inference.intent,
-                    slots={slot.key: slot.value for slot in inference.slots},
+                    slots=dict(inference.slots),
                 )
 
         if not event and self._ctx.timed_out:
             event = ConversationTimeoutEvent()
 
-        if event:
-            self._ctx.reset()
-
-        if event:
-            self.logger.debug('Intent event: %s', event)
-
         return event
 
+    def reset(self) -> None:
+        if not self._enabled:
+            return
+
+        with self._state_lock:
+            self._get_rhino().reset()
+            super().reset()
+
     def stop(self):
+        if not self._enabled:
+            return
+
         super().stop()
-        objs = self._rhino.copy()
-        for key, obj in objs.items():
-            obj.delete()
-            self._rhino.pop(key)
+
+        with self._state_lock:
+            objs = self._rhino.copy()
+            for key, obj in objs.items():
+                obj.delete()
+                self._rhino.pop(key)

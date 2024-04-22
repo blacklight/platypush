@@ -16,22 +16,16 @@ class ConversationContext:
     intent: Optional[Intent] = None
     timeout: Optional[float] = None
     t_start: Optional[float] = None
-    t_end: Optional[float] = None
 
     def start(self):
         self.reset()
         self.t_start = time()
-
-    def stop(self):
-        self.reset()
-        self.t_end = time()
 
     def reset(self):
         self.transcript = ''
         self.intent = None
         self.is_final = False
         self.t_start = None
-        self.t_end = None
 
     @property
     def timed_out(self):

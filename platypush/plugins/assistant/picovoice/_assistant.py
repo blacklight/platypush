@@ -12,7 +12,7 @@ from platypush.message.event.assistant import (
     AssistantEvent,
     ConversationTimeoutEvent,
     HotwordDetectedEvent,
-    IntentMatchedEvent,
+    IntentRecognizedEvent,
     SpeechRecognizedEvent,
 )
 from platypush.plugins.tts.picovoice import TtsPicovoicePlugin
@@ -37,7 +37,6 @@ class Assistant(Thread):
         stop_event: Event,
         hotword_enabled: bool = True,
         stt_enabled: bool = True,
-        intent_enabled: bool = False,
         keywords: Optional[Sequence[str]] = None,
         keyword_paths: Optional[Sequence[str]] = None,
         keyword_model_path: Optional[str] = None,
@@ -58,15 +57,12 @@ class Assistant(Thread):
         on_hotword_detected=_default_callback,
     ):
         super().__init__(name='picovoice:Assistant')
-        if intent_enabled:
-            assert intent_model_path, 'Intent model path not provided'
 
         self._access_key = access_key
         self._stop_event = stop_event
         self.logger = logging.getLogger(__name__)
         self.hotword_enabled = hotword_enabled
         self.stt_enabled = stt_enabled
-        self.intent_enabled = intent_enabled
         self.keywords = list(keywords or [])
         self.keyword_paths = None
         self.keyword_model_path = None
@@ -86,11 +82,11 @@ class Assistant(Thread):
         self._speech_processor = SpeechProcessor(
             stop_event=stop_event,
             stt_enabled=stt_enabled,
-            intent_enabled=intent_enabled,
+            intent_enabled=self.intent_enabled,
             conversation_timeout=conversation_timeout,
             model_path=speech_model_path,
             get_cheetah_args=self._get_speech_engine_args,
-            get_rhino_args=self._get_speech_engine_args,
+            get_rhino_args=self._get_intent_engine_args,
         )
 
         self._on_conversation_start = on_conversation_start
@@ -133,15 +129,19 @@ class Assistant(Thread):
         self._porcupine: Optional[pvporcupine.Porcupine] = None
 
     @property
-    def is_responding(self):
+    def intent_enabled(self) -> bool:
+        return self.intent_model_path is not None
+
+    @property
+    def is_responding(self) -> bool:
         return self._responding.is_set()
 
     @property
-    def speech_model_path(self):
+    def speech_model_path(self) -> Optional[str]:
         return self._speech_model_path_override or self._speech_model_path
 
     @property
-    def intent_model_path(self):
+    def intent_model_path(self) -> Optional[str]:
         return self._intent_model_path_override or self._intent_model_path
 
     @property
@@ -217,6 +217,16 @@ class Assistant(Thread):
         args: Dict[str, Any] = {'access_key': self._access_key}
         if self.speech_model_path:
             args['model_path'] = self.speech_model_path
+        if self.endpoint_duration:
+            args['endpoint_duration_sec'] = self.endpoint_duration
+        if self.enable_automatic_punctuation:
+            args['enable_automatic_punctuation'] = self.enable_automatic_punctuation
+
+        return args
+
+    def _get_intent_engine_args(self) -> dict:
+        args: Dict[str, Any] = {'access_key': self._access_key}
+        args['context_path'] = self.intent_model_path
         if self.endpoint_duration:
             args['endpoint_duration_sec'] = self.endpoint_duration
         if self.enable_automatic_punctuation:
@@ -301,12 +311,15 @@ class Assistant(Thread):
 
         if isinstance(evt, SpeechRecognizedEvent):
             self._on_speech_recognized(phrase=evt.args['phrase'])
-        if isinstance(evt, IntentMatchedEvent):
+        if isinstance(evt, IntentRecognizedEvent):
             self._on_intent_matched(
                 intent=evt.args['intent'], slots=evt.args.get('slots', {})
             )
         if isinstance(evt, ConversationTimeoutEvent):
             self._on_conversation_timeout()
+
+        if evt:
+            self._speech_processor.reset()
 
         if (
             evt

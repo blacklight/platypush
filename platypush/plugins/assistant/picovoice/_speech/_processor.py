@@ -3,7 +3,7 @@ from queue import Queue
 from threading import Event
 from typing import Callable, Optional, Sequence
 
-from platypush.message.event.assistant import AssistantEvent
+from platypush.message.event.assistant import AssistantEvent, ConversationTimeoutEvent
 from platypush.utils import wait_for_either
 
 from ._intent import IntentProcessor
@@ -39,12 +39,14 @@ class SpeechProcessor:
         self._stt_processor = SttProcessor(
             conversation_timeout=conversation_timeout,
             stop_event=stop_event,
+            enabled=stt_enabled,
             get_cheetah_args=get_cheetah_args,
         )
 
         self._intent_processor = IntentProcessor(
             conversation_timeout=conversation_timeout,
             stop_event=stop_event,
+            enabled=intent_enabled,
             get_rhino_args=get_rhino_args,
         )
 
@@ -77,24 +79,24 @@ class SpeechProcessor:
         if self.should_stop():
             return evt
 
-        # Priority to the intent processor event, if the processor is enabled
-        if self._intent_enabled:
-            evt = self._intent_processor.last_event()
+        with self._stt_processor._state_lock, self._intent_processor._state_lock:
+            # Priority to the intent processor event, if the processor is enabled
+            if self._intent_enabled:
+                evt = self._intent_processor.last_event()
+
+            # If the intent processor didn't return any event, then return the STT
+            # processor event
+            if (
+                not evt or isinstance(evt, ConversationTimeoutEvent)
+            ) and self._stt_enabled:
+                # self._stt_processor.processing_done.wait(timeout=timeout)
+                evt = self._stt_processor.last_event()
+
             if evt:
-                self.logger.debug('Intent processor event: %s', evt)
+                self._stt_processor.reset()
+                self._intent_processor.reset()
 
-        # If the intent processor didn't return any event, then return the STT
-        # processor event
-        if not evt and self._stt_enabled:
-            evt = self._stt_processor.last_event()
-            if evt:
-                self.logger.debug('STT processor event: %s', evt)
-
-        if evt:
-            self._stt_processor.clear_wait()
-            self._intent_processor.clear_wait()
-
-        return evt
+            return evt
 
     def process(
         self, audio: Sequence[int], block: bool = True, timeout: Optional[float] = None
@@ -138,8 +140,11 @@ class SpeechProcessor:
         """
         Start the STT and Intent processors.
         """
-        self._stt_processor.start()
-        self._intent_processor.start()
+        if self._stt_enabled:
+            self._stt_processor.start()
+
+        if self._intent_enabled:
+            self._intent_processor.start()
 
     def stop(self):
         """
@@ -168,6 +173,13 @@ class SpeechProcessor:
 
         if self._intent_enabled:
             self._intent_processor.on_conversation_reset()
+
+    def reset(self):
+        """
+        Reset the state of the STT and Intent processors.
+        """
+        self._stt_processor.reset()
+        self._intent_processor.reset()
 
     @property
     def sample_rate(self) -> int:
