@@ -59,10 +59,12 @@ class TextConversionUtils:
 
     @classmethod
     def convert(cls, text: str) -> str:
+        text = cls._convert_digits(text)
+
         for pattern, replacement in TextConversionUtils._conversions_map:
             text = pattern.sub(replacement, text)
 
-        return cls._convert_digits(text)
+        return text
 
 
 class TtsPicovoicePlugin(TtsPlugin):
