@@ -220,7 +220,7 @@ class Event(Message):
         :param condition: The platypush.event.hook.EventCondition object
         """
 
-        result = EventMatchResult(is_match=False, parsed_args=self.args)
+        result = EventMatchResult(is_match=False)
         match_scores = []
 
         if not isinstance(self, condition.type):
