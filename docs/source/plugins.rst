@@ -95,6 +95,7 @@ Plugins
     platypush/plugins/ngrok.rst
     platypush/plugins/nmap.rst
     platypush/plugins/ntfy.rst
+    platypush/plugins/openai.rst
     platypush/plugins/otp.rst
     platypush/plugins/pihole.rst
     platypush/plugins/ping.rst

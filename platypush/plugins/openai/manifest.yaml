@@ -1,0 +1,3 @@
+manifest:
+  package: platypush.plugins.openai
+  type: plugin
