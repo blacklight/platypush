@@ -25,7 +25,7 @@ class TextConversionUtils:
     _logger = logging.getLogger(__name__)
     _number_re = re.compile(r'(([0-9]+\.[0-9]+)|([0-9]+\,[0-9]+)|([0-9]+))')
     _conversions_map = {
-        (re.compile(r'[(){}\[\]<>]'), ','),
+        (re.compile(r'\s*[(){}\[\]<>]'), ', '),
         (re.compile(r'[;]'), '.'),
         (re.compile(r'[@#]'), ' at '),
         (re.compile(r'[$]'), ' dollar '),
@@ -39,6 +39,8 @@ class TextConversionUtils:
         (re.compile(r'[*]'), ' star '),
         (re.compile(r'[\\/]'), ' slash '),
         (re.compile(r'[_]'), '  underscore '),
+        # Anything that isn't a letter or supported punctuation is replaced with a space
+        (re.compile(r'[^a-zA-Z,.:?!\-\'" ]'), ' '),
     }
 
     @classmethod
@@ -50,8 +52,8 @@ class TextConversionUtils:
             return text
 
         while match := cls._number_re.search(text):
-            number = match.group(1).replace(',', '')
-            text = text.replace(number, num2words(float(number)))
+            number = match.group(1)
+            text = text.replace(number, num2words(float(number.replace(',', ''))))
 
         return text
 
