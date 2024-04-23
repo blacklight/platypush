@@ -179,6 +179,7 @@ class SpeechRecognizedEvent(AssistantEvent):
             result.score = sys.maxsize
             return result
 
+        parsed_args = {}
         event_tokens = re.split(r'\s+', event_args.get(argname, '').strip().lower())
         condition_tokens = re.split(r'\s+', condition_value.strip().lower())
 
@@ -201,11 +202,11 @@ class SpeechRecognizedEvent(AssistantEvent):
                 m = re.match(r'[^\\]*\${(.+?)}', condition_token)
                 if m:
                     argname = m.group(1)
-                    if argname not in result.parsed_args:
-                        result.parsed_args[argname] = event_token
+                    if argname not in parsed_args:
+                        parsed_args[argname] = event_token
                         result.score += 1.0
                     else:
-                        result.parsed_args[argname] += ' ' + event_token
+                        parsed_args[argname] += ' ' + event_token
 
                     if (len(condition_tokens) == 1 and len(event_tokens) == 1) or (
                         len(event_tokens) > 1
@@ -223,6 +224,9 @@ class SpeechRecognizedEvent(AssistantEvent):
 
         # It's a match if all the tokens in the condition string have been satisfied
         result.is_match = len(condition_tokens) == 0
+        if result.is_match:
+            result.parsed_args = parsed_args
+
         return result
 
 
