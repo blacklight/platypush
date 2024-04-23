@@ -255,6 +255,8 @@ class MusicMopidyPlugin(RunnablePlugin):
             ret = self._add(resource, position=0)
             if not ret:
                 self.logger.warning('Failed to add %s to the tracklist', resource)
+            elif isinstance(ret, list):
+                track_id = ret[0].get('tlid')
             elif isinstance(ret, dict):
                 track_id = ret.get('tlid')
         elif position is not None:
