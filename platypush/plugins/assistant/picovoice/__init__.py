@@ -12,27 +12,18 @@ from ._state import AssistantState
 
 # pylint: disable=too-many-ancestors
 class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
-    """
+    r"""
     A voice assistant that runs on your device, based on the `Picovoice
     <https://picovoice.ai/>`_ engine.
 
-    .. note:: You will need a PicoVoice account and a personal access key to
-        use this integration.
-
-    You can get your personal access key by signing up at the `Picovoice
-    console <https://console.picovoice.ai/>`_. You may be asked to submit a
-    reason for using the service (feel free to mention a personal Platypush
-    integration), and you will receive your personal access key.
-
-    You may also be asked to select which products you want to use. The default
-    configuration of this plugin requires the following:
+    Picovoice is a suite of on-device voice technologies that include:
 
         * **Porcupine**: wake-word engine, if you want the device to listen for
           a specific wake word in order to start the assistant.
 
         * **Cheetah**: speech-to-text engine, if you want your voice
-          interactions to be transcribed into free text - either programmatically
-          or when triggered by the wake word. Or:
+          interactions to be transcribed into free text - either
+          programmatically or when triggered by the wake word. Or:
 
         * **Rhino**: intent recognition engine, if you want to extract *intents*
           out of your voice commands - for instance, the phrase "set the living
@@ -46,6 +37,316 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         * **Orca**: text-to-speech engine, if you want to create your custom
           logic to respond to user's voice commands and render the responses as
           audio.
+
+    This plugin is a wrapper around the Picovoice engine that allows you to
+    run your custom voice-based conversational flows on your device.
+
+    Getting a Picovoice account and access key
+    -------------------------------------------
+
+    You can get your personal access key by signing up at the `Picovoice
+    console <https://console.picovoice.ai/>`_. You may be asked to submit a
+    reason for using the service (feel free to mention a personal Platypush
+    integration), and you will receive your personal access key.
+
+    If prompted to select the products you want to use, make sure to select
+    the ones from the Picovoice suite that you want to use with this plugin.
+
+
+    Hotword detection
+    -----------------
+
+    The hotword detection engine is based on `Porcupine
+    <https://picovoice.ai/platform/porcupine/>`_.
+
+    If enabled through the ``hotword_enabled`` parameter (default: True), the
+    assistant will listen for a specific wake word before starting the
+    speech-to-text or intent recognition engines. You can specify custom models
+    for your hotword (e.g. on the same device you may use "Alexa" to trigger the
+    speech-to-text engine in English, "Computer" to trigger the speech-to-text
+    engine in Italian, and "Ok Google" to trigger the intent recognition engine.
+
+    You can also create your custom hotword models using the `Porcupine console
+    <https://console.picovoice.ai/ppn>`_.
+
+    If ``hotword_enabled`` is set to True, you must also specify the
+    ``keywords`` parameter with the list of keywords that you want to listen
+    for, and optionally the ``keyword_paths`` parameter with the paths to the
+    any custom hotword models that you want to use. If ``hotword_enabled`` is
+    set to False, then the assistant won't start listening for speech after the
+    plugin is started, and you will need to programmatically start the
+    conversation by calling the :meth:`.start_conversation` action, or trigger
+    it from the UI.
+
+    When a wake-word is detected, the assistant will emit a
+    :class:`platypush.message.event.assistant.HotwordDetectedEvent` event that
+    you can use to build your custom logic. For example:
+
+      .. code-block:: python
+
+        import time
+
+        from platypush import hook, run
+        from platypush.message.event.assistant import HotwordDetectedEvent
+
+        # Turn on a light for 5 seconds when the hotword "Alexa" is detected
+        @hook(HotwordDetectedEvent, hotword='Alexa')
+        def on_hotword_detected(event: HotwordDetectedEvent, **context):
+            run("light.hue.on", lights=["Living Room"])
+            time.sleep(5)
+            run("light.hue.off", lights=["Living Room"])
+
+    By default, the assistant will start listening for speech after the hotword
+    if either ``stt_enabled`` or ``intent_model_path`` are set. If you don't
+    want the assistant to start listening for speech after the hotword is
+    detected (for example because you want to build your custom response flows,
+    or trigger the speech detection using different models depending on the
+    hotword that is used, or because you just want to detect hotwords but not
+    speech), then you can also set the ``start_conversation_on_hotword``
+    parameter to ``False``. If that is the case, then you can programmatically
+    start the conversation by calling the :meth:`.start_conversation` method in
+    your event hooks:
+
+      .. code-block:: python
+
+        from platypush import hook, run
+        from platypush.message.event.assistant import HotwordDetectedEvent
+
+        # Start a conversation using the Italian language model when the
+        # "Buongiorno" hotword is detected
+        @hook(HotwordDetectedEvent, hotword='Buongiorno')
+        def on_it_hotword_detected(event: HotwordDetectedEvent, **context):
+            event.assistant.start_conversation(model_file='path/to/it.pv')
+
+    Speech-to-text
+    --------------
+
+    The speech-to-text engine is based on `Cheetah
+    <https://picovoice.ai/docs/cheetah/>`_.
+
+    If enabled through the ``stt_enabled`` parameter (default: True), the
+    assistant will transcribe the voice commands into text when a conversation
+    is started either programmatically through :meth:`.start_conversation` or
+    when the hotword is detected.
+
+    It will emit a
+    :class:`platypush.message.event.assistant.SpeechRecognizedEvent` when some
+    speech is detected, and you can hook to that event to build your custom
+    logic:
+
+      .. code-block:: python
+
+        from platypush import hook, run
+        from platypush.message.event.assistant import SpeechRecognizedEvent
+
+        # Turn on a light when the phrase "turn on the lights" is detected.
+        # Note that we can leverage regex-based pattern matching to be more
+        # flexible when matching the phrases. For example, the following hook
+        # will be matched when the user says "turn on the lights", "turn on
+        # lights", "lights on", "lights on please", "turn on light" etc.
+        @hook(SpeechRecognizedEvent, phrase='turn on (the)? lights?')
+        def on_turn_on_lights(event: SpeechRecognizedEvent, **context):
+            run("light.hue.on")
+
+    You can also leverage context extraction through the ``${}`` syntax on the
+    hook to extract specific tokens from the event that can be passed to your
+    event hook. For example:
+
+      .. code-block:: python
+
+        from platypush import hook, run
+        from platypush.message.event.assistant import SpeechRecognizedEvent
+
+        @hook(SpeechRecognizedEvent, phrase='play ${title} by ${artist}')
+        def on_play_track_command(
+            event: SpeechRecognizedEvent, title: str, artist: str, **context
+        ):
+            results = run(
+                "music.mopidy.search",
+                filter={"title": title, "artist": artist}
+            )
+
+            if not results:
+                event.assistant.render_response(f"Couldn't find {title} by {artist}")
+                return
+
+            run("music.mopidy.play", resource=results[0]["uri"])
+
+    Speech-to-intent
+    ----------------
+
+    The intent recognition engine is based on `Rhino
+    <https://picovoice.ai/docs/rhino/>`_.
+
+    *Intents* are snippets of unstructured transcribed speech that can be
+    matched to structured actions.
+
+    Unlike with hotword and speech-to-text detection, you need to provide a
+    custom model for intent detection. You can create your custom model using
+    the `Rhino console <https://console.picovoice.ai/rhn>`_.
+
+    When an intent is detected, the assistant will emit a
+    :class:`platypush.message.event.assistant.IntentRecognizedEvent` that can
+    be listened.
+
+    For example, you can train a model to control groups of smart lights by
+    defining the following slots on the Rhino console:
+
+        - ``device_state``: The new state of the device (e.g. with ``on`` or
+          ``off`` as supported values)
+
+        - ``room``: The name of the room associated to the group of lights to
+          be controlled (e.g. ``living room``, ``kitchen``, ``bedroom``)
+
+    You can then define a ``lights_ctrl`` intent with the following expressions:
+
+        - "turn ``$device_state:state`` the lights"
+        - "turn ``$device_state:state`` the ``$room:room`` lights"
+        - "turn the lights ``$device_state:state``"
+        - "turn the ``$room:room`` lights ``$device_state:state``"
+        - "turn ``$room:room`` lights ``$device_state:state``"
+
+    This intent will match any of the following phrases:
+
+        - "*turn on the lights*"
+        - "*turn off the lights*"
+        - "*turn the lights on*"
+        - "*turn the lights off*"
+        - "*turn on the living room lights*"
+        - "*turn off the living room lights*"
+        - "*turn the living room lights on*"
+        - "*turn the living room lights off*"
+
+    And it will extract any slots that are matched in the phrases in the
+    :class:`platypush.message.event.assistant.IntentRecognizedEvent` event.
+
+    Train the model, download the context file, and pass the path on the
+    ``intent_model_path`` parameter.
+
+    You can then register a hook to listen to a specific intent:
+
+      .. code-block:: python
+
+        from platypush import hook, run
+        from platypush.message.event.assistant import IntentRecognizedEvent
+
+        @hook(IntentRecognizedEvent, intent='lights_ctrl', slots={'state': 'on'})
+        def on_turn_on_lights(event: IntentRecognizedEvent, **context):
+            room = event.slots.get('room')
+            if room:
+                run("light.hue.on", groups=[room])
+            else:
+                run("light.hue.on")
+
+    Note that if both ``stt_enabled`` and ``intent_model_path`` are set, then
+    both the speech-to-text and intent recognition engines will run in parallel
+    when a conversation is started.
+
+    The intent engine is usually faster, as it has a smaller set of intents to
+    match and doesn't have to run a full speech-to-text transcription. This means that,
+    if an utterance matches both a speech-to-text phrase and an intent, the
+    :class:`platypush.message.event.assistant.IntentRecognizedEvent` event is emitted
+    (and not :class:`platypush.message.event.assistant.SpeechRecognizedEvent`).
+
+    This may not be always the case though. So it may be a good practice to
+    also provide a fallback
+    :class:`platypush.message.event.assistant.SpeechRecognizedEvent` hook to
+    catch the text if the speech is not recognized as an intent:
+
+      .. code-block:: python
+
+        from platypush import hook, run
+        from platypush.message.event.assistant import SpeechRecognizedEvent
+
+        @hook(SpeechRecognizedEvent, phrase='turn ${state} (the)? ${room} lights?')
+        def on_turn_on_lights(event: SpeechRecognizedEvent, phrase, room, **context):
+            if room:
+                run("light.hue.on", groups=[room])
+            else:
+                run("light.hue.on")
+
+    Text-to-speech
+    --------------
+
+    The text-to-speech engine is based on `Orca
+    <https://picovoice.ai/docs/orca/>`_.
+
+    It is not directly implemented by this plugin, but the implementation is
+    provided in the :class:`platypush.plugins.tts.picovoice.TtsPicovoicePlugin`
+    plugin.
+
+    You can however leverage the :meth:`.render_response` action to render some
+    text as speech in response to a user command, and that in turn will leverage
+    the PicoVoice TTS plugin to render the response.
+
+    For example, the following snippet provides a hook that:
+
+        - Listens for
+          :class:`platypush.message.event.assistant.SpeechRecognizedEvent`.
+
+        - Matches the phrase against a list of predefined commands that
+          shouldn't require a response.
+
+        - Has a fallback logic that leverages the
+          :class:`platypush.plugins.openai.OpenaiPlugin` to generate a response
+          for the given text and renders it as speech.
+
+        - Has a logic for follow-on turns if the response from ChatGPT is a question.
+
+      .. code-block:: python
+
+        import re
+        from collections import defaultdict
+        from datetime import datetime as dt, timedelta
+        from dateutil.parser import isoparse
+        from logging import getLogger
+
+        from platypush import hook, run
+        from platypush.message.event.assistant import (
+            SpeechRecognizedEvent,
+            ResponseEndEvent,
+        )
+
+        logger = getLogger(__name__)
+
+        def play_music(*_, **__):
+            run("music.mopidy.play")
+
+        def stop_music(*_, **__):
+            run("music.mopidy.stop")
+
+        def ai_assist(event: SpeechRecognizedEvent, **__):
+            response = run("openai.get_response", prompt=event.phrase)
+            if not response:
+                return
+
+            run("assistant.picovoice.render_response", text=response)
+
+        # List of commands to match, as pairs of regex patterns and the
+        # corresponding actions
+        hooks = (
+            (re.compile(r"play (the)?music", re.IGNORECASE), play_music),
+            (re.compile(r"stop (the)?music", re.IGNORECASE), stop_music),
+            # Fallback to the AI assistant
+            (re.compile(r".*"), ai_assist),
+        )
+
+        @hook(SpeechRecognizedEvent)
+        def on_speech_recognized(event, **kwargs):
+            for pattern, command in hooks:
+                if pattern.search(event.phrase):
+                    logger.info("Running voice command %s", command.__name__)
+                    command(event, **kwargs)
+                    break
+
+        @hook(ResponseEndEvent)
+        def on_response_end(event: ResponseEndEvent, **__):
+            # Check if the response is a question and start a follow-on turn if so.
+            # Note that the ``openai`` plugin by default is configured to keep
+            # the past interaction in a context window of ~10 minutes, so you
+            # can follow up like in a real conversation.
+            if event.assistant and event.response_text and event.response_text.endswith("?"):
+                event.assistant.start_conversation()
 
     """
 
