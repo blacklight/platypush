@@ -8,6 +8,9 @@
   "assistant.google": {
     "class": "fas fa-microphone-lines"
   },
+  "assistant.picovoice": {
+    "class": "fas fa-microphone-lines"
+  },
   "bluetooth": {
     "class": "fab fa-bluetooth"
   },

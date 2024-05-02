@@ -112,6 +112,7 @@ export default {
       this.subscribe(this.response, null, 'platypush.message.event.assistant.ResponseEvent')
       this.subscribe(this.conversationEnd, null,
           'platypush.message.event.assistant.ConversationEndEvent',
+          'platypush.message.event.assistant.ResponseEndEvent',
           'platypush.message.event.assistant.NoResponseEvent',
           'platypush.message.event.assistant.ConversationTimeoutEvent')
     },
