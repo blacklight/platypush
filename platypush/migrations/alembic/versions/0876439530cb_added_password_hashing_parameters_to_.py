@@ -27,8 +27,11 @@ def upgrade() -> None:
         print('The table `user` does not exist, skipping migration')
         return
 
-    op.add_column('user', sa.Column('password_salt', sa.String(), nullable=True))
-    op.add_column('user', sa.Column('hmac_iterations', sa.Integer(), nullable=True))
+    if 'password_salt' not in user_table.columns:
+        op.add_column('user', sa.Column('password_salt', sa.String(), nullable=True))
+
+    if 'hmac_iterations' not in user_table.columns:
+        op.add_column('user', sa.Column('hmac_iterations', sa.Integer(), nullable=True))
 
 
 def downgrade() -> None:
@@ -41,5 +44,8 @@ def downgrade() -> None:
         print('The table `user` does not exist, skipping migration')
         return
 
-    op.drop_column('user', 'password_salt')
-    op.drop_column('user', 'hmac_iterations')
+    if 'password_salt' in user_table.columns:
+        op.drop_column('user', 'password_salt')
+
+    if 'hmac_iterations' in user_table.columns:
+        op.drop_column('user', 'hmac_iterations')
