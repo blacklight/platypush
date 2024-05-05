@@ -67,7 +67,6 @@ setup(
     ],
     install_requires=[
         'alembic',
-        'bcrypt',
         'croniter',
         'docutils',
         'flask',

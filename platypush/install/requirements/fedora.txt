@@ -1,7 +1,6 @@
 python
 python-pip
 python-alembic
-python-bcrypt
 python-croniter
 python-dateutil
 python-docutils

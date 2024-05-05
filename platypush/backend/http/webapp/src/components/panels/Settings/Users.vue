@@ -47,7 +47,7 @@
             <DropdownItem text="Change Password" :disabled="commandRunning" icon-class="fa fa-key"
                           @click="showChangePasswordModal(user)" />
             <DropdownItem text="Delete User" :disabled="commandRunning" icon-class="fa fa-trash"
-                          @click="$refs.deleteUserDialog.show()" />
+                          @click="selectedUser = user.username; $refs.deleteUserDialog.show()" />
           </Dropdown>
         </div>
       </li>
