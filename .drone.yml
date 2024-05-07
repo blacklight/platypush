@@ -462,7 +462,7 @@ steps:
 
     - echo "-- Installing dependencies"
     - apt update
-    - apt install -y curl dpkg-dev gpg git python3 python3-pip
+    - apt install -y curl dpkg-dev gpg git python3 python3-pip python3-setuptools
 
     - echo "-- Copying source directory"
     - mkdir -p "$WORKDIR"
@@ -567,7 +567,7 @@ steps:
 
     - echo "-- Installing dependencies"
     - apt update
-    - apt install -y curl dpkg-dev gpg git python3 python3-pip
+    - apt install -y curl dpkg-dev gpg git python3 python3-pip python3-setuptools
 
     - echo "--- Parsing metadata"
     - git config --global --add safe.directory "$PWD"
@@ -871,7 +871,7 @@ steps:
       [ -f .skipci ] && exit 0
 
     - echo "-- Installing dependencies"
-    - yum install -y createrepo rpm-build rpm-sign gpg wget yum-utils git python python-pip
+    - yum install -y createrepo rpm-build rpm-sign gpg wget yum-utils git python python-pip python-setuptools
 
     - echo "-- Copying source directory"
     - mkdir -p "$WORKDIR"

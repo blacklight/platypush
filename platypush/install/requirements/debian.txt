@@ -1,7 +1,6 @@
 python3
 python3-pip
 python3-alembic
-python3-bcrypt
 python3-croniter
 python3-dateutil
 python3-docutils

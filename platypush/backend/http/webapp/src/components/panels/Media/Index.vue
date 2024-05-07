@@ -446,7 +446,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "vars";
 @import "~@/components/Media/vars";
 
 .media-plugin {

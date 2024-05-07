@@ -15,7 +15,7 @@
     </MusicHeader>
 
     <div class="results">
-      <div class="row track back-track" @click="back" v-if="path !== '/'">
+      <div class="row track back-track" @click="back" v-if="!isRoot">
         <div class="icon-container">
           <i class="icon fa fa-folder" />
         </div>
@@ -28,13 +28,19 @@
            v-for="(result, i) in results" :key="i" @click="resultClick(i, $event)">
         <div class="col-10 left-side">
           <div class="icon-container">
-            <i class="icon fa fa-folder" v-if="result.directory" />
+            <i class="icon fa fa-folder" v-if="isDirectory(i)" />
+            <i class="icon fa fa-user" v-else-if="isArtist(i)" />
+            <i class="icon fa fa-compact-disc" v-else-if="isAlbum(i)" />
+            <i class="icon fa fa-list" v-else-if="isPlaylist(i)" />
             <i class="icon fa fa-music" v-else-if="result.file" />
           </div>
 
           <div class="info">
             <div class="title">
-              <span v-if="result.directory" v-text="result.directory.split('/').pop()" />
+              <span v-if="isDirectory(i)" v-text="result.name || result.directory.split('/').pop()" />
+              <span v-else-if="isArtist(i)" v-text="result.name || result.artist" />
+              <span v-else-if="isAlbum(i)" v-text="result.name || result.album" />
+              <span v-else-if="isPlaylist(i)" v-text="result.name || result.playlist" />
               <span v-else-if="result.title" v-text="result.title" />
             </div>
 
@@ -96,7 +102,8 @@ export default {
     },
 
     path: {
-      type: String,
+      type: Array,
+      default: () => [],
     },
 
     devices: {
@@ -144,6 +151,10 @@ export default {
             (result?.directory || '').toLowerCase().indexOf(filter) >= 0
       }))
     },
+
+    isRoot() {
+      return !this.path?.length || !this.path[0]?.length || this.path[0] === '/'
+    },
   },
 
   methods: {
@@ -161,8 +172,9 @@ export default {
         else
           this.selectedResults.add(pos)
       } else {
-        if (this.results[pos].directory) {
-          this.$emit('cd', this.results[pos].directory)
+        if (this.isDirectory(pos) || this.isArtist(pos) || this.isAlbum(pos) || this.isPlaylist(pos)) {
+          const dir = this.results[pos].uri || this.results[pos].directory
+          this.$emit('cd', [...this.path, dir])
         } else {
           this.selectedResults = new Set()
           if (this.selectedResults.has(pos))
@@ -191,8 +203,26 @@ export default {
     },
 
     back() {
-      const path = this.path.split('/')
-      this.$emit('cd', path.slice(0, path.length-1).join('/'))
+      if (this.isRoot)
+        return
+
+      this.$emit('cd', this.path.slice(0, -1))
+    },
+
+    isDirectory(i) {
+      return this.results[i].directory || this.results[i].type === 'directory'
+    },
+
+    isArtist(i) {
+      return this.results[i].type === 'artist'
+    },
+
+    isAlbum(i) {
+      return this.results[i].type === 'album'
+    },
+
+    isPlaylist(i) {
+      return this.results[i].type === 'playlist'
     },
   },
 }

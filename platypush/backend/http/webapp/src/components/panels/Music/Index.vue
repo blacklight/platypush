@@ -1,10 +1,21 @@
 <template>
   <Loading v-if="loading" />
 
-  <MediaView :plugin-name="pluginName" :status="status" :track="track" @play="$emit('play', $event)"
-             @pause="$emit('pause')" @stop="$emit('stop')" @previous="$emit('previous')" @next="$emit('next')"
-             @set-volume="$emit('set-volume', $event)" @seek="$emit('seek', $event)" @consume="$emit('consume', $event)"
-             @repeat="$emit('repeat', $event)" @random="$emit('random', $event)" @search="search" v-else>
+  <MediaView :plugin-name="pluginName"
+             :image="images[track?.uri || track?.file]"
+             :status="status"
+             :track="track"
+             @next="$emit('next')"
+             @pause="$emit('pause')"
+             @play="$emit('play', $event)"
+             @previous="$emit('previous')"
+             @random="$emit('random', $event)"
+             @repeat="$emit('repeat', $event)"
+             @search="search"
+             @seek="$emit('seek', $event)" @consume="$emit('consume', $event)"
+             @set-volume="$emit('set-volume', $event)"
+             @stop="$emit('stop')"
+             v-else>
     <main>
       <div class="nav-container mobile" v-if="navVisible">
         <Nav :selected-view="selectedView"
@@ -92,7 +103,7 @@
                  :devices="devices"
                  :selected-device="selectedDevice"
                  :active-device="activeDevice"
-                :show-nav-button="!navVisible"
+                 :show-nav-button="!navVisible"
                  v-else-if="selectedView === 'library'"
                  @search="search"
                  @clear="$emit('search-clear')"
@@ -207,7 +218,6 @@ import Library from "@/components/panels/Music/Library";
 import Utils from "@/Utils";
 
 export default {
-  name: "Music",
   emits: [
     'add-to-playlist',
     'add-to-tracklist',
@@ -268,6 +278,11 @@ export default {
       default: () => [],
     },
 
+    images: {
+      type: Object,
+      default: () => {},
+    },
+
     editedPlaylistTracks: {
       type: Array,
       default: () => [],
@@ -283,12 +298,18 @@ export default {
       default: () => {},
     },
 
+    track: {
+      type: Object,
+      default: null,
+    },
+
     editedPlaylist: {
       type: Number,
     },
 
     trackInfo: {
-      type: String,
+      type: Object,
+      default: () => {},
     },
 
     searchResults: {
@@ -300,7 +321,8 @@ export default {
     },
 
     path: {
-      type: String,
+      type: Array,
+      default: () => [],
     },
 
     devices: {
@@ -323,15 +345,6 @@ export default {
       addToPlaylistTrack: null,
       playlistFilter: '',
       navVisible: false,
-    }
-  },
-
-  computed: {
-    track() {
-      if (this.status?.playingPos == null)
-        return null
-
-      return this.tracks[this.status.playingPos]
     }
   },
 

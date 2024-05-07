@@ -8,23 +8,7 @@ from typing import Any, Collection, Dict, Optional, Type
 from platypush.context import get_bus, get_plugin
 from platypush.entities.assistants import Assistant
 from platypush.entities.managers.assistants import AssistantEntityManager
-from platypush.message.event.assistant import (
-    AssistantEvent,
-    ConversationStartEvent,
-    ConversationEndEvent,
-    ConversationTimeoutEvent,
-    ResponseEvent,
-    NoResponseEvent,
-    SpeechRecognizedEvent,
-    AlarmStartedEvent,
-    AlarmEndEvent,
-    TimerStartedEvent,
-    TimerEndEvent,
-    AlertStartedEvent,
-    AlertEndEvent,
-    MicMutedEvent,
-    MicUnmutedEvent,
-)
+from platypush.message.event import Event as AppEvent
 from platypush.plugins import Plugin, action
 from platypush.utils import get_plugin_name_by_class
 
@@ -181,6 +165,17 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         self.publish_entities([self])
         return asdict(self._state)
 
+    @action
+    def render_response(self, text: str, *_, **__):
+        """
+        Render a response text as audio over the configured TTS plugin.
+
+        :param text: Text to render.
+        """
+        self._on_response_render_start(text)
+        self._render_response(text)
+        self._on_response_render_end()
+
     def _get_tts_plugin(self):
         if not self.tts_plugin:
             return None
@@ -200,11 +195,13 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
 
         audio.play(self._conversation_start_sound)
 
-    def _send_event(self, event_type: Type[AssistantEvent], **kwargs):
+    def _send_event(self, event_type: Type[AppEvent], **kwargs):
         self.publish_entities([self])
         get_bus().post(event_type(assistant=self._plugin_name, **kwargs))
 
     def _on_conversation_start(self):
+        from platypush.message.event.assistant import ConversationStartEvent
+
         self._last_response = None
         self._last_query = None
         self._conversation_running.set()
@@ -212,63 +209,105 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         self._play_conversation_start_sound()
 
     def _on_conversation_end(self):
+        from platypush.message.event.assistant import ConversationEndEvent
+
         self._conversation_running.clear()
         self._send_event(ConversationEndEvent)
 
     def _on_conversation_timeout(self):
+        from platypush.message.event.assistant import ConversationTimeoutEvent
+
         self._last_response = None
         self._last_query = None
         self._conversation_running.clear()
         self._send_event(ConversationTimeoutEvent)
 
     def _on_no_response(self):
+        from platypush.message.event.assistant import NoResponseEvent
+
         self._last_response = None
         self._conversation_running.clear()
         self._send_event(NoResponseEvent)
 
-    def _on_reponse_rendered(self, text: Optional[str]):
+    def _on_response_render_start(self, text: Optional[str]):
+        from platypush.message.event.assistant import ResponseEvent
+
         self._last_response = text
         self._send_event(ResponseEvent, response_text=text)
-        tts = self._get_tts_plugin()
 
+    def _render_response(self, text: Optional[str]):
+        tts = self._get_tts_plugin()
         if tts and text:
             self.stop_conversation()
             tts.say(text=text, **self.tts_plugin_args)
 
+    def _on_response_render_end(self):
+        from platypush.message.event.assistant import ResponseEndEvent
+
+        self._send_event(ResponseEndEvent, response_text=self._last_response)
+
+    def _on_hotword_detected(self, hotword: Optional[str]):
+        from platypush.message.event.assistant import HotwordDetectedEvent
+
+        self._send_event(HotwordDetectedEvent, hotword=hotword)
+
     def _on_speech_recognized(self, phrase: Optional[str]):
+        from platypush.message.event.assistant import SpeechRecognizedEvent
+
         phrase = (phrase or '').lower().strip()
         self._last_query = phrase
         self._send_event(SpeechRecognizedEvent, phrase=phrase)
 
+    def _on_intent_matched(self, intent: str, slots: Optional[Dict[str, Any]] = None):
+        from platypush.message.event.assistant import IntentRecognizedEvent
+
+        self._send_event(IntentRecognizedEvent, intent=intent, slots=slots)
+
     def _on_alarm_start(self):
+        from platypush.message.event.assistant import AlarmStartedEvent
+
         self._cur_alert_type = AlertType.ALARM
         self._send_event(AlarmStartedEvent)
 
     def _on_alarm_end(self):
+        from platypush.message.event.assistant import AlarmEndEvent
+
         self._cur_alert_type = None
         self._send_event(AlarmEndEvent)
 
     def _on_timer_start(self):
+        from platypush.message.event.assistant import TimerStartedEvent
+
         self._cur_alert_type = AlertType.TIMER
         self._send_event(TimerStartedEvent)
 
     def _on_timer_end(self):
+        from platypush.message.event.assistant import TimerEndEvent
+
         self._cur_alert_type = None
         self._send_event(TimerEndEvent)
 
     def _on_alert_start(self):
+        from platypush.message.event.assistant import AlertStartedEvent
+
         self._cur_alert_type = AlertType.ALERT
         self._send_event(AlertStartedEvent)
 
     def _on_alert_end(self):
+        from platypush.message.event.assistant import AlertEndEvent
+
         self._cur_alert_type = None
         self._send_event(AlertEndEvent)
 
     def _on_mute(self):
+        from platypush.message.event.assistant import MicMutedEvent
+
         self._is_muted = True
         self._send_event(MicMutedEvent)
 
     def _on_unmute(self):
+        from platypush.message.event.assistant import MicUnmutedEvent
+
         self._is_muted = False
         self._send_event(MicUnmutedEvent)
 

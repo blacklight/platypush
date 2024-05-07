@@ -11,6 +11,7 @@ Plugins
     platypush/plugins/application.rst
     platypush/plugins/arduino.rst
     platypush/plugins/assistant.google.rst
+    platypush/plugins/assistant.picovoice.rst
     platypush/plugins/autoremote.rst
     platypush/plugins/bluetooth.rst
     platypush/plugins/calendar.rst
@@ -84,6 +85,7 @@ Plugins
     platypush/plugins/ml.cv.rst
     platypush/plugins/mobile.join.rst
     platypush/plugins/mqtt.rst
+    platypush/plugins/music.mopidy.rst
     platypush/plugins/music.mpd.rst
     platypush/plugins/music.snapcast.rst
     platypush/plugins/music.spotify.rst
@@ -93,6 +95,7 @@ Plugins
     platypush/plugins/ngrok.rst
     platypush/plugins/nmap.rst
     platypush/plugins/ntfy.rst
+    platypush/plugins/openai.rst
     platypush/plugins/otp.rst
     platypush/plugins/pihole.rst
     platypush/plugins/ping.rst
@@ -118,9 +121,6 @@ Plugins
     platypush/plugins/smartthings.rst
     platypush/plugins/sound.rst
     platypush/plugins/ssh.rst
-    platypush/plugins/stt.deepspeech.rst
-    platypush/plugins/stt.picovoice.hotword.rst
-    platypush/plugins/stt.picovoice.speech.rst
     platypush/plugins/sun.rst
     platypush/plugins/switch.tplink.rst
     platypush/plugins/switch.wemo.rst
@@ -135,6 +135,7 @@ Plugins
     platypush/plugins/tts.rst
     platypush/plugins/tts.google.rst
     platypush/plugins/tts.mimic3.rst
+    platypush/plugins/tts.picovoice.rst
     platypush/plugins/tv.samsung.ws.rst
     platypush/plugins/twilio.rst
     platypush/plugins/udp.rst

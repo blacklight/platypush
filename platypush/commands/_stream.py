@@ -1,4 +1,4 @@
-from multiprocessing import RLock, Queue
+from multiprocessing import RLock, Queue, active_children
 import os
 from queue import Empty
 import socket
@@ -56,6 +56,25 @@ class CommandStream(ControllableProcess):
     def close(self) -> None:
         self.reset()
         return super().close()
+
+    def _term_or_kill(self, kill: bool = False, visited=None) -> None:
+        func = 'kill' if kill else 'terminate'
+        visited = visited or set()
+        visited.add(id(self))
+
+        for child in active_children():
+            child_id = id(child)
+            if child_id not in visited:
+                visited.add(child_id)
+                getattr(child, func)()
+
+        getattr(super(), func)()
+
+    def terminate(self, visited=None) -> None:
+        self._term_or_kill(kill=False, visited=visited)
+
+    def kill(self) -> None:
+        self._term_or_kill(kill=True)
 
     def __enter__(self) -> "CommandStream":
         self.reset()

@@ -61,7 +61,10 @@
       <div class="row playlist" :class="{hidden: !displayedPlaylists.has(i)}"
            v-for="(playlist, i) in playlists" :key="i" @click="$emit('playlist-edit', i)"
            @dblclick="$emit('load', i)">
-        <div class="col-10">
+        <div class="col-10 name-container">
+          <div class="icon">
+            <i class="fa fa-list" />
+          </div>
           <div class="name" v-text="playlist.name || '[No Name]'" />
         </div>
 
@@ -251,9 +254,10 @@ export default {
       if (this.sourcePos == null || this.targetPos == null || this.sourcePos === this.targetPos)
         return
 
-      this.$emit('track-move', {from: this.sourcePos, to: this.targetPos, playlist: this.editedPlaylist})
+      this.$emit('track-move', {from: this.selectedTracks, to: this.targetPos, playlist: this.editedPlaylist})
       this.sourcePos = null
       this.targetPos = null
+      this.selectedTracks = []
     },
 
     onTrackDragOver(track) {
@@ -300,6 +304,22 @@ export default {
     padding: .75em .25em .25em .25em;
     box-shadow: 0 2.5px 2px -1px $default-shadow-color;
     cursor: pointer;
+
+    .name-container {
+      display: flex;
+      align-items: center;
+
+      .icon {
+        margin-right: .5em;
+        opacity: .85;
+      }
+
+      .name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
 
     &:hover {
       background: $hover-bg;

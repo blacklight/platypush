@@ -18,7 +18,17 @@
   }
 
   &.dragover {
-    border-top: 2px solid $default-hover-fg;
+    &.top {
+      border-top: 2px solid $default-hover-fg;
+    }
+
+    &.bottom {
+      border-bottom: 2px solid $default-hover-fg;
+    }
+  }
+
+  &.dragging {
+    opacity: .5;
   }
 
   &::selection {

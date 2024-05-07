@@ -33,6 +33,18 @@ def parse_cmdline(args: Sequence[str]) -> argparse.Namespace:
     )
 
     parser.add_argument(
+        '--main-db',
+        '--db',
+        dest='db_engine',
+        required=False,
+        default=None,
+        help='Custom database engine to be used for the application '
+        '(e.g. sqlite:///:memory: or sqlite:///path/to/db.sqlite). '
+        'If missing, it falls back to the value of the `main.db` setting in the configuration file. '
+        'If missing, it falls back to sqlite://<workdir>/main.db.',
+    )
+
+    parser.add_argument(
         '--cachedir',
         dest='cachedir',
         required=False,

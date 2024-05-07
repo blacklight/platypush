@@ -1,8 +1,10 @@
 <template>
   <div class="extension fade-in" :class="{hidden: !expanded}">
-    <div class="image-container" @click.prevent="onImageClick" v-if="status?.state !== 'stop'">
-      <div class="remote-image-container" v-if="track?.image">
-        <img class="image" :src="track.image" :alt="track.title">
+    <div class="image-container"
+         @click.prevent="searchAlbum"
+         v-if="status?.state !== 'stop'">
+      <div class="remote-image-container" v-if="trackImage">
+        <img class="image" :src="trackImage" :alt="track.title">
       </div>
 
       <div class="icon-container" v-else>
@@ -28,11 +30,17 @@
     </div>
 
     <div class="row">
-      <VolumeSlider :value="status.volume" :range="volumeRange" :status="status"
-        @mute="$emit('mute')" @unmute="$emit('unmute')"
-        @set-volume="$emit('set-volume', $event)" />
+      <VolumeSlider
+          :range="volumeRange"
+          :status="status"
+          :value="status.volume"
+          @mute="$emit('mute')"
+          @set-volume="$emit('set-volume', $event)"
+          @unmute="$emit('unmute')" />
 
-      <ExtraControls :status="status" :buttons="buttons_"
+      <ExtraControls
+          :buttons="buttons_"
+          :status="status"
           @consume="$emit('consume', !status.consume)"
           @random="$emit('random', !status.random)"
           @repeat="$emit('repeat', !status.repeat)" />
@@ -50,19 +58,19 @@
 
     <div class="track-container col-s-9 col-m-9 col-l-3">
       <div class="track-info" v-if="track && status?.state !== 'stop'">
-        <div class="img-container" v-if="track.image">
-          <img class="image from desktop" :src="track.image" :alt="track.title">
+        <div class="img-container" v-if="trackImage">
+          <img class="image from desktop" :src="trackImage" :alt="track.title">
         </div>
 
         <div class="title-container">
           <div class="title" v-if="status.state === 'play' || status.state === 'pause'">
             <a :href="$route.fullPath" v-text="track.title?.length ? track.title : '[No Title]'"
-               @click.prevent="$emit('search', {artist: track.artist, album: track.album})" v-if="track.album"></a>
-            <a :href="track.url" v-text="track.title?.length ? track.title : '[No Title]'" v-else-if="track.url"></a>
+               @click.prevent="searchAlbum" v-if="track.album"></a>
+            <a v-text="track.title?.length ? track.title : '[No Title]'" v-else-if="track.url"></a>
             <span v-text="track.title?.length ? track.title : '[No Title]' " v-else></span>
           </div>
           <div class="artist" v-if="track.artist?.length && (status.state === 'play' || status.state === 'pause')">
-            <a :href="$route.fullPath" v-text="track.artist" @click.prevent="$emit('search', {artist: track.artist})"></a>
+            <a v-text="track.artist" @click.prevent="searchArtist"></a>
           </div>
         </div>
       </div>
@@ -143,6 +151,11 @@ export default {
       default: () => {},
     },
 
+    image: {
+      type: String,
+      default: null,
+    },
+
     // Enabled playback buttons
     buttons: {
       type: Object,
@@ -187,6 +200,10 @@ export default {
     duration() {
       return this.status?.duration != null ? this.status.duration : this.track?.duration
     },
+
+    trackImage() {
+      return this.track?.image || this.image
+    },
   },
 
   methods: {
@@ -194,9 +211,33 @@ export default {
       return (new Date()).getTime() / 1000
     },
 
-    onImageClick() {
-      if (this.track?.artist && this.track?.album)
-        this.$emit('search', {artist: this.track.artist, album: this.track.album})
+    searchAlbum() {
+      if (!(this.track?.artist && this.track?.album))
+        return
+
+      const args = {
+        artist: this.track.artist,
+        album: this.track.album,
+      }
+
+      if (this.track.album_uri)
+        args.uris = [this.track.album_uri]
+
+      this.$emit('search', args)
+    },
+
+    searchArtist() {
+      if (!this.track?.artist)
+        return
+
+      const args = {
+        artist: this.track.artist,
+      }
+
+      if (this.track.artist_uri)
+        args.uris = [this.track.album_uri]
+
+      this.$emit('search', args)
     },
   },
 
@@ -245,7 +286,9 @@ button {
 }
 
 .extension {
-  box-shadow: $border-shadow-bottom;
+  background: $media-ctrl-ext-bg;
+  box-shadow: $media-ctrl-ext-shadow;
+  border-radius: 1em 1em 0 0;
   flex-direction: column;
   display: none;
   overflow: hidden;
@@ -368,6 +411,7 @@ button {
   }
 
   .track-container {
+    height: 100%;
     display: flex;
     align-items: center;
     margin-left: 0;
@@ -411,6 +455,7 @@ button {
   }
 
   .track-info {
+    height: 100%;
     display: flex;
 
     @include until($desktop) {

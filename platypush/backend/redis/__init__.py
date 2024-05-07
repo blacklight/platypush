@@ -1,43 +1,41 @@
 import json
-from typing import Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from redis import Redis
 
 from platypush.backend import Backend
-from platypush.context import get_plugin
 from platypush.message import Message
+from platypush.utils import get_redis_conf
 
 
 class RedisBackend(Backend):
     """
     Backend that reads messages from a configured Redis queue (default:
-    ``platypush_bus_mq``) and posts them to the application bus.  Very
-    useful when you have plugin whose code is executed in another process
+    ``platypush/backend/redis``) and forwards them to the application bus.
+
+    Useful when you have plugin whose code is executed in another process
     and can't post events or requests to the application bus.
     """
 
-    def __init__(self, *args, queue='platypush_bus_mq', redis_args=None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        queue: str = 'platypush/backend/redis',
+        redis_args: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ):
         """
-        :param queue: Queue name to listen on (default: ``platypush_bus_mq``)
-        :type queue: str
+        :param queue: Name of the Redis queue to listen to (default:
+            ``platypush/backend/redis``).
 
-        :param redis_args: Arguments that will be passed to the redis-py constructor (e.g. host, port, password), see
-            https://redis-py.readthedocs.io/en/latest/
-        :type redis_args: dict
+        :param redis_args: Arguments that will be passed to the redis-py
+            constructor (e.g. host, port, password). See
+            https://redis-py.readthedocs.io/en/latest/connections.html#redis.Redis
+            for supported parameters.
         """
-
         super().__init__(*args, **kwargs)
-        if redis_args is None:
-            redis_args = {}
-
+        self.redis_args = redis_args or get_redis_conf()
         self.queue = queue
-
-        if not redis_args:
-            redis_plugin = get_plugin('redis')
-            if redis_plugin and redis_plugin.kwargs:
-                redis_args = redis_plugin.kwargs
-
-        self.redis_args = redis_args
         self.redis: Optional[Redis] = None
 
     def send_message(
@@ -47,20 +45,21 @@ class RedisBackend(Backend):
         Send a message to a Redis queue.
 
         :param msg: Message to send, as a ``Message`` object or a string.
-        :param queue_name: Queue name to send the message to (default: ``platypush_bus_mq``).
+        :param queue_name: Queue name to send the message to (default:
+            configured ``queue`` value).
         """
-
         if not self.redis:
             self.logger.warning('The Redis backend is not yet running.')
             return
 
         self.redis.rpush(queue_name or self.queue, str(msg))
 
-    def get_message(self, queue_name=None):
+    def get_message(self, queue_name: Optional[str] = None) -> Optional[Message]:
         queue = queue_name or self.queue
+        assert self.redis, 'The Redis backend is not yet running.'
         data = self.redis.blpop(queue, timeout=1)
         if data is None:
-            return
+            return None
 
         msg = data[1].decode()
         try:
@@ -68,15 +67,9 @@ class RedisBackend(Backend):
         except Exception as e:
             self.logger.debug(str(e))
             try:
-                import ast
-
-                msg = Message.build(ast.literal_eval(msg))
+                msg = json.loads(msg)
             except Exception as ee:
-                self.logger.debug(str(ee))
-                try:
-                    msg = json.loads(msg)
-                except Exception as eee:
-                    self.logger.exception(eee)
+                self.logger.exception(ee)
 
         return msg
 

@@ -2,11 +2,11 @@ import base64
 import datetime
 import hashlib
 import json
+import os
 import random
 import time
 from typing import Optional, Dict
 
-import bcrypt
 import rsa
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
@@ -58,7 +58,7 @@ class UserManager:
         with self._get_session() as session:
             return session.query(User).all()
 
-    def create_user(self, username, password, **kwargs):
+    def create_user(self, username: str, password: str, **kwargs):
         if not username:
             raise ValueError('Invalid or empty username')
         if not password:
@@ -67,11 +67,17 @@ class UserManager:
         with self._get_session(locked=True) as session:
             user = self._get_user(session, username)
             if user:
-                raise NameError('The user {} already exists'.format(username))
+                raise NameError(f'The user {username} already exists')
 
+            password_salt = os.urandom(16)
+            hmac_iterations = 100_000
             record = User(
                 username=username,
-                password=self._encrypt_password(password),
+                password=self._encrypt_password(
+                    password, password_salt, hmac_iterations
+                ),
+                password_salt=password_salt.hex(),
+                hmac_iterations=hmac_iterations,
                 created_at=datetime.datetime.utcnow(),
                 **kwargs,
             )
@@ -88,7 +94,12 @@ class UserManager:
                 return False
 
             user = self._get_user(session, username)
-            user.password = self._encrypt_password(new_password)
+            user.password_salt = user.password_salt or os.urandom(16).hex()
+            user.hmac_iterations = user.hmac_iterations or 100_000
+            salt = bytes.fromhex(user.password_salt)
+            user.password = self._encrypt_password(
+                new_password, salt, user.hmac_iterations
+            )
             session.commit()
             return True
 
@@ -117,7 +128,7 @@ class UserManager:
         with self._get_session(locked=True) as session:
             user = self._get_user(session, username)
             if not user:
-                raise NameError('No such user: {}'.format(username))
+                raise NameError(f'No such user: {username}')
 
             user_sessions = (
                 session.query(UserSession).filter_by(user_id=user.user_id).all()
@@ -172,15 +183,43 @@ class UserManager:
     def _get_user(session, username):
         return session.query(User).filter_by(username=username).first()
 
-    @staticmethod
-    def _encrypt_password(pwd):
-        if isinstance(pwd, str):
-            pwd = pwd.encode()
-        return bcrypt.hashpw(pwd, bcrypt.gensalt(12)).decode()
+    @classmethod
+    def _encrypt_password(
+        cls, pwd: str, salt: Optional[bytes] = None, iterations: Optional[int] = None
+    ) -> str:
+        # Legacy password check that uses bcrypt if no salt and iterations are provided
+        # See https://git.platypush.tech/platypush/platypush/issues/397
+        if not (salt and iterations):
+            import bcrypt
+
+            return bcrypt.hashpw(pwd.encode(), bcrypt.gensalt(12)).decode()
+
+        return hashlib.pbkdf2_hmac('sha256', pwd.encode(), salt, iterations).hex()
 
     @classmethod
-    def _check_password(cls, pwd, hashed_pwd):
-        return bcrypt.checkpw(cls._to_bytes(pwd), cls._to_bytes(hashed_pwd))
+    def _check_password(
+        cls,
+        pwd: str,
+        hashed_pwd: str,
+        salt: Optional[bytes] = None,
+        iterations: Optional[int] = None,
+    ) -> bool:
+        # Legacy password check that uses bcrypt if no salt and iterations are provided
+        # See https://git.platypush.tech/platypush/platypush/issues/397
+        if not (salt and iterations):
+            import bcrypt
+
+            return bcrypt.checkpw(pwd.encode(), hashed_pwd.encode())
+
+        return (
+            hashlib.pbkdf2_hmac(
+                'sha256',
+                pwd.encode(),
+                salt,
+                iterations,
+            ).hex()
+            == hashed_pwd
+        )
 
     @staticmethod
     def _to_bytes(data) -> bytes:
@@ -289,7 +328,12 @@ class UserManager:
         if not user:
             return None
 
-        if not self._check_password(password, user.password):
+        if not self._check_password(
+            password,
+            user.password,
+            bytes.fromhex(user.password_salt) if user.password_salt else None,
+            user.hmac_iterations,
+        ):
             return None
 
         return user
@@ -304,6 +348,8 @@ class User(Base):
     user_id = Column(Integer, primary_key=True)
     username = Column(String, unique=True, nullable=False)
     password = Column(String)
+    password_salt = Column(String)
+    hmac_iterations = Column(Integer)
     created_at = Column(DateTime)
 
 

@@ -563,9 +563,7 @@ Procedures are pieces of custom logic that can be executed as atomic actions
 using `procedure.<name>` as an action name.
 
 They can be defined either in the `config.yaml` or as Python scripts stored
-under `~/.config/platypush/scripts` - provided that the procedure is also
-imported in `~/.config/platypush/scripts/__init__.py` so it can be discovered
-by the service.
+under `~/.config/platypush/scripts`.
 
 YAML example for a procedure that can be executed when we arrive home and turns
 on the lights if the luminosity is lower that a certain thresholds, says a

@@ -1,27 +1,53 @@
 import re
 import sys
-from typing import Optional
+from typing import Any, Mapping, Optional, Union
 
 from platypush.context import get_plugin
-from platypush.message.event import Event
+from platypush.message.event import Event, EventMatchResult
+from platypush.plugins.assistant import AssistantPlugin
+from platypush.utils import get_plugin_name_by_class
 
 
 class AssistantEvent(Event):
     """Base class for assistant events"""
 
-    def __init__(self, *args, assistant: Optional[str] = None, **kwargs):
+    def __init__(
+        self, *args, assistant: Optional[Union[str, AssistantPlugin]] = None, **kwargs
+    ):
         """
         :param assistant: Name of the assistant plugin that triggered the event.
         """
-        super().__init__(*args, assistant=assistant, **kwargs)
+        assistant = assistant or kwargs.get('assistant')
+        if assistant:
+            assistant = (
+                assistant
+                if isinstance(assistant, str)
+                else get_plugin_name_by_class(assistant.__class__)
+            )
+
+            kwargs['_assistant'] = assistant
+
+        super().__init__(*args, **kwargs)
 
     @property
-    def _assistant(self):
-        return (
-            get_plugin(self.args.get('assistant'))
-            if self.args.get('assistant')
-            else None
-        )
+    def assistant(self) -> Optional[AssistantPlugin]:
+        assistant = self.args.get('_assistant')
+        if not assistant:
+            return None
+
+        return get_plugin(assistant)
+
+    def as_dict(self):
+        evt_dict = super().as_dict()
+        evt_args = {**evt_dict['args']}
+        assistant = evt_args.pop('_assistant', None)
+        if assistant:
+            evt_args['assistant'] = assistant
+
+        return {
+            **evt_dict,
+            'args': evt_args,
+        }
 
 
 class ConversationStartEvent(AssistantEvent):
@@ -43,7 +69,6 @@ class ConversationEndEvent(AssistantEvent):
         :param with_follow_on_turn: Set to true if the conversation expects a
             user follow-up, false otherwise
         """
-
         super().__init__(*args, with_follow_on_turn=with_follow_on_turn, **kwargs)
 
 
@@ -56,17 +81,46 @@ class ConversationTimeoutEvent(ConversationEndEvent):
         super().__init__(*args, **kwargs)
 
 
-class ResponseEvent(ConversationEndEvent):
+class ResponseEvent(AssistantEvent):
     """
     Event triggered when a response is processed by the assistant
     """
 
-    def __init__(self, *args, response_text: str, **kwargs):
+    def __init__(
+        self, *args, response_text: str, with_follow_on_turn: bool = False, **kwargs
+    ):
         """
         :param response_text: Response text processed by the assistant
+        :param with_follow_on_turn: Set to true if the conversation expects a
+            user follow-up, false otherwise
         """
+        super().__init__(
+            *args,
+            response_text=response_text,
+            with_follow_on_turn=with_follow_on_turn,
+            **kwargs,
+        )
 
-        super().__init__(*args, response_text=response_text, **kwargs)
+
+class ResponseEndEvent(ConversationEndEvent):
+    """
+    Event triggered when a response has been rendered on the assistant.
+    """
+
+    def __init__(
+        self, *args, response_text: str, with_follow_on_turn: bool = False, **kwargs
+    ):
+        """
+        :param response_text: Response text rendered on the assistant.
+        :param with_follow_on_turn: Set to true if the conversation expects a
+            user follow-up, false otherwise.
+        """
+        super().__init__(
+            *args,
+            response_text=response_text,
+            with_follow_on_turn=with_follow_on_turn,
+            **kwargs,
+        )
 
 
 class NoResponseEvent(ConversationEndEvent):
@@ -95,8 +149,8 @@ class SpeechRecognizedEvent(AssistantEvent):
         """
 
         result = super().matches_condition(condition)
-        if result.is_match and self._assistant and 'phrase' in condition.args:
-            self._assistant.stop_conversation()
+        if result.is_match and self.assistant and 'phrase' in condition.args:
+            self.assistant.stop_conversation()
 
         return result
 
@@ -125,6 +179,7 @@ class SpeechRecognizedEvent(AssistantEvent):
             result.score = sys.maxsize
             return result
 
+        parsed_args = {}
         event_tokens = re.split(r'\s+', event_args.get(argname, '').strip().lower())
         condition_tokens = re.split(r'\s+', condition_value.strip().lower())
 
@@ -147,11 +202,11 @@ class SpeechRecognizedEvent(AssistantEvent):
                 m = re.match(r'[^\\]*\${(.+?)}', condition_token)
                 if m:
                     argname = m.group(1)
-                    if argname not in result.parsed_args:
-                        result.parsed_args[argname] = event_token
+                    if argname not in parsed_args:
+                        parsed_args[argname] = event_token
                         result.score += 1.0
                     else:
-                        result.parsed_args[argname] += ' ' + event_token
+                        parsed_args[argname] += ' ' + event_token
 
                     if (len(condition_tokens) == 1 and len(event_tokens) == 1) or (
                         len(event_tokens) > 1
@@ -169,6 +224,45 @@ class SpeechRecognizedEvent(AssistantEvent):
 
         # It's a match if all the tokens in the condition string have been satisfied
         result.is_match = len(condition_tokens) == 0
+        if result.is_match:
+            result.parsed_args = parsed_args
+
+        return result
+
+
+class IntentRecognizedEvent(AssistantEvent):
+    """
+    Event triggered when an intent is matched by a speech command.
+    """
+
+    def __init__(
+        self, *args, intent: str, slots: Optional[Mapping[str, Any]] = None, **kwargs
+    ):
+        """
+        :param intent: The intent that has been matched.
+        :param slots: The slots extracted from the intent, as a key-value mapping.
+        """
+        super().__init__(*args, intent=intent, slots=slots or {}, **kwargs)
+
+    def _matches_argument(
+        self, argname, condition_value, event_args, result: EventMatchResult
+    ):
+        if argname != 'slots':
+            return super()._matches_argument(
+                argname, condition_value, event_args, result
+            )
+
+        event_slots = set(event_args.get(argname, {}).items())
+        slots = set(self.args.get(argname, {}).items())
+
+        # All the slots in the condition must be in the event
+        if slots.difference(event_slots) == 0:
+            result.is_match = True
+            result.score += 1
+        else:
+            result.is_match = False
+            result.score = 0
+
         return result
 
 

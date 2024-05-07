@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 import logging
+import pathlib
 import os
 import signal
 import subprocess
@@ -41,6 +42,7 @@ class Application:
         self,
         config_file: Optional[str] = None,
         workdir: Optional[str] = None,
+        db: Optional[str] = None,
         logsdir: Optional[str] = None,
         cachedir: Optional[str] = None,
         device_id: Optional[str] = None,
@@ -56,30 +58,87 @@ class Application:
         ctrl_sock: Optional[str] = None,
     ):
         """
-        :param config_file: Configuration file override (default: None).
-        :param workdir: Overrides the ``workdir`` setting in the configuration
-            file (default: None).
-        :param logsdir: Set logging directory. If not specified, the
-            ``filename`` setting under the ``logging`` section of the
-            configuration file is used. If not set, logging will be sent to
-            stdout and stderr.
-        :param cachedir: Overrides the ``cachedir`` setting in the configuration
-            file (default: None).
-        :param device_id: Override the device ID used to identify this
-            instance. If not passed here, it is inferred from the configuration
-            (device_id field). If not present there either, it is inferred from
-            the hostname.
+        :param config_file: Configuration file. The order of precedence is:
+
+            - The ``config_file`` parameter (or the ``-c``/``--config`` command
+              line argument).
+            - The ``PLATYPUSH_CONFIG`` environment variable.
+            - ``./config.yaml``
+            - ``~/.config/platypush/config.yaml``
+            - ``/etc/platypush/config.yaml``
+
+        :param workdir: Working directory where the application will store its
+            data and integration plugins will store their data. The order of
+            precedence is:
+
+                - The ``workdir`` parameter (or the ``-w``/``--workdir`` command
+                  line argument).
+                - The ``PLATYPUSH_WORKDIR`` environment variable.
+                - The ``workdir`` field in the configuration file.
+                - ``~/.local/share/platypush``
+
+        :param db: Main database engine for the application. Supports SQLAlchemy
+            engine strings. The order of precedence is:
+
+                - The ``db`` parameter (or the ``--main-db``/``--db`` command
+                  line argument).
+                - The ``PLATYPUSH_DB`` environment variable.
+                - The ``db`` field in the configuration file.
+                - ``sqlite:///<workdir>/main.db``
+
+        :param logsdir: Logs directory where the application will store its logs.
+            The order of precedence is:
+
+                - The ``logsdir`` parameter (or the ``-l``/``--logsdir`` command
+                  line argument).
+                - The ``PLATYPUSH_LOGSDIR`` environment variable.
+                - The ``logging`` -> ``filename`` field in the configuration
+                  file (the ``format`` and ``level`` fields can be set as well
+                  using Python logging configuration).
+                - stdout and stderr
+
+        :param cachedir: Directory where the application and the plugins will store
+            their cache data. The order of precedence is:
+
+                - The ``cachedir`` parameter (or the ``--cachedir`` command line
+                  argument).
+                - The ``PLATYPUSH_CACHEDIR`` environment variable.
+                - The ``cachedir`` field in the configuration file.
+                - ``~/.cache/platypush``
+
+        :param device_id: Device ID used to identify this instance. The order
+            of precedence is:
+
+              - The ``device_id`` parameter (or the ``--device-id`` command
+                line argument).
+              - The ``PLATYPUSH_DEVICE_ID`` environment variable.
+              - The ``device_id`` field in the configuration file.
+              - The hostname of the machine.
+
         :param pidfile: File where platypush will store its PID upon launch,
            useful if you're planning to integrate the application within a
-           service or a launcher script (default: None).
+           service or a launcher script. Order of precedence:
+
+               - The ``pidfile`` parameter (or the ``-P``/``--pidfile`` command
+                 line argument).
+               - The ``PLATYPUSH_PIDFILE`` environment variable.
+               - No PID file.
+
         :param requests_to_process: Exit after processing the specified
-            number of requests (default: None, loop forever).
+            number of requests (default: None, loop forever). This is usually
+            useful for testing purposes.
         :param no_capture_stdout: Set to true if you want to disable the
             stdout capture by the logging system (default: False).
         :param no_capture_stderr: Set to true if you want to disable the
             stderr capture by the logging system (default: False).
         :param redis_queue: Name of the (Redis) queue used for dispatching
-            messages (default: platypush/bus).
+            messages. Order of precedence:
+
+                - The ``redis_queue`` parameter (or the ``--redis-queue`` command
+                  line argument).
+                - The ``PLATYPUSH_REDIS_QUEUE`` environment variable.
+                - ``platypush/bus``
+
         :param verbose: Enable debug/verbose logging, overriding the stored
             configuration (default: False).
         :param start_redis: If set, it starts a managed Redis instance upon
@@ -87,34 +146,57 @@ class Application:
             server). This is particularly useful when running the application
             inside of Docker containers, without relying on ``docker-compose``
             to start multiple containers, and in tests (default: False).
-        :param redis_host: Host of the Redis server to be used. It overrides
-            the settings in the ``redis`` section of the configuration file.
-        :param redis_port: Port of the local Redis server. It overrides the
-            settings in the ``redis`` section of the configuration file.
+        :param redis_host: Host of the Redis server to be used. The order of
+            precedence is:
+
+                - The ``redis_host`` parameter (or the ``--redis-host`` command
+                  line argument).
+                - The ``PLATYPUSH_REDIS_HOST`` environment variable.
+                - The ``redis`` -> ``host`` field in the configuration file.
+                - The ``backend.redis`` -> ``redis_args`` -> ``host`` field in
+                  the configuration file.
+                - ``localhost``
+
+        :param redis_port: Port of the Redis server to be used. The order of
+            precedence is:
+
+                - The ``redis_port`` parameter (or the ``--redis-port`` command
+                  line argument).
+                - The ``PLATYPUSH_REDIS_PORT`` environment variable.
+                - The ``redis`` -> ``port`` field in the configuration file.
+                - The ``backend.redis`` -> ``redis_args`` -> ``port`` field in
+                  the configuration file.
+                - ``6379``
+
         :param ctrl_sock: If set, it identifies a path to a UNIX domain socket
             that the application can use to send control messages (e.g. STOP
             and RESTART) to its parent.
         """
 
-        self.pidfile = pidfile
+        self.pidfile = pidfile or os.environ.get('PLATYPUSH_PIDFILE')
         self.bus: Optional[Bus] = None
-        self.redis_queue = redis_queue or RedisBus.DEFAULT_REDIS_QUEUE
-        self.config_file = config_file
-        self._verbose = verbose
-        self._logsdir = (
-            os.path.abspath(os.path.expanduser(logsdir)) if logsdir else None
+        self.redis_queue = (
+            redis_queue
+            or os.environ.get('PLATYPUSH_REDIS_QUEUE')
+            or RedisBus.DEFAULT_REDIS_QUEUE
         )
+        self.config_file = config_file or os.environ.get('PLATYPUSH_CONFIG')
+        self.verbose = verbose
+        self.db_engine = db or os.environ.get('PLATYPUSH_DB')
+        self.device_id = device_id or os.environ.get('PLATYPUSH_DEVICE_ID')
 
+        self.logsdir = self.expand_path(logsdir or os.environ.get('PLATYPUSH_LOGSDIR'))
+        self.workdir = self.expand_path(workdir or os.environ.get('PLATYPUSH_WORKDIR'))
+        self.cachedir = self.expand_path(
+            cachedir or os.environ.get('PLATYPUSH_CACHEDIR')
+        )
         Config.init(
             self.config_file,
-            device_id=device_id,
-            workdir=os.path.abspath(os.path.expanduser(workdir)) if workdir else None,
-            cachedir=os.path.abspath(os.path.expanduser(cachedir))
-            if cachedir
-            else None,
-            ctrl_sock=os.path.abspath(os.path.expanduser(ctrl_sock))
-            if ctrl_sock
-            else None,
+            device_id=self.device_id,
+            workdir=self.workdir,
+            db=self.db_engine,
+            cachedir=self.cachedir,
+            ctrl_sock=self.expand_path(ctrl_sock),
         )
 
         self.no_capture_stdout = no_capture_stdout
@@ -125,24 +207,25 @@ class Application:
         self.processed_requests = 0
         self.cron_scheduler = None
         self.start_redis = start_redis
-        self.redis_host = redis_host
-        self.redis_port = redis_port
-        self.redis_conf = {}
+        self.redis_host = redis_host or os.environ.get('PLATYPUSH_REDIS_HOST')
+        self.redis_port = redis_port or os.environ.get('PLATYPUSH_REDIS_PORT')
+        self._redis_conf = {
+            'host': self.redis_host or 'localhost',
+            'port': self.redis_port or self._default_redis_port,
+        }
+
         self._redis_proc: Optional[subprocess.Popen] = None
         self.cmd_stream = CommandStream(ctrl_sock)
 
         self._init_bus()
         self._init_logging()
 
+    @staticmethod
+    def expand_path(path: Optional[str]) -> Optional[str]:
+        return os.path.abspath(os.path.expanduser(path)) if path else None
+
     def _init_bus(self):
-        self._redis_conf = get_redis_conf()
-        self._redis_conf['port'] = self.redis_port or self._redis_conf.get(
-            'port', self._default_redis_port
-        )
-
-        if self.redis_host:
-            self._redis_conf['host'] = self.redis_host
-
+        self._redis_conf = {**self._redis_conf, **get_redis_conf()}
         Config.set('redis', self._redis_conf)
         self.bus = RedisBus(
             redis_queue=self.redis_queue,
@@ -152,11 +235,17 @@ class Application:
 
     def _init_logging(self):
         logging_conf = Config.get('logging') or {}
-        if self._verbose:
+        if self.verbose:
             logging_conf['level'] = logging.DEBUG
-        if self._logsdir:
-            logging_conf['filename'] = os.path.join(self._logsdir, 'platypush.log')
+
+        if self.logsdir:
+            logging_conf['filename'] = os.path.join(self.logsdir, 'platypush.log')
             logging_conf.pop('stream', None)
+
+        if logging_conf.get('filename'):
+            pathlib.Path(os.path.dirname(logging_conf['filename'])).mkdir(
+                parents=True, exist_ok=True
+            )
 
         Config.set('logging', logging_conf)
         logging.basicConfig(**logging_conf)
@@ -214,6 +303,7 @@ class Application:
             workdir=opts.workdir,
             cachedir=opts.cachedir,
             logsdir=opts.logsdir,
+            db=opts.db_engine,
             device_id=opts.device_id,
             pidfile=opts.pidfile,
             no_capture_stdout=opts.no_capture_stdout,

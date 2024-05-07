@@ -23,6 +23,10 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
     """
     Plugin to interact with the user's Spotify library and players.
 
+    .. warning:: I don't have a Spotify account, so I can't test this plugin. If you have
+       a Spotify account and you want to contribute to testing or improving this plugin,
+       please reach out to me.
+
     In order to use this plugin to interact with your Spotify account you need to register a new app on the Spotify
     developers website, whitelist the callback URL of your Platypush host and authorize the app to your account:
 

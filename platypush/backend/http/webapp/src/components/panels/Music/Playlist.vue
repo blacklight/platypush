@@ -59,41 +59,38 @@
            @dragover="onTrackDragOver(i)"
            draggable="true"
            v-for="i in displayedTrackIndices"
-           :set="track = tracks[i]"
            :key="i"
            :data-index="i"
            :class="trackClass(i)"
-           @click="onTrackClick($event, i)"
+           @click.left="onTrackClick($event, i)"
+           @click.right.prevent="$refs['menu' + i][0].toggle($event)"
            @dblclick="$emit('play', {pos: i})">
         <div class="col-10">
           <div class="title">
-            {{ track.title || '[No Title]' }}
-            <div class="playing-icon" :class="{paused: status?.state === 'pause'}"
-                 v-if="status?.playingPos === i && (status?.state === 'play' || status?.state === 'pause')">
+            {{ tracks[i].title || '[No Title]' }}
+            <div class="playing-icon" :class="{paused: status?.state === 'pause'}" v-if="isPlayingTrack(i)">
               <span v-for="i in [...Array(3).keys()]" :key="i" />
             </div>
           </div>
 
-          <div class="artist" v-if="track.artist">
-            <a :href="$route.fullPath" v-text="track.artist"
-               @click.prevent="$emit('search', {artist: track.artist})" />
+          <div class="artist" v-if="tracks[i].artist">
+            <a v-text="tracks[i].artist" @click.prevent="searchArtist(tracks[i])" />
           </div>
 
-          <div class="album" v-if="track.album">
-            <a :href="$route.fullPath" v-text="track.album"
-               @click.prevent="$emit('search', {artist: track.artist, album: track.album})" />
+          <div class="album" v-if="tracks[i].album">
+            <a v-text="tracks[i].album" @click.prevent="searchAlbum(tracks[i])" />
           </div>
         </div>
 
         <div class="col-2 right-side">
-          <span class="duration" v-text="track.time ? convertTime(track.time) : '-:--'" />
+          <span class="duration" v-text="tracks[i].time ? convertTime(tracks[i].time) : '-:--'" />
 
           <span class="actions">
-            <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
-              <DropdownItem text="Play" icon-class="fa fa-play" @click="onMenuPlay" />
+            <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" :ref="'menu' + i">
+              <DropdownItem text="Play" icon-class="fa fa-play" @click="onMenuPlay(i)" />
               <DropdownItem text="Add to queue" icon-class="fa fa-plus"
                 @click="$emit('add-to-queue', [...(new Set([...selectedTracks, i]))])" v-if="withAddToQueue" />
-              <DropdownItem text="Add to playlist" icon-class="fa fa-list-ul" @click="$emit('add-to-playlist', track)" />
+              <DropdownItem text="Add to playlist" icon-class="fa fa-list-ul" @click="$emit('add-to-playlist', tracks[i])" />
               <DropdownItem text="Remove" icon-class="fa fa-trash" @click="$emit('remove', [...(new Set([...selectedTracks, i]))])" />
               <DropdownItem text="Info" icon-class="fa fa-info" @click="$emit('info', tracks[i])" />
             </Dropdown>
@@ -260,6 +257,10 @@ export default {
   },
 
   methods: {
+    getTrackElements() {
+      return this.$refs.body.querySelectorAll('.track')
+    },
+
     onTrackClick(event, pos) {
       if (event.shiftKey) {
         const selectedTracks = this.selectedTracks.sort()
@@ -293,10 +294,23 @@ export default {
       }
     },
 
+    isPlayingTrack(i) {
+      // If the state is not play or pause, then no track is playing.
+      if (this.status?.state !== 'play' && this.status?.state !== 'pause')
+        return false
+
+      // If withAddToQueue is not enabled, then we are on the tracklist view.
+      // The playing track is only highlighted if the track is playing.
+      return (
+        !this.withAddToQueue &&
+        this.status?.playingPos === i
+      )
+    },
+
     trackClass(i) {
       return {
         selected: this.selectedTracksSet.has(i),
-        active: !this.withAddToQueue && this.status?.playingPos === i,
+        active: this.isPlayingTrack(i),
       }
     },
 
@@ -317,23 +331,53 @@ export default {
 
     onTrackDragStart(track) {
       this.sourcePos = track
+      if (!this.selectedTracksSet.has(track))
+        this.selectedTracks = [track]
+
+      this.$nextTick(() => {
+        const selectedTracks = [...this.getTrackElements()].filter(
+          (_, i) => this.selectedTracksSet.has(i)
+        )
+
+        selectedTracks.forEach((track) => track.classList.add('dragging'))
+      })
     },
 
     onTrackDragEnd() {
-      this.$refs.body.querySelectorAll('.track').forEach((track) => track.classList.remove('dragover'));
-      if (this.sourcePos == null || this.targetPos == null || this.sourcePos === this.targetPos)
-        return
+      this.getTrackElements().forEach((track) => {
+        track.classList.remove('dragover')
+        track.classList.remove('top')
+        track.classList.remove('bottom')
+      })
 
-      this.$emit('move', {from: this.sourcePos, to: this.targetPos})
+      if (!(this.sourcePos == null || this.targetPos == null || this.sourcePos === this.targetPos)) {
+        const from = this.selectedTracks.length ? this.selectedTracks : [this.sourcePos]
+        this.$emit('move', {from: from, to: this.targetPos})
+      }
+
       this.sourcePos = null
       this.targetPos = null
+      this.selectedTracks = []
+      this.getTrackElements().forEach((track) => track.classList.remove('dragging'))
     },
 
     onTrackDragOver(track) {
       this.targetPos = track
-      const tracks = this.$refs.body.querySelectorAll('.track')
-      tracks.forEach((track) => track.classList.remove('dragover'));
-      [...tracks][track].classList.add('dragover')
+      const tracks = this.getTrackElements()
+      const trackEl = [...tracks].find((t) => parseInt(t.dataset.index || -1) === track)
+      const minSelected = Math.min(...this.selectedTracks)
+
+      tracks.forEach((track) => {
+        track.classList.remove('dragover')
+        track.classList.remove('top')
+        track.classList.remove('bottom')
+      })
+
+      if (track === minSelected)
+        return
+
+      trackEl.classList.add('dragover')
+      track > minSelected ? trackEl.classList.add('bottom') : trackEl.classList.add('top')
     },
 
     onScroll() {
@@ -388,15 +432,51 @@ export default {
         this.mounted = true
       })
     },
+
+    searchArtist(track) {
+      const args = {}
+      if (track.artist_uri)
+        args.uris = [track.artist_uri]
+
+      if (track.artist)
+        args.artist = track.artist
+      else {
+        console.warn('No artist information available')
+        console.debug(track)
+        return
+      }
+
+      this.$emit('search', args)
+    },
+
+    searchAlbum(track) {
+      const args = {}
+      if (track.album_uri)
+        args.uris = [track.album_uri]
+
+      if (track.artist && track.album) {
+        args.artist = track.artist
+        args.album = track.album
+      } else {
+        console.warn('No artist/album information available')
+        console.debug(track)
+        return
+      }
+
+      this.$emit('search', args)
+    },
   },
 
   mounted() {
-    this.scrollToTrack()
-    this.$watch(() => this.status, () => this.scrollToTrack())
-    this.$watch(() => this.filter, (filter) => {
-      if (!filter?.length)
-        this.scrollToTrack()
-    })
+    // Add the scrolling listeners only if we are on the queue view.
+    if (!this.withAddToQueue) {
+      this.scrollToTrack()
+      this.$watch(() => this.status, () => this.scrollToTrack())
+      this.$watch(() => this.filter, (filter) => {
+        if (!filter?.length)
+          this.scrollToTrack()
+      })
+    }
   },
 }
 </script>

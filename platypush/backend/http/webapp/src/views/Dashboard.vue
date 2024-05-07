@@ -45,6 +45,10 @@ export default {
     classes() {
       return this.class
     },
+
+    _refreshSeconds() {
+      return parseFloat(this.refreshSeconds) || 0
+    },
   },
 
   methods: {
@@ -56,7 +60,7 @@ export default {
       return props
     },
 
-    parseTemplate(name, tmpl) {
+    parseTemplate(tmpl) {
       const node = new DOMParser().parseFromString(tmpl, 'text/xml').childNodes[0]
       const self = this
       this.style = node.attributes.style?.nodeValue
@@ -111,17 +115,17 @@ export default {
         this.notifyError(`Dashboard ${name} not found`)
       }
 
-      this.parseTemplate(name, template)
+      this.parseTemplate(template)
     },
   },
 
   mounted() {
     this.refreshDashboard()
-    if (this.refreshSeconds) {
+    if (this._refreshSeconds) {
       const self = this
       setInterval(() => {
         self.refreshDashboard()
-      }, parseInt((this.refreshSeconds*1000).toFixed(0)))
+      }, parseInt((this._refreshSeconds*1000).toFixed(0)))
     }
   }
 }

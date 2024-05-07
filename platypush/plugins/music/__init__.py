@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Dict, Iterable, Optional
 
 from platypush.plugins import Plugin, action
 
@@ -106,6 +106,19 @@ class MusicPlugin(Plugin, ABC):
     @abstractmethod
     def search(self, query, **kwargs):
         raise NotImplementedError()
+
+    @action
+    def get_images(self, resources: Iterable[str], **__) -> Dict[str, Optional[str]]:
+        """
+        Get the images for a list of URIs.
+
+        .. note:: This is an optional action, and it may not be implemented by all plugins.
+                  If the plugin doesn't implement this action, it will return an empty dictionary.
+
+        :param uris: List of URIs.
+        :return: Dictionary in the form ``{uri: image_url}``.
+        """
+        return {}
 
 
 # vim:sw=4:ts=4:et:
