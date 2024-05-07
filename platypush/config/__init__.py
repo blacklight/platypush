@@ -233,19 +233,22 @@ class Config:
             self._config['scripts_dir'] = os.path.join(
                 os.path.dirname(self.config_file), 'scripts'
             )
-        os.makedirs(self._config['scripts_dir'], mode=0o755, exist_ok=True)
 
-        # Create a default (empty) __init__.py in the scripts folder
-        init_py = os.path.join(self._config['scripts_dir'], '__init__.py')
-        if not os.path.isfile(init_py):
-            with open(init_py, 'w') as f:
-                f.write('# Auto-generated __init__.py - do not remove\n')
+        scripts_dir = os.path.abspath(os.path.expanduser(self._config['scripts_dir']))
+        os.makedirs(scripts_dir, mode=0o755, exist_ok=True)
+
+        # Make sure that every folder with a .py file has an __init__.py file
+        for root, _, files in os.walk(scripts_dir):
+            for file in files:
+                if file.endswith('.py'):
+                    init_py = os.path.join(root, '__init__.py')
+                    if not os.path.isfile(init_py):
+                        with open(init_py, 'w') as f:
+                            f.write('')
 
         # Include scripts_dir parent in sys.path so members can be imported in scripts
         # through the `scripts` package
-        scripts_parent_dir = str(
-            pathlib.Path(self._config['scripts_dir']).absolute().parent
-        )
+        scripts_parent_dir = str(pathlib.Path(scripts_dir).absolute().parent)
         sys.path = [scripts_parent_dir] + sys.path
 
     def _init_dashboards_dir(self):
