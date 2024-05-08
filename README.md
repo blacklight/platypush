@@ -505,11 +505,10 @@ event.hook.SearchSongVoiceCommand:
   [Example](https://git.platypush.tech/platypush/platypush/src/branch/master/examples/conf/hook.py):
 
 ```python
-from platypush.event.hook import hook
-from platypush.utils import run
+from platypush import run, when
 from platypush.message.event.assistant import SpeechRecognizedEvent
 
-@hook(SpeechRecognizedEvent, phrase='play ${title} by ${artist}')
+@when(SpeechRecognizedEvent, phrase='play ${title} by ${artist}')
 def on_music_play_command(event, title=None, artist=None, **context):
   results = run('music.mpd.search', filter={
     'artist': artist,
@@ -527,22 +526,22 @@ against partial event arguments are also possible, and relational operators are
 supported as well. For example:
 
 ```python
-from platypush.event.hook import hook
+from platypush import hook
 from platypush.message.event.sensor import SensorDataChangeEvent
 
-@hook(SensorDataChangeEvent, data=1):
+@when(SensorDataChangeEvent, data=1):
 def hook_1(event):
     """
     Triggered when event.data == 1
     """
 
-@hook(SensorDataChangeEvent, data={'state': 1}):
+@when(SensorDataChangeEvent, data={'state': 1}):
 def hook_2(event):
     """
     Triggered when event.data['state'] == 1
     """
 
-@hook(SensorDataChangeEvent, data={
+@when(SensorDataChangeEvent, data={
   'temperature': {'$gt': 25},
   'humidity': {'$le': 15}
 }):

@@ -3,13 +3,10 @@
 # which event type they should be called, and optionally on which event attribute values.
 #
 # Event hooks should be stored in Python files under `~/.config/platypush/scripts`. All the functions that use the
-# @hook decorator will automatically be discovered and imported as event hooks into the platform at runtime.
+# @when decorator will automatically be discovered and imported as event hooks into the platform at runtime.
 
 # `run` is a utility function that runs a request by name (e.g. `light.hue.on`).
-from platypush.utils import run
-
-# @hook decorator
-from platypush.event.hook import hook
+from platypush import when, run
 
 # Event types that you want to react to
 from platypush.message.event.assistant import (
@@ -18,7 +15,7 @@ from platypush.message.event.assistant import (
 )
 
 
-@hook(SpeechRecognizedEvent, phrase='play ${title} by ${artist}')
+@when(SpeechRecognizedEvent, phrase='play ${title} by ${artist}')
 def on_music_play_command(event, title=None, artist=None, **context):
     """
     This function will be executed when a SpeechRecognizedEvent with `phrase="play the music"` is triggered.
@@ -40,7 +37,7 @@ def on_music_play_command(event, title=None, artist=None, **context):
         run('tts.say', "I can't find any music matching your query")
 
 
-@hook(ConversationStartEvent)
+@when(ConversationStartEvent)
 def on_conversation_start(event, **context):
     """
     A simple hook that gets invoked when a new conversation starts with a voice assistant and simply pauses the music

@@ -153,14 +153,13 @@ class HttpBackend(Backend):
 
             .. code-block:: python
 
-                from platypush.context import get_plugin
-                from platypush.event.hook import hook
+                from platypush import get_plugin, when
                 from platypush.message.event.http.hook import WebhookEvent
 
                 hook_token = 'abcdefabcdef'
 
                 # Expose the hook under the /hook/lights_toggle endpoint
-                @hook(WebhookEvent, hook='lights_toggle')
+                @when(WebhookEvent, hook='lights_toggle')
                 def lights_toggle(event, **context):
                     # Do any checks on the request
                     assert event.headers.get('X-Token') == hook_token, 'Unauthorized'

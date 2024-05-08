@@ -17,6 +17,10 @@ from .procedure import procedure
 from .runner import main
 from .utils import run
 
+# Alias for platypush.event.hook.hook,
+# see https://git.platypush.tech/platypush/platypush/issues/399
+when = hook
+
 
 __author__ = 'Fabio Manganiello <fabio@manganiello.tech>'
 __version__ = '0.50.3'
@@ -35,6 +39,7 @@ __all__ = [
     'main',
     'procedure',
     'run',
+    'when',
 ]
 
 
