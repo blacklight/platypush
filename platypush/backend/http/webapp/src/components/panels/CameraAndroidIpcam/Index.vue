@@ -87,8 +87,30 @@ export default {
   },
 
   computed: {
-    config() {
-      return this.$root.config['camera.android.ipcam']
+    configuredCameras() {
+      const config = this.$root.config['camera.android.ipcam']
+      let cameras = config.cameras || []
+
+      if (!cameras.length) {
+        const name = config.name || config.host
+        cameras[name] = {
+          'name': name,
+          'host': config.host,
+          'port': config.port,
+          'username': config.username,
+          'password': config.password,
+          'timeout': config.timeout,
+          'ssl': config.ssl,
+        }
+      } else {
+        cameras = cameras.reduce((cameras, cam) => {
+          const name = cam.name || cam.host
+          cameras[name] = cam
+          return cameras
+        }, {})
+      }
+
+      return cameras
     },
   },
 
@@ -160,7 +182,7 @@ export default {
               cam[attr] = cam[attr].replace('https://', 'http://')
             }
 
-            if (cam.name in this.config.cameras && this.config.cameras[cam.name].username) {
+            if (cam.name in this.configuredCameras && this.configuredCameras[cam.name].username) {
               cam[attr] = 'http://' + this.config.cameras[cam.name].username + ':' +
                   this.config.cameras[cam.name].password + '@' + cam[attr].substr(7)
             }
