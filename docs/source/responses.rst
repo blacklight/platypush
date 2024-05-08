@@ -6,8 +6,6 @@ Responses
     :maxdepth: 1
     :caption: Responses:
 
-    platypush/responses/camera.rst
-    platypush/responses/camera.android.rst
     platypush/responses/google.drive.rst
     platypush/responses/pihole.rst
     platypush/responses/printer.cups.rst
