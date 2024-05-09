@@ -21,7 +21,7 @@ manifest:
       - python-numpy
       - python-pillow
       - python-qrcode
-      - pyzbar
+      # - pyzbar  # Only available via yay for now
     pip:
       - numpy
       - qrcode
