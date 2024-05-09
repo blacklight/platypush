@@ -97,6 +97,7 @@ mock_imports = [
     "pyotp",
     "pysmartthings",
     "pyzbar",
+    "qrcode",
     "rtmidi",
     "samsungtvws",
     "serial",
