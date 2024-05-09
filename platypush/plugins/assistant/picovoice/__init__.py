@@ -86,11 +86,11 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
 
         import time
 
-        from platypush import hook, run
+        from platypush import when, run
         from platypush.message.event.assistant import HotwordDetectedEvent
 
         # Turn on a light for 5 seconds when the hotword "Alexa" is detected
-        @hook(HotwordDetectedEvent, hotword='Alexa')
+        @when(HotwordDetectedEvent, hotword='Alexa')
         def on_hotword_detected(event: HotwordDetectedEvent, **context):
             run("light.hue.on", lights=["Living Room"])
             time.sleep(5)
@@ -109,12 +109,12 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
 
       .. code-block:: python
 
-        from platypush import hook, run
+        from platypush import when, run
         from platypush.message.event.assistant import HotwordDetectedEvent
 
         # Start a conversation using the Italian language model when the
         # "Buongiorno" hotword is detected
-        @hook(HotwordDetectedEvent, hotword='Buongiorno')
+        @when(HotwordDetectedEvent, hotword='Buongiorno')
         def on_it_hotword_detected(event: HotwordDetectedEvent, **context):
             event.assistant.start_conversation(model_file='path/to/it.pv')
 
@@ -136,7 +136,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
 
       .. code-block:: python
 
-        from platypush import hook, run
+        from platypush import when, run
         from platypush.message.event.assistant import SpeechRecognizedEvent
 
         # Turn on a light when the phrase "turn on the lights" is detected.
@@ -144,7 +144,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         # flexible when matching the phrases. For example, the following hook
         # will be matched when the user says "turn on the lights", "turn on
         # lights", "lights on", "lights on please", "turn on light" etc.
-        @hook(SpeechRecognizedEvent, phrase='turn on (the)? lights?')
+        @when(SpeechRecognizedEvent, phrase='turn on (the)? lights?')
         def on_turn_on_lights(event: SpeechRecognizedEvent, **context):
             run("light.hue.on")
 
@@ -154,10 +154,10 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
 
       .. code-block:: python
 
-        from platypush import hook, run
+        from platypush import when, run
         from platypush.message.event.assistant import SpeechRecognizedEvent
 
-        @hook(SpeechRecognizedEvent, phrase='play ${title} by ${artist}')
+        @when(SpeechRecognizedEvent, phrase='play ${title} by ${artist}')
         def on_play_track_command(
             event: SpeechRecognizedEvent, title: str, artist: str, **context
         ):
@@ -227,10 +227,10 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
 
       .. code-block:: python
 
-        from platypush import hook, run
+        from platypush import when, run
         from platypush.message.event.assistant import IntentRecognizedEvent
 
-        @hook(IntentRecognizedEvent, intent='lights_ctrl', slots={'state': 'on'})
+        @when(IntentRecognizedEvent, intent='lights_ctrl', slots={'state': 'on'})
         def on_turn_on_lights(event: IntentRecognizedEvent, **context):
             room = event.slots.get('room')
             if room:
@@ -255,10 +255,10 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
 
       .. code-block:: python
 
-        from platypush import hook, run
+        from platypush import when, run
         from platypush.message.event.assistant import SpeechRecognizedEvent
 
-        @hook(SpeechRecognizedEvent, phrase='turn ${state} (the)? ${room} lights?')
+        @when(SpeechRecognizedEvent, phrase='turn ${state} (the)? ${room} lights?')
         def on_turn_on_lights(event: SpeechRecognizedEvent, phrase, room, **context):
             if room:
                 run("light.hue.on", groups=[room])
@@ -331,7 +331,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             (re.compile(r".*"), ai_assist),
         )
 
-        @hook(SpeechRecognizedEvent)
+        @when(SpeechRecognizedEvent)
         def on_speech_recognized(event, **kwargs):
             for pattern, command in hooks:
                 if pattern.search(event.phrase):
@@ -339,7 +339,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
                     command(event, **kwargs)
                     break
 
-        @hook(ResponseEndEvent)
+        @when(ResponseEndEvent)
         def on_response_end(event: ResponseEndEvent, **__):
             # Check if the response is a question and start a follow-on turn if so.
             # Note that the ``openai`` plugin by default is configured to keep

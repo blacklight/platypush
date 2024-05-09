@@ -3,18 +3,29 @@ import os
 import requests
 
 from requests.auth import HTTPBasicAuth
-from typing import Optional, Union, Dict, List, Any
+from typing import Optional, Sequence, Union, Dict, List, Any
 
-from platypush.message.response.camera.android import AndroidCameraStatusResponse, AndroidCameraStatusListResponse, \
-    AndroidCameraPictureResponse
 from platypush.plugins import Plugin, action
+from platypush.schemas.camera.android.ipcam import CameraStatusSchema
 
 
 class AndroidIpcam:
+    """
+    IPCam camera configuration.
+    """
+
     args = {}
 
-    def __init__(self, name: str, host: str, port: int = 8080, username: Optional[str] = None,
-                 password: Optional[str] = None, timeout: int = 10, ssl: bool = True):
+    def __init__(
+        self,
+        name: str,
+        host: str,
+        port: int = 8080,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        timeout: int = 10,
+        ssl: bool = True,
+    ):
         self.args = {
             'name': name,
             'host': host,
@@ -41,12 +52,13 @@ class AndroidIpcam:
             self.args[key] = value
 
     def __str__(self):
-        return json.dumps(getattr(self, 'args') or {})
+        return json.dumps(self.args or {})
 
     @property
     def base_url(self) -> str:
         return 'http{ssl}://{host}:{port}/'.format(
-            ssl=('s' if self.ssl else ''), host=self.host, port=self.port)
+            ssl=('s' if self.ssl else ''), host=self.host, port=self.port
+        )
 
     @property
     def stream_url(self) -> str:
@@ -67,16 +79,20 @@ class CameraAndroidIpcamPlugin(Plugin):
     `IPCam <https://play.google.com/store/apps/details?id=com.pas.webcam>`_.
     """
 
-    def __init__(self,
-                 host: Optional[str] = None,
-                 port: Optional[int] = 8080,
-                 username: Optional[str] = None,
-                 password: Optional[str] = None,
-                 timeout: int = 10,
-                 ssl: bool = True,
-                 cameras: Optional[Dict[str, Dict[str, Any]]] = None,
-                 **kwargs):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        host: Optional[str] = None,
+        port: int = 8080,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        timeout: int = 10,
+        ssl: bool = True,
+        cameras: Optional[Sequence[dict]] = None,
+        **kwargs,
+    ):
         """
+        :param name: Custom name for the default camera (default: IP/hostname)
         :param host: Camera host name or address
         :param port: Camera port
         :param username: Camera username, if set
@@ -84,28 +100,44 @@ class CameraAndroidIpcamPlugin(Plugin):
         :param timeout: Connection timeout
         :param ssl: Use HTTPS instead of HTTP
         :param cameras: Alternatively, you can specify a list of IPCam cameras as a
-            name->dict mapping. The keys will be unique names used to identify your
-            cameras, the values will contain dictionaries containing `host, `port`,
-            `username`, `password`, `timeout` and `ssl` attributes for each camera.
+            list of objects with ``name``, ``host``, ``port``, ``username``,
+            ``password``, ``timeout`` and ``ssl`` attributes.
         """
         super().__init__(**kwargs)
         self.cameras: List[AndroidIpcam] = []
         self._camera_name_to_idx: Dict[str, int] = {}
 
         if not cameras:
-            camera = AndroidIpcam(name=host, host=host, port=port, username=username,
-                                  password=password, timeout=timeout, ssl=ssl)
+            assert host, 'You need to specify at least one camera'
+            name = name or host
+            camera = AndroidIpcam(
+                name=name,
+                host=host,
+                port=port,
+                username=username,
+                password=password,
+                timeout=timeout,
+                ssl=ssl,
+            )
             self.cameras.append(camera)
-            self._camera_name_to_idx[host] = 0
+            self._camera_name_to_idx[name] = 0
         else:
-            for name, camera in cameras.items():
-                camera = AndroidIpcam(name=name, host=camera['host'], port=camera.get('port', port),
-                                      username=camera.get('username'), password=camera.get('password'),
-                                      timeout=camera.get('timeout', timeout), ssl=camera.get('ssl', ssl))
+            for camera in cameras:
+                assert 'host' in camera, 'You need to specify the host for each camera'
+                name = camera.get('name', camera['host'])
+                camera = AndroidIpcam(
+                    name=name,
+                    host=camera['host'],
+                    port=camera.get('port', port),
+                    username=camera.get('username'),
+                    password=camera.get('password'),
+                    timeout=camera.get('timeout', timeout),
+                    ssl=camera.get('ssl', ssl),
+                )
                 self._camera_name_to_idx[name] = len(self.cameras)
                 self.cameras.append(camera)
 
-    def _get_camera(self, camera: Union[int, str] = None) -> AndroidIpcam:
+    def _get_camera(self, camera: Optional[Union[int, str]] = None) -> AndroidIpcam:
         if not camera:
             camera = 0
 
@@ -114,10 +146,14 @@ class CameraAndroidIpcamPlugin(Plugin):
 
         return self.cameras[self._camera_name_to_idx[camera]]
 
-    def _exec(self, url: str, camera: Union[int, str] = None, *args, **kwargs) -> Union[Dict[str, Any], bool]:
+    def _exec(
+        self, url: str, *args, camera: Optional[Union[int, str]] = None, **kwargs
+    ) -> Union[Dict[str, Any], bool]:
         cam = self._get_camera(camera)
         url = cam.base_url + url
-        response = requests.get(url, auth=cam.auth, timeout=cam.timeout, verify=False, *args, **kwargs)
+        response = requests.get(
+            url, auth=cam.auth, timeout=cam.timeout, verify=False, *args, **kwargs
+        )
         response.raise_for_status()
 
         if response.headers.get('content-type') == 'application/json':
@@ -125,87 +161,138 @@ class CameraAndroidIpcamPlugin(Plugin):
 
         return response.text.find('Ok') != -1
 
-    @action
-    def change_setting(self, key: str, value: Union[str, int, bool], camera: Union[int, str] = None) -> bool:
-        """
-        Change a setting.
-        :param key: Setting name
-        :param value: Setting value
-        :param camera: Camera index or configured name
-        :return: True on success, False otherwise
-        """
+    def _change_setting(
+        self,
+        key: str,
+        value: Union[str, int, bool],
+        camera: Optional[Union[int, str]] = None,
+    ) -> bool:
         if isinstance(value, bool):
             payload = "on" if value else "off"
         else:
             payload = value
 
-        return self._exec("settings/{key}?set={payload}".format(key=key, payload=payload), camera=camera)
+        return bool(
+            self._exec(
+                "settings/{key}?set={payload}".format(key=key, payload=payload),
+                camera=camera,
+            )
+        )
 
     @action
-    def status(self, camera: Union[int, str] = None) -> AndroidCameraStatusListResponse:
+    def change_setting(
+        self,
+        key: str,
+        value: Union[str, int, bool],
+        camera: Optional[Union[int, str]] = None,
+    ) -> bool:
+        """
+        Change a setting.
+
+        :param key: Setting name
+        :param value: Setting value
+        :param camera: Camera index or configured name
+        :return: True on success, False otherwise
+        """
+        return self._change_setting(key, value, camera=camera)
+
+    @action
+    def status(self, camera: Optional[Union[int, str]] = None) -> List[dict]:
         """
         :param camera: Camera index or name (default: status of all the cameras)
-        :return: True if the camera is available, False otherwise
+        :return: .. schema:: camera.android.ipcam.CameraStatusSchema(many=True)
         """
         cameras = self._camera_name_to_idx.keys() if camera is None else [camera]
         statuses = []
 
         for c in cameras:
             try:
-                if isinstance(camera, int):
+                print('****** HERE ******')
+                print(self._camera_name_to_idx)
+                if isinstance(c, int):
                     cam = self.cameras[c]
                 else:
                     cam = self.cameras[self._camera_name_to_idx[c]]
 
-                status_data = self._exec('status.json', params={'show_avail': 1}, camera=cam.name).get('curvals', {})
-                status = AndroidCameraStatusResponse(
-                    name=cam.name,
-                    stream_url=cam.stream_url,
-                    image_url=cam.image_url,
-                    audio_url=cam.audio_url,
-                    **{k: v for k, v in status_data.items()
-                       if k in AndroidCameraStatusResponse.attrs})
+                response = self._exec(
+                    'status.json', params={'show_avail': 1}, camera=cam.name
+                )
+                assert isinstance(response, dict), f'Invalid response: {response}'
+
+                status_data = response.get('curvals', {})
+                status = CameraStatusSchema().dump(
+                    {
+                        'name': cam.name,
+                        'stream_url': cam.stream_url,
+                        'image_url': cam.image_url,
+                        'audio_url': cam.audio_url,
+                        **status_data,
+                    }
+                )
 
                 statuses.append(status)
             except Exception as e:
-                self.logger.warning('Could not get the status of {}: {}'.format(c, str(e)))
+                self.logger.warning(
+                    'Could not get the status of %s: %s: %s', c, type(e), e
+                )
 
-        return AndroidCameraStatusListResponse(statuses)
+        return statuses
 
     @action
-    def set_front_facing_camera(self, activate: bool = True, camera: Union[int, str] = None) -> bool:
+    def set_front_facing_camera(
+        self, activate: bool = True, camera: Optional[Union[int, str]] = None
+    ) -> bool:
         """Enable/disable the front-facing camera."""
-        return self.change_setting('ffc', activate, camera=camera)
+        return self._change_setting('ffc', activate, camera=camera)
 
     @action
-    def set_torch(self, activate: bool = True, camera: Union[int, str] = None) -> bool:
+    def set_torch(
+        self, activate: bool = True, camera: Optional[Union[int, str]] = None
+    ) -> bool:
         """Enable/disable the torch."""
         url = 'enabletorch' if activate else 'disabletorch'
-        return self._exec(url, camera=camera)
+        return bool(self._exec(url, camera=camera))
 
     @action
-    def set_focus(self, activate: bool = True, camera: Union[int, str] = None) -> bool:
+    def set_focus(
+        self, activate: bool = True, camera: Optional[Union[int, str]] = None
+    ) -> bool:
         """Enable/disable the focus."""
         url = 'focus' if activate else 'nofocus'
-        return self._exec(url, camera=camera)
+        return bool(self._exec(url, camera=camera))
 
     @action
-    def start_recording(self, tag: Optional[str] = None, camera: Union[int, str] = None) -> bool:
+    def start_recording(
+        self, tag: Optional[str] = None, camera: Optional[Union[int, str]] = None
+    ) -> bool:
         """Start recording."""
-        params = {'force': 1}
-        if tag:
-            params['tag'] = tag
-
-        return self._exec('startvideo', params=params, camera=camera)
+        params = {
+            'force': 1,
+            **({'tag': tag} if tag else {}),
+        }
+        return bool(self._exec('startvideo', params=params, camera=camera))
 
     @action
-    def stop_recording(self, camera: Union[int, str] = None) -> bool:
+    def stop_recording(self, camera: Optional[Union[int, str]] = None) -> bool:
         """Stop recording."""
-        return self._exec('stopvideo', params={'force': 1}, camera=camera)
+        return bool(self._exec('stopvideo', params={'force': 1}, camera=camera))
 
     @action
-    def take_picture(self, image_file: str, camera: Union[int, str] = None) -> AndroidCameraPictureResponse:
-        """Take a picture and save it on the local device."""
+    def take_picture(
+        self, image_file: str, camera: Optional[Union[int, str]] = None
+    ) -> dict:
+        """
+        Take a picture and save it on the local device.
+
+        :return: dict
+
+          .. code-block:: json
+
+            {
+              "image_file": "/path/to/image.jpg"
+            }
+
+        """
         cam = self._get_camera(camera)
         image_file = os.path.abspath(os.path.expanduser(image_file))
         os.makedirs(os.path.dirname(image_file), exist_ok=True)
@@ -214,47 +301,64 @@ class CameraAndroidIpcamPlugin(Plugin):
 
         with open(image_file, 'wb') as f:
             f.write(response.content)
-        return AndroidCameraPictureResponse(image_file=image_file)
+
+        return {'image_file': image_file}
 
     @action
-    def set_night_vision(self, activate: bool = True, camera: Union[int, str] = None) -> bool:
+    def set_night_vision(
+        self, activate: bool = True, camera: Optional[Union[int, str]] = None
+    ) -> bool:
         """Enable/disable night vision."""
-        return self.change_setting('night_vision', activate, camera=camera)
+        return self._change_setting('night_vision', activate, camera=camera)
 
     @action
-    def set_overlay(self, activate: bool = True, camera: Union[int, str] = None) -> bool:
+    def set_overlay(
+        self, activate: bool = True, camera: Optional[Union[int, str]] = None
+    ) -> bool:
         """Enable/disable video overlay."""
-        return self.change_setting('overlay', activate, camera=camera)
+        return self._change_setting('overlay', activate, camera=camera)
 
     @action
-    def set_gps(self, activate: bool = True, camera: Union[int, str] = None) -> bool:
+    def set_gps(
+        self, activate: bool = True, camera: Optional[Union[int, str]] = None
+    ) -> bool:
         """Enable/disable GPS."""
-        return self.change_setting('gps_active', activate, camera=camera)
+        return self._change_setting('gps_active', activate, camera=camera)
 
     @action
-    def set_quality(self, quality: int = 100, camera: Union[int, str] = None) -> bool:
+    def set_quality(
+        self, quality: int = 100, camera: Optional[Union[int, str]] = None
+    ) -> bool:
         """Set video quality."""
-        return self.change_setting('quality', int(quality), camera=camera)
+        return self._change_setting('quality', int(quality), camera=camera)
 
     @action
-    def set_motion_detect(self, activate: bool = True, camera: Union[int, str] = None) -> bool:
+    def set_motion_detect(
+        self, activate: bool = True, camera: Optional[Union[int, str]] = None
+    ) -> bool:
         """Enable/disable motion detect."""
-        return self.change_setting('motion_detect', activate, camera=camera)
+        return self._change_setting('motion_detect', activate, camera=camera)
 
     @action
-    def set_orientation(self, orientation: str = 'landscape', camera: Union[int, str] = None) -> bool:
+    def set_orientation(
+        self, orientation: str = 'landscape', camera: Optional[Union[int, str]] = None
+    ) -> bool:
         """Set video orientation."""
-        return self.change_setting('orientation', orientation, camera=camera)
+        return self._change_setting('orientation', orientation, camera=camera)
 
     @action
-    def set_zoom(self, zoom: float, camera: Union[int, str] = None) -> bool:
+    def set_zoom(self, zoom: float, camera: Optional[Union[int, str]] = None) -> bool:
         """Set the zoom level."""
-        return self._exec('settings/ptz', params={'zoom': float(zoom)}, camera=camera)
+        return bool(
+            self._exec('settings/ptz', params={'zoom': float(zoom)}, camera=camera)
+        )
 
     @action
-    def set_scenemode(self, scenemode: str = 'auto', camera: Union[int, str] = None) -> bool:
+    def set_scenemode(
+        self, scenemode: str = 'auto', camera: Optional[Union[int, str]] = None
+    ) -> bool:
         """Set video orientation."""
-        return self.change_setting('scenemode', scenemode, camera=camera)
+        return self._change_setting('scenemode', scenemode, camera=camera)
 
 
 # vim:sw=4:ts=4:et:
