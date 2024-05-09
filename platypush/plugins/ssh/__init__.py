@@ -19,15 +19,18 @@ from stat import (
 from typing import Optional, Dict, Tuple, List, Union, Any
 
 from paramiko import DSSKey, RSAKey, SSHClient, WarningPolicy, SFTPClient
-from paramiko.py3compat import u
 
 try:
-    from paramiko import GSS_AUTH_AVAILABLE
+    from paramiko.util import u
+except ImportError:
+    from paramiko.py3compat import u  # type: ignore
+
+try:
+    from paramiko import GSS_AUTH_AVAILABLE  # type: ignore
 except ImportError:
     from paramiko.ssh_gss import GSS_AUTH_AVAILABLE
 
 from platypush import Response
-from platypush.message.response.ssh import SSHKeygenResponse
 from platypush.plugins import Plugin, action
 from platypush.plugins.ssh.tunnel.forward import forward_tunnel
 from platypush.plugins.ssh.tunnel.reverse import reverse_tunnel, close_tunnel
@@ -44,8 +47,8 @@ class SshPlugin(Plugin):
         self, key_file: Optional[str] = None, passphrase: Optional[str] = None, **kwargs
     ):
         """
-        :param key_file: Default key file (default: any "id_rsa", "id_dsa", "id_ecdsa", or "id_ed25519" key discoverable
-            in ``~/.ssh/``.
+        :param key_file: Default key file (default: any "id_rsa", "id_dsa",
+            "id_ecdsa", or "id_ed25519" key discoverable in ``~/.ssh/``.
         :param passphrase: Key file passphrase (default: None).
         """
         super().__init__(**kwargs)
@@ -71,38 +74,46 @@ class SshPlugin(Plugin):
         if host.find('@') >= 0:
             user, host = host.split('@')
         if host.find(':') >= 0:
-            host, port = host.split(':')
+            host, p = host.split(':')
+            port = int(p)
         if not user:
             user = getpass.getuser()
 
-        return host, int(port), user
+        return host, port, user
 
-    # noinspection PyShadowingBuiltins
     @action
     def keygen(
         self,
         filename: str,
-        type: str = 'rsa',
+        type: str = 'rsa',  # pylint: disable=redefined-builtin
         bits: int = 4096,
         comment: Optional[str] = None,
         passphrase: Optional[str] = None,
-    ) -> SSHKeygenResponse:
+    ) -> dict:
         """
         Generate an SSH keypair.
 
-        :param filename: Output file name for the private key (the public key will be stored in <filename>.pub).
+        :param filename: Output file name for the private key (the public key
+            will be stored in <filename>.pub).
         :param type: Encryption algorithm, either "rsa" or "dsa" (default: "rsa").
         :param bits: Key length in bits (default: 4096).
         :param comment: Key comment (default: None).
         :param passphrase: Key passphrase (default: None).
-        :return: :class:`platypush.message.response.ssh.SSHKeygenResponse`.
+        :return:
+
+            .. code-block:: json
+
+              {
+                "fingerprint": "SHA256:...",
+                "key_file": "private_key_file",
+                "pub_key_file": "public_key_file"
+              }
+
         """
         assert type != 'dsa' or bits <= 1024, 'DSA keys support a maximum of 1024 bits'
         assert (
             type in self.key_dispatch_table
-        ), 'No such type: {}. Available types: {}'.format(
-            type, self.key_dispatch_table.keys()
-        )
+        ), f'No such type: {type}. Available types: {self.key_dispatch_table.keys()}'
 
         if filename:
             filename = os.path.abspath(os.path.expanduser(filename))
@@ -110,22 +121,23 @@ class SshPlugin(Plugin):
         prv = self.key_dispatch_table[type].generate(bits=bits)
         prv.write_private_key_file(filename=filename, password=passphrase)
         pub = self.key_dispatch_table[type](filename=filename, password=passphrase)
-        pub_file = '{filename}.pub'.format(filename=filename)
+        pub_file = f'{filename}.pub'
         with open(pub_file, 'w') as f:
-            f.write('{name} {key}'.format(name=pub.get_name(), key=pub.get_base64()))
+            f.write(f'{pub.get_name()} {pub.get_base64()}')
             if comment:
                 f.write(' ' + comment)
 
-        hash = u(hexlify(pub.get_fingerprint()))
-        return SSHKeygenResponse(
-            fingerprint=hash, key_file=filename, pub_key_file=pub_file
-        )
+        return {
+            'fingerprint': u(hexlify(pub.get_fingerprint())),
+            'key_file': filename,
+            'pub_key_file': pub_file,
+        }
 
     def run(self, *args, **kwargs):
         try:
             return super().run(*args, **kwargs)
         except Exception as e:
-            raise AssertionError(e)
+            raise AssertionError(e) from e
 
     def _connect(
         self,
@@ -144,9 +156,10 @@ class SshPlugin(Plugin):
             key = (host, port, user)
             if key in self._sessions:
                 self.logger.info(
-                    '[Connect] The SSH session is already active: {user}@{host}:{port}'.format(
-                        user=user, host=host, port=port
-                    )
+                    '[Connect] The SSH session is already active: %s@%s:%d',
+                    user,
+                    host,
+                    port,
                 )
                 return self._sessions[key]
 
@@ -178,7 +191,7 @@ class SshPlugin(Plugin):
             return client
         except Exception as e:
             self.logger.exception(e)
-            raise AssertionError('Connection to {} failed: {}'.format(host, str(e)))
+            raise AssertionError(f'Connection to {host} failed: {type(e)}: {e}')
 
     @action
     def connect(
@@ -231,9 +244,7 @@ class SshPlugin(Plugin):
         key = (host, port, user)
         if key not in self._sessions:
             self.logger.info(
-                '[Disconnect] The SSH session is not active: {user}@{host}:{port}'.format(
-                    user=user, host=host, port=port
-                )
+                '[Disconnect] The SSH session is not active: %s@%s:%d', user, host, port
             )
 
         session = self._sessions[key]
@@ -269,13 +280,13 @@ class SshPlugin(Plugin):
 
         def decode(buf: bytes) -> str:
             try:
-                buf = buf.decode()
+                s_buf = buf.decode()
             except (ValueError, TypeError):
-                buf = base64.encodebytes(buf).decode()
+                s_buf = base64.encodebytes(buf).decode()
 
-            if buf.endswith('\n'):
-                buf = buf[:-1]
-            return buf
+            if s_buf.endswith('\n'):
+                s_buf = s_buf[:-1]
+            return s_buf
 
         try:
             _in, _out, _err = client.exec_command(cmd, timeout=timeout, environment=env)
@@ -300,6 +311,9 @@ class SshPlugin(Plugin):
     @staticmethod
     def is_directory(sftp: SFTPClient, path: str) -> bool:
         f = sftp.lstat(path)
+        if f.st_mode is None:
+            return False
+
         return S_ISDIR(f.st_mode)
 
     @classmethod
@@ -308,7 +322,7 @@ class SshPlugin(Plugin):
         folders = []
 
         for f in sftp.listdir_attr(path):
-            if S_ISDIR(f.st_mode):
+            if f.st_mode is not None and S_ISDIR(f.st_mode):
                 folders.append(f.filename)
             else:
                 files.append(f.filename)
@@ -317,8 +331,7 @@ class SshPlugin(Plugin):
 
         for folder in folders:
             new_path = os.path.join(path, folder)
-            for x in cls.sftp_walk(sftp, new_path):
-                yield x
+            yield from cls.sftp_walk(sftp, new_path)
 
     def sftp_get(
         self,
@@ -341,10 +354,9 @@ class SshPlugin(Plugin):
 
                 for file in files:
                     self.logger.info(
-                        'Downloading file {} from {} to {}'.format(
-                            file, path, new_local_path
-                        )
+                        'Downloading file %s from %s to %s', file, path, new_local_path
                     )
+
                     self.sftp_get(
                         sftp,
                         os.path.join(remote_path, path, file),
@@ -421,16 +433,17 @@ class SshPlugin(Plugin):
                 try:
                     sftp.mkdir(remote_path)
                 except Exception as e:
-                    self.logger.warning(f'mkdir {remote_path}: {e}')
+                    self.logger.warning(
+                        'mkdir %s failed: %s: %s', remote_path, type(e), e
+                    )
 
                 assert (
                     recursive
-                ), '{} is a directory but recursive has been set to False'.format(
-                    local_path
-                )
+                ), f'{local_path} is a directory but recursive has been set to False'
+
                 assert self.is_directory(
                     sftp, remote_path
-                ), '{} is not a directory on the remote host'.format(remote_path)
+                ), f'{remote_path} is not a directory on the remote host'
 
                 sftp.chdir(remote_path)
                 os.chdir(local_path)
@@ -439,12 +452,14 @@ class SshPlugin(Plugin):
                     try:
                         sftp.mkdir(path)
                     except Exception as e:
-                        self.logger.warning(f'mkdir {remote_path}: {e}')
+                        self.logger.warning(
+                            'mkdir %s failed: %s: %s', remote_path, type(e), e
+                        )
 
                     for file in files:
                         src = os.path.join(path, file)
                         dst = os.path.join(path, file)
-                        self.logger.info('Copying {} to {}'.format(src, dst))
+                        self.logger.info('Copying %s to %s', src, dst)
                         sftp.put(src, dst)
             else:
                 if self.is_directory(sftp, remote_path):
@@ -475,7 +490,9 @@ class SshPlugin(Plugin):
         client = self._connect(**kwargs)
         sftp = client.open_sftp()
 
-        def get_file_type(st_mode: int) -> str:
+        def get_file_type(st_mode: Optional[int]) -> str:
+            if st_mode is None:
+                return 'unknown'
             if S_ISDIR(st_mode):
                 return 'directory'
             elif S_ISBLK(st_mode):
@@ -503,16 +520,24 @@ class SshPlugin(Plugin):
                         'longname': f.longname,
                         'attributes': f.attr,
                         'type': get_file_type(f.st_mode),
-                        'access_time': datetime.datetime.fromtimestamp(f.st_atime),
-                        'modify_time': datetime.datetime.fromtimestamp(f.st_mtime),
+                        'access_time': (
+                            datetime.datetime.fromtimestamp(f.st_atime)
+                            if f.st_atime
+                            else None
+                        ),
+                        'modify_time': (
+                            datetime.datetime.fromtimestamp(f.st_mtime)
+                            if f.st_mtime
+                            else None
+                        ),
                         'uid': f.st_uid,
                         'gid': f.st_gid,
                         'size': f.st_size,
                     }
                     for f in sftp.listdir_attr(path)
                 }
-            else:
-                return sftp.listdir(path)
+
+            return sftp.listdir(path)
         finally:
             if not keep_alive:
                 host, port, user = self._get_host_port_user(**kwargs)
@@ -692,7 +717,7 @@ class SshPlugin(Plugin):
         sftp = client.open_sftp()
 
         try:
-            return sftp.getcwd()
+            return sftp.getcwd() or '/'
         finally:
             if not keep_alive:
                 host, port, user = self._get_host_port_user(**kwargs)
@@ -704,24 +729,29 @@ class SshPlugin(Plugin):
         local_port: int,
         remote_host: str,
         remote_port: int,
-        bind_addr: Optional[str] = '',
+        bind_addr: str = '',
         **kwargs,
     ):
         """
-        Start an SSH forward tunnel, tunnelling <local_port> to <remote_host>:<remote_port>.
+        Start an SSH forward tunnel, tunnelling ``<local_port>`` to
+        ``<remote_host>:<remote_port>``.
 
         :param local_port: Local port.
         :param remote_host: Remote host.
         :param remote_port: Remote port.
-        :param bind_addr: If set, the `local_port` will be bound to this address/subnet (default: '', or 0.0.0.0: any).
-        :param kwargs: Arguments for :meth:`platypush.plugins.ssh.SshPlugin.connect`.
+        :param bind_addr: If set, the `local_port` will be bound to this
+            address/subnet (default: '', or 0.0.0.0: any).
+        :param kwargs: Arguments for
+            :meth:`platypush.plugins.ssh.SshPlugin.connect`.
         """
         key = local_port, remote_host, remote_port
         if key in self._fwd_tunnels:
             self.logger.info(
-                'The tunnel {}:{}:{}:{} is already active'.format(
-                    bind_addr, local_port, remote_host, remote_port
-                )
+                'The tunnel %s:%d:%s:%d is already active',
+                bind_addr,
+                local_port,
+                remote_host,
+                remote_port,
             )
             return
 
@@ -753,9 +783,7 @@ class SshPlugin(Plugin):
         key = (local_port, remote_host, remote_port)
         if key not in self._fwd_tunnels:
             self.logger.warning(
-                'No such forward tunnel: {}:{}:{}'.format(
-                    local_port, remote_host, remote_port
-                )
+                'No such forward tunnel: %d:%s:%d', local_port, remote_host, remote_port
             )
             return
 
@@ -772,7 +800,7 @@ class SshPlugin(Plugin):
         server_port: int,
         remote_host: str,
         remote_port: int,
-        bind_addr: Optional[str] = '',
+        bind_addr: str = '',
         **kwargs,
     ):
         """
@@ -788,9 +816,11 @@ class SshPlugin(Plugin):
         key = server_port, remote_host, remote_port
         if key in self._fwd_tunnels:
             self.logger.info(
-                'The tunnel {}:{}:{}:{} is already active'.format(
-                    bind_addr, server_port, remote_host, remote_port
-                )
+                'The tunnel %s:%d:%s:%d is already active',
+                bind_addr,
+                server_port,
+                remote_host,
+                remote_port,
             )
             return
 
@@ -823,9 +853,10 @@ class SshPlugin(Plugin):
         key = (server_port, remote_host, remote_port)
         if key not in self._rev_tunnels:
             self.logger.warning(
-                'No such reversed tunnel: {}:{}:{}'.format(
-                    server_port, remote_host, remote_port
-                )
+                'No such reverse tunnel: %d:%s:%d',
+                server_port,
+                remote_host,
+                remote_port,
             )
             return
 
