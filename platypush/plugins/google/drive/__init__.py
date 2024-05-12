@@ -4,7 +4,7 @@ from typing import Optional, List, Union
 
 from platypush.plugins import action
 from platypush.plugins.google import GooglePlugin
-from platypush.message.response.google.drive import GoogleDriveFile
+from platypush.schemas.google.drive import GoogleDriveFileSchema
 
 
 class GoogleDrivePlugin(GooglePlugin):
@@ -63,16 +63,15 @@ class GoogleDrivePlugin(GooglePlugin):
     scopes = [
         'https://www.googleapis.com/auth/drive',
         'https://www.googleapis.com/auth/drive.appfolder',
-        'https://www.googleapis.com/auth/drive.photos.readonly',
+        'https://www.googleapis.com/auth/drive.file',
     ]
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(scopes=self.scopes, *args, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(scopes=self.scopes, **kwargs)
 
-    def get_service(self, **_):
+    def get_service(self, *_, **__):
         return super().get_service(service='drive', version='v3')
 
-    # noinspection PyShadowingBuiltins
     @action
     def files(
         self,
@@ -82,7 +81,7 @@ class GoogleDrivePlugin(GooglePlugin):
         drive_id: Optional[str] = None,
         spaces: Optional[Union[str, List[str]]] = None,
         order_by: Optional[Union[str, List[str]]] = None,
-    ) -> Union[GoogleDriveFile, List[GoogleDriveFile]]:
+    ) -> List[dict]:
         """
         Get the list of files.
 
@@ -117,8 +116,9 @@ class GoogleDrivePlugin(GooglePlugin):
             Attributes will be sorted in ascending order by default. You can change that by
             by appending "``desc``" separated by a space to the attribute you want in descending
             order - e.g. ``["folder", "createdTime desc", "modifiedTime desc"]``.
-        """
 
+        :return: .. schema:: google.drive.GoogleDriveFileSchema(many=True)
+        """
         service = self.get_service()
         page_token = None
         files = []
@@ -152,15 +152,7 @@ class GoogleDrivePlugin(GooglePlugin):
 
             page_token = results.get('nextPageToken')
             files.extend(
-                [
-                    GoogleDriveFile(
-                        id=f.get('id'),
-                        name=f.get('name'),
-                        type=f.get('kind').split('#')[1],
-                        mime_type=f.get('mimeType'),
-                    )
-                    for f in results.get('files', [])
-                ]
+                GoogleDriveFileSchema().dump(results.get('files', []), many=True)
             )
 
             if not page_token or (limit and len(files) >= limit):
@@ -172,16 +164,13 @@ class GoogleDrivePlugin(GooglePlugin):
     def get(self, file_id: str):
         """
         Get the information of a file on the Drive by file ID.
+
         :param file_id: File ID.
+        :return: .. schema:: google.drive.GoogleDriveFileSchema
         """
         service = self.get_service()
         file = service.files().get(fileId=file_id).execute()
-        return GoogleDriveFile(
-            type=file.get('kind').split('#')[1],
-            id=file.get('id'),
-            name=file.get('name'),
-            mime_type=file.get('mimeType'),
-        )
+        return GoogleDriveFileSchema().dump(file)
 
     @action
     def upload(
@@ -193,7 +182,7 @@ class GoogleDrivePlugin(GooglePlugin):
         parents: Optional[List[str]] = None,
         starred: bool = False,
         target_mime_type: Optional[str] = None,
-    ) -> GoogleDriveFile:
+    ) -> dict:
         """
         Upload a file to Google Drive.
 
@@ -208,8 +197,11 @@ class GoogleDrivePlugin(GooglePlugin):
             (use "``application/vnd.google-apps.document``). See
             `the official documentation <https://developers.google.com/drive/api/v3/mime-types>`_ for a complete list
             of supported types.
+        :return: The uploaded file metadata.
+
+          .. schema:: google.drive.GoogleDriveFileSchema
+
         """
-        # noinspection PyPackageRequirements
         from googleapiclient.http import MediaFileUpload
 
         path = os.path.abspath(os.path.expanduser(path))
@@ -232,12 +224,7 @@ class GoogleDrivePlugin(GooglePlugin):
             .execute()
         )
 
-        return GoogleDriveFile(
-            type=file.get('kind').split('#')[1],
-            id=file.get('id'),
-            name=file.get('name'),
-            mime_type=file.get('mimeType'),
-        )
+        return dict(GoogleDriveFileSchema().dump(file))
 
     @action
     def download(self, file_id: str, path: str) -> str:
@@ -248,7 +235,6 @@ class GoogleDrivePlugin(GooglePlugin):
         :param path: Path of the file to upload.
         :return: The local file path.
         """
-        # noinspection PyPackageRequirements
         from googleapiclient.http import MediaIoBaseDownload
 
         service = self.get_service()
@@ -268,6 +254,7 @@ class GoogleDrivePlugin(GooglePlugin):
 
         with open(path, 'wb') as f:
             f.write(fh.getbuffer().tobytes())
+
         return path
 
     @action
@@ -278,7 +265,7 @@ class GoogleDrivePlugin(GooglePlugin):
         mime_type: Optional[str] = None,
         parents: Optional[List[str]] = None,
         starred: bool = False,
-    ) -> GoogleDriveFile:
+    ) -> dict:
         """
         Create a file.
 
@@ -287,6 +274,10 @@ class GoogleDrivePlugin(GooglePlugin):
         :param mime_type: File MIME type.
         :param parents: List of folder IDs that will contain the file (default: drive root).
         :param starred: If True then the file will be marked as starred.
+        :return: The created file metadata.
+
+          .. schema:: google.drive.GoogleDriveFileSchema
+
         """
         metadata = {
             'name': name,
@@ -300,13 +291,7 @@ class GoogleDrivePlugin(GooglePlugin):
 
         service = self.get_service()
         file = service.files().create(body=metadata, fields='*').execute()
-
-        return GoogleDriveFile(
-            type=file.get('kind').split('#')[1],
-            id=file.get('id'),
-            name=file.get('name'),
-            mime_type=file.get('mimeType'),
-        )
+        return dict(GoogleDriveFileSchema().dump(file))
 
     @action
     def update(
@@ -319,7 +304,7 @@ class GoogleDrivePlugin(GooglePlugin):
         mime_type: Optional[str] = None,
         starred: Optional[bool] = None,
         trashed: Optional[bool] = None,
-    ) -> GoogleDriveFile:
+    ) -> dict:
         """
         Update the metadata or the content of a file.
 
@@ -331,6 +316,10 @@ class GoogleDrivePlugin(GooglePlugin):
         :param mime_type: Set the file MIME type.
         :param starred: Change the starred flag.
         :param trashed: Move/remove from trash.
+        :return: The updated file metadata.
+
+          .. schema:: google.drive.GoogleDriveFileSchema
+
         """
         metadata = {}
         if name:
@@ -348,40 +337,40 @@ class GoogleDrivePlugin(GooglePlugin):
         if trashed is not None:
             metadata['trashed'] = trashed
 
-        service = self.get_service()
-        file = (
-            service.files().update(fileId=file_id, body=metadata, fields='*').execute()
-        )
-
-        return GoogleDriveFile(
-            type=file.get('kind').split('#')[1],
-            id=file.get('id'),
-            name=file.get('name'),
-            mime_type=file.get('mimeType'),
+        return dict(
+            GoogleDriveFileSchema().dump(
+                self.get_service()
+                .files()
+                .update(fileId=file_id, body=metadata, fields='*')
+                .execute()
+            )
         )
 
     @action
     def delete(self, file_id: str):
         """
         Delete a file from Google Drive.
+
         :param file_id: File ID.
         """
         service = self.get_service()
         service.files().delete(fileId=file_id).execute()
 
     @action
-    def copy(self, file_id: str) -> GoogleDriveFile:
+    def copy(self, file_id: str) -> dict:
         """
         Create a copy of a file.
+
         :param file_id: File ID.
+        :return: The copied file metadata.
+
+          .. schema:: google.drive.GoogleDriveFileSchema
+
         """
-        service = self.get_service()
-        file = service.files().copy(fileId=file_id).execute()
-        return GoogleDriveFile(
-            type=file.get('kind').split('#')[1],
-            id=file.get('id'),
-            name=file.get('name'),
-            mime_type=file.get('mimeType'),
+        return dict(
+            GoogleDriveFileSchema().dump(
+                self.get_service().files().copy(fileId=file_id).execute()
+            )
         )
 
     @action
