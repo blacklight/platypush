@@ -3,7 +3,6 @@ from typing import Optional, List
 
 from google.cloud import translate_v2 as translate
 
-from platypush.message.response.translate import TranslateResponse
 from platypush.plugins import action, Plugin
 
 
@@ -98,7 +97,7 @@ class GoogleTranslatePlugin(Plugin):
         target_language: Optional[str] = None,
         source_language: Optional[str] = None,
         format: Optional[str] = None,
-    ) -> TranslateResponse:
+    ) -> dict:
         """
         Translate a piece of text or HTML.
 
@@ -106,7 +105,16 @@ class GoogleTranslatePlugin(Plugin):
         :param target_language: target_language override.
         :param source_language: source_language (default: auto-detect).
         :param format: Input format (available formats: ``text``, ``html``).
-        :return: :class:`platypush.message.response.translate.TranslateResponse`.
+        :return: dict
+
+          .. code-block:: json
+
+            {
+              "translated_text": "Translated text",
+              "source_text": "Source text",
+              "detected_source_language": "Detected source language"
+            }
+
         """
         target_language = target_language or self.target_language
         args = {}
@@ -127,11 +135,11 @@ class GoogleTranslatePlugin(Plugin):
             else:
                 result['translatedText'] += ' ' + response['translatedText']
 
-        return TranslateResponse(
-            translated_text=result.get('translatedText'),
-            source_text=text,
-            detected_source_language=result.get('detectedSourceLanguage'),
-        )
+        return {
+            'translated_text': result.get('translatedText'),
+            'source_text': text,
+            'detected_source_language': result.get('detectedSourceLanguage'),
+        }
 
 
 # vim:sw=4:ts=4:et:
