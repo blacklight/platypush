@@ -12,5 +12,5 @@ manifest:
       - python-pycups
     pip:
       - pycups
-  package: platypush.plugins.printer.cups
+  package: platypush.plugins.cups
   type: plugin

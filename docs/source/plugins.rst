@@ -26,6 +26,7 @@ Plugins
     platypush/plugins/clipboard.rst
     platypush/plugins/config.rst
     platypush/plugins/csv.rst
+    platypush/plugins/cups.rst
     platypush/plugins/db.rst
     platypush/plugins/dbus.rst
     platypush/plugins/dropbox.rst
@@ -99,7 +100,6 @@ Plugins
     platypush/plugins/otp.rst
     platypush/plugins/pihole.rst
     platypush/plugins/ping.rst
-    platypush/plugins/printer.cups.rst
     platypush/plugins/pushbullet.rst
     platypush/plugins/pwm.pca9685.rst
     platypush/plugins/qrcode.rst
