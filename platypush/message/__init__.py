@@ -30,6 +30,11 @@ class Message:
     """
 
     class Encoder(json.JSONEncoder):
+        """
+        JSON encoder that can serialize custom types commonly handled in
+        Platypush messages.
+        """
+
         @staticmethod
         def parse_numpy(obj):
             try:
@@ -57,50 +62,50 @@ class Message:
             if isinstance(obj, (datetime.datetime, datetime.date, datetime.time)):
                 return obj.isoformat()
 
-        def default(self, obj):
+        def default(self, o):
             from platypush.procedure import Procedure
 
-            value = self.parse_datetime(obj)
+            value = self.parse_datetime(o)
             if value is not None:
                 return value
 
-            if isinstance(obj, set):
-                return list(obj)
+            if isinstance(o, set):
+                return list(o)
 
-            if isinstance(obj, UUID):
-                return str(obj)
+            if isinstance(o, UUID):
+                return str(o)
 
-            value = self.parse_numpy(obj)
+            value = self.parse_numpy(o)
             if value is not None:
                 return value
 
-            if isinstance(obj, JSONAble):
-                return obj.to_json()
+            if isinstance(o, JSONAble):
+                return o.to_json()
 
-            if isinstance(obj, Procedure):
-                return obj.to_dict()
+            if isinstance(o, Procedure):
+                return o.to_dict()
 
-            if isinstance(obj, Enum):
-                return obj.value
+            if isinstance(o, Enum):
+                return o.value
 
-            if isinstance(obj, Exception):
-                return f'<{obj.__class__.__name__}>' + (f' {obj}' if obj else '')
+            if isinstance(o, Exception):
+                return f'<{o.__class__.__name__}>' + (f' {o}' if o else '')
 
-            if is_dataclass(obj):
-                return asdict(obj)
+            if is_dataclass(o):
+                return asdict(o)
 
-            if isinstance(obj, Message):
-                return obj.to_dict(obj)
+            if isinstance(o, Message):
+                return o.to_dict(o)
 
             # Don't serialize I/O wrappers/objects
-            if isinstance(obj, io.IOBase):
+            if isinstance(o, io.IOBase):
                 return None
 
             try:
-                return super().default(obj)
+                return super().default(o)
             except Exception as e:
                 _logger.warning(
-                    'Could not serialize object type %s: %s: %s', type(obj), e, obj
+                    'Could not serialize object type %s: %s: %s', type(o), e, o
                 )
 
     def __init__(self, *_, timestamp=None, logging_level=logging.INFO, **__):
@@ -203,64 +208,6 @@ class Message:
         msgtype = get_message_class_by_type(msg['type'])
         if msgtype != cls:
             return msgtype.build(msg)
-
-
-class Mapping(dict):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for k, v in kwargs.items():
-            self.__setattr__(k, v)
-
-    def __setitem__(self, key, item):
-        self.__dict__[key] = item
-
-    def __getitem__(self, key):
-        return self.__dict__[key]
-
-    def __repr__(self):
-        return repr(self.__dict__)
-
-    def __len__(self):
-        return len(self.__dict__)
-
-    def __delitem__(self, key):
-        del self.__dict__[key]
-
-    def clear(self):
-        return self.__dict__.clear()
-
-    def copy(self):
-        return self.__dict__.copy()
-
-    def has_key(self, k):
-        return k in self.__dict__
-
-    def update(self, *args, **kwargs):
-        return self.__dict__.update(*args, **kwargs)
-
-    def keys(self):
-        return self.__dict__.keys()
-
-    def values(self):
-        return self.__dict__.values()
-
-    def items(self):
-        return self.__dict__.items()
-
-    def pop(self, *args):
-        return self.__dict__.pop(*args)
-
-    def __cmp__(self, dict_):
-        return self.__cmp__(dict_)
-
-    def __contains__(self, item):
-        return item in self.__dict__
-
-    def __iter__(self):
-        return iter(self.__dict__)
-
-    def __str__(self):
-        return str(self.__dict__)
 
 
 # vim:sw=4:ts=4:et:
