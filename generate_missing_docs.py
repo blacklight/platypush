@@ -8,7 +8,6 @@ import pkgutil
 
 from platypush.backend import Backend
 from platypush.message.event import Event
-from platypush.message.response import Response
 from platypush.plugins import Plugin
 from platypush.utils.manifest import Manifests
 from platypush.utils.mock import auto_mocks
@@ -24,10 +23,6 @@ def get_all_backends():
 
 def get_all_events():
     return _get_modules(Event)
-
-
-def get_all_responses():
-    return _get_modules(Response)
 
 
 def _get_modules(base_type: type):
@@ -151,20 +146,11 @@ def generate_events_doc():
     )
 
 
-def generate_responses_doc():
-    _generate_components_doc(
-        index_name='responses',
-        package_name='message.response',
-        components=sorted(response for response in get_all_responses() if response),
-    )
-
-
 def main():
     with auto_mocks():
         generate_plugins_doc()
         generate_backends_doc()
         generate_events_doc()
-        generate_responses_doc()
 
 
 if __name__ == '__main__':

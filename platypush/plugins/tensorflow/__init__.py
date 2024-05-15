@@ -20,11 +20,8 @@ from platypush.message.event.tensorflow import (
     TensorflowTrainStartedEvent,
     TensorflowTrainEndedEvent,
 )
-from platypush.message.response.tensorflow import (
-    TensorflowTrainResponse,
-    TensorflowPredictResponse,
-)
 from platypush.plugins import Plugin, action
+from platypush.schemas.tensorflow import TensorflowTrainSchema
 
 
 class TensorflowPlugin(Plugin):
@@ -50,11 +47,11 @@ class TensorflowPlugin(Plugin):
         super().__init__(**kwargs)
         self.models = {}  # str -> Model
         self._models_lock = threading.RLock()
-        self._model_locks: Dict[str, threading.RLock()] = {}
+        self._model_locks: Dict[str, threading.RLock] = {}
         self._work_dir = (
             os.path.abspath(os.path.expanduser(workdir))
             if workdir
-            else os.path.join(Config.get('workdir'), 'tensorflow')
+            else os.path.join(Config.get_workdir(), 'tensorflow')
         )
 
         self._models_dir = os.path.join(self._work_dir, 'models')
@@ -99,6 +96,8 @@ class TensorflowPlugin(Plugin):
             elif os.path.isdir(model_name):
                 model_dir = model_name
                 model = load_model(model_dir)
+            else:
+                raise FileNotFoundError(f'Model not found: {model_name}')
 
         assert model, 'Could not find model: {}'.format(model_name)
         model.input_labels = []
@@ -196,8 +195,7 @@ class TensorflowPlugin(Plugin):
             loaded, otherwise the model currently in memory will be kept (default: ``False``).
         :return: The model configuration.
         """
-        model = self._load_model(model, reload=reload)
-        return model.get_config()
+        return self._load_model(model, reload=reload).get_config()
 
     @action
     def unload(self, model: str) -> None:
@@ -794,12 +792,12 @@ class TensorflowPlugin(Plugin):
         sample_weight: Optional[Union[np.ndarray, Iterable]] = None,
         initial_epoch: int = 0,
         steps_per_epoch: Optional[int] = None,
-        validation_steps: int = None,
+        validation_steps: Optional[int] = None,
         validation_freq: int = 1,
         max_queue_size: int = 10,
         workers: int = 1,
         use_multiprocessing: bool = False,
-    ) -> TensorflowTrainResponse:
+    ) -> dict:
         """
         Trains a model on a dataset for a fixed number of epochs.
 
@@ -915,13 +913,12 @@ class TensorflowPlugin(Plugin):
             Note that because this implementation relies on multiprocessing, you should not pass non-picklable
             arguments to the generator as they can't be passed easily to children processes.
 
-        :return: :class:`platypush.message.response.tensorflow.TensorflowTrainResponse`
+        :return: .. schema:: tensorflow.TensorflowTrainSchema
         """
         name = model
-        model = self._load_model(model)
+        model_obj = self._load_model(model)
         inputs, outputs = self._get_dataset(inputs, outputs, model)
-
-        ret = model.fit(
+        ret = model_obj.fit(
             x=inputs,
             y=outputs,
             batch_size=batch_size,
@@ -942,8 +939,14 @@ class TensorflowPlugin(Plugin):
             use_multiprocessing=use_multiprocessing,
         )
 
-        return TensorflowTrainResponse(
-            model=model, model_name=name, epochs=ret.epoch, history=ret.history
+        return dict(
+            TensorflowTrainSchema().dump(
+                {
+                    'model': name,
+                    'epochs': ret.epoch,
+                    'history': ret.history,
+                }
+            )
         )
 
     @action
@@ -1035,10 +1038,10 @@ class TensorflowPlugin(Plugin):
         """
 
         name = model
-        model = self._load_model(model)
-        inputs, outputs = self._get_dataset(inputs, outputs, model)
+        model_obj = self._load_model(model)
+        inputs, outputs = self._get_dataset(inputs, outputs, model_obj)
 
-        ret = model.evaluate(
+        ret = model_obj.evaluate(
             x=inputs,
             y=outputs,
             batch_size=batch_size,
@@ -1052,10 +1055,10 @@ class TensorflowPlugin(Plugin):
         )
 
         ret = ret if isinstance(ret, list) else [ret]
-        if not model.metrics_names:
+        if not model_obj.metrics_names:
             return ret
 
-        return {model.metrics_names[i]: value for i, value in enumerate(ret)}
+        return {model_obj.metrics_names[i]: value for i, value in enumerate(ret)}
 
     @action
     def predict(
@@ -1070,7 +1073,7 @@ class TensorflowPlugin(Plugin):
         max_queue_size: int = 10,
         workers: int = 1,
         use_multiprocessing: bool = False,
-    ) -> TensorflowPredictResponse:
+    ) -> dict:
         """
         Generates output predictions for the input samples.
 
@@ -1114,7 +1117,7 @@ class TensorflowPlugin(Plugin):
             Note that because this implementation relies on multiprocessing, you should not pass non-picklable
             arguments to the generator as they can't be passed easily to children processes.
 
-        :return: :class:`platypush.message.response.tensorflow.TensorflowPredictResponse`. Format:
+        :return: Format:
 
             - For regression models with no output labels specified: ``outputs`` will contain the output vector:
 
@@ -1158,19 +1161,19 @@ class TensorflowPlugin(Plugin):
 
         """
         name = model
-        model = self._load_model(model)
-        inputs = self._get_data(inputs, model)
+        model_obj = self._load_model(model)
+        inputs = self._get_data(inputs, model_obj)
         if (
             isinstance(inputs, np.ndarray)
-            and len(model.inputs[0].shape) == len(inputs.shape) + 1
+            and len(model_obj.inputs[0].shape) == len(inputs.shape) + 1
             and (
-                model.inputs[0].shape[0] is None
-                or model.inputs[0].shape[0].value is None
+                model_obj.inputs[0].shape[0] is None
+                or model_obj.inputs[0].shape[0].value is None
             )
         ):
             inputs = np.asarray([inputs])
 
-        ret = model.predict(
+        ret = model_obj.predict(
             inputs,
             batch_size=batch_size,
             verbose=verbose,
@@ -1181,12 +1184,28 @@ class TensorflowPlugin(Plugin):
             use_multiprocessing=use_multiprocessing,
         )
 
-        return TensorflowPredictResponse(
-            model=model,
-            model_name=name,
-            prediction=ret,
-            output_labels=model.output_labels,
-        )
+        if (
+            model_obj.output_labels
+            and len(model_obj.output_labels) == model_obj.outputs[-1].shape[-1]
+        ):
+            outputs = [
+                {model_obj.output_labels[i]: value for i, value in enumerate(p)}
+                for p in ret
+            ]
+        else:
+            outputs = ret
+
+        if model_obj.__class__.__name__ != 'LinearModel':
+            ret = [int(np.argmax(p)) for p in ret]
+            if model_obj.output_labels:
+                ret = [model_obj.output_labels[p] for p in ret]
+
+        return {
+            'model': name,
+            'outputs': outputs,
+            'prediction': ret,
+            'output_labels': model_obj.output_labels,
+        }
 
     @action
     def save(self, model: str, overwrite: bool = True, **opts) -> None:
@@ -1212,28 +1231,30 @@ class TensorflowPlugin(Plugin):
                 model_dir = str(pathlib.Path(model_file).parent)
             elif os.path.isdir(model_file):
                 model_dir = model_file
+            else:
+                raise FileNotFoundError(f'No such model loaded: {model_name}')
 
-        model = self.models.get(model_name, self.models.get(model_dir))
-        assert model, 'No such model loaded: {}'.format(model_name)
+        model_obj = self.models.get(model_name, self.models.get(model_dir))
+        assert model_obj, f'No such model loaded: {model_name}'
         pathlib.Path(model_dir).mkdir(parents=True, exist_ok=True)
 
         with self._lock_model(model_name):
             labels = {}
             labels_file = os.path.join(model_dir, 'labels.json')
 
-            if hasattr(model, 'input_labels') and model.input_labels:
-                labels['input'] = model.input_labels
-            if hasattr(model, 'output_labels') and model.output_labels:
+            if hasattr(model_obj, 'input_labels') and model_obj.input_labels:
+                labels['input'] = model_obj.input_labels
+            if hasattr(model_obj, 'output_labels') and model_obj.output_labels:
                 if hasattr(labels, 'input'):
-                    labels['output'] = model.output_labels
+                    labels['output'] = model_obj.output_labels
                 else:
-                    labels = model.output_labels
+                    labels = model_obj.output_labels
 
             if labels:
                 with open(labels_file, 'w') as f:
                     json.dump(labels, f)
 
-            model.save(
+            model_obj.save(
                 model_name if os.path.isfile(model_name) else model_dir,
                 overwrite=overwrite,
                 options=opts,

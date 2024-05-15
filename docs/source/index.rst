@@ -50,7 +50,6 @@ Reference
     backends
     plugins
     events
-    responses
 
 Indices and tables
 ==================
