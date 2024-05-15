@@ -1388,7 +1388,7 @@ print(json.dumps(config))
         Scan the available networks.
 
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
-        :return: .. schema:: esp.WifiScanResult(many=True)
+        :return: .. schema:: esp.WifiScanResultSchema(many=True)
         """
         code = '''
 import network
