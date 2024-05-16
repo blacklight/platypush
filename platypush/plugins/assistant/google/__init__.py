@@ -58,7 +58,7 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
         years, some of its dependencies are quite old and may break more recent
         Python installations. Please refer to the comments in the `manifest
         file
-        <https://git.platypush.tech/platypush/platypush/src/branch/master/platypush/plugins/assistant/google/manifest.yaml>`_.
+        <https://git.platypush.tech/platypush/platypush/src/branch/master/platypush/plugins/assistant/google/manifest.json>`_.
         for more information on how to install the required dependencies, if
         the automated ways fail.
     """

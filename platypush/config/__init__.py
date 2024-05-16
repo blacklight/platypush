@@ -2,6 +2,7 @@ import datetime
 import glob
 import importlib
 import inspect
+import json
 import logging
 import os
 import pathlib
@@ -440,9 +441,13 @@ class Config:
                 if base_dir.endswith('plugins')
                 else self._backend_manifests
             )
-            for mf in pathlib.Path(base_dir).rglob('manifest.yaml'):
+
+            for mf in pathlib.Path(base_dir).rglob('manifest.json'):
                 with open(mf, 'r') as f:
-                    manifest = yaml.safe_load(f)['manifest']
+                    manifest = json.load(f).get('manifest')
+                    if not manifest:
+                        continue
+
                     comp_name = '.'.join(manifest['package'].split('.')[2:])
                     manifests_map[comp_name] = manifest
 

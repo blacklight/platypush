@@ -26,8 +26,6 @@ from typing import (
     Union,
 )
 
-import yaml
-
 from platypush.utils import get_src_root, is_root
 
 _available_package_manager = None
@@ -538,7 +536,7 @@ class Manifest(ABC):
         return os.path.join(
             get_src_root(),
             *self.package.split('.')[1:],
-            'manifest.yaml',
+            'manifest.json',
         )
 
     def _init_deps(self, install: Mapping[str, Iterable[str]]) -> Dependencies:
@@ -584,7 +582,7 @@ class Manifest(ABC):
         Parse a manifest filename into a ``Manifest`` class.
         """
         with open(str(filename), 'r') as f:
-            manifest = yaml.safe_load(f).get('manifest', {})
+            manifest = json.load(f).get('manifest', {})
 
         assert 'type' in manifest, f'Manifest file {filename} has no type field'
         comp_type = ManifestType(manifest.pop('type'))
@@ -657,9 +655,14 @@ class Manifests:
         and parse them into :class:`Manifest` objects.
         """
         for mf in pathlib.Path(os.path.dirname(inspect.getfile(base_class))).rglob(
-            'manifest.yaml'
+            'manifest.json'
         ):
-            yield Manifest.from_file(str(mf), pkg_manager=pkg_manager)
+            try:
+                yield Manifest.from_file(str(mf), pkg_manager=pkg_manager)
+            except Exception as e:
+                logger.debug(
+                    'Could not parse manifest file %s: %s', mf, e, exc_info=True
+                )
 
     @staticmethod
     def by_config(
@@ -681,12 +684,21 @@ class Manifests:
 
         for name in Config.get_backends().keys():
             yield Manifest.from_file(
-                os.path.join(app_dir, 'backend', *name.split('.'), 'manifest.yaml'),
+                os.path.join(app_dir, 'backend', *name.split('.'), 'manifest.json'),
                 pkg_manager=pkg_manager,
             )
 
         for name in Config.get_plugins().keys():
             yield Manifest.from_file(
-                os.path.join(app_dir, 'plugins', *name.split('.'), 'manifest.yaml'),
+                os.path.join(app_dir, 'plugins', *name.split('.'), 'manifest.json'),
                 pkg_manager=pkg_manager,
             )
+
+    @staticmethod
+    def scan() -> Generator[Manifest, None, None]:
+        """
+        Scan all the manifest files in the source tree and parse them into
+        :class:`Manifest` objects.
+        """
+        for mf in pathlib.Path(get_src_root()).rglob('manifest.json'):
+            yield Manifest.from_file(str(mf))

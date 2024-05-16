@@ -31,7 +31,7 @@ def exec_wrapper(f: Callable[..., Any], *args, **kwargs):
 # pylint: disable=too-few-public-methods
 class ExtensionWithManifest:
     """
-    This class models an extension with an associated manifest.yaml in the same
+    This class models an extension with an associated manifest.json in the same
     folder.
     """
 
@@ -40,11 +40,11 @@ class ExtensionWithManifest:
 
     def get_manifest(self) -> Manifest:
         manifest_file = os.path.join(
-            os.path.dirname(inspect.getfile(self.__class__)), 'manifest.yaml'
+            os.path.dirname(inspect.getfile(self.__class__)), 'manifest.json'
         )
         assert os.path.isfile(
             manifest_file
-        ), f'The extension {self.__class__.__name__} has no associated manifest.yaml'
+        ), f'The extension {self.__class__.__name__} has no associated manifest.json'
 
         return Manifest.from_file(manifest_file)
 

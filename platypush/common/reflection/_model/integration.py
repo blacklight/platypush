@@ -251,7 +251,7 @@ class Integration(Component, DocstringParser, Serializable):
         :return: Path of the manifest file for the integration.
         """
         return os.path.join(
-            os.path.dirname(inspect.getfile(self.type)), "manifest.yaml"
+            os.path.dirname(inspect.getfile(self.type)), "manifest.json"
         )
 
     @property

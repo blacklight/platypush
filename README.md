@@ -22,7 +22,7 @@ Platypush
   * [Install from sources](#install-from-sources)
   * [Installing the dependencies for your extensions](#installing-the-dependencies-for-your-extensions)
     + [Install via `extras` name](#install-via-extras-name)
-    + [Install via `manifest.yaml`](#install-via-manifestyaml)
+    + [Install via `manifest.json`](#install-via-manifestjson)
     + [Check the instructions reported in the documentation](#check-the-instructions-reported-in-the-documentation)
   * [Virtual environment installation](#virtual-environment-installation)
   * [Docker installation](#docker-installation-1)
@@ -216,16 +216,27 @@ ways to check the dependencies required by an extension:
 
 #### Install via `extras` name
 
-All the extensions that require extra dependencies are listed in the
-[`extras_require` section under
-`setup.py`](https://git.platypush.tech/platypush/platypush/src/branch/master/setup.py#L84).
+You can install extra dependencies via pip extras:
 
-#### Install via `manifest.yaml`
+```shell
+pip install 'platypush[plugin1,plugin2,...]'
+```
 
-All the plugins and backends have a `manifest.yaml` file in their source folder.
+For example:
+
+```shell
+pip install 'platypush[light.hue,music.mpd,rss]'
+```
+
+Will install Platypush with the dependencies for the `light.hue`, `music.mpd`
+and `rss` plugins.
+
+#### Install via `manifest.json`
+
+All the plugins and backends have a `manifest.json` file in their source folder.
 Any extra dependencies are listed there
 
-If you followed the `extras` or `manifest.yaml` way to discover the
+If you followed the `extras` or `manifest.json` way to discover the
 dependencies, then you can install them in two ways:
 
 1. `pip` installation:

@@ -27,13 +27,9 @@ Guidelines:
   you are changing some of the core entities (e.g. requests, events, procedures, hooks, crons
   or the bus) then make sure to add tests and not to break the existing tests.
 
-- If the feature requires an optional dependency then make sure to document it:
-
-  - In the class docstring (see other plugins and backends for examples).
-  - In [`setup.py`](https://git.platypush.tech/platypush/platypush/-/blob/master/setup.py#L72) as
-    an `extras_require` entry.
-  - In the plugin/backend class pydoc string.
-  - In the `manifest.yaml` - refer to the Wiki (how to write
-    [plugins](https://git.platypush.tech/platypush/platypush/wiki/Writing-your-own-plugins)
-    and [backends](https://git.platypush.tech/platypush/platypush/wiki/Writing-your-own-backends))
-    for examples on how to write an extension manifest file.
+- If the feature requires an optional dependency then make sure to document it
+  in the `manifest.json` - refer to the Wiki (how to write
+  [plugins](https://git.platypush.tech/platypush/platypush/wiki/Writing-your-own-plugins)
+  and
+  [backends](https://git.platypush.tech/platypush/platypush/wiki/Writing-your-own-backends))
+  for examples on how to write an extension manifest file.

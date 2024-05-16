@@ -159,7 +159,7 @@ class IntegrationEnricher:
             base_path,
             *doc.split(os.sep)[:-1],
             *doc.split(os.sep)[-1].split('.'),
-            'manifest.yaml',
+            'manifest.json',
         )
 
         if not os.path.isfile(manifest_file):
