@@ -40,7 +40,6 @@ Plugins
     platypush/plugins/github.rst
     platypush/plugins/google.calendar.rst
     platypush/plugins/google.drive.rst
-    platypush/plugins/google.fit.rst
     platypush/plugins/google.mail.rst
     platypush/plugins/google.maps.rst
     platypush/plugins/google.pubsub.rst
