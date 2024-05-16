@@ -1,0 +1,12 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.flic.FlicButtonEvent"
+    ],
+    "install": {
+      "pip": []
+    },
+    "package": "platypush.plugins.flic",
+    "type": "plugin"
+  }
+}

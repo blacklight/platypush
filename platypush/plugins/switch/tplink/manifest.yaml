@@ -1,7 +1,0 @@
-manifest:
-  events: {}
-  install:
-    pip:
-    - pyHS100
-  package: platypush.plugins.switch.tplink
-  type: plugin

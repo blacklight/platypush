@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apk": [
+        "mplayer",
+        "yt-dlp"
+      ],
+      "apt": [
+        "mplayer",
+        "yt-dlp"
+      ],
+      "dnf": [
+        "mplayer",
+        "yt-dlp"
+      ],
+      "pacman": [
+        "mplayer",
+        "yt-dlp"
+      ]
+    },
+    "package": "platypush.plugins.media.mplayer",
+    "type": "plugin"
+  }
+}

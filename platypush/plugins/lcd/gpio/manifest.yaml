@@ -1,8 +1,0 @@
-manifest:
-  events: {}
-  install:
-    pip:
-    - RPLCD
-    - RPi.GPIO
-  package: platypush.plugins.lcd.gpio
-  type: plugin

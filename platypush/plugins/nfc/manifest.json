@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.nfc.NFCDeviceConnectedEvent",
+      "platypush.message.event.nfc.NFCDeviceDisconnectedEvent",
+      "platypush.message.event.nfc.NFCTagDetectedEvent",
+      "platypush.message.event.nfc.NFCTagRemovedEvent"
+    ],
+    "install": {
+      "pip": [
+        "nfcpy>=1.0",
+        "ndeflib"
+      ]
+    },
+    "package": "platypush.plugins.nfc",
+    "type": "plugin"
+  }
+}

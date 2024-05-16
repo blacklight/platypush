@@ -1,0 +1,40 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.tensorflow.TensorflowBatchEndedEvent": "when a the processing of a Tensorflow model training/evaluation batch ends.",
+      "platypush.message.event.tensorflow.TensorflowBatchStartedEvent": "when a Tensorflow model training/evaluation batch starts being processed.",
+      "platypush.message.event.tensorflow.TensorflowEpochEndedEvent": "when a Tensorflow model training/evaluation epoch ends.",
+      "platypush.message.event.tensorflow.TensorflowEpochStartedEvent": "when a Tensorflow model training/evaluation epoch begins.",
+      "platypush.message.event.tensorflow.TensorflowTrainEndedEvent": "when the training phase of a Tensorflow model ends.",
+      "platypush.message.event.tensorflow.TensorflowTrainStartedEvent": "when a Tensorflow model starts being trained."
+    },
+    "install": {
+      "apk": [
+        "py3-numpy",
+        "py3-pandas"
+      ],
+      "apt": [
+        "python3-numpy",
+        "python3-pandas"
+      ],
+      "dnf": [
+        "python3-numpy",
+        "python3-pandas"
+      ],
+      "pacman": [
+        "python-numpy",
+        "python-pandas",
+        "python-tensorflow",
+        "python-keras"
+      ],
+      "pip": [
+        "numpy",
+        "pandas",
+        "tensorflow",
+        "keras"
+      ]
+    },
+    "package": "platypush.plugins.tensorflow",
+    "type": "plugin"
+  }
+}

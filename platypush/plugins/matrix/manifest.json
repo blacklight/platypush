@@ -1,0 +1,48 @@
+{
+  "manifest": {
+    "type": "plugin",
+    "package": "platypush.plugins.matrix",
+    "events": [
+      "platypush.message.event.matrix.MatrixMessageEvent",
+      "platypush.message.event.matrix.MatrixMessageImageEvent",
+      "platypush.message.event.matrix.MatrixMessageAudioEvent",
+      "platypush.message.event.matrix.MatrixMessageVideoEvent",
+      "platypush.message.event.matrix.MatrixMessageFileEvent",
+      "platypush.message.event.matrix.MatrixSyncEvent",
+      "platypush.message.event.matrix.MatrixRoomCreatedEvent",
+      "platypush.message.event.matrix.MatrixRoomJoinEvent",
+      "platypush.message.event.matrix.MatrixRoomLeaveEvent",
+      "platypush.message.event.matrix.MatrixRoomInviteEvent",
+      "platypush.message.event.matrix.MatrixRoomTopicChangedEvent",
+      "platypush.message.event.matrix.MatrixCallInviteEvent",
+      "platypush.message.event.matrix.MatrixCallAnswerEvent",
+      "platypush.message.event.matrix.MatrixCallHangupEvent",
+      "platypush.message.event.matrix.MatrixEncryptedMessageEvent",
+      "platypush.message.event.matrix.MatrixRoomTypingStartEvent",
+      "platypush.message.event.matrix.MatrixRoomTypingStopEvent",
+      "platypush.message.event.matrix.MatrixRoomSeenReceiptEvent",
+      "platypush.message.event.matrix.MatrixUserPresenceEvent"
+    ],
+    "install": {
+      "apk": [
+        "olm-dev"
+      ],
+      "apt": [
+        "libolm-devel",
+        "python3-async-lru"
+      ],
+      "dnf": [
+        "libolm-devel",
+        "python-async-lru"
+      ],
+      "pacman": [
+        "libolm",
+        "python-async-lru"
+      ],
+      "pip": [
+        "matrix-nio[e2e]",
+        "async_lru"
+      ]
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "pip": []
+    },
+    "package": "platypush.plugins.udp",
+    "type": "plugin"
+  }
+}

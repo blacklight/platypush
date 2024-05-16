@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apk": [
+        "yt-dlp"
+      ],
+      "apt": [
+        "yt-dlp"
+      ],
+      "dnf": [
+        "yt-dlp"
+      ],
+      "pacman": [
+        "yt-dlp"
+      ],
+      "pip": [
+        "yt-dlp"
+      ]
+    },
+    "package": "platypush.plugins.youtube",
+    "type": "plugin"
+  }
+}

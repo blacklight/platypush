@@ -1,0 +1,48 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.bluetooth.BluetoothConnectionFailedEvent": null,
+      "platypush.message.event.bluetooth.BluetoothDeviceConnectedEvent": null,
+      "platypush.message.event.bluetooth.BluetoothDeviceDisconnectedEvent": null,
+      "platypush.message.event.bluetooth.BluetoothDeviceFoundEvent": null,
+      "platypush.message.event.bluetooth.BluetoothDeviceLostEvent": null,
+      "platypush.message.event.bluetooth.BluetoothFileReceivedEvent": null,
+      "platypush.message.event.bluetooth.BluetoothFileSentEvent": null,
+      "platypush.message.event.bluetooth.BluetoothFileTransferCancelledEvent": null,
+      "platypush.message.event.bluetooth.BluetoothFileTransferStartedEvent": null,
+      "platypush.message.event.bluetooth.BluetoothScanPausedEvent": null,
+      "platypush.message.event.bluetooth.BluetoothScanResumedEvent": null,
+      "platypush.message.event.entities.EntityUpdateEvent": null
+    },
+    "install": {
+      "apk": [
+        "py3-pydbus",
+        "git"
+      ],
+      "apt": [
+        "libbluetooth-dev",
+        "python3-pydbus",
+        "git"
+      ],
+      "dnf": [
+        "python-pydbus",
+        "git"
+      ],
+      "pacman": [
+        "python-pydbus",
+        "python-bleak",
+        "git"
+      ],
+      "pip": [
+        "bleak",
+        "bluetooth-numbers",
+        "TheengsDecoder",
+        "pydbus",
+        "git+https://github.com/pybluez/pybluez",
+        "git+https://github.com/BlackLight/PyOBEX"
+      ]
+    },
+    "package": "platypush.plugins.bluetooth",
+    "type": "plugin"
+  }
+}

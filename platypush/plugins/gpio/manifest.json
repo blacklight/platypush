@@ -1,0 +1,14 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.gpio.GPIOEvent"
+    ],
+    "install": {
+      "pip": [
+        "RPi.GPIO"
+      ]
+    },
+    "package": "platypush.plugins.gpio",
+    "type": "plugin"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apk": [
+        "py3-libtorrent-rasterbar"
+      ],
+      "apt": [
+        "python3-libtorrent"
+      ],
+      "dnf": [
+        "rb_libtorrent-python3"
+      ],
+      "pacman": [
+        "libtorrent-rasterbar"
+      ],
+      "pip": [
+        "libtorrent"
+      ]
+    },
+    "package": "platypush.plugins.torrent",
+    "type": "plugin"
+  }
+}

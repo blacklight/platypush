@@ -1,0 +1,14 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.linode.LinodeInstanceStatusChanged": null
+    },
+    "install": {
+      "pip": [
+        "linode_api4"
+      ]
+    },
+    "package": "platypush.plugins.linode",
+    "type": "plugin"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.sensor.SensorDataAboveThresholdEvent": null,
+      "platypush.message.event.sensor.SensorDataBelowThresholdEvent": null,
+      "platypush.message.event.sensor.SensorDataChangeEvent": null
+    },
+    "install": {
+      "pip": [
+        "Adafruit-GPIO"
+      ]
+    },
+    "package": "platypush.plugins.sensor.lis3dh",
+    "type": "plugin"
+  }
+}

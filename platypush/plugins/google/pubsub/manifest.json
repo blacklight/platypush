@@ -1,0 +1,41 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.google.pubsub.GooglePubsubMessageEvent"
+    ],
+    "install": {
+      "apk": [
+        "py3-google-api-python-client",
+        "py3-google-auth",
+        "py3-oauth2client",
+        "py3-httplib2"
+      ],
+      "apt": [
+        "python3-google-auth",
+        "python3-oauth2client",
+        "python3-httplib2"
+      ],
+      "dnf": [
+        "python-google-api-client",
+        "python-google-auth",
+        "python-oauth2client",
+        "python-httplib2"
+      ],
+      "pacman": [
+        "python-google-api-python-client",
+        "python-google-auth",
+        "python-oauth2client",
+        "python-httplib2"
+      ],
+      "pip": [
+        "google-api-python-client",
+        "google-auth",
+        "oauth2client",
+        "google-cloud-pubsub",
+        "httplib2"
+      ]
+    },
+    "package": "platypush.plugins.google.pubsub",
+    "type": "plugin"
+  }
+}

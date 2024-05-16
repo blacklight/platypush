@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.trello.ArchivedCardEvent",
+      "platypush.message.event.trello.MoveCardEvent",
+      "platypush.message.event.trello.UnarchivedCardEvent",
+      "platypush.message.event.trello.NewCardEvent"
+    ],
+    "install": {
+      "pip": [
+        "py-trello"
+      ]
+    },
+    "package": "platypush.plugins.trello",
+    "type": "plugin"
+  }
+}

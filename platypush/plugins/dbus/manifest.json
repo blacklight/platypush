@@ -1,0 +1,31 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.dbus.DbusSignalEvent": "When a signal is received"
+    },
+    "install": {
+      "apk": [
+        "py3-pydbus",
+        "py3-defusedxml"
+      ],
+      "apt": [
+        "python3-pydbus",
+        "python3-defusedxml"
+      ],
+      "dnf": [
+        "python-pydbus",
+        "python-defusedxml"
+      ],
+      "pacman": [
+        "python-pydbus",
+        "python-defusedxml"
+      ],
+      "pip": [
+        "pydbus",
+        "defusedxml"
+      ]
+    },
+    "package": "platypush.plugins.dbus",
+    "type": "plugin"
+  }
+}

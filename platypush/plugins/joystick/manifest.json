@@ -1,0 +1,12 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.joystick.JoystickConnectedEvent",
+      "platypush.message.event.joystick.JoystickDisconnectedEvent",
+      "platypush.message.event.joystick.JoystickStateEvent"
+    ],
+    "install": {},
+    "package": "platypush.plugins.joystick",
+    "type": "plugin"
+  }
+}

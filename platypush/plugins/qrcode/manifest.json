@@ -1,0 +1,40 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.qrcode.QrcodeScannedEvent"
+    ],
+    "install": {
+      "apk": [
+        "py3-numpy",
+        "py3-pillow",
+        "py3-qrcode",
+        "py3-pyzbar"
+      ],
+      "apt": [
+        "python3-numpy",
+        "python3-pillow",
+        "python3-pyzbar",
+        "python3-qrcode"
+      ],
+      "dnf": [
+        "python-numpy",
+        "python-pillow",
+        "python-qrcode",
+        "python-zbar"
+      ],
+      "pacman": [
+        "python-numpy",
+        "python-pillow",
+        "python-qrcode"
+      ],
+      "pip": [
+        "numpy",
+        "qrcode",
+        "pyzbar",
+        "Pillow"
+      ]
+    },
+    "package": "platypush.plugins.qrcode",
+    "type": "plugin"
+  }
+}

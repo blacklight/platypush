@@ -1,0 +1,20 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.kafka.KafkaMessageEvent"
+    ],
+    "install": {
+      "apt": [
+        "python-kafka"
+      ],
+      "dnf": [
+        "python-kafka"
+      ],
+      "pip": [
+        "kafka"
+      ]
+    },
+    "package": "platypush.plugins.kafka",
+    "type": "plugin"
+  }
+}

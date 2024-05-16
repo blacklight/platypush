@@ -1,0 +1,12 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.weather.NewWeatherConditionEvent"
+    ],
+    "install": {
+      "pip": []
+    },
+    "package": "platypush.plugins.weather.openweathermap",
+    "type": "plugin"
+  }
+}

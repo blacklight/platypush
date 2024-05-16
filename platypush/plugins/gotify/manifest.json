@@ -1,0 +1,9 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.gotify.GotifyMessageEvent": "when a new message is received."
+    },
+    "package": "platypush.plugins.gotify",
+    "type": "plugin"
+  }
+}

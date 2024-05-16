@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.telegram.CommandMessageEvent",
+      "platypush.message.event.telegram.ContactMessageEvent",
+      "platypush.message.event.telegram.DocumentMessageEvent",
+      "platypush.message.event.telegram.GroupChatCreatedEvent",
+      "platypush.message.event.telegram.LocationMessageEvent",
+      "platypush.message.event.telegram.PhotoMessageEvent",
+      "platypush.message.event.telegram.TextMessageEvent",
+      "platypush.message.event.telegram.VideoMessageEvent"
+    ],
+    "install": {
+      "pip": [
+        "python-telegram-bot"
+      ]
+    },
+    "package": "platypush.plugins.telegram",
+    "type": "plugin"
+  }
+}

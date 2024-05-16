@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.sensor.SensorDataAboveThresholdEvent": null,
+      "platypush.message.event.sensor.SensorDataBelowThresholdEvent": null,
+      "platypush.message.event.sensor.SensorDataChangeEvent": null
+    },
+    "install": {
+      "pip": [
+        "adafruit-mcp3008"
+      ]
+    },
+    "package": "platypush.plugins.sensor.mcp3008",
+    "type": "plugin"
+  }
+}

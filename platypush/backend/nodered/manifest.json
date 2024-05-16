@@ -1,0 +1,12 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "pip": [
+        "pynodered"
+      ]
+    },
+    "package": "platypush.backend.nodered",
+    "type": "backend"
+  }
+}

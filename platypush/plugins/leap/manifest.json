@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.sensor.leap.LeapConnectEvent",
+      "platypush.message.event.sensor.leap.LeapDisconnectEvent",
+      "platypush.message.event.sensor.leap.LeapFrameEvent",
+      "platypush.message.event.sensor.leap.LeapFrameStartEvent",
+      "platypush.message.event.sensor.leap.LeapFrameStopEvent"
+    ],
+    "install": {
+      "pip": []
+    },
+    "package": "platypush.plugins.leap",
+    "type": "plugin"
+  }
+}

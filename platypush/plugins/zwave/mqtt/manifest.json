@@ -1,0 +1,33 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.zwave.ZwaveNodeAddedEvent": "when a node is added to the network.\n",
+      "platypush.message.event.zwave.ZwaveNodeAsleepEvent": "when a node goes into sleep mode.\n",
+      "platypush.message.event.zwave.ZwaveNodeAwakeEvent": "when a node goes back into awake mode.\n",
+      "platypush.message.event.zwave.ZwaveNodeEvent": "when a node attribute changes.\n",
+      "platypush.message.event.zwave.ZwaveNodeReadyEvent": "when a node is ready.\n",
+      "platypush.message.event.zwave.ZwaveNodeRemovedEvent": "when a node is removed from the network.\n",
+      "platypush.message.event.zwave.ZwaveNodeRenamedEvent": "when a node is renamed.\n",
+      "platypush.message.event.zwave.ZwaveValueChangedEvent": "when the value of a node on the network changes.\n"
+    },
+    "install": {
+      "apt": [
+        "python3-paho-mqtt"
+      ],
+      "apk": [
+        "py3-paho-mqtt"
+      ],
+      "dnf": [
+        "python-paho-mqtt"
+      ],
+      "pacman": [
+        "python-paho-mqtt"
+      ],
+      "pip": [
+        "paho-mqtt"
+      ]
+    },
+    "package": "platypush.plugins.zwave.mqtt",
+    "type": "plugin"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apk": [
+        "ffmpeg"
+      ],
+      "apt": [
+        "ffmpeg"
+      ],
+      "dnf": [
+        "ffmpeg"
+      ],
+      "pacman": [
+        "ffmpeg",
+        "python-ffmpeg"
+      ],
+      "pip": [
+        "ffmpeg-python"
+      ]
+    },
+    "package": "platypush.plugins.ffmpeg",
+    "type": "plugin"
+  }
+}

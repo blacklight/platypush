@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apk": [
+        "py3-paramiko"
+      ],
+      "apt": [
+        "python3-paramiko"
+      ],
+      "dnf": [
+        "python-paramiko"
+      ],
+      "pacman": [
+        "python-paramiko"
+      ],
+      "pip": [
+        "paramiko"
+      ]
+    },
+    "package": "platypush.plugins.ssh",
+    "type": "plugin"
+  }
+}

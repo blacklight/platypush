@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.sensor.SensorDataChangeEvent"
+    ],
+    "install": {
+      "apk": [
+        "py3-pyserial"
+      ],
+      "apt": [
+        "python3-serial"
+      ],
+      "dnf": [
+        "python-pyserial"
+      ],
+      "pacman": [
+        "python-pyserial"
+      ],
+      "pip": [
+        "pyserial"
+      ]
+    },
+    "package": "platypush.plugins.serial",
+    "type": "plugin"
+  }
+}

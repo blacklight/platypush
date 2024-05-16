@@ -1,0 +1,22 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.ping.HostDownEvent",
+      "platypush.message.event.ping.HostUpEvent",
+      "platypush.message.event.ping.PingResponseEvent"
+    ],
+    "install": {
+      "apt": [
+        "iputils-ping"
+      ],
+      "dnf": [
+        "iputils"
+      ],
+      "pacman": [
+        "iputils"
+      ]
+    },
+    "package": "platypush.plugins.ping",
+    "type": "plugin"
+  }
+}

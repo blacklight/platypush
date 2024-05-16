@@ -1,4 +1,0 @@
-manifest:
-  events: {}
-  package: platypush.plugins.media.jellyfin
-  type: plugin

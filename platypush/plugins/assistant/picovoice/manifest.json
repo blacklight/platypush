@@ -1,0 +1,43 @@
+{
+  "manifest": {
+    "package": "platypush.plugins.assistant.picovoice",
+    "type": "plugin",
+    "events": [
+      "platypush.message.event.assistant.ConversationEndEvent",
+      "platypush.message.event.assistant.ConversationStartEvent",
+      "platypush.message.event.assistant.ConversationTimeoutEvent",
+      "platypush.message.event.assistant.HotwordDetectedEvent",
+      "platypush.message.event.assistant.IntentRecognizedEvent",
+      "platypush.message.event.assistant.MicMutedEvent",
+      "platypush.message.event.assistant.MicUnmutedEvent",
+      "platypush.message.event.assistant.NoResponseEvent",
+      "platypush.message.event.assistant.ResponseEndEvent",
+      "platypush.message.event.assistant.ResponseEvent",
+      "platypush.message.event.assistant.SpeechRecognizedEvent"
+    ],
+    "install": {
+      "apk": [
+        "ffmpeg"
+      ],
+      "apt": [
+        "ffmpeg"
+      ],
+      "dnf": [
+        "ffmpeg"
+      ],
+      "pacman": [
+        "ffmpeg",
+        "python-sounddevice"
+      ],
+      "pip": [
+        "num2words",
+        "pvcheetah",
+        "pvleopard",
+        "pvorca",
+        "pvporcupine",
+        "pvrhino",
+        "sounddevice"
+      ]
+    }
+  }
+}

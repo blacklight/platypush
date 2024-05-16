@@ -1,0 +1,31 @@
+{
+  "manifest": {
+    "package": "platypush.plugins.pushbullet",
+    "type": "plugin",
+    "events": [
+      "platypush.message.event.pushbullet.PushbulletDismissalEvent",
+      "platypush.message.event.pushbullet.PushbulletFileEvent",
+      "platypush.message.event.pushbullet.PushbulletLinkEvent",
+      "platypush.message.event.pushbullet.PushbulletMessageEvent",
+      "platypush.message.event.pushbullet.PushbulletMessageEvent",
+      "platypush.message.event.pushbullet.PushbulletNotificationEvent"
+    ],
+    "install": {
+      "apk": [
+        "git"
+      ],
+      "apt": [
+        "git"
+      ],
+      "dnf": [
+        "git"
+      ],
+      "pacman": [
+        "git"
+      ],
+      "pip": [
+        "git+https://github.com/rbrcsk/pushbullet.py"
+      ]
+    }
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.midi.MidiDeviceAddedEvent",
+      "platypush.message.event.midi.MidiDeviceConnectedEvent",
+      "platypush.message.event.midi.MidiDeviceDisconnectedEvent",
+      "platypush.message.event.midi.MidiDeviceRemovedEvent",
+      "platypush.message.event.midi.MidiMessageEvent"
+    ],
+    "install": {
+      "apt": [
+        "python3-rtmidi"
+      ],
+      "dnf": [
+        "python-rtmidi"
+      ],
+      "pacman": [
+        "rtmidi",
+        "python-rtmidi"
+      ],
+      "pip": [
+        "rtmidi"
+      ]
+    },
+    "package": "platypush.plugins.midi",
+    "type": "plugin"
+  }
+}

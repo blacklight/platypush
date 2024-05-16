@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apk": [
+        "py3-gobject3",
+        "py3-gst"
+      ],
+      "apt": [
+        "python3-gi",
+        "python3-gst-1.0"
+      ],
+      "dnf": [
+        "python-gstreamer1",
+        "python-gobject"
+      ],
+      "pacman": [
+        "gst-python",
+        "python-gobject"
+      ],
+      "pip": [
+        "pygobject"
+      ]
+    },
+    "package": "platypush.plugins.media.gstreamer",
+    "type": "plugin"
+  }
+}

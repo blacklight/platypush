@@ -1,8 +1,0 @@
-manifest:
-  events:
-    - platypush.message.event.music.tidal.TidalPlaylistUpdatedEvent
-  install:
-    pip:
-      - tidalapi >= 0.7.0
-  package: platypush.plugins.music.tidal
-  type: plugin

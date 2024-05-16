@@ -1,6 +1,0 @@
-manifest:
-  events: {}
-  install:
-    pip: []
-  package: platypush.plugins.media.webtorrent
-  type: plugin

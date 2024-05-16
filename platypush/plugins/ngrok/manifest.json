@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.ngrok.NgrokProcessStartedEvent": "when the ``ngrok`` process is started.",
+      "platypush.message.event.ngrok.NgrokProcessStoppedEvent": "when the ``ngrok`` process is stopped.",
+      "platypush.message.event.ngrok.NgrokTunnelStartedEvent": "when a tunnel is started.",
+      "platypush.message.event.ngrok.NgrokTunnelStoppedEvent": "when a tunnel is stopped."
+    },
+    "install": {
+      "pip": [
+        "pyngrok"
+      ]
+    },
+    "package": "platypush.plugins.ngrok",
+    "type": "plugin"
+  }
+}

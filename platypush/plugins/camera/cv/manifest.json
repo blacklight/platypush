@@ -1,0 +1,34 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apk": [
+        "py3-numpy",
+        "py3-pillow",
+        "py3-opencv"
+      ],
+      "apt": [
+        "python3-numpy",
+        "python3-pillow",
+        "python3-opencv"
+      ],
+      "dnf": [
+        "python-numpy",
+        "python-pillow",
+        "python-opencv"
+      ],
+      "pacman": [
+        "python-numpy",
+        "python-pillow",
+        "python-opencv"
+      ],
+      "pip": [
+        "numpy",
+        "opencv-python",
+        "Pillow"
+      ]
+    },
+    "package": "platypush.plugins.camera.cv",
+    "type": "plugin"
+  }
+}

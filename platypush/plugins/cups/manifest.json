@@ -1,0 +1,25 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apk": [
+        "py3-pycups"
+      ],
+      "apt": [
+        "libcups2-dev",
+        "python3-cups"
+      ],
+      "dnf": [
+        "python-cups"
+      ],
+      "pacman": [
+        "python-pycups"
+      ],
+      "pip": [
+        "pycups"
+      ]
+    },
+    "package": "platypush.plugins.cups",
+    "type": "plugin"
+  }
+}

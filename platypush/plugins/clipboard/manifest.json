@@ -1,0 +1,23 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.clipboard.ClipboardEvent": "on clipboard update."
+    },
+    "install": {
+      "apk": [
+        "py3-pyclip"
+      ],
+      "dnf": [
+        "python-pyclip"
+      ],
+      "pacman": [
+        "python-pyclip"
+      ],
+      "pip": [
+        "pyclip"
+      ]
+    },
+    "package": "platypush.plugins.clipboard",
+    "type": "plugin"
+  }
+}

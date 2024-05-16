@@ -1,0 +1,54 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.xmpp.XmppConnectedEvent": null,
+      "platypush.message.event.xmpp.XmppContactAddRequestAcceptedEvent": null,
+      "platypush.message.event.xmpp.XmppContactAddRequestEvent": null,
+      "platypush.message.event.xmpp.XmppContactAddRequestRejectedEvent": null,
+      "platypush.message.event.xmpp.XmppConversationAddedEvent": null,
+      "platypush.message.event.xmpp.XmppConversationEnterEvent": null,
+      "platypush.message.event.xmpp.XmppConversationExitEvent": null,
+      "platypush.message.event.xmpp.XmppConversationJoinEvent": null,
+      "platypush.message.event.xmpp.XmppConversationLeaveEvent": null,
+      "platypush.message.event.xmpp.XmppConversationNickChangedEvent": null,
+      "platypush.message.event.xmpp.XmppDisconnectedEvent": null,
+      "platypush.message.event.xmpp.XmppMessageReceivedEvent": null,
+      "platypush.message.event.xmpp.XmppPresenceChangedEvent": null,
+      "platypush.message.event.xmpp.XmppRoomAffiliationChangedEvent": null,
+      "platypush.message.event.xmpp.XmppRoomEnterEvent": null,
+      "platypush.message.event.xmpp.XmppRoomExitEvent": null,
+      "platypush.message.event.xmpp.XmppRoomInviteAcceptedEvent": null,
+      "platypush.message.event.xmpp.XmppRoomInviteEvent": null,
+      "platypush.message.event.xmpp.XmppRoomInviteRejectedEvent": null,
+      "platypush.message.event.xmpp.XmppRoomJoinEvent": null,
+      "platypush.message.event.xmpp.XmppRoomLeaveEvent": null,
+      "platypush.message.event.xmpp.XmppRoomMessageReceivedEvent": null,
+      "platypush.message.event.xmpp.XmppRoomNickChangedEvent": null,
+      "platypush.message.event.xmpp.XmppRoomPresenceChangedEvent": null,
+      "platypush.message.event.xmpp.XmppRoomRoleChangedEvent": null,
+      "platypush.message.event.xmpp.XmppRoomTopicChangedEvent": null,
+      "platypush.message.event.xmpp.XmppRoomUserUnavailableEvent": null,
+      "platypush.message.event.xmpp.XmppUserAvailableEvent": null,
+      "platypush.message.event.xmpp.XmppUserUnavailableEvent": null
+    },
+    "apk": [
+      "py3-tz"
+    ],
+    "apt": [
+      "python3-aioxmpp",
+      "python3-tz"
+    ],
+    "dnf": [
+      "python-pytz"
+    ],
+    "pacman": [
+      "python-pytz"
+    ],
+    "pip": [
+      "aioxmpp",
+      "pytz"
+    ],
+    "package": "platypush.plugins.xmpp",
+    "type": "plugin"
+  }
+}

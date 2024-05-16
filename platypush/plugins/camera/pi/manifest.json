@@ -1,0 +1,34 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apk": [
+        "ffmpeg",
+        "py3-numpy",
+        "py3-pillow"
+      ],
+      "apt": [
+        "ffmpeg",
+        "python3-numpy",
+        "python3-pillow"
+      ],
+      "dnf": [
+        "ffmpeg",
+        "python-numpy",
+        "python-pillow"
+      ],
+      "pacman": [
+        "ffmpeg",
+        "python-numpy",
+        "python-pillow"
+      ],
+      "pip": [
+        "picamera2",
+        "numpy",
+        "Pillow"
+      ]
+    },
+    "package": "platypush.plugins.camera.pi",
+    "type": "plugin"
+  }
+}

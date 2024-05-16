@@ -1,0 +1,31 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.rss.NewFeedEntryEvent": "when a new entry is received on a subscribed feed."
+    },
+    "install": {
+      "apk": [
+        "py3-feedparser",
+        "py3-defusedxml"
+      ],
+      "apt": [
+        "python3-feedparser",
+        "python3-defusedxml"
+      ],
+      "dnf": [
+        "python-feedparser",
+        "python-defusedxml"
+      ],
+      "pacman": [
+        "python-feedparser",
+        "python-defusedxml"
+      ],
+      "pip": [
+        "feedparser",
+        "defusedxml"
+      ]
+    },
+    "package": "platypush.plugins.rss",
+    "type": "plugin"
+  }
+}

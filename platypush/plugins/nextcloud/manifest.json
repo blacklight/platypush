@@ -1,0 +1,14 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.nextcloud.NextCloudActivityEvent": "When new activity occurs on the instance - e.g. a file or bookmark is\ncreated, a comment is added, a message is received etc.\n"
+    },
+    "install": {
+      "pip": [
+        "nextcloud-api-wrapper"
+      ]
+    },
+    "package": "platypush.plugins.nextcloud",
+    "type": "plugin"
+  }
+}

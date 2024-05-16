@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.github.GithubCommitCommentEvent",
+      "platypush.message.event.github.GithubCreateEvent",
+      "platypush.message.event.github.GithubDeleteEvent",
+      "platypush.message.event.github.GithubEvent",
+      "platypush.message.event.github.GithubForkEvent",
+      "platypush.message.event.github.GithubIssueCommentEvent",
+      "platypush.message.event.github.GithubIssueEvent",
+      "platypush.message.event.github.GithubMemberEvent",
+      "platypush.message.event.github.GithubPublicEvent",
+      "platypush.message.event.github.GithubPullRequestEvent",
+      "platypush.message.event.github.GithubPullRequestReviewCommentEvent",
+      "platypush.message.event.github.GithubPushEvent",
+      "platypush.message.event.github.GithubReleaseEvent",
+      "platypush.message.event.github.GithubSponsorshipEvent",
+      "platypush.message.event.github.GithubWatchEvent",
+      "platypush.message.event.github.GithubWikiEvent"
+    ],
+    "package": "platypush.plugins.github",
+    "type": "plugin"
+  }
+}

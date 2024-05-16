@@ -1,0 +1,14 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.weather.NewWeatherConditionEvent"
+    ],
+    "install": {
+      "pip": [
+        "buienradar"
+      ]
+    },
+    "package": "platypush.plugins.weather.buienradar",
+    "type": "plugin"
+  }
+}

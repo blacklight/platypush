@@ -1,0 +1,12 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "pip": [
+        "todoist-python"
+      ]
+    },
+    "package": "platypush.plugins.todoist",
+    "type": "plugin"
+  }
+}

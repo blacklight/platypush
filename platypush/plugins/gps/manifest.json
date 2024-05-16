@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.gps.GPSDeviceEvent",
+      "platypush.message.event.gps.GPSDisabledEvent",
+      "platypush.message.event.gps.GPSEnabledEvent",
+      "platypush.message.event.gps.GPSLocationUpdateEvent"
+    ],
+    "install": {
+      "apk": [
+        "gpsd",
+        "py3-gpsd"
+      ],
+      "apt": [
+        "gpsd",
+        "python3-gps"
+      ],
+      "dnf": [
+        "gpsd",
+        "python-gpsd"
+      ],
+      "pacman": [
+        "gpsd"
+      ],
+      "pip": [
+        "gps"
+      ]
+    },
+    "package": "platypush.plugins.gps",
+    "type": "plugin"
+  }
+}

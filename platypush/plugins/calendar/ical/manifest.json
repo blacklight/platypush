@@ -1,0 +1,24 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apk": [
+        "py3-icalendar"
+      ],
+      "apt": [
+        "python3-icalendar"
+      ],
+      "dnf": [
+        "python-icalendar"
+      ],
+      "pacman": [
+        "python-icalendar"
+      ],
+      "pip": [
+        "icalendar"
+      ]
+    },
+    "package": "platypush.plugins.calendar.ical",
+    "type": "plugin"
+  }
+}

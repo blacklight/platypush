@@ -1,0 +1,18 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apt": [
+        "python3-twilio"
+      ],
+      "dnf": [
+        "python-twilio"
+      ],
+      "pip": [
+        "twilio"
+      ]
+    },
+    "package": "platypush.plugins.twilio",
+    "type": "plugin"
+  }
+}

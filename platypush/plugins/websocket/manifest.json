@@ -1,0 +1,12 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.websocket.WebsocketMessageEvent": "when a message is received on a subscribed websocket."
+    },
+    "install": {
+      "pip": []
+    },
+    "package": "platypush.plugins.websocket",
+    "type": "plugin"
+  }
+}

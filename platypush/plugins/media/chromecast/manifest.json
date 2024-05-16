@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apk": [
+        "py3-pychromecast"
+      ],
+      "apt": [
+        "python3-pychromecast"
+      ],
+      "dnf": [
+        "python-chromecast"
+      ],
+      "pip": [
+        "pychromecast"
+      ]
+    },
+    "package": "platypush.plugins.media.chromecast",
+    "type": "plugin"
+  }
+}

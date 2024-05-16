@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.sensor.SensorDataAboveThresholdEvent": null,
+      "platypush.message.event.sensor.SensorDataBelowThresholdEvent": null,
+      "platypush.message.event.sensor.SensorDataChangeEvent": null
+    },
+    "install": {
+      "pip": [
+        "ltr559",
+        "smbus"
+      ]
+    },
+    "package": "platypush.plugins.sensor.ltr559",
+    "type": "plugin"
+  }
+}

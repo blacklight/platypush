@@ -1,0 +1,26 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.log.http.HttpLogEvent"
+    ],
+    "install": {
+      "apk": [
+        "py3-watchdog"
+      ],
+      "apt": [
+        "python3-watchdog"
+      ],
+      "dnf": [
+        "python-watchdog"
+      ],
+      "pacman": [
+        "python-watchdog"
+      ],
+      "pip": [
+        "watchdog"
+      ]
+    },
+    "package": "platypush.plugins.log.http",
+    "type": "plugin"
+  }
+}

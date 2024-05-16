@@ -1,7 +1,0 @@
-manifest:
-  events: {}
-  install:
-    pip:
-    - plexapi
-  package: platypush.plugins.media.plex
-  type: plugin

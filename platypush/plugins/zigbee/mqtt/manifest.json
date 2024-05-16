@@ -1,0 +1,44 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBannedEvent": "when a device is banned from the network.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceBindEvent": "when a device bind event occurs.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceConnectedEvent": "when a device connects to the network.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePairingEvent": "when a device is pairing.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePropertySetEvent": "when the properties of a connected device change.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedEvent": "when a device is removed from the network.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRemovedFailedEvent": "when a request to remove a device from the network fails.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceRenamedEvent": "when a device is renamed on the network.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceUnbindEvent": "when a device unbind event occurs.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttDeviceWhitelistedEvent": "when a device is whitelisted on the network.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttErrorEvent": "when an internal error occurs on the zigbee2mqtt service.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedEvent": "when a group is added.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupAddedFailedEvent": "when a request to add a new group fails.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllEvent": "when all the devices are removed from a group.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemoveAllFailedEvent": "when a request to remove all the devices from a group fails.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedEvent": "when a group is removed.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttGroupRemovedFailedEvent": "when a request to remove a group fails.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttOfflineEvent": "when the service goes offline.\n",
+      "platypush.message.event.zigbee.mqtt.ZigbeeMqttOnlineEvent": "when the service comes online.\n"
+    },
+    "install": {
+      "apk": [
+        "py3-paho-mqtt"
+      ],
+      "apt": [
+        "python3-paho-mqtt"
+      ],
+      "dnf": [
+        "python-paho-mqtt"
+      ],
+      "pacman": [
+        "python-paho-mqtt"
+      ],
+      "pip": [
+        "paho-mqtt"
+      ]
+    },
+    "package": "platypush.plugins.zigbee.mqtt",
+    "type": "plugin"
+  }
+}

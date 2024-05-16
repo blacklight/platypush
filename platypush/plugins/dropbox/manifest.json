@@ -1,0 +1,21 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apt": [
+        "python3-dropbox"
+      ],
+      "dnf": [
+        "python-dropbox"
+      ],
+      "pacman": [
+        "python-dropbox"
+      ],
+      "pip": [
+        "dropbox"
+      ]
+    },
+    "package": "platypush.plugins.dropbox",
+    "type": "plugin"
+  }
+}

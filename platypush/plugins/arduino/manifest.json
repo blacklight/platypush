@@ -1,0 +1,16 @@
+{
+  "manifest": {
+    "events": {
+      "platypush.message.event.sensor.SensorDataAboveThresholdEvent": null,
+      "platypush.message.event.sensor.SensorDataBelowThresholdEvent": null,
+      "platypush.message.event.sensor.SensorDataChangeEvent": null
+    },
+    "install": {
+      "pip": [
+        "pyfirmata2"
+      ]
+    },
+    "package": "platypush.plugins.arduino",
+    "type": "plugin"
+  }
+}

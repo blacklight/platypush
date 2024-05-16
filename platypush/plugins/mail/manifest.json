@@ -1,0 +1,30 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.mail.FlaggedMailEvent",
+      "platypush.message.event.mail.SeenMailEvent",
+      "platypush.message.event.mail.UnflaggedMailEvent",
+      "platypush.message.event.mail.UnseenMailEvent"
+    ],
+    "install": {
+      "apk": [
+        "py3-dnspython"
+      ],
+      "apt": [
+        "python3-dnspython"
+      ],
+      "dnf": [
+        "python-dnspython"
+      ],
+      "pacman": [
+        "python-dnspython"
+      ],
+      "pip": [
+        "dnspython",
+        "imapclient"
+      ]
+    },
+    "package": "platypush.plugins.mail",
+    "type": "plugin"
+  }
+}

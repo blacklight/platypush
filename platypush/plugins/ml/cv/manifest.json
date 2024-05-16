@@ -1,0 +1,29 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apk": [
+        "py3-numpy",
+        "py3-opencv"
+      ],
+      "apt": [
+        "python3-numpy",
+        "python3-opencv"
+      ],
+      "dnf": [
+        "python-numpy",
+        "python-opencv"
+      ],
+      "pacman": [
+        "python-numpy",
+        "python-opencv"
+      ],
+      "pip": [
+        "numpy",
+        "opencv-python"
+      ]
+    },
+    "package": "platypush.plugins.ml.cv",
+    "type": "plugin"
+  }
+}

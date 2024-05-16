@@ -1,0 +1,7 @@
+{
+  "manifest": {
+    "events": {},
+    "package": "platypush.plugins.mastodon",
+    "type": "plugin"
+  }
+}

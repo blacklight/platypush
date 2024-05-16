@@ -1,0 +1,12 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.foursquare.FoursquareCheckinEvent"
+    ],
+    "install": {
+      "pip": []
+    },
+    "package": "platypush.plugins.foursquare",
+    "type": "plugin"
+  }
+}
