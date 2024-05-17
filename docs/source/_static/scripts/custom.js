@@ -188,9 +188,47 @@ const renderActionsList = () => {
   })
 }
 
+const addFilterBar = () => {
+  const container = document.querySelector('.bd-main')
+  if (!container)
+    return
+
+  const referenceSection = document.getElementById('reference')
+  if (!referenceSection)
+    return
+
+  const header = referenceSection.querySelector('h2')
+  if (!header)
+    return
+
+  const input = document.createElement('input')
+  input.type = 'text'
+  input.placeholder = 'Filter'
+  input.classList.add('filter-bar')
+  input.addEventListener('input', (event) => {
+    const filter = event.target.value.toLowerCase()
+    referenceSection.querySelectorAll('ul.grid li').forEach((li) => {
+      if (li.innerText.toLowerCase().includes(filter)) {
+        li.style.display = 'flex'
+      } else {
+        li.style.display = 'none'
+      }
+    })
+  })
+
+  // Apply the fixed class if the header is above the viewport
+  const headerOffsetTop = header.offsetTop
+  document.addEventListener('scroll', () => {
+    header.classList.toggle('fixed', headerOffsetTop < window.scrollY)
+  })
+
+  header.appendChild(input)
+}
+
 document.addEventListener("DOMContentLoaded", function() {
   generateComponentsGrid()
   convertDepsToTabs()
   addClipboardToCodeBlocks()
   renderActionsList()
+  addFilterBar()
 })

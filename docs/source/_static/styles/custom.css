@@ -29,15 +29,18 @@ a.grid-title {
 
 ul.grid li {
   display: flex;
+  background: linear-gradient(0deg, #fff, #f9f9f9);
   align-items: center;
+  justify-content: space-between;
   margin: 0 10px 10px 0;
-  padding: 10px;
+  padding: 20px;
   border: 1px solid #ccc;
   border-radius: 15px;
+  flex-direction: column;
 }
 
 ul.grid img {
-  width: 32px;
+  width: 48px;
   margin-right: 5px;
 }
 
@@ -52,13 +55,19 @@ ul.grid li code .pre {
 }
 
 ul.grid li:hover {
-  background: linear-gradient(0deg, #e0ffe8, #e3ffff);
+  background: linear-gradient(0deg, #157765, #cbffd8) !important;
 }
 
 ul.grid li a {
-  width: calc(100% - 35px);
+  width: 100%;
   display: flex;
   justify-content: center;
+  text-align: center;
+  margin-top: 0.5em;
+}
+
+ul.grid li:hover a {
+  color: white !important;
 }
 
 ul.grid li a code {
@@ -128,3 +137,48 @@ ul.grid .icon {
   border-radius: 0 0 0.75em 0.75em;
 }
 
+.bd-article-container {
+  position: relative;
+}
+
+.filter-bar {
+  width: 100%;
+  display: block;
+  font-size: 0.6em;
+  border: 1px solid #ccc;
+  border-radius: 0.75em;
+  margin: 0.5em 0;
+  padding: 0.25em;
+}
+
+#reference h2.fixed {
+  position: fixed;
+  top: 0;
+  background: white;
+  z-index: 1;
+  border-bottom: 1px solid #ccc;
+}
+
+@media screen and (max-width: 768px) {
+  #reference h2.fixed {
+    width: 100%;
+    margin-left: -0.5em;
+    padding: 0.5em 0.5em 0 0.5em;
+  }
+}
+
+@media screen and (max-width: 959px) {
+  #reference h2.fixed {
+    width: 100%;
+    margin-left: -1em;
+    padding: 0.5em 0.5em 0 0.5em;
+  }
+}
+
+@media screen and (min-width: 960px) {
+  #reference h2.fixed {
+    width: 75%;
+    max-width: 800px;
+    padding-top: 0.5em;
+  }
+}
