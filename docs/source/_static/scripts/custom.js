@@ -188,20 +188,10 @@ const renderActionsList = () => {
   })
 }
 
-const addFilterBar = () => {
-  const container = document.querySelector('.bd-main')
-  if (!container)
-    return
-
-  const referenceSection = document.getElementById('reference')
-  if (!referenceSection)
-    return
-
-  const header = referenceSection.querySelector('h2')
-  if (!header)
-    return
-
+const createFilterBar = () => {
   const input = document.createElement('input')
+  const referenceSection = document.getElementById('reference')
+
   input.type = 'text'
   input.placeholder = 'Filter'
   input.classList.add('filter-bar')
@@ -216,13 +206,38 @@ const addFilterBar = () => {
     })
   })
 
-  // Apply the fixed class if the header is above the viewport
-  const headerOffsetTop = header.offsetTop
-  document.addEventListener('scroll', () => {
-    header.classList.toggle('fixed', headerOffsetTop < window.scrollY)
-  })
+  return input
+}
 
+const addFilterBar = () => {
+  const container = document.querySelector('.bd-main')
+  if (!container)
+    return
+
+  const referenceSection = document.getElementById('reference')
+  if (!referenceSection)
+    return
+
+  const header = referenceSection.querySelector('h2')
+  if (!header)
+    return
+
+  const origInnerHTML = header.innerHTML
+  header.innerHTML = '<span class="header-content">' + origInnerHTML + '</span>'
+
+  const input = createFilterBar()
   header.appendChild(input)
+
+  const headerOffsetTop = header.offsetTop
+
+  // Apply the fixed class if the header is above the viewport
+  document.addEventListener('scroll', () => {
+    if (headerOffsetTop < window.scrollY) {
+      header.classList.add('fixed')
+    } else {
+      header.classList.remove('fixed')
+    }
+  })
 }
 
 document.addEventListener("DOMContentLoaded", function() {

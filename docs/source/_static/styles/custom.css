@@ -156,7 +156,10 @@ ul.grid .icon {
   top: 0;
   background: white;
   z-index: 1;
-  border-bottom: 1px solid #ccc;
+}
+
+#reference h2.fixed .header-content {
+  display: none;
 }
 
 @media screen and (max-width: 768px) {
