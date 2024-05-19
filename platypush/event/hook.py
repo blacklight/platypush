@@ -179,9 +179,17 @@ class EventHook:
         result = self.matches_event(event)
 
         if result.is_match:
-            logger.info('Running hook %s triggered by an event', self.name)
+            logger.info(
+                'Running hook `%s` triggered by a `%s` event',
+                self.name,
+                f'{event.__module__}.{event.__class__.__name__}',
+            )
+
             threading.Thread(
-                target=_thread_func, name='Event-' + self.name, args=(result,)
+                target=_thread_func,
+                name='Event-' + self.name,
+                args=(result,),
+                daemon=True,
             ).start()
 
 

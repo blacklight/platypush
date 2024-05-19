@@ -537,7 +537,7 @@ against partial event arguments are also possible, and relational operators are
 supported as well. For example:
 
 ```python
-from platypush import hook
+from platypush import when
 from platypush.message.event.sensor import SensorDataChangeEvent
 
 @when(SensorDataChangeEvent, data=1):

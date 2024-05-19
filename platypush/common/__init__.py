@@ -1,13 +1,29 @@
 import inspect
 import logging
 import os
-from typing import Any, Callable
+from typing import Any, Callable, Mapping, Sequence, Tuple
 
 from platypush.utils.manifest import Manifest
 
 from ._types import StoppableThread
 
 logger = logging.getLogger('platypush')
+
+
+def _build_args(
+    func: Callable, *args, **kwargs
+) -> Tuple[Sequence[Any], Mapping[str, Any]]:
+    spec = inspect.getfullargspec(func)
+    func_args = args if spec.varargs else args[: len(spec.args)]
+    func_kwargs = (
+        kwargs
+        if spec.varkw
+        else {
+            arg: kwargs[arg] for arg in [*spec.args, *spec.kwonlyargs] if arg in kwargs
+        }
+    )
+
+    return func_args, func_kwargs
 
 
 def exec_wrapper(f: Callable[..., Any], *args, **kwargs):
@@ -17,8 +33,10 @@ def exec_wrapper(f: Callable[..., Any], *args, **kwargs):
     """
     from platypush import Response
 
+    func_args, func_kwargs = _build_args(f, *args, **kwargs)
+
     try:
-        ret = f(*args, **kwargs)
+        ret = f(*func_args, **func_kwargs)
         if isinstance(ret, Response):
             return ret
 
