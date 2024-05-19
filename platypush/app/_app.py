@@ -464,10 +464,15 @@ class Application:
             self._run()
 
 
+app: Optional[Application] = None
+
+
 def main(*args: str):
     """
     Application entry point.
     """
+    global app
+
     app = Application.from_cmdline(args)
 
     try:

@@ -5,7 +5,7 @@ Platypush
 .. license: MIT
 """
 
-from .app import Application
+from .app import Application, app
 from .config import Config
 from .context import Variable, get_backend, get_bus, get_plugin
 from .cron import cron
@@ -31,6 +31,7 @@ __all__ = [
     'Event',
     'Request',
     'Response',
+    'app',
     'cron',
     'get_backend',
     'get_bus',
