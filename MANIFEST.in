@@ -2,5 +2,6 @@ recursive-include platypush/backend/http/webapp/dist *
 recursive-include platypush/install *
 include platypush/plugins/http/webpage/mercury-parser.js
 include platypush/config/*.yaml
+include platypush/config/systemd/*
 global-include manifest.json
 global-include components.json.gz

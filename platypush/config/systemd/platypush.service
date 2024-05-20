@@ -1,0 +1,30 @@
+# Platypush systemd service file.
+#
+# It is advised to install Platypush through a supported package manager or a
+# Platypush Docker container.
+#
+# In such case, the service file should be automatically installed and configured,
+# and Platypush can be started either via `[sudo] systemctl start platypush`
+# (privileged start, usually with a dedicated `platypush` user) or
+# `systemctl --user start platypush` if you want to run it through a generic user.
+#
+# In the first case, the working directory would usually be
+# `/var/lib/platypush`, and the configuration will be stored under `/etc/platypush`.
+#
+# You can however also copy this service configuration either to
+# `/etc/systemd/system/platypush.service` or
+# `~/.config/systemd/user/platypush.service`.
+
+[Unit]
+Description=Platypush - A general-purpose platform for automation
+After=network.target redis.service
+# Uncomment this line if you're running the service as a privileged user
+# Requires=redis.service
+
+[Service]
+ExecStart=/usr/bin/platypush
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
