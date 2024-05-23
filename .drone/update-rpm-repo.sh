@@ -38,6 +38,8 @@ Requires: $(cat platypush/install/requirements/fedora.txt | tr '\n' ' ')
 Conflicts: $PKG_NAME
 Prefix: %{_prefix}
 BuildRoot: %{_tmppath}/%{name}-root
+BuildRequires: systemd-rpm-macros
+%{?sysusers_requires_compat}
 
 %description
 Universal command executor and automation hub.
@@ -45,13 +47,26 @@ Universal command executor and automation hub.
 %install
 mkdir -p %{buildroot}/
 cp -r "$BUILD_DIR"/* %{buildroot}/
+install -p -Dm0644 "${BUILD_DIR}/usr/lib/sysusers.d/platypush.conf" %{buildroot}%{_sysusersdir}/platypush.conf
+
+%pre
+%sysusers_create_compat "${BUILD_DIR}/usr/lib/sysusers.d/platypush.conf"
 
 %clean
 
 %files
+%defattr(750,platypush,platypush,750)
+%dir /etc/platypush
+/etc/platypush/*
 /usr/bin/*
 /usr/lib/python$(python3 --version | awk '{print $2}' | cut -d. -f 1,2)/site-packages/platypush
 /usr/lib/python$(python3 --version | awk '{print $2}' | cut -d. -f 1,2)/site-packages/platypush-$VERSION.dist-info
+/usr/lib/systemd/system/*
+/usr/lib/systemd/user/*
+%defattr(750,platypush,platypush,750)
+%dir /var/lib/platypush
+/var/lib/platypush/*
+%{_sysusersdir}/platypush.conf
 
 %changelog
 * $(date +'%a %b %d %Y') admin <admin@platypush.tech>
@@ -60,7 +75,28 @@ EOF
 
 echo "--- Building git package"
 mkdir -p "$BUILD_DIR"
+
 pip install --prefix="$BUILD_DIR/usr" --no-cache --no-deps .
+
+install -m755 -d "${BUILD_DIR}/usr/lib/systemd/system"
+install -m755 -d "${BUILD_DIR}/usr/lib/systemd/user"
+install -m755 -d "${BUILD_DIR}/usr/lib/sysusers.d"
+install -m750 -d "${BUILD_DIR}/var/lib/platypush"
+install -m750 -d "${BUILD_DIR}/etc/platypush/scripts"
+
+install -m644 "${SRCDIR}/platypush/config/config.yaml" "${BUILD_DIR}/etc/platypush/config.yaml"
+install -Dm644 "${SRCDIR}/platypush/config/systemd/platypush-sysusers.conf" "${BUILD_DIR}/usr/lib/sysusers.d/platypush.conf"
+install -m644 "${SRCDIR}/platypush/config/systemd/platypush.service" "${BUILD_DIR}/usr/lib/systemd/user/platypush.service"
+install -m644 "${SRCDIR}/platypush/config/systemd/platypush.service" "${BUILD_DIR}/usr/lib/systemd/system/platypush.service"
+sed -i "${BUILD_DIR}/usr/lib/systemd/system/platypush.service" -r \
+    -e 's/^#\s*Requires=(.*)/Requires=\1/' \
+    -e 's/^\[Service\]$/\[Service\]\
+User=platypush\
+Group=platypush\
+WorkingDirectory=\/var\/lib\/platypush\
+Environment="PLATYPUSH_CONFIG=\/etc\/platypush\/config.yaml"\
+Environment="PLATYPUSH_WORKDIR=\/var\/lib\/platypush"/'
+
 rpmbuild --target "noarch" -bb "$SPECFILE"
 
 echo "--- Copying the new RPM package"
@@ -106,6 +142,8 @@ Requires: $(cat platypush/install/requirements/fedora.txt | tr '\n' ' ')
 Conflicts: $PKG_NAME-git
 Prefix: %{_prefix}
 BuildRoot: %{_tmppath}/%{name}-root
+BuildRequires: systemd-rpm-macros
+%{?sysusers_requires_compat}
 
 %description
 Universal command executor and automation hub.
@@ -113,13 +151,26 @@ Universal command executor and automation hub.
 %install
 mkdir -p %{buildroot}/
 cp -r "$BUILD_DIR"/* %{buildroot}/
+install -p -Dm0644 "${BUILD_DIR}/usr/lib/sysusers.d/platypush.conf" %{buildroot}%{_sysusersdir}/platypush.conf
+
+%pre
+%sysusers_create_compat "${BUILD_DIR}/usr/lib/sysusers.d/platypush.conf"
 
 %clean
 
 %files
+%defattr(750,platypush,platypush,750)
+%dir /etc/platypush
+/etc/platypush/*
 /usr/bin/*
 /usr/lib/python$(python3 --version | awk '{print $2}' | cut -d. -f 1,2)/site-packages/platypush
 /usr/lib/python$(python3 --version | awk '{print $2}' | cut -d. -f 1,2)/site-packages/platypush-$VERSION.dist-info
+/usr/lib/systemd/system/*
+/usr/lib/systemd/user/*
+%defattr(750,platypush,platypush,750)
+%dir /var/lib/platypush
+/var/lib/platypush/*
+%{_sysusersdir}/platypush.conf
 
 %changelog
 * $(date +'%a %b %d %Y') admin <admin@platypush.tech>

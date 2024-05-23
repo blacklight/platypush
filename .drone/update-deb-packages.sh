@@ -64,9 +64,10 @@ cat <<EOF > "$GIT_BUILD_DIR/DEBIAN/postinst" && chmod +x "$GIT_BUILD_DIR/DEBIAN/
 set -e
 
 if [ "\$1" = "configure" ]; then
-  grep -e '^platypush:' /etc/passwd 2>/dev/null || useradd -r -s /bin/false -d /var/lib/platypush platypush
+  grep -e '^platypush:' /etc/passwd 2>/dev/null || useradd -U -r -s /bin/false -d /var/lib/platypush platypush
   mkdir -p /var/lib/platypush
-  chown platypush:platypush /var/lib/platypush
+  chown -R platypush:platypush /var/lib/platypush
+  chown -R platypush:platypush /etc/platypush
   if which systemctl; then systemctl daemon-reload; fi
 fi
 EOF
