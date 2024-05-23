@@ -9,7 +9,7 @@ yum install -y \
   gpg \
   python \
   python-pip \
-  python-setuptools
+  python-setuptools \
   rpm-build \
   rpm-sign \
   systemd-rpm-macros \
