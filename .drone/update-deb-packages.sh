@@ -29,6 +29,23 @@ find "$GIT_BUILD_DIR" -name "site-packages" | while read dir; do
   mv "$dir" "$base/dist-packages"
 done
 
+install -m755 -d "${GIT_BUILD_DIR}/usr/lib/systemd/system"
+install -m755 -d "${GIT_BUILD_DIR}/usr/lib/systemd/user"
+install -m750 -d "${GIT_BUILD_DIR}/var/lib/platypush"
+install -m750 -d "${GIT_BUILD_DIR}/etc/platypush/scripts"
+
+install -m644 "${SRCDIR}/platypush/config/config.yaml" "${GIT_BUILD_DIR}/etc/platypush/config.yaml"
+install -m644 "${SRCDIR}/platypush/config/systemd/platypush.service" "${GIT_BUILD_DIR}/usr/lib/systemd/user/platypush.service"
+install -m644 "${SRCDIR}/platypush/config/systemd/platypush.service" "${GIT_BUILD_DIR}/usr/lib/systemd/system/platypush.service"
+sed -i "${GIT_BUILD_DIR}/usr/lib/systemd/system/platypush.service" -r \
+    -e 's/^#\s*Requires=(.*)/Requires=\1/' \
+    -e 's/^\[Service\]$/\[Service\]\
+User=platypush\
+Group=platypush\
+WorkingDirectory=\/var\/lib\/platypush\
+Environment="PLATYPUSH_CONFIG=\/etc\/platypush\/config.yaml"\
+Environment="PLATYPUSH_WORKDIR=\/var\/lib\/platypush"/'
+
 mkdir -p "$GIT_BUILD_DIR/DEBIAN"
 
 cat <<EOF > "$GIT_BUILD_DIR/DEBIAN/control"
@@ -39,6 +56,19 @@ Depends: $(cat platypush/install/requirements/debian.txt | tr '\n' ',' | sed -re
 Architecture: all
 Homepage: https://platypush.tech
 Description: Universal command executor and automation hub.
+EOF
+
+cat <<EOF > "$GIT_BUILD_DIR/DEBIAN/postinst" && chmod +x "$GIT_BUILD_DIR/DEBIAN/postinst"
+#!/bin/sh
+
+set -e
+
+if [ "\$1" = "configure" ]; then
+  grep -e '^platypush:' /etc/passwd 2>/dev/null || useradd -r -s /bin/false -d /var/lib/platypush platypush
+  mkdir -p /var/lib/platypush
+  chown platypush:platypush /var/lib/platypush
+  if which systemctl; then systemctl daemon-reload; fi
+fi
 EOF
 
 mkdir -p "$POOL_PATH"
