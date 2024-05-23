@@ -3,7 +3,18 @@
 [ -f .skipci ] && exit 0
 
 echo "-- Installing dependencies"
-yum install -y createrepo rpm-build rpm-sign gpg wget yum-utils git python python-pip python-setuptools
+yum install -y \
+  createrepo \
+  git \
+  gpg \
+  python \
+  python-pip \
+  python-setuptools
+  rpm-build \
+  rpm-sign \
+  systemd-rpm-macros \
+  wget \
+  yum-utils \
 
 echo "-- Copying source directory"
 mkdir -p "$WORKDIR"
