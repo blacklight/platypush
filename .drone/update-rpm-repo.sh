@@ -76,7 +76,6 @@ install -p -Dm0644 "${BUILD_DIR}/usr/lib/sysusers.d/platypush.conf" %{buildroot}
 /usr/lib/systemd/user/*
 %defattr(750,platypush,platypush,750)
 %dir /var/lib/platypush
-/var/lib/platypush/*
 %{_sysusersdir}/platypush.conf
 
 %changelog
@@ -180,7 +179,6 @@ install -p -Dm0644 "${BUILD_DIR}/usr/lib/sysusers.d/platypush.conf" %{buildroot}
 /usr/lib/systemd/user/*
 %defattr(750,platypush,platypush,750)
 %dir /var/lib/platypush
-/var/lib/platypush/*
 %{_sysusersdir}/platypush.conf
 
 %changelog
