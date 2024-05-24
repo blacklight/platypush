@@ -19,7 +19,7 @@ from importlib.util import spec_from_loader, module_from_spec
 from multiprocessing import Lock as PLock
 from tempfile import gettempdir
 from threading import Event, Lock as TLock
-from typing import Callable, Generator, Optional, Tuple, Type, Union
+from typing import Generator, Optional, Tuple, Type, Union
 
 from dateutil import parser, tz
 from redis import Redis
@@ -469,7 +469,28 @@ def run(action, *args, **kwargs):
         >>> run('music.mpd.play', resource='file:///home/user/music.mp3')
 
     """
+    from platypush.config import Config
     from platypush.context import get_plugin
+    from platypush.procedure import Procedure
+
+    if action.startswith('procedure.'):
+        procedure_name = action.removeprefix('procedure.')
+        procedures = Config.get_procedures()
+        procedure = procedures.get(procedure_name)
+        if not procedure:
+            raise RuntimeError(f'No such procedure: {procedure_name}')
+
+        if isinstance(procedure, dict):
+            procedure = Procedure.build(
+                name=procedure_name,
+                requests=procedure.get('actions', []),
+                args=procedure.get('args', {}),
+                _async=procedure.get('async', False),
+            )
+
+            return procedure.execute(*args, **kwargs)
+
+        return procedure(*args, **kwargs)
 
     (module_name, method_name) = get_module_and_method_from_action(action)
     plugin = get_plugin(module_name)
