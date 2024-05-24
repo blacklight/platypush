@@ -8,7 +8,7 @@ ENV DOCKER_CTX=1
 
 RUN apk update && \
     /install/platypush/install/scripts/alpine/install.sh && \
-    cd /install && pip install -U --no-input --no-cache-dir . && \
+    cd /install && pip install -U --no-input --no-cache-dir . --break-system-packages && \
     rm -rf /install && \
     apk cache clean
 

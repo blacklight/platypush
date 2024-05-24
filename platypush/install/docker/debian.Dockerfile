@@ -10,7 +10,8 @@ ENV DOCKER_CTX=1
 
 RUN apt update && \
     /install/platypush/install/scripts/debian/install.sh && \
-    cd /install && pip install -U --no-input --no-cache-dir . --break-system-packages && \
+    cd /install && \
+    pip install -U --no-input --no-cache-dir . --break-system-packages && \
     rm -rf /install && \
     apt autoclean -y && \
     apt autoremove -y && \

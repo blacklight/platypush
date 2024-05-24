@@ -454,11 +454,8 @@ class Dependencies:
             through another script.
         """
         wants_break_system_packages = not (
-            # Docker installations shouldn't require --break-system-packages in
-            # pip, except for Debian
-            (self._is_docker and self.base_image != BaseImage.DEBIAN)
             # --break-system-packages has been introduced in Python 3.10
-            or sys.version_info < (3, 11)
+            sys.version_info < (3, 11)
             # If we're in a virtual environment then we don't need
             # --break-system-packages
             or self._is_venv
