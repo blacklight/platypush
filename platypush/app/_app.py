@@ -5,6 +5,7 @@ import os
 import signal
 import subprocess
 import sys
+from textwrap import dedent
 from typing import Optional, Sequence
 
 from platypush.bus import Bus
@@ -420,7 +421,21 @@ class Application:
         if not self.no_capture_stderr:
             sys.stderr = Logger(log.warning)
 
-        log.info('---- Starting platypush v.%s', __version__)
+        log.info(
+            dedent(
+                r'''
+                  _____  _       _                         _
+                 |  __ \| |     | |                       | |
+                 | |__) | | __ _| |_ _   _ _ __  _   _ ___| |__
+                 |  ___/| |/ _` | __| | | | '_ \| | | / __| '_ \
+                 | |    | | (_| | |_| |_| | |_) | |_| \__ \ | | |
+                 |_|    |_|\__,_|\__|\__, | .__/ \__,_|___/_| |_|
+                                      __/ | |
+                                     |___/|_|
+                        '''
+            )
+        )
+        log.info('---- Starting Platypush v.%s', __version__)
 
         # Start the local Redis service if required
         if self.start_redis:
