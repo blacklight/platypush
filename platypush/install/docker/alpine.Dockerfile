@@ -1,14 +1,24 @@
 FROM alpine
 
-ADD . /install
-WORKDIR /var/lib/platypush
-
 ARG DOCKER_CTX=1
 ENV DOCKER_CTX=1
+WORKDIR /var/lib/platypush
 
-RUN apk update && \
-    /install/platypush/install/scripts/alpine/install.sh && \
-    cd /install && pip install -U --no-input --no-cache-dir . --break-system-packages && \
+RUN --mount=type=bind,source=.,target=/curdir \
+    apk update && \
+    # If the current directory is the Platypush repository, then we can copy the existing files \
+    if grep 'name="platypush"' /curdir/setup.py >/dev/null 2>&1; \
+    then \
+      cp -r /curdir /install; \
+    # Otherwise, we need to clone the repository \
+    else \
+      apk add --no-cache git && \
+      git clone https://github.com/blacklight/platypush.git /install; \
+    fi
+
+RUN /install/platypush/install/scripts/alpine/install.sh && \
+    cd /install && \
+    pip install -U --no-input --no-cache-dir . --break-system-packages && \
     rm -rf /install && \
     apk cache clean
 

@@ -1,6 +1,5 @@
 FROM debian
 
-ADD . /install
 WORKDIR /var/lib/platypush
 
 ARG DEBIAN_FRONTEND=noninteractive
@@ -8,8 +7,19 @@ ENV DEBIAN_FRONTEND=noninteractive
 ARG DOCKER_CTX=1
 ENV DOCKER_CTX=1
 
-RUN apt update && \
-    /install/platypush/install/scripts/debian/install.sh && \
+RUN --mount=type=bind,source=.,target=/curdir \
+    apt update && \
+    # If the current directory is the Platypush repository, then we can copy the existing files \
+    if grep 'name="platypush"' /curdir/setup.py >/dev/null 2>&1; \
+    then \
+      cp -r /curdir /install; \
+    # Otherwise, we need to clone the repository \
+    else \
+      apt install -y git && \
+      git clone https://github.com/blacklight/platypush.git /install; \
+    fi
+
+RUN /install/platypush/install/scripts/debian/install.sh && \
     cd /install && \
     pip install -U --no-input --no-cache-dir . --break-system-packages && \
     rm -rf /install && \

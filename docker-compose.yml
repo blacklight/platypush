@@ -1,6 +1,5 @@
 services:
   platypush:
-    container_name: platypush
     restart: "always"
     command:
       - platypush
