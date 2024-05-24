@@ -4,6 +4,7 @@ import re
 from functools import wraps
 
 from queue import LifoQueue
+from typing import Optional
 
 from ..common import exec_wrapper
 from ..config import Config
@@ -557,18 +558,22 @@ class IfProcedure(Procedure):
         return response
 
 
-def procedure(f):
-    """
-    Public decorator to mark a function as a procedure.
-    """
+def procedure(name: Optional[str] = None):
+    def func_wrapper(f):
+        """
+        Public decorator to mark a function as a procedure.
+        """
 
-    f.procedure = True
+        f.procedure = True
+        f.procedure_name = name
 
-    @wraps(f)
-    def _execute_procedure(*args, **kwargs):
-        return exec_wrapper(f, *args, **kwargs)
+        @wraps(f)
+        def _execute_procedure(*args, **kwargs):
+            return exec_wrapper(f, *args, **kwargs)
 
-    return _execute_procedure
+        return _execute_procedure
+
+    return func_wrapper
 
 
 # vim:sw=4:ts=4:et:
