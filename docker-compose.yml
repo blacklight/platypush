@@ -1,0 +1,47 @@
+services:
+  platypush:
+    container_name: platypush
+    restart: "always"
+    command:
+      - platypush
+      # Comment --start-redis if you want to run an external Redis service
+      # In such case you'll also have to ensure that the appropriate Redis
+      # variables are set in the .env file, or the Redis configuration is
+      # passed in the config.yaml, or use the --redis-host and --redis-port
+      # command-line options
+      - --start-redis
+
+    # Custom list of host devices that should be accessible to the container -
+    # e.g. an Arduino, an ESP-compatible microcontroller, a joystick etc.
+    # devices:
+    #   - /dev/ttyUSB0
+
+    # Uncomment if you need plugins that require access to low-level hardware
+    # (e.g. Bluetooth BLE or GPIO/SPI/I2C) if access to individual devices is
+    # not enough or isn't practical
+    # privileged: true
+
+    build:
+      context: .
+      # Alpine base image
+      dockerfile: ./platypush/install/docker/alpine.Dockerfile
+      # Debian base image
+      # dockerfile: ./platypush/install/docker/debian.Dockerfile
+      # Ubuntu base image
+      # dockerfile: ./platypush/install/docker/ubuntu.Dockerfile
+      # Fedora base image
+      # dockerfile: ./platypush/install/docker/fedora.Dockerfile
+
+    # Copy .env.example to .env and modify as needed
+    # env_file:
+    #   - .env
+
+    ports:
+      # Comment if you don't have the HTTP backend enable or you don't want to
+      # expose it
+      - "8008:8008"
+
+    volumes:
+      - /path/to/your/config.yaml:/etc/platypush
+      - /path/to/a/workdir:/var/lib/platypush
+      # - /path/to/a/cachedir:/var/cache/platypush

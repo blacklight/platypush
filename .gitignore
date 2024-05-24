@@ -24,7 +24,7 @@ coverage.xml
 Session.vim
 /jsconfig.json
 /package.json
-/Dockerfile
 /docs/source/wiki
 /.skipci
 dump.rdb
+.env
