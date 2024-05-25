@@ -22,6 +22,8 @@ RUN dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-re
   cd /install && \
   pip install -U --no-input --no-cache-dir . --break-system-packages && \
   rm -rf /install && \
+  rm -rf /root/.cache/pip && \
+  find / | grep -E "(/__pycache__$|\.pyc$|\.pyo$)" | xargs rm -rf && \
   dnf clean all -y
 
 EXPOSE 8008

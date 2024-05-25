@@ -23,6 +23,8 @@ RUN /install/platypush/install/scripts/debian/install.sh && \
     cd /install && \
     pip install -U --no-input --no-cache-dir . --break-system-packages && \
     rm -rf /install && \
+    rm -rf /root/.cache/pip && \
+    find / | grep -E "(/__pycache__$|\.pyc$|\.pyo$)" | xargs rm -rf && \
     apt autoclean -y && \
     apt autoremove -y && \
     apt clean
