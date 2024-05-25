@@ -480,8 +480,7 @@ class Dependencies:
                     + ' \\\n  '.join(deps)
                 )
             else:
-                for dep in deps:
-                    yield dep
+                yield from deps
 
     def to_install_commands(self) -> Generator[str, None, None]:
         """
