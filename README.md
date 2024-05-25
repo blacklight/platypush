@@ -34,6 +34,7 @@
 - [Websocket API](#websocket-api)
   * [Events](#events)
   * [Actions](#actions)
+- [Web hooks](#web-hooks)
 - [Entities](#entities)
 - [Core Installation](#core-installation)
   * [System package manager installation](#system-package-manager-installation)
@@ -683,6 +684,41 @@ responses asynchronously on the same channel:
     -c "ws://localhost:8008/ws/requests" \
     -w 1 \
     -x '{"type": "requests", "action": "procedure.foo.bar"}'
+```
+
+## Web hooks
+
+You can use Platypush to expose your custom routines as dynamic Web hooks that
+can be called by any client.
+
+All you need is to register a listener for a
+[`WebhookEvent`](https://docs.platypush.tech/platypush/events/http.hook.html#platypush.message.event.http.hook.WebhookEvent)
+
+```python
+from platypush import run, when
+from platypush.events.http.hook import WebhookEvent
+
+hook_token = "abcdefabcdef"
+
+
+# Expose the hook under the /hook/at_home endpoint
+@when(WebhookEvent, hook="at_home")
+def at_home_webhook(event: WebhookEvent):
+    # Unlike the calls to /execute, custom web hooks are unauthenticated.
+    # If you want authentication, you'll need to implement your custom logic by
+    # parsing the event headers
+    if event.headers.get("X-Token") != hook_token:
+        # Tuple with <response, http-code, [response-headers]>
+        event.send_response(("Unauthorized", 401))
+        return
+
+    run('procedure.at_home')
+```
+
+Then you can invoke your custom logic over HTTP:
+
+```bash
+❯ curl -H 'X-Token: abcdefabcdef' 'http://localhost:8008/hook/at_home'
 ```
 
 ## Entities
