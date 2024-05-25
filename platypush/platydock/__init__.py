@@ -71,7 +71,7 @@ class DockerBuilder(BaseBuilder):
         super().__init__(*args, **kwargs)
         self.image = image
         self.tag = tag
-        self.print_only = print_only  # TODO
+        self.print_only = print_only
 
     @classmethod
     def get_name(cls):
@@ -151,23 +151,9 @@ class DockerBuilder(BaseBuilder):
             nonlocal is_after_expose_cmd
 
             for line in self._read_base_dockerfile_lines():
-                if re.match(
-                    r'RUN /install/platypush/install/scripts/[A-Za-z0-9_-]+/install.sh',
-                    line.strip(),
-                ):
-                    yield self._generate_git_clone_command()
-                elif line.startswith('RUN cd /install '):
-                    for new_line in deps.before:
-                        yield 'RUN ' + new_line
-
-                    for new_line in deps.to_pkg_install_commands():
-                        yield 'RUN ' + new_line
-                elif line == 'RUN rm -rf /install':
-                    for new_line in deps.to_pip_install_commands():
-                        yield 'RUN ' + new_line
-
-                    for new_line in deps.after:
-                        yield 'RUN' + new_line
+                if re.search(r'\s*rm -rf /install\s*', line):
+                    for new_line in [*deps.to_pip_install_commands(), *deps.after]:
+                        yield f'\t{new_line} && \\'
                 elif line.startswith('EXPOSE ') and ports:
                     if not is_after_expose_cmd:
                         yield from [f'EXPOSE {port}' for port in ports]
@@ -178,6 +164,10 @@ class DockerBuilder(BaseBuilder):
                     yield from self._footer.split('\n')
 
                 yield line
+
+                if line.startswith('RUN /install/platypush/install/scripts/'):
+                    for new_line in [*deps.before, *deps.to_pkg_install_commands()]:
+                        yield f'\t{new_line} && \\'
 
                 if line.startswith('CMD') and self.device_id:
                     yield f'\t--device-id {self.device_id} \\'
@@ -264,28 +254,6 @@ class DockerBuilder(BaseBuilder):
             f.write(self._header + '\n')
             for line in parser():
                 f.write(line + '\n')
-
-    def _generate_git_clone_command(self) -> str:
-        """
-        Generates a git clone command in Dockerfile that checks out the repo
-        and the right git reference, if the application sources aren't already
-        available under /install.
-        """
-        install_cmd = ' '.join(self.pkg_manager.value.install)
-        uninstall_cmd = ' '.join(self.pkg_manager.value.uninstall)
-        return textwrap.dedent(
-            f"""
-            RUN if [ ! -f "/install/setup.py" ]; then \\
-              echo "Platypush source not found under the current directory, downloading it" && \\
-                  {install_cmd} git && \\
-                  rm -rf /install && \\
-                  git clone --recursive https://github.com/BlackLight/platypush.git /install && \\
-                  cd /install && \\
-                  git checkout {self.gitref} && \\
-                  {uninstall_cmd} git; \\
-            fi
-            """
-        )
 
     @classmethod
     def _get_arg_parser(cls) -> argparse.ArgumentParser:
