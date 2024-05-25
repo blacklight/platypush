@@ -1,20 +1,22 @@
 ![Platypush logo](https://static.platypush.tech/images/platypush-banner.png)
 
 [![Build Status](https://ci-cd.platypush.tech/api/badges/platypush/platypush/status.svg)](https://ci-cd.platypush.tech/platypush/platypush)
-[![pip version](https://img.shields.io/pypi/v/platypush.svg?style=flat)](https://pypi.python.org/pypi/platypush/)
-[![License](https://img.shields.io/github/license/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/src/branch/master/LICENSE.txt)
+[![Issues](https://img.shields.io/gitea/issues/open/platypush/platypush?gitea_url=https://git.platypush.tech)](https://git.platypush.tech/platypush/platypush/issues)
+[![Github stars](https://img.shields.io/github/stars/blacklight/platypush?style=flat&logo=Github)](https://github.com/blacklight/platypush)
+[![Github forks](https://img.shields.io/github/forks/blacklight/platypush?style=flat&logo=Github)](https://github.com/blacklight/platypush)
 [![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/commits/branch/master)
-[![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://git.platypush.tech/platypush/platypush/src/branch/master/CONTRIBUTING.md)
-[![Join chat on Matrix](https://img.shields.io/matrix/platypush:matrix.platypush.tech.svg?server_fqdn=matrix.platypush.tech)](https://matrix.to/#/#platypush:matrix.platypush.tech)
+[![Ask on Lemmy](https://img.shields.io/lemmy/platypush%40lemmy.platypush.tech?style=flat&logo=lemmy&label=Ask%20on%20Lemmy)](https://lemmy.platypush.tech/c/platypush)
+[![Join chat on Matrix](https://img.shields.io/matrix/platypush:matrix.platypush.tech.svg?server_fqdn=matrix.platypush.tech&label=chat&logo=matrix)](https://matrix.to/#/#platypush:matrix.platypush.tech)
 
+[![pip version](https://img.shields.io/pypi/v/platypush.svg?style=flat)](https://pypi.python.org/pypi/platypush/)
+[![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://git.platypush.tech/platypush/platypush/src/branch/master/CONTRIBUTING.md)
+[![License](https://img.shields.io/github/license/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/src/branch/master/LICENSE.txt)
+[![Sponsor](https://img.shields.io/github/sponsors/blacklight)](https://github.com/sponsors/blacklight)
 [![Blog](https://img.shields.io/badge/-Blog-9532CA?logo=LiveJournal)](https://blog.platypush.tech)
 [![Documentation](https://img.shields.io/badge/-Docs-022AC5?logo=GitBook)](https://docs.platypush.tech)
 [![Wiki](https://img.shields.io/badge/-Wiki-00AA40?logo=Docs.rs)](https://git.platypush.tech/platypush/platypush/wiki)
-[![Issues](https://img.shields.io/badge/-Issues-BABA30?logo=TickTick)](https://git.platypush.tech/platypush/platypush/issues)
-[![Sponsor](https://img.shields.io/github/sponsors/blacklight)](https://github.com/sponsors/blacklight)
-[![PayPal](https://img.shields.io/badge/-PayPal-CACA30?logo=PayPal)](https://paypal.me/fabiomanganiello)
 [![Join chat on IRC](https://img.shields.io/badge/-IRC-4542CA?logo=LiveChat)](irc://platypush@irc.platypush.tech:6697)
-[![Ask on Lemmy](https://img.shields.io/lemmy/platypush%40lemmy.platypush.tech)](https://matrix.to/#/#platypush:matrix.platypush.tech)
+[![PayPal](https://img.shields.io/badge/-PayPal-CACA30?logo=PayPal)](https://paypal.me/fabiomanganiello)
 
 <!-- toc -->
 
@@ -52,6 +54,8 @@
   * [Manual installation](#manual-installation-1)
 - [Post-installation](#post-installation)
   * [Configuration file](#configuration-file)
+    + [Scripts directory](#scripts-directory)
+    + [Splitting configuration on multiple files](#splitting-configuration-on-multiple-files)
   * [systemd service](#systemd-service)
   * [Redis](#redis)
   * [nginx](#nginx)
@@ -1010,6 +1014,68 @@ in the following way:
 5. Otherwise, if you are running Platypush as a non-privileged user or in a
    virtual environment, `$XDG_CONFIG_HOME/platypush/config.yaml` will be used
    (defaults to `~/.config/platypush/config.yaml`).
+
+#### Scripts directory
+
+By default, any custom Python scripts will be searched under
+`<CONFDIR>/scripts`, where `<CONFDIR>` is the path to your `config.yaml`.
+
+You can override it in your `config.yaml`:
+
+```yaml
+scripts_dir: /path/to/custom/scripts
+```
+
+Since everything under the scripts directory will be imported as a submodule,
+you can create your own libraries of scripts that can import other scripts:
+
+```python
+# Content of scripts/music.py
+
+from platypush import run
+
+def music_play(plugin='music.mopidy', resource=None):
+  run(f'{plugin}.play', resource)
+
+# Content of scripts/lights.py
+
+from platypush import run
+
+def lights_toggle(plugin='light.hue', groups=('Living Room',)):
+  run(f'{plugin}.toggle', groups=groups)
+
+# Content of scripts/home.py
+
+from platypush import procedure
+
+from scripts.music import music_play
+from scripts.lights import lights_toggle
+
+@procedure
+def at_home():
+  music_play()
+  lights_toggle()
+```
+
+#### Splitting configuration on multiple files
+
+The `config.yaml` file can become very complex, especially if you embed many
+hooks and procedures in it in YAML format.
+
+To make the configuration more maintainable, and also to isolate modules that
+you can reuse across multiple instances, you can leverage the `include`
+directive:
+
+```yaml
+# All paths are relative to config.yaml, or to the location of the current file
+include:
+  - assistant.yaml
+  - db.yaml
+  - media.yaml
+  - mqtt.yaml
+  - sensors.yaml
+  # ...
+```
 
 ### systemd service
 
