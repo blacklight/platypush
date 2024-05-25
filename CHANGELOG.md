@@ -1,8 +1,124 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-Given the high speed of development in the first phase, changes are being
-reported only starting from v0.20.2.
+## [1.0.0 release candidate]
+
+Many, many changes for the first major release of Platypush after so many
+years.
+
+- [!3](https://git.platypush.tech/platypush/platypush/milestone/3) All
+  backends, except for `http`, `nodered`, `redis` and `tcp`, are gone. Many
+  were already deprecated a while ago, but the change now applies to all of
+  them. Backends should only be components that actively listen for application
+  messages to process, not generic daemon threads for integrations. This had
+  been a source of confusion for a long time. Backends and plugins are now
+  merged, meaning that you won't need to configure two different sections
+  instead of one for many integrations (one for the stateless plugin, and one
+  for the background state listener). Please check the
+  [documentation](https://docs.platypush.tech) to verify the configuration
+  changes required by your integrations. This has been a long process that has
+  involved the rewrite of most of the integrations, and many bugs have been
+  fixed.
+
+- Improved Docker support - now with a default `docker-compose.yml`, multiple
+  Dockerfiles for
+  [Alpine](https://git.platypush.tech/platypush/platypush/src/branch/master/platypush/install/docker/alpine.Dockerfile),
+  [Debian](https://git.platypush.tech/platypush/platypush/src/branch/master/platypush/install/docker/debian.Dockerfile),
+  [Ubuntu](https://git.platypush.tech/platypush/platypush/src/branch/master/platypush/install/docker/ubuntu.Dockerfile)
+  and
+  [Fedora](https://git.platypush.tech/platypush/platypush/src/branch/master/platypush/install/docker/fedora.Dockerfile)
+  base images. Many improvements on the `platydock` and `platyvenv` scripts
+  too, with better automated installation processes for optional dependencies.
+
+- Added [official
+  packages](https://git.platypush.tech/platypush/platypush#system-package-manager-installation)
+  for
+  [Debian](https://git.platypush.tech/platypush/platypush#debian-ubuntu)
+  and [Fedora](https://git.platypush.tech/platypush/platypush#fedora).
+
+- Added `--device-id`, `--workdir`, `--logsdir`, `--cachedir`, `--main-db`,
+  `--redis-host`, `--redis-port` and `--redis-queue` CLI arguments, along the
+  `PLATYPUSH_DEVICE_ID`, `PLATYPUSH_WORKDIR`, `PLATYPUSH_LOGSDIR`,
+  `PLATYPUSH_CACHEDIR`, `PLATYPUSH_DB`, `PLATYPUSH_REDIS_HOST`,
+  `PLATYPUSH_REDIS_PORT` and `PLATYPUSH_REDIS_QUEUE` environment variables.
+
+- Added an _Extensions_ panel to the UI to dynamically:
+    - Install new dependencies directly from the Web view.
+    - Explore the documentation as well as the supported actions and events for
+      each plugin.
+    - Get ready-to-paste configuration snippets/templates.
+
+- New, completely rewritten [documentation](https://docs.platypush.tech), which
+  now integrates the wiki, dynamically includes plugins configuration snippets
+  and dependencies, and adds a global filter bar for the integrations.
+
+- [[#394](https://git.platypush.tech/platypush/platypush/issues/394)] A more
+  intuitive way of installing extra dependencies via `pip`. Instead of a static
+  list that the user should check inside of `setup.py`, the syntax `pip install
+  'platypush[plugin1,plugin2,...]'` is now supported.
+
+- No more need to manually create `__init__.py` in each of the `scripts`
+  folders that you want to use to store your custom scripts. Automatic
+  discovery of scripts and creation of module files has been implemented. You
+  can now just drop a `.py` script with your procedures, hooks or crons in the
+  scripts folder and it should be picked up by the application.
+
+- The _Execute_ Web panel now supports procedures too, as well as curl snippets.
+
+- Removed all `Response` objects outside of the root type. They are now all
+  replaced by Marshmallow schemas with the structure automatically generated in
+  the documentation.
+
+- [`alarm`] [[#340](https://git.platypush.tech/platypush/platypush/issues/340)]
+  Rewritten integration. It now includes a powerful UI panel to set up alarms
+  with custom procedures too.
+
+- [`assistant.picovoice`]
+  [[#304](https://git.platypush.tech/platypush/platypush/issues/304)] New
+  all-in-one Picovoice integration that replaces the previous `stt.picovoice.*`
+  integrations.
+
+- [`youtube`]
+  [[#337](https://git.platypush.tech/platypush/platypush/issues/337)] Full
+  rewrite of the plugin. It now supports Piped instances instead of the
+  official YouTube API. A new UI has also been designed to explore
+  subscriptions, playlists and channels.
+
+- [`weather.*`]
+  [[#308](https://git.platypush.tech/platypush/platypush/issues/308)] Removed
+  the `weather.darksky` integration (it's now owned by Apple and the API is
+  basically dead) and enhanced the `weather.openweathermap` plugin instead.
+
+- [`camera.pi*`] The old `camera.pi` integration based on the deprecated
+  `picamera` module has been moved to `camera.pi.legacy`. `camera.pi` is now a
+  new plugin which uses the new `picamera2` API (and it's so far only
+  compatible with recent versions on the Raspberry Pi OS).
+
+- Dynamically auto-generate plugins documentation in the UI from the RST
+  docstrings.
+
+- New design for the configuration panel.
+
+- Better synchronization between processes on threads on application stop -
+  greatly reduced the risk of hanging processes on shutdown.
+
+- Migrated all CI/CD pipelines to [Drone
+  CI](https://ci-cd.platypush.tech/platypush/platypush).
+
+- Removed `google.fit` integration, as Google has deprecated the API.
+
+- Removed `wiimote` integration: the `cwiid` library hasn't been updated in
+  years, it doesn't even work well with Python 3, and I'm not in the mood of
+  bringing it back from the dead.
+
+- Removed `stt.deepspeech` integration. That project has been basically
+  abandoned by Mozilla, the libraries are very buggy and I don't think it's
+  going to see new developments any time soon.
+
+- [[#297](https://git.platypush.tech/platypush/platypush/issues/297)] Removed
+  `spotify` backend integration based on Librespot. The project has gone
+  through a lot of changes, and I no longer have a Spotify premium account to
+  work on a new implementation. Open to contributions if somebody still wants
+  it.
 
 ## [0.50.3] - 2023-07-22
 
