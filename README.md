@@ -704,7 +704,6 @@ from platypush.events.http.hook import WebhookEvent
 
 hook_token = "abcdefabcdef"
 
-
 # Expose the hook under the /hook/at_home endpoint
 @when(WebhookEvent, hook="at_home")
 def at_home_webhook(event: WebhookEvent):
@@ -717,6 +716,9 @@ def at_home_webhook(event: WebhookEvent):
         return
 
     run('procedure.at_home')
+
+    # Return anything back to the client
+    return {'status': 'ok'}
 ```
 
 Then you can invoke your custom logic over HTTP:
