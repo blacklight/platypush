@@ -23,7 +23,7 @@ when = hook
 
 
 __author__ = 'Fabio Manganiello <fabio@manganiello.tech>'
-__version__ = '0.99.2'
+__version__ = '0.99.3'
 __all__ = [
     'Application',
     'Variable',
