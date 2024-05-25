@@ -459,10 +459,12 @@ class Dependencies:
             # If we're generating a Docker image then we always need
             # --break-system-packages
             or self._is_docker
-            # If we're in a virtual environment then we don't need
-            # --break-system-packages
-            or not self._is_venv
         )
+
+        if self._is_venv and not self._is_docker:
+            # If we're in a virtual environment then we don't need
+            # --break-system-packages, unless we're generating a Docker image
+            wants_break_system_packages = False
 
         if self.pip:
             deps = sorted(self.pip)
