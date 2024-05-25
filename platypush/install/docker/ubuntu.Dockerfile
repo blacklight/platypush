@@ -25,6 +25,8 @@ RUN /install/platypush/install/scripts/debian/install.sh && \
     rm -rf /install && \
     rm -rf /root/.cache/pip && \
     find / | grep -E "(/__pycache__$|\.pyc$|\.pyo$)" | xargs rm -rf && \
+    apt remove -y git build-essential && \
+    rm -rf /var/lib/apt/lists/* && \
     apt autoclean -y && \
     apt autoremove -y && \
     apt clean

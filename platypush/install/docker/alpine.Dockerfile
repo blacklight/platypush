@@ -22,7 +22,9 @@ RUN /install/platypush/install/scripts/alpine/install.sh && \
     rm -rf /install && \
     rm -rf /root/.cache/pip && \
     find / | grep -E "(/__pycache__$|\.pyc$|\.pyo$)" | xargs rm -rf && \
-    apk cache clean
+    apk del gcc git && \
+    apk cache clean && \
+    rm -rf /var/cache/apk/*
 
 EXPOSE 8008
 
