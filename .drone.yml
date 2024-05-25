@@ -30,29 +30,6 @@ steps:
     - . .drone/github-mirror.sh
 
 ###
-### Synchronize the `stable` branch to the new release
-###
-
-- name: sync-stable-branch
-  image: alpine
-  environment:
-    SSH_PUBKEY:
-      from_secret: ssh_pubkey
-    SSH_PRIVKEY:
-      from_secret: ssh_privkey
-    PGP_KEY:
-      from_secret: pgp_key
-    PGP_KEY_ID:
-      from_secret: pgp_key_id
-
-  commands:
-    - . .drone/sync-stable-branch.sh
-
-  when:
-    event:
-      - tag
-
-###
 ### Rebuild the docs
 ###
 
