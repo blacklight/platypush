@@ -4,10 +4,6 @@
 . .drone/macros/configure-ssh.sh
 . .drone/macros/configure-gpg.sh
 
-# Git configuration
-git remote rm origin
-git remote add origin git@git.platypush.tech:platypush/platypush.git
-
 # Merge and push to the `stable` branch
 git checkout stable
 git rebase master
