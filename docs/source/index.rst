@@ -33,7 +33,7 @@ Wiki
 .. toctree::
     :maxdepth: 3
 
-    wiki/index
+    wiki/Home
     wiki/Quickstart
     wiki/Installation
     wiki/Plugins-installation
