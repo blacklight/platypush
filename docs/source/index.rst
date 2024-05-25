@@ -24,9 +24,8 @@ Useful links
 ============
 
 * The `main page <https://platypush.tech>`_ of the project.
-* The `Gitea page <https://git.platypush.tech/platypush/platypush>`_.
-* The `blog <https://blog.platypush.tech>`_, for articles showing how to use
-  Platypush in real-world scenarios.
+* The `source code <https://git.platypush.tech/platypush/platypush>`_.
+* The `blog <https://blog.platypush.tech>`_.
 
 Wiki
 ====
@@ -35,10 +34,14 @@ Wiki
     :maxdepth: 3
 
     wiki/index
+    wiki/Quickstart
     wiki/Installation
+    wiki/Plugins-installation
+    wiki/APIs
+    wiki/Variables
+    wiki/Entities
     wiki/Configuration
-    wiki/Installing-extensions
-    wiki/A-configuration-example
+    wiki/A-full-configuration-example
     wiki/The-Web-interface
 
 Reference

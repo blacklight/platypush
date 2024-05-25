@@ -52,7 +52,7 @@
   * [Docker](#docker-1)
   * [Virtual environment](#virtual-environment)
   * [Manual installation](#manual-installation-1)
-- [Post-installation](#post-installation)
+- [Configuration](#configuration)
   * [Configuration file](#configuration-file)
     + [Scripts directory](#scripts-directory)
     + [Splitting configuration on multiple files](#splitting-configuration-on-multiple-files)
@@ -997,7 +997,7 @@ If you want to customize your installation, or if you need to install
 dependencies for a plugin that requires some manual steps, you can check out
 any plugin-specific installation steps from its documentation.
 
-## Post-installation
+## Configuration
 
 ### Configuration file
 
@@ -1197,8 +1197,7 @@ Several integrations add their own feature-rich panels to the Web view, turning
 Platypush into a gateway to all of your services - from Zigbee sensors, to
 media players and services, to your music cloud, and more.
 
-![Screenshot of the media panel, showing search results from multiple sources
-and several supported types of streaming services](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/media-panel-screenshot-1.png)
+For example, the music view is available to most of the `music` plugins.
 
 ![Screenshot of one of the music
 panels](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/music-panel-screenshot-1.png)
@@ -1206,6 +1205,22 @@ panels](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/music-panel-scr
 ![Screenshot of the Snapcast panel, which can be used to synchronize your music
 streams across multiple
 devices](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/snapcast-panel-screenshot-1.png)
+
+Another example is the camera panel, to monitor your cameras, get stand-alone
+feed URLs, and take photos. This becomes available in the UI if you enable at
+least a `camera` plugin.
+
+![Camera panel screenshot
+1](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/Camera-panel-screenshot-1.png)
+
+If you enabled at least one local `media` plugin (like `media.vlc`,
+`media.mplayer` etc.) then you'll also unlock the media UI, which allows you to
+index, search, view and cast media files under the configured `media_dirs`, and
+it also integrates with other configured/supported backends such as YouTube,
+Plex and Jellyfin.
+
+![Media panel screenshot
+1](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/Media-panel-screenshot-1.png)
 
 ### Dashboards
 
