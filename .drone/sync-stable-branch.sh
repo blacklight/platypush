@@ -5,7 +5,7 @@
 . .drone/macros/configure-gpg.sh
 
 # Merge and push to the `stable` branch
-git checkout stable
+git checkout stable || git checkout -b stable
 git rebase master
 git push -u origin stable
 git checkout master
