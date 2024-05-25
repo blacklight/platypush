@@ -453,19 +453,22 @@ class Dependencies:
             (as a single string) or the list of packages that will be installed
             through another script.
         """
-        wants_break_system_packages = not (
+        wants_break_system_packages = (
             # --break-system-packages has been introduced in Python 3.10
-            sys.version_info < (3, 11)
+            sys.version_info >= (3, 11)
+            # If we're generating a Docker image then we always need
+            # --break-system-packages
+            or self._is_docker
             # If we're in a virtual environment then we don't need
             # --break-system-packages
-            or self._is_venv
+            or not self._is_venv
         )
 
         if self.pip:
             deps = sorted(self.pip)
             if full_command:
                 yield (
-                    'pip install --no-input '
+                    'pip install -U --no-input '
                     + ('--no-cache-dir ' if self._is_docker else '')
                     + (
                         '--break-system-packages '
