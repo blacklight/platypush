@@ -4,7 +4,6 @@
     "install": {
       "apk": [
         "vlc",
-        "py3-vlc",
         "yt-dlp"
       ],
       "apt": [
