@@ -1,536 +1,404 @@
-Platypush
-=========
+![Platypush logo](https://static.platypush.tech/images/platypush-banner.png)
 
 [![Build Status](https://ci-cd.platypush.tech/api/badges/platypush/platypush/status.svg)](https://ci-cd.platypush.tech/platypush/platypush)
 [![pip version](https://img.shields.io/pypi/v/platypush.svg?style=flat)](https://pypi.python.org/pypi/platypush/)
 [![License](https://img.shields.io/github/license/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/src/branch/master/LICENSE.txt)
 [![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/commits/branch/master)
-[![Join chat on Matrix](https://img.shields.io/matrix/:platypush?server_fqdn=matrix.platypush.tech)](https://matrix.to/#/#platypush:matrix.platypush.tech)
 [![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://git.platypush.tech/platypush/platypush/src/branch/master/CONTRIBUTING.md)
+[![Join chat on Matrix](https://img.shields.io/matrix/platypush:matrix.platypush.tech.svg?server_fqdn=matrix.platypush.tech)](https://matrix.to/#/#platypush:matrix.platypush.tech)
+
+[![Blog](https://img.shields.io/badge/-Blog-9532CA?logo=LiveJournal)](https://blog.platypush.tech)
+[![Documentation](https://img.shields.io/badge/-Docs-022AC5?logo=GitBook)](https://docs.platypush.tech)
+[![Wiki](https://img.shields.io/badge/-Wiki-00AA40?logo=Docs.rs)](https://git.platypush.tech/platypush/platypush/wiki)
+[![Issues](https://img.shields.io/badge/-Issues-BABA30?logo=TickTick)](https://git.platypush.tech/platypush/platypush/issues)
+[![Sponsor](https://img.shields.io/github/sponsors/blacklight)](https://github.com/sponsors/blacklight)
+[![PayPal](https://img.shields.io/badge/-PayPal-CACA30?logo=PayPal)](https://paypal.me/fabiomanganiello)
+[![Join chat on IRC](https://img.shields.io/badge/-IRC-4542CA?logo=LiveChat)](irc://platypush@irc.platypush.tech:6697)
+[![Ask on Lemmy](https://img.shields.io/lemmy/platypush%40lemmy.platypush.tech)](https://matrix.to/#/#platypush:matrix.platypush.tech)
 
 <!-- toc -->
 
 - [Introduction](#introduction)
-    + [What it can do](#what-it-can-do)
-- [Installation](#installation)
-  * [Prerequisites](#prerequisites)
-    + [Docker installation](#docker-installation)
-    + [Use an external service](#use-an-external-service)
-    + [Manual installation](#manual-installation)
-  * [Install through `pip`](#install-through-pip)
-  * [Install through a system package manager](#install-through-a-system-package-manager)
-  * [Install from sources](#install-from-sources)
-  * [Installing the dependencies for your extensions](#installing-the-dependencies-for-your-extensions)
-    + [Install via `extras` name](#install-via-extras-name)
-    + [Install via `manifest.json`](#install-via-manifestjson)
-    + [Check the instructions reported in the documentation](#check-the-instructions-reported-in-the-documentation)
-  * [Virtual environment installation](#virtual-environment-installation)
-  * [Docker installation](#docker-installation-1)
-- [Architecture](#architecture)
-  * [Plugins](#plugins)
-  * [Actions](#actions)
-  * [Backends](#backends)
+  * [What it can do](#what-it-can-do)
+- [Core concepts](#core-concepts)
+- [A few examples](#a-few-examples)
+  * [Turn on the lights when I say so](#turn-on-the-lights-when-i-say-so)
+  * [Play the music when I say so](#play-the-music-when-i-say-so)
+  * [Turn on the lights when the sun goes down](#turn-on-the-lights-when-the-sun-goes-down)
+  * [Event matching and token extraction through hook templates](#event-matching-and-token-extraction-through-hook-templates)
+  * [Complex hook conditions](#complex-hook-conditions)
+  * [Turn off the lights at 1 AM](#turn-off-the-lights-at-1-am)
+  * [Greet me with lights and music when I come home](#greet-me-with-lights-and-music-when-i-come-home)
+- [HTTP API](#http-api)
+  * [The _Execute_ tab](#the-_execute_-tab)
+- [Websocket API](#websocket-api)
   * [Events](#events)
-  * [Hooks](#hooks)
-    + [More complex filters](#more-complex-filters)
-  * [Procedures](#procedures)
-  * [Cronjobs](#cronjobs)
-  * [Entities](#entities)
-  * [The web interface](#the-web-interface)
-    + [The main web panel](#the-main-web-panel)
-    + [The execution panel](#the-execution-panel)
-    + [Other web panels](#other-web-panels)
-    + [Dashboards](#dashboards)
-  * [Running in production mode](#running-in-production-mode)
-    + [PWA support](#pwa-support)
+  * [Actions](#actions)
+- [Entities](#entities)
+- [Core Installation](#core-installation)
+  * [System package manager installation](#system-package-manager-installation)
+    + [Arch Linux](#arch-linux)
+    + [Debian/Ubuntu](#debianubuntu)
+    + [Fedora](#fedora)
+  * [`pip`](#pip)
+  * [Docker](#docker)
+  * [Manual installation](#manual-installation)
+- [Plugins installation](#plugins-installation)
+  * [`pip`](#pip-1)
+  * [Web interface](#web-interface)
+  * [Docker](#docker-1)
+  * [Virtual environment](#virtual-environment)
+  * [Manual installation](#manual-installation-1)
+- [Post-installation](#post-installation)
+  * [Configuration file](#configuration-file)
+  * [systemd service](#systemd-service)
+  * [Redis](#redis)
+  * [nginx](#nginx)
+- [The Web interface](#the-web-interface)
+  * [Other Web panels](#other-web-panels)
+  * [Dashboards](#dashboards)
+  * [PWA support](#pwa-support)
 - [Mobile app](#mobile-app)
+- [Browser extension](#browser-extension)
 - [Tests](#tests)
-- [Useful links](#useful-links)
-- [Funding](#funding)
 
 <!-- tocstop -->
 
 ## Introduction
 
-Platypush is a general-purpose extensible platform for automation across
-multiple services and devices.
+Platypush is a general-purpose and extensible platform for automation across
+multiple services and devices with [hundreds of supported
+integrations](https://docs.platypush.tech/plugins.html).
 
 It enables users to create their own self-hosted pieces of automation based on
 events (*if this happens then do that*)
 and it provides a comprehensive and customizable user interface that collects
 everything you need to visualize and control under one roof.
 
-It takes some concepts from [IFTTT](https://ifttt.com),
-[Tasker](https://tasker.joaoapps.com/), [Microsoft
-Flow](https://flow.microsoft.com) and [Home
+It borrows concepts from [IFTTT](https://ifttt.com),
+[Tasker](https://tasker.joaoapps.com/) and [Home
 Assistant](https://www.home-assistant.io/) to provide an environment where the
-user can easily connect things together.
+user can easily connect things together. It focuses on an automation-as-code
+and API-first approach, offering power users great flexibility in customizing
+their routines.
 
 It's built with compatibility and flexibility in mind, and it can easily run on
-any device that can run a Python interpreter - from a Raspberry Pi zero, to an
-old smartphone, to a beefy server.
+any device that can run a Python interpreter - from a Raspberry Pi, to an old
+smartphone, to a beefy server.
 
-#### What it can do
+### What it can do
 
 You can use Platypush to do things like:
 
-- [Control your smart home lights](https://blog.platypush.tech/article/Ultimate-self-hosted-automation-with-Platypush)
-- [Control your music and synchronize it to multiple devices](https://blog.platypush.tech/article/Build-your-open-source-multi-room-and-multi-provider-sound-server-with-Platypush-Mopidy-and-Snapcast)
-- [Create custom and privacy-secure voice assistants that run custom hooks on your phrases](https://blog.platypush.tech/article/Build-custom-voice-assistants)
-- Build integrations between [sensors](https://docs.platypush.tech/en/latest/platypush/backend/sensor.html),
-  [cameras](https://docs.platypush.tech/en/latest/platypush/plugins/camera.pi.html),
-  [microphones](https://docs.platypush.tech/en/latest/platypush/plugins/sound.html)
+- [Control your smart
+  lights](https://blog.platypush.tech/article/Ultimate-self-hosted-automation-with-Platypush)
+- [Control your music across multiple
+  devices](https://blog.platypush.tech/article/Build-your-open-source-multi-room-and-multi-provider-sound-server-with-Platypush-Mopidy-and-Snapcast)
+- [Create custom and privacy-secure voice assistants that run custom hooks on
+  your
+  phrases](https://blog.platypush.tech/article/Build-custom-voice-assistants)
+- Build integrations between sensors,
+  [cameras](https://docs.platypush.tech/platypush/plugins/camera.pi.html),
+  [microphones](https://docs.platypush.tech/platypush/plugins/sound.html)
   and [machine learning
-  models](https://docs.platypush.tech/en/latest/platypush/plugins/tensorflow.html)
-  to create smart
-  pieces of automation for e.g.
-  [people detection](https://blog.platypush.tech/article/Detect-people-with-a-RaspberryPi-a-thermal-camera-Platypush-and-a-pinch-of-machine-learning)
-  or [sound detection](https://blog.platypush.tech/article/Create-your-smart-baby-monitor-with-Platypush-and-Tensorflow)
-- [Get events from your Google or Facebook calendars](https://docs.platypush.tech/en/latest/platypush/plugins/calendar.html)
-- [Read data from your sensors and trigger custom events whenever they go above or below some custom thresholds](https://blog.platypush.tech/article/How-to-build-your-personal-infrastructure-for-data-collection-and-visualization)
-- [Control and automate a self-built robot](https://docs.platypush.tech/en/latest/platypush/plugins/gpio.zeroborg.html)
-- [Deliver automated newsletters from custom RSS digests](https://blog.platypush.tech/article/Deliver-customized-newsletters-from-RSS-feeds-with-Platypush)
-- [Synchronize the clipboards on your devices](https://docs.platypush.tech/en/latest/platypush/plugins/clipboard.html)
-- [Control your smart switches](https://docs.platypush.tech/en/latest/platypush/plugins/switch.html)
-- [Implement automated custom text-to-speech routines](https://docs.platypush.tech/en/latest/platypush/plugins/tts.html)
-- [Build any kind of interactions and automation routines with your Android device using Tasker](https://blog.platypush.tech/article/How-to-build-your-personal-infrastructure-for-data-collection-and-visualization)
-- Play [local
-  videos](https://docs.platypush.tech/en/latest/platypush/plugins/media.mpv.html),
-  YouTube videos and torrent media from any device and service, to any device
-- [Get weather forecast events for your location and build automation routines on them](https://docs.platypush.tech/en/latest/platypush/plugins/weather.darksky.html)
+  models](https://docs.platypush.tech/platypush/plugins/tensorflow.html)
+  to create smart pieces of automation for e.g. [people
+  detection](https://blog.platypush.tech/article/Detect-people-with-a-RaspberryPi-a-thermal-camera-Platypush-and-a-pinch-of-machine-learning)
+  or [sound
+  detection](https://blog.platypush.tech/article/Create-your-smart-baby-monitor-with-Platypush-and-Tensorflow)
+- [Display events from your calendars and build automation on
+  them](https://docs.platypush.tech/platypush/plugins/calendar.html)
+- [Build automation routines and visualizations from your sensors
+  data](https://blog.platypush.tech/article/How-to-build-your-personal-infrastructure-for-data-collection-and-visualization)
+- [Control and automate a self-built
+  robot](https://docs.platypush.tech/platypush/plugins/gpio.zeroborg.html)
+- [Deliver automated newsletters from custom RSS
+  digests](https://blog.platypush.tech/article/Deliver-customized-newsletters-from-RSS-feeds-with-Platypush)
+- [Synchronize the clipboards on your
+  devices](https://docs.platypush.tech/platypush/plugins/clipboard.html)
+- [Implement custom text-to-speech
+  logic](https://docs.platypush.tech/platypush/plugins/tts.html)
+- [Build any kind of automation routines with your Android device using
+  Tasker](https://blog.platypush.tech/article/How-to-build-your-personal-infrastructure-for-data-collection-and-visualization)
+- Play local
+  videos,
+  YouTube videos and torrent media from any device and service, to any device, with support for [Kodi](https://docs.platypush.tech/platypush/plugins/media.kodi.html), [Chromecast](https://docs.platypush.tech/platypush/plugins/media.chromecast.html), [VLC](https://docs.platypush.tech/platypush/plugins/media.vlc.html), [Jellyfin](https://docs.platypush.tech/platypush/plugins/media.jellyfin.html), [Plex](https://docs.platypush.tech/platypush/plugins/media.plex.html) and more
+- [Get weather forecast events for your location and build automation routines on them](https://docs.platypush.tech/platypush/plugins/weather.darksky.html)
 - [Create a custom single hub for Zigbee and Z-Wave smart devices](https://blog.platypush.tech/article/Transform-a-RaspberryPi-into-a-universal-Zigbee-and-Z-Wave-bridge)
 - Build your own web dashboard with calendar, weather, news and music controls
   (basically, anything that has a Platypush web widget)
-- ...and much more (basically, anything that comes with a [Platypush plugin](https://docs.platypush.tech))
+- ...and much more (basically, anything that comes with a [Platypush plugin](https://docs.platypush.tech)).
 
-## Installation
+The full list of available integrations is available at
+[docs.platypush.tech](https://docs.platypush.tech), which also contains a more
+in-depth wiki on the features supported by the platform.
 
-### Prerequisites
+The wiki is also mirrored on
+[git.platypush.tech](https://git.platypush.tech/platypush/platypush/wiki).
 
-Platypush uses [Redis](https://redis.io/) to dispatch requests, responses,
-events and custom messages across several processes and integrations.
+[The blog](https://blog.platypush.tech) regularly publishes content with
+step-by-step tutorials and recipes.
 
-#### Docker installation
+## Core concepts
 
-You can run Redis on the fly on your local machine using a Docker image:
+The foundations of Platypush rest on a few simple building blocks that offer
+great versatility to build arbitrarily complex automation routines:
 
-```bash
-# Expose a Redis server on port 6379 (default)
-docker run --rm -p 6379:6379 --name redis redis
-```
+- 🧩 **Plugins**. Plugins are the bread-and-butter of the platform. Each plugin
+  exposes an API to interact with an integration - there are plugins for media
+  players and devices, calendars, sensors, voice assistants, smart devices,
+  cloud services, and so on.
 
-#### Use an external service
+  - ⏻ **Actions**. These are the methods of a plugin transparently exposed to the
+    user over a simple JSON RPC API, and they are always expressed in the
+    format `<plugin_name>.<action_name>`. For instance,
+    [`light.hue.on`](https://docs.platypush.tech/platypush/plugins/light.hue.html#platypush.plugins.light.hue.LightHuePlugin.on)
+    can be used to turn on Philips Hue-compatible lights,
+    [`media.vlc.play`](https://docs.platypush.tech/platypush/plugins/media.vlc.html#platypush.plugins.media.vlc.MediaVlcPlugin.play)
+    to play some media on a VLC player, etc.
 
-You can let Platypush use an external Redis service, if you wish to avoid
-running one on the same machine.
+  - ⚙️ **Backends**. These are special integrations whose main purpose is to
+    deliver messages to the main application. The principal one is the
+    [`http` backend](https://docs.platypush.tech/platypush/backend/http.html),
+    which exposes the HTTP and WebSocket APIs, serves the main UI and is used
+    by several integrations to provide additional services. A [`nodered`
+    backend](https://docs.platypush.tech/platypush/backend/nodered.html) is
+    also available to expose a Platypush action component to a Node-RED
+    instance, as well as an internal [`redis`
+    backend](https://docs.platypush.tech/platypush/backend/redis.html) and an
+    (insecure) [`tcp`
+    backend](https://docs.platypush.tech/platypush/backend/tcp.html) to receive
+    raw messages.
 
-In such scenario, simply start the application by passing custom values for
-`--redis-host` and `--redis-port`, or configure these values in its
-configuration file:
+- 📧 **Events**. Plugins emit _events_ whenever some particular conditions happen
+  for example, a [new media track is
+  played](https://docs.platypush.tech/platypush/events/media.html#platypush.message.event.media.MediaPlayEvent),
+  a [voice assistant conversation has
+  started](https://docs.platypush.tech/platypush/events/assistant.html#platypush.message.event.assistant.ConversationStartEvent),
+  and so on.
+
+  - 🪝 **Hooks**. Users can define custom callbacks on events in the form of
+    *hooks*. Hooks can contain lists of actions to execute when a certain event
+    matches the hook *condition*, or any kind of custom logic - for example,
+    *send a notification on my phone when the presence sensor in my garage goes
+    on*, or *use a TTS plugin to process the digest of the latest RSS feeds if
+    I tell the voice assistant "play the news"*. Event hooks can be expressed
+    either in YAML format or as Python runtime scripts.
+
+- 📜 **Procedures**. Procedures are custom snippets of logic that can be invoked
+  using the Platypush API. For example, you can define an `at_home` procedure
+  that will be executed when you arrive home, which turns on the lights, plays
+  the music, sets the thermostat temperature etc., and then call it using the
+  Platypush API from any device. Like event hooks, procedures can be defined
+  both in YAML format (good if you just want to execute lists of actions
+  without much added logic), or as Python scripts.
+
+  - 🕗 **Cronjobs**. Cronjobs are special procedures that can be executed either
+    at regular intervals (the [UNIX cron
+    syntax](https://linuxhandbook.com/crontab/) is supported), or at a specific
+    time (one-shot). Just like procedures, they can be defined either in YAML or
+    as Python scripts.
+
+- 💡 **Entities**. Some plugins expose generic _entities_ - such a lights,
+  sensors, media players, switches, voice assistants etc. These entities can be
+  controlled through [the same generic
+  APIs](https://docs.platypush.tech/platypush/plugins/entities.html), emit [the
+  same types of
+  events](https://docs.platypush.tech/platypush/events/entities.html), can
+  be controlled from the same Web view or dashboard, and their state is
+  persisted across runs.
+
+## A few examples
+
+The bulk of the configuration of Platypush lives under the `config.yaml` file.
+An extensive [`config.yaml`
+example](https://git.platypush.tech/platypush/platypush/src/branch/master/platypush/config/config.yaml)
+is provided in the repo. All the sections are optional - the only one enabled by
+default is the HTTP server, `backend.http`, but that is optional too.
+
+Let's take an example where we want to control the following entities:
+
+- A Philips Hue bridge and its connected smart lights.
+
+- An on-device voice assistant (we'll consider the Google Assistant in this
+  example as it's the easiest to configure, although Google deprecated the
+  Assistant libraries long ago).
+
+- A compatible music player - we'll consider MPD/Mopidy in this example as they
+  are the ones best supported in Platypush, and Mopidy also offers plugins with
+  basically any audio backend out there.
+
+We'll need the following plugins enabled in the `config.yaml`:
+
+- [`light.hue`](https://docs.platypush.tech/platypush/plugins/light.hue.html)
+- [`assistant.google`](https://docs.platypush.tech/platypush/plugins/assistant.google.html)
+- [`music.mopidy`](https://docs.platypush.tech/platypush/plugins/music.mopidy.html)
+  or
+  [`music.mpd`](https://docs.platypush.tech/platypush/plugins/music.mpd.html)
+  (they expose the same API)
+
+The documentation pages of these plugins already provide some comprehensive
+configuration snippets that you can use.
+
+The most basic configuration would be something like this:
 
 ```yaml
-redis:
-  host: some-ip
-  port: some-port
-```
+# Enable it if you want the enable the HTTP API and the Web interface
+backend.http:
 
-If you wish to run multiple instances that use the same Redis server, you may
-also want to customize the name of the default queue that they use
-(`--redis-queue` command-line option) in order to avoid conflicts.
-
-#### Manual installation
-
-Unless you are running Platypush in a Docker container, or you are running
-Redis in a Docker container, or you want to use a remote Redis service, the
-Redis server should be installed on the same machine where Platypush runs:
-
-```bash
-# On Debian-based distributions
-sudo apt install redis-server
-
-# On Arch-based distributions
-# The hiredis package is also advised
-sudo pacman -S redis
-
-# On MacOS
-brew install redis
-```
-
-Once Redis is installed, you have two options:
-
-1. Run it a separate service. This depends on your operating system and
-   supervisor/service controller. For example, on systemd:
-
-```bash
-# Enable and start the service
-sudo systemctl enable redis
-sudo systemctl start redis
-```
-
-2. Let Platypush run and control the Redis service. This is a good option if
-   you want Platypush to run its own service, separate from any other one
-   running on the same machine, and terminate it as soon as the application
-   ends. In this case, simply launch the application with the `--start-redis`
-   option (and optionally `--redis-port <any-num>` to customize the listen
-   port).
-
-### Install through `pip`
-
-```bash
-[sudo] pip install platypush
-```
-
-### Install through a system package manager
-
-Note: currently only Arch Linux and derived distributions are supported.
-
-You can either install the
-[`platypush`](https://aur.archlinux.org/packages/platypush) package (for the
-latest stable version) or the
-[`platypush-git`](https://aur.archlinux.org/packages/platypush-git) package
-(for the latest git version) through your favourite AUR package manager. For
-example, using `yay`:
-
-```bash
-yay platypush
-# Or
-yay platypush-git
-```
-
-The Arch Linux packages on AUR are automatically updated upon new git commits
-or tags.
-
-### Install from sources
-
-```shell
-git clone https://git.platypush.tech/platypush/platypush.git
-cd platypush
-[sudo] pip install .
-```
-
-### Installing the dependencies for your extensions
-
-After installing the base platform, you may want to check the dependencies and
-configuration required by the extensions that you wish to use. There are a few
-ways to check the dependencies required by an extension:
-
-#### Install via `extras` name
-
-You can install extra dependencies via pip extras:
-
-```shell
-pip install 'platypush[plugin1,plugin2,...]'
-```
-
-For example:
-
-```shell
-pip install 'platypush[light.hue,music.mpd,rss]'
-```
-
-Will install Platypush with the dependencies for the `light.hue`, `music.mpd`
-and `rss` plugins.
-
-#### Install via `manifest.json`
-
-All the plugins and backends have a `manifest.json` file in their source folder.
-Any extra dependencies are listed there
-
-If you followed the `extras` or `manifest.json` way to discover the
-dependencies, then you can install them in two ways:
-
-1. `pip` installation:
-
-```shell
-[sudo] pip3 install 'platypush[extra1,extra2,extra3]'
-```
-
-2. Sources installation:
-
-```shell
-cd $DIR_TO_PLATYPUSH
-[sudo] pip3 install '.[extra1,extra2,extra3]'
-```
-
-#### Check the instructions reported in the documentation
-
-If you follow this route then simply run the commands listed in the
-[plugin/backend documentation](https://docs.platypush.tech) to get the
-dependencies installed.
-
-After installing the dependencies, create a configuration file under
-`~/.config/platypush/config.yaml` (the application can load the configuration
-from another location through the `-c` option) containing the configuration of
-the backend and plugins that you want to use, and add any hooks and procedures
-for your use case.
-
-You can then start the service by simply running:
-
-```shell
-platypush
-```
-
-See `platypush --help` for a full list of options.
-
-It's advised to run it as a systemd service though - simply copy the provided
-[`.service`
-file](https://git.platypush.tech/platypush/platypush/src/branch/master/examples/systemd/platypush.service)
-to `~/.config/systemd/user`, check if the path of `platypush` matches the path
-where it's installed on your system, and start the service via `systemctl`:
-
-```shell
-systemctl --user start platypush
-```
-
-### Virtual environment installation
-
-Platypush provides a script named `platyvenv` that can parse a `config.yaml`
-and automatically create a virtual environment (under
-`~/.local/share/platypush/venv/<device_id>`) with all the dependencies required
-by the configured integrations.
-
-1. Create the environment from a configuration file:
-
-    ```shell
-    platyvenv build -c /path/to/config.yaml
-    ```
-
-2. Start the service from the virtual environment:
-
-    ```shell
-    # device_id matches either the hostname or the device_id in config.yaml
-    platyvenv start device_id
-    ```
-
-3. Stop the instance:
-
-    ```shell
-    platyvenv stop device_id
-    ```
-
-4. Remove the instance:
-
-    ```shell
-    platyvenv rm device_id
-    ```
-
-[Wiki instructions](https://git.platypush.tech/platypush/platypush/wiki/Run-platypush-in-a-virtual-environment)
-
-### Docker installation
-
-You can also install Platypush in a container - the application provides a
-script named `platydock` that automatically creates a container instance from a
-`config.yaml`:
-
-1. Create the container from a configuration file:
-
-    ```shell
-    platydock build -c /path/to/config.yaml
-    ```
-
-2. Start the container:
-
-    ```shell
-    # device_id matches either the hostname or the device_id in config.yaml
-    platydock start device_id
-    ```
-
-3. Stop the instance:
-
-    ```shell
-    platydock stop device_id
-    ```
-
-4. Remove the instance:
-
-    ```shell
-    platydock rm device_id
-    ```
-
-Note that both the virtual environment and Docker container option offer the
-possibility to include extra YAML configuration files in the main `config.yaml`
-through the `include` directive (as long as they are in the same folder as the
-main `config.yaml`), as well as external Python scripts in a `scripts`
-directory in the same folder as the `config.yaml`.
-
-[Wiki instructions](https://git.platypush.tech/platypush/platypush/wiki/Run-platypush-in-a-container)
-
-## Architecture
-
-The architecture of Platypush consists of a few simple pieces, orchestrated by
-a configuration file stored by default under
-[`~/.config/platypush/config.yaml`](https://git.platypush.tech/platypush/platypush/src/branch/master/examples/conf/config.yaml):
-
-### Plugins
-
-[Full list](https://docs.platypush.tech/en/latest/plugins.html)
-
-Plugins are integrations that do things - like [modify
-files](https://docs.platypush.tech/en/latest/platypush/plugins/file.html),
-[train and evaluate machine learning
-models](https://docs.platypush.tech/en/latest/platypush/plugins/tensorflow.html),
-[control
-cameras](https://docs.platypush.tech/en/latest/platypush/plugins/camera.pi.html),
-[read
-sensors](https://docs.platypush.tech/en/latest/platypush/plugins/gpio.sensor.dht.html),
-[parse a web
-page](https://docs.platypush.tech/en/latest/platypush/plugins/http.webpage.html),
-[control
-lights](https://docs.platypush.tech/en/latest/platypush/plugins/light.hue.html),
-[send
-emails](https://docs.platypush.tech/en/latest/platypush/plugins/mail.smtp.html),
-[control
-Chromecasts](https://docs.platypush.tech/en/latest/platypush/plugins/media.chromecast.html),
-[run voice
-queries](https://docs.platypush.tech/en/latest/platypush/plugins/assistant.google.html),
-[handle torrent
-transfers](https://docs.platypush.tech/en/latest/platypush/plugins/torrent.html)
-or control
-[Zigbee](https://docs.platypush.tech/en/latest/platypush/plugins/zigbee.mqtt.html)
-or [Z-Wave](https://docs.platypush.tech/en/latest/platypush/plugins/zwave.html)
-devices.
-
-The configuration of a plugin matches one-on-one that of its documented class
-constructor, so it's very straightforward to write a configuration for a plugin
-by reading its documentation:
-
-```yaml
 light.hue:
-  # Groups that will be controlled by default
+  # IP/hostname of the Hue bridge
+  bridge: 192.168.1.10
+  # Default groups that should be targeted by actions if none is specified
+  # (default: all lights/groups)
   groups:
     - Living Room
-    - Hall
+
+# Check the plugin documentation on how to get the credentials
+assistant.google:
+
+music.mopidy:  # Or music.mpd
+  # IP/hostname of the MPD/Mopidy server
+  host: 192.168.1.2
 ```
 
-### Actions
+Now that we have our integrations configured, let's build some automation routines.
 
-Plugins expose *actions*, that match one-on-one the plugin class methods
-denoted by `@action`, so it's very straightforward to invoke plugin actions by
-just reading the plugin documentation. They can be invoked directly from your
-own scripts or they can be sent to the platform through any supported channel
-as simple JSON messages:
+### Turn on the lights when I say so
 
-```json
-{
-  "type": "request",
-  "action": "light.hue.on",
-  "args": {
-    "lights": ["Entrance Bulb"]
-  }
-}
-```
+In this case we will have to create a hook that listens to a
+[`SpeechRecognizedEvent`](https://docs.platypush.tech/platypush/events/assistant.html#platypush.message.event.assistant.SpeechRecognizedEvent)
+triggered by the assistant - for example, when we say "_OK, Google_" followed
+by "_turn on the lights_".
 
-### Backends
-
-[Full list](https://docs.platypush.tech/en/latest/backends.html)
-
-They are background services that listen for messages on channels (like
-an [HTTP
-backend](https://docs.platypush.tech/en/latest/platypush/backend/http.html), an
-[MQTT
-instance](https://docs.platypush.tech/en/latest/platypush/backend/mqtt.html), a
-[Kafka
-instance](https://docs.platypush.tech/en/latest/platypush/backend/kafka.html).
-
-If a backend supports the execution of requests (e.g. HTTP, MQTT, Kafka,
-Websocket and TCP) then you can send requests to these services in JSON format.
-For example, in the case of the HTTP backend:
-
-```shell
-# Get a token
-curl -XPOST -H 'Content-Type: application/json' -d '
-{
-  "username": "$YOUR_USER",
-  "password": "$YOUR_PASSWORD"
-}' http://host:8008/auth
-
-# Execute a request
-curl -XPOST -H 'Content-Type: application/json' \
-    -H "Authorization: Bearer $YOUR_TOKEN" -d '
-{
-  "type": "request",
-  "action": "tts.say",
-  "args": {
-    "text": "This is a test"
-  }
-}' http://host:8008/execute
-```
-
-### Events
-
-[Full list](https://docs.platypush.tech/en/latest/events.html)
-
-When a certain event occurs (e.g. a JSON request is received, or a [Bluetooth
-device is
-connected](https://docs.platypush.tech/en/latest/platypush/events/bluetooth.html#platypush.message.event.bluetooth.BluetoothDeviceConnectedEvent),
-or a [Flic button is
-pressed](https://docs.platypush.tech/en/latest/platypush/events/button.flic.html#platypush.message.event.button.flic.FlicButtonEvent),
-or some [speech is detected on the voice assistant
-service](https://docs.platypush.tech/en/latest/platypush/events/assistant.html#platypush.message.event.assistant.SpeechRecognizedEvent),
-or an [RSS feed has new
-items](https://docs.platypush.tech/en/latest/platypush/events/http.rss.html#platypush.message.event.http.rss.NewFeedEvent),
-or a [new email is
-received](https://docs.platypush.tech/en/latest/platypush/events/mail.html#platypush.message.event.mail.MailReceivedEvent),
-or a [new track is
-played](https://docs.platypush.tech/en/latest/platypush/events/music.html#platypush.message.event.music.NewPlayingTrackEvent),
-or an [NFC tag is
-detected](https://docs.platypush.tech/en/latest/platypush/events/nfc.html#platypush.message.event.nfc.NFCTagDetectedEvent),
-or [new sensor data is
-available](https://docs.platypush.tech/en/latest/platypush/events/sensor.html#platypush.message.event.sensor.SensorDataChangeEvent),
-or [a value of a Zigbee device
-changes](https://docs.platypush.tech/en/latest/platypush/events/zigbee.mqtt.html#platypush.message.event.zigbee.mqtt.ZigbeeMqttDevicePropertySetEvent),
-etc.), the associated backend will trigger an
-[event](https://docs.platypush.tech/en/latest/events.html).
-
-### Hooks
-
-Event hooks are custom pieces of logic that will be run when a certain event is
-triggered. Hooks are the glue that connects events to actions, exposing a
-paradigm similar to IFTTT (_if a certain event happens then run these
-actions_). They can declared as:
-
-- Sections of the [`config.yaml`](https://git.platypush.tech/platypush/platypush/src/branch/master/examples/conf/config.yaml).
-  Example:
+We can declare the hook in YAML format directly in the `config.yaml`, or in one
+of the files included in it through the `include:` directive:
 
 ```yaml
-event.hook.SearchSongVoiceCommand:
+event.hook.turn_lights_on_voice_command:
   if:
     type: platypush.message.event.assistant.SpeechRecognizedEvent
-    phrase: "play ${title} by ${artist}"
+    # Note that a minimal regex-like syntax is supported here.
+    # This condition matches both a phrase that contains
+    # "turn on the lights" and one that contains "turn on lights"
+    phrase: "turn on (the)? lights"
   then:
-    - action: music.mpd.clear
-    - action: music.mpd.search
+    - action: light.hue.on
       args:
-        filter:
-          artist: ${artist}
-          title: ${title}
-
-    - if ${len(output)}:
-      - action: music.mpd.play
-        args:
-          resource: ${output[0]['file']}
+      groups:
+        - Living Room
 ```
 
-- Stand-alone Python scripts stored under `~/.config/platypush/scripts` and
-  will be dynamically imported at start time.
-  [Example](https://git.platypush.tech/platypush/platypush/src/branch/master/examples/conf/hook.py):
+Or we can declare the hook in a Python script - you just have to create a `.py`
+file (e.g. `lights.py`) under a `scripts` directory located under the same
+folder as your `config.yaml`:
 
 ```python
 from platypush import run, when
-from platypush.message.event.assistant import SpeechRecognizedEvent
+from platypush.events.assistant import SpeechRecognizedEvent
+
+@when(SpeechRecognizedEvent, phrase="turn on (the)? lights")
+def lights_on_voice_command():  # Also accepts an optional `event` argument
+  run('light.hue.on', groups=['Living Room'])
+```
+
+Or, using the `get_plugin` API:
+
+```python
+from platypush import get_plugin, when
+from platypush.events.assistant import SpeechRecognizedEvent
+
+@when(SpeechRecognizedEvent, phrase="turn on (the)? lights")
+def lights_on_voice_command():
+  get_plugin('light.hue').on(groups=['Living Room'])
+```
+
+### Play the music when I say so
+
+The approach is similar for a "_play the music_" voice command. YAML:
+
+```yaml
+event.hook.play_music_voice_command:
+  if:
+    type: platypush.message.event.assistant.SpeechRecognizedEvent
+    phrase: "play (the)? music"
+  then:
+    - action: music.mopidy.play
+```
+
+Python:
+
+```python
+from platypush import run, when
+from platypush.events.assistant import SpeechRecognizedEvent
+
+@when(SpeechRecognizedEvent, phrase="play (the)? music")
+def lights_on_voice_command():
+  run('music.mopidy.play')
+```
+
+### Turn on the lights when the sun goes down
+
+This example requires the [`sun`
+plugin](https://docs.platypush.tech/platypush/plugins/sun.html) configured:
+
+```yaml
+sun:
+  latitude: LAT
+  longitude: LONG
+```
+
+You can then simply subscribe to
+[`SunsetEvent`](https://docs.platypush.tech/platypush/events/sun.html#platypush.message.event.sun.SunsetEvent).
+YAML:
+
+```yaml
+event.hook.sunset_lights_on:
+  if:
+    type: platypush.message.event.sun.SunsetEvent
+  then:
+    - action: light.hue.on
+```
+
+Python:
+
+```python
+from platypush import run, when
+from platypush.events.sun import SunsetEvent
+
+@when(SunsetEvent)
+def sunset_lights_on():
+  run('light.hue.on')
+```
+
+### Event matching and token extraction through hook templates
+
+You can also operate token extraction from event arguments if the values are
+strings.
+
+For example, you can use advanced pattern matching and token extraction to
+create voice assistant hooks that will match a template with parametrized field
+which will be passed as arguments to your event hook:
+
+```python
+from platypush import run, when
+from platypush.events.assistant import SpeechRecognizedEvent
 
 @when(SpeechRecognizedEvent, phrase='play ${title} by ${artist}')
-def on_music_play_command(event, title=None, artist=None, **context):
-  results = run('music.mpd.search', filter={
-    'artist': artist,
-    'title': title,
-  })
+def on_music_play_command(event, title, artist):
+  results = run(
+    'music.mpd.search',
+    filter={
+      'artist': artist,
+      'title': title,
+    }
+  )
 
   if results:
     run('music.mpd.play', results[0]['file'])
 ```
 
-#### More complex filters
+### Complex hook conditions
 
 Your event hooks can include more complex filters too. Structured filters
 against partial event arguments are also possible, and relational operators are
@@ -538,7 +406,7 @@ supported as well. For example:
 
 ```python
 from platypush import when
-from platypush.message.event.sensor import SensorDataChangeEvent
+from platypush.events.sensor import SensorDataChangeEvent
 
 @when(SensorDataChangeEvent, data=1):
 def hook_1(event):
@@ -567,117 +435,263 @@ The supported relational fields are the same supported by ElasticSearch - `$gt`
 for greater than, `$lt` for lesser than, `$ge` for greater or equal, `$ne` for
 not equal, etc.
 
-### Procedures
+### Turn off the lights at 1 AM
 
-Procedures are pieces of custom logic that can be executed as atomic actions
-using `procedure.<name>` as an action name.
-
-They can be defined either in the `config.yaml` or as Python scripts stored
-under `~/.config/platypush/scripts`.
-
-YAML example for a procedure that can be executed when we arrive home and turns
-on the lights if the luminosity is lower that a certain thresholds, says a
-welcome home message using the TTS engine and starts playing the music:
+We can use a `cron` for this case. YAML:
 
 ```yaml
-procedure.at_home:
-    # Get luminosity data from a sensor - e.g. LTR559
-    - action: gpio.sensor.ltr559.get_data
-
-    # If it's lower than a certain threshold, turn on the lights
-    - if ${int(light or 0) < 110}:
-        - action: light.hue.on
-
-    # Say a welcome home message
-    - action: tts.google.say
-      args:
-        text: Welcome home
-
-    # Play the music
-    - action: music.mpd.play
+cron.lights_off_night:
+  # Run this every day at 1 AM
+  cron_expression: '0 1 * * *'
+  actions:
+      - action: light.hue.off
 ```
 
-Python example:
+Python:
 
 ```python
-# Content of ~/.config/platypush/scripts/home.py
-from platypush.procedure import procedure
-from platypush.utils import run
+from platypush import cron, run
 
-@procedure
-def at_home(**context):
-  sensor_data = run('gpio.sensor.ltr559.get_data')
-  if sensor_data['light'] < 110:
+@cron('0 1 * * *')
+def lights_off_night():
+  run('light.hue.off')
+```
+
+### Greet me with lights and music when I come home
+
+Let's create an `at_home` procedure for this purpose. We can also use a
+text-to-speech plugin like the [`tts`
+plugin](https://docs.platypush.tech/platypush/plugins/tts.html) (it requires no
+configuration as it relies on the Google Translate frontend API, but other,
+more sophisticated plugins are also available) to have a warm voice to welcome
+us home. YAML:
+
+```yaml
+# Make sure that the sound plugin is also enabled, for audio processing
+sound:
+
+procedure.at_home:
+  - action: tts.say
+    args:
+      text: "Welcome home!"
+
+  # Get luminosity data from a sensor - e.g. LTR559
+  - action: gpio.sensor.ltr559.get_data
+
+  # If it's lower than a certain threshold, turn on the lights.
+  # Note that we can directly access attributes returned by the
+  # previous request(s) as local context variables within the
+  # procedure/hook/cron. In this case, `light` is an attribute returned
+  # on the response of the previous command.
+
+  # Otherwise, you can also use the special `output` variable to get only
+  # the response of the latest action, e.g. `output['light']`
+
+  # Also note the use of the special `if ${}` construct. It accepts
+  # a snippet of Python code and it can access variables within the
+  # current context.
+  - if ${light is not None and light < 110}:
+      - action: light.hue.on
+
+  - action: music.mopidy.play
+    args:
+      resource: "uri:to:my:favourite:playlist"
+```
+
+Python:
+
+```python
+from platypush import procedure, run
+
+@procedure("at_home")
+def at_home_proc():
+  run('tts.say', text='Welcome home!')
+
+  luminosity = run('gpio.sensor.ltr559.get_data').get('light', 0)
+  if luminosity < 110:
     run('light.hue.on')
 
-  run('tts.google.say', text='Welcome home')
-  run('music.mpd.play')
+  run('music.mopidy.play', resource='uri:to:my:favourite:playlist')
 ```
 
-In either case, you can easily trigger the at-home procedure by sending an
-action request message to a backend - for example, over the HTTP backend:
-
-```shell
-curl -XPOST -H 'Content-Type: application/json' \
-    -H "Authorization: Bearer $YOUR_TOKEN" -d '
-{
-  "type": "request",
-  "action": "procedure.at_home"
-}' http://host:8008/execute
-```
-
-### Cronjobs
-
-Cronjobs are pieces of logic that will be run at regular intervals, expressed
-in crontab-compatible syntax. They can be defined either in the `config.yaml`
-or as Python scripts stored under `~/.config/platypush/scripts` as functions
-labelled by the `@cron` decorator.
-
-Note that seconds are also supported (unlike the standard crontab definition),
-but, for back-compatibility with the standard crontab format, they are at the
-end of the cron expression, so the expression is actually in the format
-`<minute> <hour> <day_of_month> <month> <day_of_week> <second>`.
-
-YAML example for a cronjob that is executed every 30 seconds and checks if a
-Bluetooth device is nearby:
-
-```yaml
-cron.check_bt_device:
-  cron_expression: '* * * * * */30'
-  actions:
-    - action: bluetooth.lookup_name
-      args:
-        addr: XX:XX:XX:XX:XX:XX
-
-    - if ${name}:
-        - action: procedure.on_device_on
-    - else:
-        - action: procedure.on_device_off
-```
-
-Python example:
+You can then call the procedure from a hook or another script:
 
 ```python
-# Content of ~/.config/platypush/scripts/bt_cron.py
-from platypush.cron import cron
-from platypush.utils import run
+from platypush import run
 
-@cron('* * * * * */30')
-def check_bt_device(**context):
-  name = run('bluetooth.lookup_name').get('name')
-  if name:
-    # on_device_on logic here
-  else:
-    # on_device_off logic here
+run('procedure.at_home')
 ```
 
-### Entities
+Or, from YAML:
 
-Entities are a fundamental building block of Platypush. Most of the
-integrations will store their state or connected devices in the form of
-entities - e.g. the sensors detected by the Z-Wave/Zigbee/Bluetooth
-integration, or the lights connected to a Hue bridge, or your cloud nodes, or
-your custom Arduino/ESP machinery, and so on.
+```yaml
+procedure.some_other_procedure:
+  - action: procedure.at_home
+```
+
+Or using the API (see next section).
+
+## HTTP API
+
+Actions and procedures can also be called using the JSON-RPC API exposed by
+Platypush.
+
+Your configuration requires the [`backend.http`
+section](https://docs.platypush.tech/platypush/backend/http.html) enabled if
+you want to use the HTTP API - default listen port: `8008`.
+
+After ensuring that the HTTP backend is enabled, head to
+`http://localhost:8008` and register a new user.
+
+![Platypush local user registration
+page](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/registration-page-screenshot.png)
+
+From the Web UI, head to _Settings_ → _Tokens_, insert your password again and
+click _Generate JWT token_.
+
+![User token generation UI](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/tokens-ui-screenshot.png)
+
+Alternatively, you can retrieve a token via HTTP request:
+
+```shell
+❯ curl -XPOST -H 'Content-Type: application/json' -d '
+{
+  "username": "$YOUR_USER",
+  "password": "$YOUR_PASSWORD"
+}' http://localhost:8008/auth
+```
+
+You can then send requests to Platypush using a simple RPC API:
+
+```bash
+❯ curl -XPOST \
+    -d '{"type":"request", "action":"procedure.at_home"}' \
+    -H "Authorization: Bearer $YOUR_TOKEN" \
+    -H "Content-Type: application/json" \
+    http://localhost:8008/execute
+❮
+{
+  "id": "724754df98968247a284557ce32f74bb",
+  "type": "response",
+  "target": "http",
+  "origin": "myhost",
+  "_timestamp": 1716575901.046127,
+  "response": {
+    "output": {
+      "success": true
+    },
+    "errors": []
+  }
+}
+```
+
+If your procedure returned something, then that will be returned on the API
+response too, so downstream consumers can use it.
+
+The `POST /execute` endpoint accepts a payload in the format:
+
+```javascript
+{
+  "type": "request",  // Constant
+  "action": "<plugin-name>.<action-name>",  // Or procedure.<name>
+  "args": {
+    "arg1": "arg2",
+    // ...
+  }
+}
+```
+
+In our `procedure.at_home` example, you can for instance create an automation
+snippet paired with your phone that runs the routine whenever you arrive home
+(or your phone does):
+
+1. Install an app like [Tasker](https://tasker.joaoapps.com/) to create
+   automation tasks on your Android device.
+
+2. Install a plugin like [AutoLocation](https://joaoapps.com/autolocation/) to
+   create automation tasks based on your phone's location.
+
+3. Create a profile that triggers whenever you enter your home location (and/or
+   exit it).
+
+![Tasker screenshot showing an At Home/Outside Home pair of
+profiles](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/tasker-screenshot-1.png)
+
+4. Leverage the [HTTP
+   Request](https://tasker.joaoapps.com/userguide/en/help/ah_http_request.html)
+   Tasker action to send a request to your Platypush API to trigger the routine.
+
+### The _Execute_ tab
+
+The Web interface also provides an _Execute_ tab under the menu sidebar. You
+can use this tab to dynamically discover the actions exposed by various plugins
+(and also your own procedures):
+
+![Screenshot of the Execute tab showing the autocomplete discovery of the
+actions](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/execute-panel-screenshot-1.jpg)
+
+![Screenshot of the Execute tab showing the automatically generated
+documentation for a given action and its
+parameters](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/execute-panel-screenshot-2.jpg)
+
+![Screenshot of the Execute tab showing the output of an action being
+run](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/execute-panel-screenshot-3.jpg)
+
+## Websocket API
+
+### Events
+
+You can subscribe to events generated by the application over the `/ws/events`
+Websocket endpoint, and send events to this endpoint too.
+
+This is useful if you want to synchronize Platypush events with another client,
+or send custom events outside of those native to the application and build
+custom automation hooks on them.
+
+Sending events:
+
+```bash
+❯ wscat -H "Authorization: Bearer $YOUR_TOKEN" \
+    -c "ws://localhost:8008/ws/events" \
+    -w 1 \
+    -x '
+{
+  "type": "event",
+  "args": {
+    "type": "platypush.message.event.custom.CustomEvent",
+    "subtype": "foo",
+    "args": {
+      "bar": "baz"
+    }
+  }
+}'
+```
+
+Receiving events:
+
+```bash
+❯ wscat -H "Authorization: Bearer $YOUR_TOKEN" -c "ws://localhost:8008/ws/events"
+```
+
+### Actions
+
+You can also send requests to the `/ws/requests` Websocket endpoint, and get
+responses asynchronously on the same channel:
+
+```bash
+❯ wscat -H "Authorization: Bearer $YOUR_TOKEN" \
+    -c "ws://localhost:8008/ws/requests" \
+    -w 1 \
+    -x '{"type": "requests", "action": "procedure.foo.bar"}'
+```
+
+## Entities
+
+Entities are another building block of Platypush. Many integrations will store
+their state or connected devices in the form of entities - e.g. the sensors
+detected by the Z-Wave/Zigbee/Bluetooth integration, or the lights connected to
+a Hue bridge, or your cloud nodes, or your custom Arduino/ESP machinery, and so
+on.
 
 Entities provide a consistent interface to interact with your integrations
 regardless of their type and the plugin that handles them. For instance, all
@@ -702,47 +716,334 @@ same API. Also, when an entity is updated it always emits an
 so you can easily create hooks that react to these events and act on multiple
 types of entities.
 
-### The web interface
+If you enabled the HTTP backend, then you can also access all the entities from
+the home panel of the Web UI.
 
-If
-[`backend.http`](https://docs.platypush.tech/en/latest/platypush/backend/http.html)
-is enabled then a web interface will be provided by default on
-`http://host:8008/`. Besides using the `/execute` endpoint for running
-requests, the built-in web server also provides a full-featured interface that
-groups together the controls for most of the plugins - e.g. sensors, switches,
-music controls and search, media library and torrent management, lights,
-Zigbee/Z-Wave devices and so on. The UI is responsive and mobile-friendly.
+![Screenshot of the entities UI](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/Entities-screenshot-1.png)
 
-#### The main web panel
-
-This is the default panel available at `http://<host>:<port>` after
-registration/login. It provides all the entities published by the integrations
-under one view, with custom grouping and filtering options.
+![Screenshot of the entities UI](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/Entities-screenshot-2.png)
 
 ![Screenshot of the application main
 panel, showing the Bluetooth, Serial, SmartThings and System integrations](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/main-panel-screenshot-1.png)
 
-![Screenshot of the application main
-panel, showing the Philips Hue, Zigbee, SmartThings and some sensors integrations](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/main-panel-screenshot-2.png)
+## Core Installation
 
-#### The execution panel
+### System package manager installation
 
-The web interface provides an `execute` panel as well. You can use this panel to
-interactively inspect the available integrations and their actions, together
-with their documentation and parameters, run requests directly from the web
-interface, and inspect the JSON responses.
+#### Arch Linux
 
-![Screenshot of the execution panel, showing the actions autocomplete
-form](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/execute-panel-screenshot-1.png)
+You can either install the
+[`platypush`](https://aur.archlinux.org/packages/platypush) package (for the
+latest stable version) or the
+[`platypush-git`](https://aur.archlinux.org/packages/platypush-git) package
+(for the latest git version) through your favourite AUR package manager. For
+example, using `yay`:
 
-![Screenshot of the execution panel, showing an action's automatically generated
-documentation and its parsed attributes](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/execute-panel-screenshot-2.png)
+```bash
+$ yay platypush
+# Or
+$ yay platypush-git
+```
 
-#### Other web panels
+The Arch Linux packages on AUR are automatically updated upon new git commits
+or tags.
 
-Several integrations add their own feature-rich panels to the web view, turning
-Platypush into a gateway to all of your services - from Zigbee sensors, to media
-players and services, to your music cloud, and more.
+#### Debian/Ubuntu
+
+Currently the following releases are supported:
+
+1. The current Debian `stable`
+2. Debian `oldstable`
+
+Ubuntu supported [to be added
+soon](https://git.platypush.tech/platypush/platypush/issues/368).
+
+- Add the Platypush APT key to your trusted keyring:
+
+```
+# wget -q -O \
+    /etc/apt/trusted.gpg.d/platypush.asc \
+    https://apt.platypush.tech/pubkey.txt
+```
+
+- Add the Platypush repository to your APT sources:
+
+```
+#  wget -q -O \
+    /etc/apt/sources.list.d/platypush.list \
+    https://apt.platypush.tech/lists/platypush-<deb_version>-<branch>.list
+```
+
+Where:
+
+- `deb_version` can be either *stable* (for the current Debian stable version) or
+  *oldstable* (for the previous Debian stable version)
+- `branch` can be either *main* (for the latest releases) or *dev* (for a package
+  that is always in sync with the git version)
+
+For example, to install the latest stable tags on Debian stable:
+
+```
+# wget -q -O \
+    /etc/apt/sources.list.d/platypush.list \
+    https://apt.platypush.tech/lists/platypush-stable-main.list
+```
+
+- Update your repos and install Platypush:
+
+```
+# apt update
+# apt install platypush
+```
+
+#### Fedora
+
+RPM builds targeting the latest Fedora release are automatically built on every
+push pipeline.
+
+To install Platypush via RPM on Fedora:
+
+- Add the Platypush RPM repository configuration to the package manager:
+
+```
+# yum config-manager --add-repo https://rpm.platypush.tech/platypush.repo
+```
+
+- Install Platypush, either the latest stable release or the rolling release
+  updated on every commit to the main branch:
+
+```
+# yum install platypush
+# Or
+# yum install platypush-git
+```
+
+### `pip`
+
+```bash
+$ pip install platypush
+```
+
+Or, for the latest git version:
+
+```bash
+# Official repo
+$ pip install git+https://git.platypush.tech/platypush/platypush
+# Github mirror
+$ pip install git+https://github.com/blacklight/platypush
+```
+
+### Docker
+
+```bash
+$ git clone https://git.platypush.tech/platypush/platypush.git
+$ cd platypush
+# Copy .env.example to .env and edit docker-compose.yml if required.
+# In particular, you may want /etc/platypush and /var/lib/platypush
+# to point to directories on your hosts
+$ docker compose up
+```
+
+Note that the default `Dockerfile` uses Alpine, but in `docker-compose.yml` you
+can also specify an alternative `Dockerfile` - Debian, Ubuntu and Fedora are
+supported.
+
+### Manual installation
+
+```shell
+$ git clone https://git.platypush.tech/platypush/platypush.git
+$ cd platypush
+$ pip install .
+```
+
+## Plugins installation
+
+All the plugins included in the main repo will be available once you have
+installed the core platform.
+
+However, some plugins may require extra (optional) dependencies. You have
+several ways of installing those dependencies:
+
+### `pip`
+
+You can install extra dependencies via pip extras:
+
+```shell
+pip install 'platypush[plugin1,plugin2,...]'
+```
+
+For example:
+
+```shell
+pip install 'platypush[light.hue,music.mpd,rss]'
+```
+
+Will install Platypush with the dependencies for the `light.hue`, `music.mpd`
+and `rss` plugins.
+
+### Web interface
+
+Plugins can be installed from the Web interface too. Navigate to the
+_Extensions_ entry in the sidebar, select the extension that you want to install,
+select the _Install_ tab and click _Install_.
+
+![Screenshot of the extensions installation Web
+view](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/install-ui-screenshot.jpg)
+
+This section also includes the _Configuration_ tab, with a ready-to-paste
+configuration snippet template for that plugin, as well as a documentation page
+that includes all the actions supported by a given plugin and the events it
+triggers.
+
+### Docker
+
+If you already have the base installation of Platypush on your machine, and you
+have a configuration file with a custom set of integrations, then you may opt
+to generate a custom Docker image from your configuration file, with all the
+extra dependencies configured, using the `platydock` command.
+
+The following command:
+
+```shell
+❯ platydock -c /path/to/your/config.yaml -d platypush-test
+```
+
+Will create a Platypush Docker image for a device with ID `platypush-test`,
+with all the requirements for the additional integrations listed in
+`config.yaml`.
+
+You can pass the `--print` option if you just want to print the content of the
+output `Dockerfile` instead of generating the image.
+
+By default the image will use Alpine Linux as a base. You can use the
+`-i`/`--image` to specify another supported base image - `ubuntu`, `debian` or
+`fedora`.
+
+### Virtual environment
+
+If you already have the base installation of Platypush on your machine, and you
+have a configuration file with a custom set of integrations, then you may opt
+to generate a custom virtual environment from your configuration file, with all
+the extra dependencies configured, using the `platyvenv` command.
+
+The following command:
+
+```bash
+❯ platyvenv -c /path/to/your/config.yaml -o /path/to/your/venv
+```
+
+Will create a new virtual environment under `/path/to/your/venv` using the
+specified `config.yaml` to determine which optional dependencies should be installed.
+
+You can then run Platypush after activating your new environment:
+
+```bash
+❯ source /path/to/your/venv/bin/activate
+❯ platypush -c /path/to/your/config.yaml
+```
+
+### Manual installation
+
+The [plugin/backend documentation](https://docs.platypush.tech) reports all the
+dependencies required by each plugin, as well as the commands to install them
+on multiple platforms.
+
+If you want to customize your installation, or if you need to install
+dependencies for a plugin that requires some manual steps, you can check out
+any plugin-specific installation steps from its documentation.
+
+## Post-installation
+
+### Configuration file
+
+You can use the [default
+`config.yaml`](https://git.platypush.tech/platypush/platypush/src/branch/master/platypush/config/config.yaml)
+as a template/reference.
+
+The location of the `config.yaml` to be used by the application is determined
+in the following way:
+
+1. It can be passed through the command-line `-c`/`--config` argument.
+2. If not specified via `-c`, it will be read from the `PLATYPUSH_CONFIG`
+   environment variable.
+3. If not specified, use `./config.yaml` if available.
+4. If not available, and you are running Platypush within a Docker container,
+   or as a privileged user (and usually you shouldn't), or as a systemd service
+   created by a supported package manager, then `/etc/platypush/config.yaml`
+   will be used if available.
+5. Otherwise, if you are running Platypush as a non-privileged user or in a
+   virtual environment, `$XDG_CONFIG_HOME/platypush/config.yaml` will be used
+   (defaults to `~/.config/platypush/config.yaml`).
+
+### systemd service
+
+If you installed Platypush from a system package manager then you'll also have
+a `systemd` service installed for it.
+
+You can start/enable Platypush like any other `systemd` service:
+
+```
+# systemctl start platypush
+# systemctl enable platypush
+```
+
+Or, if you want to run the Platypush service as a generic user:
+
+```bash
+❯ systemctl --user start platypush
+❯ systemctl --user enable platypush
+```
+
+Otherwise, you can create your own `systemd` service copying the [provided
+`.service`
+file](https://git.platypush.tech/platypush/platypush/src/branch/master/examples/systemd/platypush.service)
+to e.g. `~/.config/systemd/user` or `/etc/systemd/system`.
+
+### Redis
+
+Platypush uses Redis as a in-memory queue to deliver messages and as a pub/sub
+bus for inter-process communication.
+
+If you installed Platypush through a package manager, then the Redis service
+will automatically be installed and started if you launch the Platypush service
+as a privileged user.
+
+If you run Platypush in a container then by default it'll start its own Redis
+instance through the `--start-redis` command-line option.
+
+You can customize the Redis configuration through the:
+
+1. `--redis-host`, `--redis-port` and `--redis-queue` command-line options.
+2. `PLATYPUSH_REDIS_HOST`, `PLATYPUSH_REDIS_PORT` and `PLATYPUSH_REDIS_QUEUE`
+   environment variables.
+3. Through your `config.yaml`:
+
+```yaml
+# See https://redis-py.readthedocs.io/en/latest/connections.html#redis.Redis
+# for the full list of supported parameters
+redis:
+  host: redis-host
+  port: 6379
+  username: redis-user
+  password: redis-pass
+```
+
+### nginx
+
+If you want to access your Platypush web panel outside your home network, it may
+be a good idea to use an nginx/Apache reverse proxy with a valid SSL certificate
+(e.g. managed by certbot). A [sample an nginx
+configuration](https://git.platypush.tech/platypush/platypush/src/branch/master/examples/nginx/nginx.sample.conf)
+is provided in the repository.
+
+## The Web interface
+
+### Other Web panels
+
+Besides the built-in panels that we've already seen in the other sections,
+Several integrations add their own feature-rich panels to the Web view, turning
+Platypush into a gateway to all of your services - from Zigbee sensors, to
+media players and services, to your music cloud, and more.
 
 ![Screenshot of the media panel, showing search results from multiple sources
 and several supported types of streaming services](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/media-panel-screenshot-1.png)
@@ -754,7 +1055,7 @@ panels](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/music-panel-scr
 streams across multiple
 devices](https://platypush-static.s3.nl-ams.scw.cloud/screenshots/snapcast-panel-screenshot-1.png)
 
-#### Dashboards
+### Dashboards
 
 The web service also provides means for the user to create [custom
 dashboards](https://git.platypush.tech/platypush/platypush/src/branch/master/examples/conf/dashboard.xml)
@@ -764,15 +1065,7 @@ that can be used to show information from multiple sources on a large screen.
 music state, weather, news from the RSS integration, and a carousel of custom
 pictures.](https://blog.platypush.tech/img/dashboard-1.png)
 
-### Running in production mode
-
-If you want to access your Platypush web panel outside your home network, it may
-be a good idea to use an nginx/Apache reverse proxy with a valid SSL certificate
-(e.g. managed by certbot). A [sample an nginx
-configuration](https://git.platypush.tech/platypush/platypush/src/branch/master/examples/nginx/nginx.sample.conf)
-is provided in the repository.
-
-#### PWA support
+### PWA support
 
 Note that having the web application served over SSL is a requirement for the
 PWA (progressive web app) to work. The Platypush PWA allows you to install a
@@ -787,46 +1080,21 @@ the F-Droid store. It allows to easily discover and manage multiple Platypush
 services on a network through the web interface, and it easily brings the power
 of Platypush to your fingertips.
 
+## Browser extension
+
+A [browser extension](https://git.platypush.tech/platypush/platypush-webext) is
+available for [Chrome](https://git.platypush.tech/platypush/platypush-webext)
+and [Firefox](https://addons.mozilla.org/en-US/firefox/addon/platypush/).
+
+The browser extension allows you to run Platypush actions and procedures
+directly from your browser, associate keybindings with them, so you can run
+your favourite routines with a few keystrokes anywhere in your browser, and
+provides an advanced API to interact with the Web pages you visit - for
+example, you can build an action that gets the content of a page you're
+visiting and uses Platypush to distill it in readable format, or send the URL
+to another service.
+
 ## Tests
 
 To run the tests simply run `pytest` either from the project root folder or the
 `tests/` folder.
-
-## Useful links
-- Recommended read: [**Getting started with Platypush**](https://blog.platypush.tech/article/Ultimate-self-hosted-automation-with-Platypush).
-
-- The [blog](https://blog.platypush.tech) is a good place to get more insights
-  and inspiration on what you can build.
-
-- The [wiki](https://git.platypush.tech/platypush/platypush/wiki) also
-  contains many resources on getting started.
-
-- Extensive documentation for all the available integrations and messages [is
-  available](https://docs.platypush.tech/).
-
-- If you have issues/feature requests/enhancements please [create an
-  issue](https://git.platypush.tech/platypush/platypush/issues).
-
-- A [Matrix instance](https://matrix.to/#/#platypush:matrix.platypush.tech) is
-  available if you are looking for interactive support.
-
-- An IRC channel is also available at `#platypush@irc.platypush.tech:6697` (SSL
-  only).
-
-- A [Lemmy instance](https://lemmy.platypush.tech/c/platypush) is available for
-  general questions.
-
----
-
-## Funding
-
-If you use and love Platypush, please consider [buying me a coffee/beer](https://paypal.me/fabiomanganiello).
-
-I've been working on Platypush all by myself in my spare time for the past few
-years, and I've made sure that it remains open and free.
-
-If you like this product, please consider supporting - I'm definitely not
-planning to get rich with this project, but I'd love to have at least the costs
-for the server covered by users.
-
-Issues and requests opened by donors will also be given priority over others.
