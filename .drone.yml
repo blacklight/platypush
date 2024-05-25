@@ -46,9 +46,6 @@ steps:
     event:
       - tag
 
-  depends_on:
-    - sync-stable-branch
-
 ###
 ### Run the tests
 ###
