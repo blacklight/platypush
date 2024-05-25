@@ -56,6 +56,9 @@
   * [Configuration file](#configuration-file)
     + [Scripts directory](#scripts-directory)
     + [Splitting configuration on multiple files](#splitting-configuration-on-multiple-files)
+  * [Working directory](#working-directory)
+  * [Database](#database)
+  * [Device ID](#device-id)
   * [systemd service](#systemd-service)
   * [Redis](#redis)
   * [nginx](#nginx)
@@ -1078,6 +1081,51 @@ include:
   - sensors.yaml
   # ...
 ```
+
+### Working directory
+
+This is where the application will store its data and integration plugins will
+store their data. The order of precedence is:
+
+* `-w`/`--workdir` command line argument.
+* The `PLATYPUSH_WORKDIR` environment variable.
+* The `workdir` field in the configuration file.
+* `$XDG_DATA_HOME/platypush` (default: `~/.local/share/platypush`) if launched
+  with a non-privileged user, `/var/lib/platypush` if launched as root or with
+  a system user.
+
+### Database
+
+The application stores entities, variables, users, integrations state and more
+on a database. The engine configuration supports the [SQLAlchemy engine
+syntax](https://docs.sqlalchemy.org/en/20/core/engines.html).
+
+**Note**: The application uses a local SQLite database by default, which is
+natively supported by SQLAlchemy. The application has also been tested against
+MySQL/MariaDB and Postgres, and should work fine with any modern relational
+database supported by SQLAlchemy. However, any backend other than SQLite may
+require an additional Python dependency for the SQLAlchemy driver (for example
+[`pg8000`](https://pypi.org/project/pg8000/) for PostgreSQL).
+
+Order of precedence for the engine:
+
+* `--main-db`/`--db` command line argument.
+* The `PLATYPUSH_DB` environment variable.
+* The `main.db` field in the configuration file.
+* `sqlite:///<WORKDIR>/main.db`
+
+### Device ID
+
+The device ID is a unique identifier for a Platypush instance on a network and
+is used to reliably dispatch messages when multiple instances use a shared
+backend.
+
+The order of precedence is:
+
+* `--device-id` command line argument.
+* The `PLATYPUSH_DEVICE_ID` environment variable.
+* The `device_id` field in the configuration file.
+* The hostname of the machine.
 
 ### systemd service
 
