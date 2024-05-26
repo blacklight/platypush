@@ -20,7 +20,7 @@ done
 
 echo "-- Updating Packages files"
 
-echo "stable\noldstable" | while read distro; do
+echo "stable\noldstable\nubuntu" | while read distro; do
   echo "main\ndev" | while read branch; do
     branch_dir="$TMP_APT_ROOT/pool/$distro/$branch"
     echo "Checking pool folder: $branch_dir"
@@ -57,7 +57,7 @@ add_hashes() {
   done
 }
 
-echo "stable\noldstable" | while read distro; do
+echo "stable\noldstable\nubuntu" | while read distro; do
   dist_dir="$TMP_APT_ROOT/dists/$distro"
   components=$(find "$dist_dir" -name Packages | awk -F '/' '{print $(NF-2)}' | uniq | tr '\n' ' ')
   release_file="$dist_dir/Release"
@@ -81,7 +81,7 @@ done
 echo "-- Generating list files"
 mkdir -p "$TMP_APT_ROOT/lists"
 
-for distro in stable oldstable; do
+for distro in stable oldstable ubuntu; do
   for branch in main dev; do
     echo "deb https://apt.platypush.tech/ $distro $branch" > "$TMP_APT_ROOT/lists/platypush-$distro-$branch.list"
   done
