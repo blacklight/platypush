@@ -152,7 +152,7 @@ const generateComponentsGrid = () => {
     return
   }
 
-  if (window.location.pathname.endsWith('/index.html')) {
+  if (window.location.pathname === '/' || window.location.pathname.endsWith('/index.html')) {
     if (tocWrappers.length < 2) {
       return
     }
