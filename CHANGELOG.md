@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+- [[#368](https://git.platypush.tech/platypush/platypush/issues/368)] Added
+  Ubuntu packages.
+
 ## [1.0.2] - 2024-05-26
 
 - Fixed regression introduced by the support of custom names through the
