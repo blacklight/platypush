@@ -1,6 +1,5 @@
 #!/bin/sh
 
-
 [ -f .skipci ] && exit 0
 
 echo "-- Installing dependencies"
@@ -105,39 +104,43 @@ Steps:
 1. Add this repository's PGP key to your apt keyring
 ====================================================
 
-$ sudo wget -q -O \\\
+# wget -q -O \\\
     /etc/apt/trusted.gpg.d/platypush.asc \\\
     https://apt.platypush.tech/pubkey.txt
 
 2. Add the repository to your sources
 =====================================
 
-$ sudo wget -q -O \\\
+# wget -q -O \\\
     /etc/apt/sources.list.d/platypush.list \\\
     https://apt.platypush.tech/lists/platypush-<deb_version>-<branch>.list
 
 Where:
 
-- deb_version can be either *stable* (for the current Debian stable version) or
-  *oldstable* (for the previous Debian stable version)
-- branch can be either *main* (for the latest releases) or *dev* (for a package
-  that is always in sync with the git version)
+- deb_version can be:
+  - *stable* - current Debian stable version
+  - *oldstable* - previous Debian stable version
+  - *ubuntu* - latest Ubuntu version
+
+- branch can be either:
+  - *main* - latest stable release
+  - *dev* a package always in sync with the git version
 
 For example, to install the latest stable tags on Debian stable:
 
-$ sudo wget -q -O \\\
+# wget -q -O \\\
     /etc/apt/sources.list.d/platypush.list \\\
     https://apt.platypush.tech/lists/platypush-stable-main.list
 
 3. Update your repos
 ====================
 
-$ sudo apt update
+# apt update
 
 4. Install Platypush
 ====================
 
-$ sudo apt install platypush
+# apt install platypush
 EOF
 
 echo "-- Importing and refreshing PGP key"

@@ -235,16 +235,16 @@ Steps:
 1. Add the repository to your sources
 =====================================
 
-$ sudo yum config-manager --add-repo https://rpm.platypush.tech/platypush.repo
+# yum config-manager --add-repo https://rpm.platypush.tech/platypush.repo
 
 2. Install Platypush
 ====================
 
-$ sudo yum install platypush
+# yum install platypush
 
 Or, if you want to install a version always up-to-date with the git repo:
 
-$ sudo yum install platypush-git
+# yum install platypush-git
 EOF
 
 cat <<EOF > "$TMP_RPM_ROOT/pubkey.txt"
