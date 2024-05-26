@@ -14,7 +14,6 @@ git clone 'https://git.platypush.tech/platypush/platypush.wiki.git' wiki
 
 echo "Linking the wiki to the Sphinx index"
 cd wiki
-ln -s Home.md index.md
 cd "$APPDIR/docs"
 make html
 rm -f config*.yaml
