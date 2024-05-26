@@ -1,6 +1,11 @@
 # Changelog
 
-## [1.0.0 release candidate]
+## [1.0.2] - 2024-05-26
+
+- Fixed regression introduced by the support of custom names through the
+  `@procedure` decorator.
+
+## [1.0.0] - 2024-05-26
 
 Many, many changes for the first major release of Platypush after so many
 years.
