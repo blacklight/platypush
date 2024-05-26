@@ -9,6 +9,7 @@ cp -r "$PWD" "$SRCDIR"
 cd "$SRCDIR"
 
 echo "-- Installing dependencies"
+export DEBIAN_FRONTEND=noninteractive
 apt update
 apt install -y curl dpkg-dev gpg git python3 python3-pip python3-setuptools
 

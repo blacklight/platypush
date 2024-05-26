@@ -195,6 +195,34 @@ steps:
     - . .drone/update-deb-packages.sh
 
 ###
+### Update the Ubuntu (latest) packages
+###
+
+- name: update-ubuntu-packages
+  image: ubuntu:latest
+  volumes:
+    - name: repos
+      path: /repos
+
+  environment:
+    DEB_VERSION: ubuntu
+    WORKDIR: /tmp/workdir
+    APT_ROOT: /repos/apt
+    PKG_NAME: platypush
+
+  when:
+    branch:
+      - master
+    event:
+      - push
+
+  depends_on:
+    - update-components-cache
+
+  commands:
+    - . .drone/update-deb-packages.sh
+
+###
 ### Updates the APT repository after new packages have been pushed
 ###
 
@@ -221,6 +249,7 @@ steps:
   depends_on:
     - update-debian-stable-packages
     - update-debian-oldstable-packages
+    - update-ubuntu-packages
 
   commands:
     - . .drone/update-apt-repo.sh

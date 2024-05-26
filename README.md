@@ -795,51 +795,49 @@ or tags.
 
 #### Debian/Ubuntu
 
-Currently the following releases are supported:
+1. Add the Platypush APT key to your trusted keyring:
 
-1. The current Debian `stable`
-2. Debian `oldstable`
+  ```
+  # wget -q -O \
+      /etc/apt/trusted.gpg.d/platypush.asc \
+      https://apt.platypush.tech/pubkey.txt
+  ```
 
-Ubuntu supported [to be added
-soon](https://git.platypush.tech/platypush/platypush/issues/368).
+2. Add the Platypush repository to your APT sources:
 
-- Add the Platypush APT key to your trusted keyring:
+  ```
+  #  wget -q -O \
+      /etc/apt/sources.list.d/platypush.list \
+      https://apt.platypush.tech/lists/platypush-<deb_version>-<branch>.list
+  ```
 
-```
-# wget -q -O \
-    /etc/apt/trusted.gpg.d/platypush.asc \
-    https://apt.platypush.tech/pubkey.txt
-```
+  Where:
 
-- Add the Platypush repository to your APT sources:
+  - `deb_version` can be either:
 
-```
-#  wget -q -O \
-    /etc/apt/sources.list.d/platypush.list \
-    https://apt.platypush.tech/lists/platypush-<deb_version>-<branch>.list
-```
+    - `stable`: current Debian stable
+    - `oldstable`: previous Debian stable
+    - `ubuntu`: latest Ubuntu release
 
-Where:
+  - `branch` can be either:
 
-- `deb_version` can be either *stable* (for the current Debian stable version) or
-  *oldstable* (for the previous Debian stable version)
-- `branch` can be either *main* (for the latest releases) or *dev* (for a package
-  that is always in sync with the git version)
+    - `main`: latest stable release
+    - `dev`: a package always in sync with the latest git version
 
-For example, to install the latest stable tags on Debian stable:
+  For example, to install the latest stable tags on Debian stable:
 
-```
-# wget -q -O \
-    /etc/apt/sources.list.d/platypush.list \
-    https://apt.platypush.tech/lists/platypush-stable-main.list
-```
+  ```
+  # wget -q -O \
+      /etc/apt/sources.list.d/platypush.list \
+      https://apt.platypush.tech/lists/platypush-stable-main.list
+  ```
 
-- Update your repos and install Platypush:
+3. Update your repos and install Platypush:
 
-```
-# apt update
-# apt install platypush
-```
+  ```
+  # apt update
+  # apt install platypush
+  ```
 
 #### Fedora
 
