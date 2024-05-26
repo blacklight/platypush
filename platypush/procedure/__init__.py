@@ -558,7 +558,9 @@ class IfProcedure(Procedure):
         return response
 
 
-def procedure(name: Optional[str] = None):
+def procedure(name_or_func: Optional[str] = None, *upper_args, **upper_kwargs):
+    name = name_or_func if isinstance(name_or_func, str) else None
+
     def func_wrapper(f):
         """
         Public decorator to mark a function as a procedure.
@@ -569,9 +571,14 @@ def procedure(name: Optional[str] = None):
 
         @wraps(f)
         def _execute_procedure(*args, **kwargs):
+            args = [*upper_args, *args]
+            kwargs = {**upper_kwargs, **kwargs}
             return exec_wrapper(f, *args, **kwargs)
 
         return _execute_procedure
+
+    if callable(name_or_func):
+        return func_wrapper(name_or_func)
 
     return func_wrapper
 

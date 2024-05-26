@@ -355,7 +355,7 @@ class Config:
         prefix = modname + '.' if prefix is None else prefix
         self.procedures.update(
             **{
-                getattr(obj, 'procedure_name', f'{prefix}.{name}'): obj
+                (getattr(obj, 'procedure_name', None) or f'{prefix}{name}'): obj
                 for name, obj in inspect.getmembers(module)
                 if is_functional_procedure(obj)
             }
