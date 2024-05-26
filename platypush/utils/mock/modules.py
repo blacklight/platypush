@@ -28,6 +28,7 @@ mock_imports = [
     "dbus",
     "deepspeech",
     "defusedxml",
+    "dns",
     "docutils",
     "envirophat",
     "feedparser",
