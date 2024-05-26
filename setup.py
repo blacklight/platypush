@@ -34,8 +34,7 @@ def parse_deps(deps):
     ret = []
     for dep in deps:
         if dep.startswith('git+'):
-            repo_name = dep.split('/')[-1].split('.git')[0]
-            dep = f'{repo_name} @ {dep}'
+            continue  # Don't include git dependencies in the setup.py, or Twine will complain
 
         ret.append(dep)
 
