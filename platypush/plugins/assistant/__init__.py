@@ -13,7 +13,6 @@ from platypush.plugins import Plugin, action
 from platypush.utils import get_plugin_name_by_class
 
 
-@dataclass
 class AlertType(Enum):
     """
     Enum representing the type of an alert.
@@ -77,7 +76,7 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         """
         super().__init__(*args, **kwargs)
         self.tts_plugin = tts_plugin
-        self.tts_plugin_args = tts_plugin_args or {}
+        self.tts_plugin_args = {'join': True, **(tts_plugin_args or {})}
         self.stop_conversation_on_speech_match = stop_conversation_on_speech_match
         self._conversation_start_sound = None
         if conversation_start_sound:
