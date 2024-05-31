@@ -178,7 +178,7 @@ class TtsPicovoicePlugin(TtsPlugin):
         self._play_audio(
             orca=orca,
             pcm=np.array(
-                orca.synthesize(text, speech_rate=speech_rate),
+                orca.synthesize(text, speech_rate=speech_rate)[0],
                 dtype='int16',
             ),
         )
