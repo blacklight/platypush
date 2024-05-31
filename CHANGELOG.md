@@ -1,9 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [1.0.3] - 2024-05-31
 
 - [[#368](https://git.platypush.tech/platypush/platypush/issues/368)] Added
   Ubuntu packages.
+
+- Fixed bug that didn't get hooks to match events imported through the new
+  `platypush.events` symlinked module.
 
 ## [1.0.2] - 2024-05-26
 
