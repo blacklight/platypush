@@ -19,13 +19,11 @@ class AssistantEvent(Event):
         """
         assistant = assistant or kwargs.get('assistant')
         if assistant:
-            assistant = (
+            kwargs['plugin'] = kwargs['_assistant'] = (
                 assistant
                 if isinstance(assistant, str)
                 else get_plugin_name_by_class(assistant.__class__)
             )
-
-            kwargs['_assistant'] = assistant
 
         super().__init__(*args, **kwargs)
 
