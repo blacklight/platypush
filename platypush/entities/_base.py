@@ -6,7 +6,7 @@ import pathlib
 import subprocess
 import sys
 import types
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Callable, Dict, List, Optional, Set, Type, Tuple, Any
 
 import pkgutil
@@ -83,12 +83,12 @@ if not is_defined('entity'):
         image_url = Column(String)
 
         created_at = Column(
-            DateTime(timezone=False), default=datetime.utcnow(), nullable=False
+            DateTime(timezone=False), default=datetime.now(UTC), nullable=False
         )
         updated_at = Column(
             DateTime(timezone=False),
-            default=datetime.utcnow(),
-            onupdate=datetime.utcnow(),
+            default=datetime.now(UTC),
+            onupdate=datetime.now(UTC),
         )
 
         parent = relationship(

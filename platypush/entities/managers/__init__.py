@@ -1,7 +1,7 @@
 import inspect
 import json
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any, Optional, Dict, Collection, Type
 
 from platypush.config import Config
@@ -77,7 +77,7 @@ class EntityManager(ABC):
                 entity.id = None  # type: ignore
 
             entity.plugin = get_plugin_name_by_class(self.__class__)  # type: ignore
-            entity.updated_at = datetime.utcnow()  # type: ignore
+            entity.updated_at = datetime.now(UTC)  # type: ignore
             entity.children = self._normalize_entities(entity.children)
 
         return entities

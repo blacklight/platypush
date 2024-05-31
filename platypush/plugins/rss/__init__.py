@@ -289,7 +289,7 @@ class RssPlugin(RunnablePlugin):
         title = ElementTree.Element('title')
         title.text = 'Platypush feed subscriptions'
         created = ElementTree.Element('dateCreated')
-        created.text = self._datetime_to_string(datetime.datetime.utcnow())
+        created.text = self._datetime_to_string(datetime.datetime.now(datetime.UTC))
         head.append(title)
         head.append(created)
 
