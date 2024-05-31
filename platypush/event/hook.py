@@ -1,5 +1,6 @@
 import copy
 import json
+import importlib
 import logging
 import threading
 from functools import wraps
@@ -46,14 +47,30 @@ class EventCondition:
             kwargs -- Fields rules as a key-value (e.g. source_button=btn_id
                 or recognized_phrase='Your phrase')
         """
-
-        self.type = type or Event.__class__  # type: ignore
+        self.type = self._get_event_type(type)
         self.args = {}
         self.parsed_args = {}
         self.priority = priority
 
         for key, value in kwargs.items():
             self.args[key] = value
+
+    @staticmethod
+    def _get_event_type(type: Optional[Type[Event]] = None) -> Type[Event]:
+        if not type:
+            return Event
+
+        # The package alias `platypush.events` -> `platypush.message.event` is
+        # supported
+        if type.__module__.startswith('platypush.events'):
+            module = importlib.import_module(
+                'platypush.message.event' + type.__module__[len('platypush.events') :]
+            )
+
+            type = getattr(module, type.__name__)
+            assert type, f'Invalid event type: {type}'
+
+        return type
 
     @classmethod
     def build(cls, rule):
