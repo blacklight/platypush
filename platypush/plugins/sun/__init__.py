@@ -68,7 +68,7 @@ class SunPlugin(RunnablePlugin):
         dt = datetime.datetime.strptime(
             f'{now.year}-{now.month:02d}-{now.day:02d} {t}',
             '%Y-%m-%d %I:%M:%S %p',
-        ).replace(tzinfo=datetime.UTC)
+        ).replace(tzinfo=datetime.timezone.utc)
 
         if dt < now:
             dt += datetime.timedelta(days=1)

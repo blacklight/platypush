@@ -115,9 +115,13 @@ class UserManager:
                 .first()
             )
 
-            if not user_session or (
-                user_session.expires_at and user_session.expires_at < utcnow()
-            ):
+            expires_at = (
+                user_session.expires_at.replace(tzinfo=datetime.timezone.utc)
+                if user_session and user_session.expires_at
+                else None
+            )
+
+            if not user_session or (expires_at and expires_at < utcnow()):
                 return None, None
 
             user = session.query(User).filter_by(user_id=user_session.user_id).first()

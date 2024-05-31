@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, timezone
 from logging import getLogger
 from queue import Queue
 from typing import Callable, Collection, Dict, Final, List, Optional, Type
@@ -99,7 +99,8 @@ event_matchers: Dict[
         )
         and (
             not (old and old.updated_at)
-            or utcnow() - old.updated_at >= timedelta(seconds=_rssi_update_interval)
+            or utcnow() - old.updated_at.replace(tzinfo=timezone.utc)
+            >= timedelta(seconds=_rssi_update_interval)
         )
     ),
 }

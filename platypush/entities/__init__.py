@@ -1,9 +1,7 @@
-from datetime import timedelta
 import logging
 from threading import Event
+from time import time
 from typing import Collection, Optional
-
-from platypush.utils import utcnow
 
 from ._base import (
     Entity,
@@ -47,8 +45,8 @@ def get_entities_engine(timeout: Optional[float] = None) -> EntitiesEngine:
 
     :param timeout: Timeout in seconds (default: None).
     """
-    time_start = utcnow()
-    while not timeout or (utcnow() - time_start < timedelta(seconds=timeout)):
+    time_start = time()
+    while not timeout or (time() - time_start < timeout):
         if _engine:
             break
 

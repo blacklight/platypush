@@ -97,8 +97,7 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
             if (
                 event['status'] != 'cancelled'
                 and event['end'].get('dateTime')
-                and event['end']['dateTime']
-                >= utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
+                and event['end']['dateTime'] >= utcnow().isoformat()
                 and (
                     (
                         only_participating

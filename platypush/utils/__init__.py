@@ -816,14 +816,10 @@ def wait_for_either(*events, timeout: Optional[float] = None, cls: Type = Event)
 
 def utcnow():
     """
-    A workaround util to maintain compatibility both with Python >= 3.12 (which
-    deprecated datetime.utcnow) and Python < 3.12 (which doesn't have
-    datetime.UTC).
+    utcnow() without tears. It always returns a datetime object in UTC
+    timezone.
     """
-    if hasattr(datetime, 'UTC'):
-        return datetime.datetime.now(datetime.UTC)
-
-    return datetime.datetime.utcnow()
+    return datetime.datetime.now(datetime.timezone.utc)
 
 
 # vim:sw=4:ts=4:et:
