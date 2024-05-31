@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.4] - 2024-05-31
+
+- Fixed regression introduced by
+  [c18768e61fef62924f4c1fac3089ecfb83666dab](https://git.platypush.tech/platypush/platypush/commit/c18768e61fef62924f4c1fac3089ecfb83666dab).
+  Python seems to have introduced a breaking change from the version 3.12 -
+  `datetime.utcnow()` is not deprecated, but `datetime.UTC`, the suggested
+  alternative, isn't available on older versions of Python. Added a workaround
+  that makes Platypush compatible with both the implementations.
+
 ## [1.0.3] - 2024-05-31
 
 - [[#368](https://git.platypush.tech/platypush/platypush/issues/368)] Added
