@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.0.5] - 2024-06-01
+
+- A proper solution for the `utcnow()` issue.
+
+It was a bit trickier than expected to solve, but now Platypush uses a
+`utcnow()` facade that always returns a UTC datetime in a timezone-aware
+representation.
+
+The code should however also handle the case of timestamps stored on the db in
+the old format.
+
 ## [1.0.4] - 2024-05-31
 
 - Fixed regression introduced by
