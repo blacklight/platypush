@@ -4,6 +4,7 @@ from typing import Optional
 
 from platypush.plugins import Plugin, action
 from platypush.plugins.calendar import CalendarInterface
+from platypush.utils import utcnow
 
 
 class CalendarIcalPlugin(Plugin, CalendarInterface):
@@ -25,7 +26,7 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
         if not t:
             return
 
-        if type(t.dt) == datetime.date:
+        if isinstance(t.dt, datetime.date):
             return datetime.datetime(
                 t.dt.year, t.dt.month, t.dt.day, tzinfo=datetime.timezone.utc
             ).isoformat()
@@ -42,21 +43,23 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
             'id': str(event.get('uid')) if event.get('uid') else None,
             'kind': 'calendar#event',
             'summary': str(event.get('summary')) if event.get('summary') else None,
-            'description': str(event.get('description'))
-            if event.get('description')
-            else None,
+            'description': (
+                str(event.get('description')) if event.get('description') else None
+            ),
             'status': str(event.get('status')).lower() if event.get('status') else None,
-            'responseStatus': str(event.get('partstat')).lower()
-            if event.get('partstat')
-            else None,
+            'responseStatus': (
+                str(event.get('partstat')).lower() if event.get('partstat') else None
+            ),
             'location': str(event.get('location')) if event.get('location') else None,
             'htmlLink': str(event.get('url')) if event.get('url') else None,
-            'organizer': {
-                'email': str(event.get('organizer')).replace('MAILTO:', ''),
-                'displayName': event.get('organizer').params.get('cn'),
-            }
-            if event.get('organizer')
-            else None,
+            'organizer': (
+                {
+                    'email': str(event.get('organizer')).replace('MAILTO:', ''),
+                    'displayName': event.get('organizer').params.get('cn'),
+                }
+                if event.get('organizer')
+                else None
+            ),
             'created': cls._convert_timestamp(event, 'created'),
             'updated': cls._convert_timestamp(event, 'last-modified'),
             'start': {
@@ -95,9 +98,7 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
                 event['status'] != 'cancelled'
                 and event['end'].get('dateTime')
                 and event['end']['dateTime']
-                >= datetime.datetime.utcnow()
-                .replace(tzinfo=datetime.timezone.utc)
-                .isoformat()
+                >= utcnow().replace(tzinfo=datetime.timezone.utc).isoformat()
                 and (
                     (
                         only_participating

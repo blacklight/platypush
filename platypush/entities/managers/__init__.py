@@ -1,12 +1,11 @@
 import inspect
 import json
 from abc import ABC, abstractmethod
-from datetime import datetime, UTC
 from typing import Any, Optional, Dict, Collection, Type
 
 from platypush.config import Config
 from platypush.entities._base import Entity, EntitySavedCallback
-from platypush.utils import get_plugin_name_by_class, get_redis
+from platypush.utils import get_plugin_name_by_class, get_redis, utcnow
 
 _entity_registry_varname = '_platypush/plugin_entity_registry'
 
@@ -77,7 +76,7 @@ class EntityManager(ABC):
                 entity.id = None  # type: ignore
 
             entity.plugin = get_plugin_name_by_class(self.__class__)  # type: ignore
-            entity.updated_at = datetime.now(UTC)  # type: ignore
+            entity.updated_at = utcnow()  # type: ignore
             entity.children = self._normalize_entities(entity.children)
 
         return entities

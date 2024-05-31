@@ -18,7 +18,7 @@ from platypush.exceptions.user import (
     InvalidJWTTokenException,
     InvalidCredentialsException,
 )
-from platypush.utils import get_or_generate_jwt_rsa_key_pair
+from platypush.utils import get_or_generate_jwt_rsa_key_pair, utcnow
 
 
 class UserManager:
@@ -78,7 +78,7 @@ class UserManager:
                 ),
                 password_salt=password_salt.hex(),
                 hmac_iterations=hmac_iterations,
-                created_at=datetime.datetime.now(datetime.UTC),
+                created_at=utcnow(),
                 **kwargs,
             )
 
@@ -116,8 +116,7 @@ class UserManager:
             )
 
             if not user_session or (
-                user_session.expires_at
-                and user_session.expires_at < datetime.datetime.now(datetime.UTC)
+                user_session.expires_at and user_session.expires_at < utcnow()
             ):
                 return None, None
 
@@ -171,7 +170,7 @@ class UserManager:
                 user_id=user.user_id,
                 session_token=self.generate_session_token(),
                 csrf_token=self.generate_session_token(),
-                created_at=datetime.datetime.now(datetime.UTC),
+                created_at=utcnow(),
                 expires_at=expires_at,
             )
 

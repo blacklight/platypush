@@ -6,7 +6,7 @@ import pathlib
 import subprocess
 import sys
 import types
-from datetime import datetime, UTC
+from datetime import datetime
 from typing import Callable, Dict, List, Optional, Set, Type, Tuple, Any
 
 import pkgutil
@@ -32,6 +32,7 @@ import platypush
 from platypush.config import Config
 from platypush.common.db import Base, is_defined
 from platypush.message import JSONAble, Message
+from platypush.utils import utcnow
 
 EntityRegistryType = Dict[str, Type['Entity']]
 entities_registry: EntityRegistryType = {}
@@ -82,13 +83,11 @@ if not is_defined('entity'):
         external_url = Column(String)
         image_url = Column(String)
 
-        created_at = Column(
-            DateTime(timezone=False), default=datetime.now(UTC), nullable=False
-        )
+        created_at = Column(DateTime(timezone=False), default=utcnow(), nullable=False)
         updated_at = Column(
             DateTime(timezone=False),
-            default=datetime.now(UTC),
-            onupdate=datetime.now(UTC),
+            default=utcnow(),
+            onupdate=utcnow(),
         )
 
         parent = relationship(

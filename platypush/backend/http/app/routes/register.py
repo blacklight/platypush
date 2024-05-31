@@ -6,6 +6,7 @@ from flask import Blueprint, request, redirect, render_template, make_response, 
 from platypush.backend.http.app import template_folder
 from platypush.backend.http.utils import HttpUtils
 from platypush.user import UserManager
+from platypush.utils import utcnow
 
 register = Blueprint('register', __name__, template_folder=template_folder)
 
@@ -50,9 +51,7 @@ def register():
                 username=username,
                 password=password,
                 expires_at=(
-                    datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=1)
-                    if not remember
-                    else None
+                    utcnow() + datetime.timedelta(days=1) if not remember else None
                 ),
             )
 

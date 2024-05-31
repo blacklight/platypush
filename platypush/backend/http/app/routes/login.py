@@ -6,6 +6,7 @@ from flask import Blueprint, request, redirect, render_template, make_response
 from platypush.backend.http.app import template_folder
 from platypush.backend.http.utils import HttpUtils
 from platypush.user import UserManager
+from platypush.utils import utcnow
 
 login = Blueprint('login', __name__, template_folder=template_folder)
 
@@ -37,11 +38,7 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         remember = request.form.get('remember')
-        expires = (
-            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=365)
-            if remember
-            else None
-        )
+        expires = utcnow() + datetime.timedelta(days=365) if remember else None
 
         session = user_manager.create_user_session(
             username=username, password=password, expires_at=expires
