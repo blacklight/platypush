@@ -16,6 +16,7 @@ from platypush.message.event.rss import NewFeedEntryEvent
 from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.variable import VariablePlugin
 from platypush.schemas.rss import RssFeedEntrySchema
+from platypush.utils import utcnow
 
 
 def _variable() -> VariablePlugin:
@@ -289,7 +290,7 @@ class RssPlugin(RunnablePlugin):
         title = ElementTree.Element('title')
         title.text = 'Platypush feed subscriptions'
         created = ElementTree.Element('dateCreated')
-        created.text = self._datetime_to_string(datetime.datetime.now(datetime.UTC))
+        created.text = self._datetime_to_string(utcnow())
         head.append(title)
         head.append(created)
 

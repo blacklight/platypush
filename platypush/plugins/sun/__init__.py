@@ -7,6 +7,7 @@ from dateutil.tz import gettz
 from platypush.message.event.sun import SunriseEvent, SunsetEvent
 from platypush.plugins import RunnablePlugin, action
 from platypush.schemas.sun import SunEventsSchema
+from platypush.utils import utcnow
 
 
 class SunPlugin(RunnablePlugin):
@@ -63,7 +64,7 @@ class SunPlugin(RunnablePlugin):
 
     @staticmethod
     def _convert_time(t: str) -> datetime.datetime:
-        now = datetime.datetime.now(datetime.UTC).replace(microsecond=0)
+        now = utcnow().replace(microsecond=0)
         dt = datetime.datetime.strptime(
             f'{now.year}-{now.month:02d}-{now.day:02d} {t}',
             '%Y-%m-%d %I:%M:%S %p',

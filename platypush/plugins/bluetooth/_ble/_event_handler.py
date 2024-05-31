@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, UTC
+from datetime import timedelta
 from logging import getLogger
 from queue import Queue
 from typing import Callable, Collection, Dict, Final, List, Optional, Type
@@ -16,6 +16,7 @@ from platypush.message.event.bluetooth import (
     BluetoothDeviceSignalUpdateEvent,
     BluetoothDeviceEvent,
 )
+from platypush.utils import utcnow
 
 from .._cache import EntityCache
 from .._model import ServiceClass
@@ -98,8 +99,7 @@ event_matchers: Dict[
         )
         and (
             not (old and old.updated_at)
-            or datetime.now(UTC) - old.updated_at
-            >= timedelta(seconds=_rssi_update_interval)
+            or utcnow() - old.updated_at >= timedelta(seconds=_rssi_update_interval)
         )
     ),
 }

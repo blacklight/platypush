@@ -1,8 +1,7 @@
-import datetime
-
 from platypush.plugins import action
 from platypush.plugins.google import GooglePlugin
 from platypush.plugins.calendar import CalendarInterface
+from platypush.utils import utcnow
 
 
 class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
@@ -72,7 +71,7 @@ class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
         :meth:`platypush.plugins.calendar.CalendarPlugin.get_upcoming_events`.
         """
 
-        now = datetime.datetime.now(datetime.UTC).isoformat() + 'Z'
+        now = utcnow().isoformat() + 'Z'
         service = self.get_service('calendar', 'v3')
         result = (
             service.events()
