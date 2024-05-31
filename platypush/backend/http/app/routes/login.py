@@ -17,7 +17,7 @@ __routes__ = [
 
 @login.route('/login', methods=['GET', 'POST'])
 def login():
-    """ Login page """
+    """Login page"""
     user_manager = UserManager()
     session_token = request.cookies.get('session_token')
 
@@ -37,11 +37,15 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         remember = request.form.get('remember')
-        expires = datetime.datetime.utcnow() + datetime.timedelta(days=365) \
-            if remember else None
+        expires = (
+            datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=365)
+            if remember
+            else None
+        )
 
-        session = user_manager.create_user_session(username=username, password=password,
-                                                   expires_at=expires)
+        session = user_manager.create_user_session(
+            username=username, password=password, expires_at=expires
+        )
 
         if session:
             redirect_target = redirect(redirect_page, 302)  # lgtm [py/url-redirection]

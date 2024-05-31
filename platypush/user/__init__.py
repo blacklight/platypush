@@ -78,7 +78,7 @@ class UserManager:
                 ),
                 password_salt=password_salt.hex(),
                 hmac_iterations=hmac_iterations,
-                created_at=datetime.datetime.utcnow(),
+                created_at=datetime.datetime.now(datetime.UTC),
                 **kwargs,
             )
 
@@ -117,7 +117,7 @@ class UserManager:
 
             if not user_session or (
                 user_session.expires_at
-                and user_session.expires_at < datetime.datetime.utcnow()
+                and user_session.expires_at < datetime.datetime.now(datetime.UTC)
             ):
                 return None, None
 
@@ -171,7 +171,7 @@ class UserManager:
                 user_id=user.user_id,
                 session_token=self.generate_session_token(),
                 csrf_token=self.generate_session_token(),
-                created_at=datetime.datetime.utcnow(),
+                created_at=datetime.datetime.now(datetime.UTC),
                 expires_at=expires_at,
             )
 

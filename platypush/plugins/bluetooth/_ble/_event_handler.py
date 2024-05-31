@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from logging import getLogger
 from queue import Queue
 from typing import Callable, Collection, Dict, Final, List, Optional, Type
@@ -98,7 +98,7 @@ event_matchers: Dict[
         )
         and (
             not (old and old.updated_at)
-            or datetime.utcnow() - old.updated_at
+            or datetime.now(UTC) - old.updated_at
             >= timedelta(seconds=_rssi_update_interval)
         )
     ),
@@ -227,9 +227,11 @@ class EventHandler:
             return True
 
         mapped_uuids = [
-            int(str(srv.uuid).split('-', maxsplit=1)[0], 16) & 0xFFFF
-            if isinstance(srv.uuid, UUID)
-            else srv.uuid
+            (
+                int(str(srv.uuid).split('-', maxsplit=1)[0], 16) & 0xFFFF
+                if isinstance(srv.uuid, UUID)
+                else srv.uuid
+            )
             for srv in device.services
         ]
 

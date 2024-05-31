@@ -17,7 +17,7 @@ __routes__ = [
 
 @register.route('/register', methods=['GET', 'POST'])
 def register():
-    """ Registration page """
+    """Registration page"""
     user_manager = UserManager()
     redirect_page = request.args.get('redirect')
     if not redirect_page:
@@ -34,7 +34,9 @@ def register():
             return redirect(redirect_page, 302)  # lgtm [py/url-redirection]
 
     if user_manager.get_user_count() > 0:
-        return redirect('/login?redirect=' + redirect_page, 302)  # lgtm [py/url-redirection]
+        return redirect(
+            '/login?redirect=' + redirect_page, 302
+        )  # lgtm [py/url-redirection]
 
     if request.form:
         username = request.form.get('username')
@@ -44,12 +46,20 @@ def register():
 
         if password == confirm_password:
             user_manager.create_user(username=username, password=password)
-            session = user_manager.create_user_session(username=username, password=password,
-                                                       expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=1)
-                                                       if not remember else None)
+            session = user_manager.create_user_session(
+                username=username,
+                password=password,
+                expires_at=(
+                    datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=1)
+                    if not remember
+                    else None
+                ),
+            )
 
             if session:
-                redirect_target = redirect(redirect_page, 302)  # lgtm [py/url-redirection]
+                redirect_target = redirect(
+                    redirect_page, 302
+                )  # lgtm [py/url-redirection]
                 response = make_response(redirect_target)
                 response.set_cookie('session_token', session.session_token)
                 return response

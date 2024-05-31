@@ -72,7 +72,7 @@ class GoogleCalendarPlugin(GooglePlugin, CalendarInterface):
         :meth:`platypush.plugins.calendar.CalendarPlugin.get_upcoming_events`.
         """
 
-        now = datetime.datetime.utcnow().isoformat() + 'Z'
+        now = datetime.datetime.now(datetime.UTC).isoformat() + 'Z'
         service = self.get_service('calendar', 'v3')
         result = (
             service.events()
