@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from dataclasses import asdict, dataclass
 from enum import Enum
 import os
@@ -111,19 +111,17 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
             alert_state=self._cur_alert_type.value if self._cur_alert_type else None,
         )
 
-    @abstractmethod
-    def start_conversation(self, *_, **__):
-        """
-        Programmatically starts a conversation.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
+    @action
     def stop_conversation(self, *_, **__):
         """
         Programmatically stops a conversation.
         """
-        raise NotImplementedError
+        self._stop_conversation()
+
+    def _stop_conversation(self, *_, **__):
+        tts = self._get_tts_plugin()
+        if tts:
+            tts.stop()
 
     @action
     def pause_detection(self, *_, **__):
