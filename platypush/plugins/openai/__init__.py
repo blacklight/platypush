@@ -49,7 +49,18 @@ class OpenaiPlugin(Plugin):
     """
     Plugin to interact with OpenAI services.
 
-    So far only ChatGPT is supported.
+    Currently supported:
+
+        - :meth:`get_response`: Get a response to a prompt/question using the
+          GPT API. It supports custom contexts and environment settings.
+
+        - :meth:`transcribe`: Perform speech-to-text on an audio file. This API
+          is also leveraged by the
+          :class:`platypush.plugins.assistant.openai.OpenaiPlugin` to provide a
+          full-fledged voice assistant.
+
+        - Through the :class:`platypush.plugins.tts.openai.OpenaiPlugin` plugin,
+          text-to-speech is also supported.
 
     Contexts
     --------
