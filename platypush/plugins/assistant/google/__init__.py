@@ -181,8 +181,7 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
         if self.assistant:
             self.assistant.start_conversation()
 
-    @action
-    def stop_conversation(self, *_, **__):
+    def _stop_conversation(self, *_, **__):
         """
         Programmatically stop a running conversation with the assistant
         """
