@@ -530,12 +530,12 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
     def _get_tts_plugin(self) -> TtsPicovoicePlugin:
         return self.tts
 
-    def _on_response_render_start(self, text: Optional[str]):
+    def _on_response_render_start(self, text: Optional[str], *_, **__):
         if self._assistant:
             self._assistant.set_responding(True)
         return super()._on_response_render_start(text)
 
-    def _on_response_render_end(self):
+    def _on_response_render_end(self, *_, **__):
         if self._assistant:
             self._assistant.set_responding(False)
 
