@@ -147,7 +147,7 @@ class SpeechRecognizedEvent(AssistantEvent):
         """
 
         result = super().matches_condition(condition)
-        if result.is_match and self.assistant and 'phrase' in condition.args:
+        if result.is_match and self.assistant and condition.args.get('phrase'):
             self.assistant.stop_conversation()
 
         return result
@@ -241,6 +241,17 @@ class IntentRecognizedEvent(AssistantEvent):
         :param slots: The slots extracted from the intent, as a key-value mapping.
         """
         super().__init__(*args, intent=intent, slots=slots or {}, **kwargs)
+
+    def matches_condition(self, condition):
+        """
+        Overrides matches condition, and stops the conversation to prevent the
+        default assistant response if the event matched some event hook condition.
+        """
+        result = super().matches_condition(condition)
+        if result.is_match and self.assistant:
+            self.assistant.stop_conversation()
+
+        return result
 
     def _matches_argument(
         self, argname, condition_value, event_args, result: EventMatchResult
