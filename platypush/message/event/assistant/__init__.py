@@ -147,7 +147,12 @@ class SpeechRecognizedEvent(AssistantEvent):
         """
 
         result = super().matches_condition(condition)
-        if result.is_match and self.assistant and condition.args.get('phrase'):
+        if (
+            result.is_match
+            and condition.args.get('phrase')
+            and self.assistant
+            and self.assistant.stop_conversation_on_speech_match
+        ):
             self.assistant.stop_conversation()
 
         return result
@@ -248,7 +253,11 @@ class IntentRecognizedEvent(AssistantEvent):
         default assistant response if the event matched some event hook condition.
         """
         result = super().matches_condition(condition)
-        if result.is_match and self.assistant:
+        if (
+            result.is_match
+            and self.assistant
+            and self.assistant.stop_conversation_on_speech_match
+        ):
             self.assistant.stop_conversation()
 
         return result
