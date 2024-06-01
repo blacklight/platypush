@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.6] - 2024-06-01
+
+- 🐛 Bug fix on one of the entities modules that prevented the application from
+  loading when `.` is part of `PYTHONPATH`.
+
 ## [1.0.5] - 2024-06-01
 
 - A proper solution for the `utcnow()` issue.
