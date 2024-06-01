@@ -50,7 +50,7 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         tts_plugin: Optional[str] = None,
         tts_plugin_args: Optional[Dict[str, Any]] = None,
         conversation_start_sound: Optional[str] = None,
-        stop_conversation_on_speech_match: bool = False,
+        stop_conversation_on_speech_match: bool = True,
         **kwargs,
     ):
         """
@@ -66,13 +66,21 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
             on the default audio output device. If not set, the assistant won't
             play any sound when it detects a speech.
 
-        :param stop_conversation_on_speech_match: If set, the plugin will close the
-            conversation if the latest recognized speech matches a registered
-            :class:`platypush.message.event.assistant.SpeechRecognizedEvent` hook
-            with a phrase. This is usually set to ``True`` for
-            :class:`platypush.plugins.assistant.google.GoogleAssistantPlugin`,
-            as it overrides the default assistant response when a speech event is
-            actually handled on the application side.
+        :param stop_conversation_on_speech_match: If set, the plugin will
+            prevent the default assistant response when a
+            :class:`platypush.message.event.assistant.SpeechRecognizedEvent`
+            matches a user hook with a condition on a ``phrase`` field. This is
+            useful to prevent the assistant from responding with a default "*I'm
+            sorry, I can't help you with that*" when e.g. you say "*play the
+            music*", and you have a hook that matches the phrase "*play the
+            music*" and handles it with a custom action. If set, and you wish
+            the assistant to also provide an answer if an event matches one of
+            your hooks, then you should call the :meth:`render_response` method
+            in your hook handler. If not set, then the assistant will always try
+            and respond with a default message, even if a speech event matches
+            the phrase of one of your hooks. In this case, if you want to prevent
+            the default response, you should call :meth:`stop_conversation`
+            explicitly from your hook handler. Default: True.
         """
         super().__init__(*args, **kwargs)
         self.tts_plugin = tts_plugin
@@ -165,15 +173,38 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         return asdict(self._state)
 
     @action
-    def render_response(self, text: str, *_, **__):
+    def render_response(
+        self, text: str, *_, with_follow_on_turn: Optional[bool] = None, **__
+    ) -> bool:
         """
         Render a response text as audio over the configured TTS plugin.
 
         :param text: Text to render.
+        :param with_follow_on_turn: If set, the assistant will wait for a follow-up.
+            By default, ``with_follow_on_turn`` will be automatically set to true if
+            the ``text`` ends with a question mark.
+        :return: True if the assistant is waiting for a follow-up, False otherwise.
         """
-        self._on_response_render_start(text)
+        if not text:
+            self._on_no_response()
+            return False
+
+        follow_up = (
+            bool(text and text.strip().endswith('?'))
+            if with_follow_on_turn is None
+            else with_follow_on_turn
+        )
+
+        self._on_response_render_start(text, with_follow_on_turn=follow_up)
         self._render_response(text)
-        self._on_response_render_end()
+        self._on_response_render_end(with_follow_on_turn=follow_up)
+
+        if follow_up:
+            self.start_conversation()
+        else:
+            self.stop_conversation()
+
+        return follow_up
 
     def _get_tts_plugin(self):
         if not self.tts_plugin:
@@ -228,22 +259,37 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         self._conversation_running.clear()
         self._send_event(NoResponseEvent)
 
-    def _on_response_render_start(self, text: Optional[str]):
+    def _on_response_render_start(
+        self, text: Optional[str], with_follow_on_turn: bool = False
+    ):
         from platypush.message.event.assistant import ResponseEvent
 
         self._last_response = text
-        self._send_event(ResponseEvent, response_text=text)
+        self._send_event(
+            ResponseEvent, response_text=text, with_follow_on_turn=with_follow_on_turn
+        )
 
     def _render_response(self, text: Optional[str]):
-        tts = self._get_tts_plugin()
-        if tts and text:
-            self.stop_conversation()
-            tts.say(text=text, **self.tts_plugin_args)
+        if not text:
+            return
 
-    def _on_response_render_end(self):
+        tts = self._get_tts_plugin()
+        if not tts:
+            self.logger.warning(
+                'Got a response to render, but no TTS plugin is configured: %s', text
+            )
+            return
+
+        tts.say(text=text, **self.tts_plugin_args)
+
+    def _on_response_render_end(self, with_follow_on_turn: bool = False):
         from platypush.message.event.assistant import ResponseEndEvent
 
-        self._send_event(ResponseEndEvent, response_text=self._last_response)
+        self._send_event(
+            ResponseEndEvent,
+            response_text=self._last_response,
+            with_follow_on_turn=with_follow_on_turn,
+        )
 
     def _on_hotword_detected(self, hotword: Optional[str]):
         from platypush.message.event.assistant import HotwordDetectedEvent
