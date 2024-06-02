@@ -11,6 +11,7 @@ Plugins
     platypush/plugins/application.rst
     platypush/plugins/arduino.rst
     platypush/plugins/assistant.google.rst
+    platypush/plugins/assistant.openai.rst
     platypush/plugins/assistant.picovoice.rst
     platypush/plugins/autoremote.rst
     platypush/plugins/bluetooth.rst
@@ -134,6 +135,7 @@ Plugins
     platypush/plugins/tts.rst
     platypush/plugins/tts.google.rst
     platypush/plugins/tts.mimic3.rst
+    platypush/plugins/tts.openai.rst
     platypush/plugins/tts.picovoice.rst
     platypush/plugins/tv.samsung.ws.rst
     platypush/plugins/twilio.rst

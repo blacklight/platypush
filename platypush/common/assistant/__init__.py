@@ -1,8 +1,6 @@
-from collections import namedtuple
-from dataclasses import dataclass, field
 from logging import getLogger
 from queue import Full, Queue
-from threading import Event, RLock
+from threading import Event
 from time import time
 from typing import Optional
 
@@ -10,63 +8,7 @@ import sounddevice as sd
 
 from platypush.utils import wait_for_either
 
-
-AudioFrame = namedtuple('AudioFrame', ['data', 'timestamp'])
-
-
-@dataclass
-class PauseState:
-    """
-    Data class to hold the boilerplate (state + synchronization events) for the
-    audio recorder pause API.
-    """
-
-    _paused_event: Event = field(default_factory=Event)
-    _recording_event: Event = field(default_factory=Event)
-    _state_lock: RLock = field(default_factory=RLock)
-
-    @property
-    def paused(self):
-        with self._state_lock:
-            return self._paused_event.is_set()
-
-    def pause(self):
-        """
-        Pause the audio recorder.
-        """
-        with self._state_lock:
-            self._paused_event.set()
-            self._recording_event.clear()
-
-    def resume(self):
-        """
-        Resume the audio recorder.
-        """
-        with self._state_lock:
-            self._paused_event.clear()
-            self._recording_event.set()
-
-    def toggle(self):
-        """
-        Toggle the audio recorder pause state.
-        """
-        with self._state_lock:
-            if self.paused:
-                self.resume()
-            else:
-                self.pause()
-
-    def wait_paused(self, timeout: Optional[float] = None):
-        """
-        Wait until the audio recorder is paused.
-        """
-        self._paused_event.wait(timeout=timeout)
-
-    def wait_recording(self, timeout: Optional[float] = None):
-        """
-        Wait until the audio recorder is resumed.
-        """
-        self._recording_event.wait(timeout=timeout)
+from ._state import AudioFrame, PauseState
 
 
 class AudioRecorder:
@@ -112,9 +54,7 @@ class AudioRecorder:
         """
         Start the audio stream.
         """
-        self._stop_event.clear()
-        self.stream.start()
-        return self
+        return self.start()
 
     def __exit__(self, *_):
         """
@@ -144,6 +84,14 @@ class AudioRecorder:
         except TimeoutError:
             self.logger.debug('Audio queue is empty')
             return None
+
+    def start(self):
+        """
+        Start the audio stream.
+        """
+        self._stop_event.clear()
+        self.stream.start()
+        return self
 
     def stop(self):
         """
@@ -186,6 +134,6 @@ class AudioRecorder:
         wait_for_either(
             self._stop_event,
             self._upstream_stop_event,
-            self._paused_state._recording_event,
+            self._paused_state._recording_event,  # pylint: disable=protected-access
             timeout=timeout,
         )

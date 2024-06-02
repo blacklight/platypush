@@ -562,11 +562,8 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         self._assistant.override_speech_model(model_file)
         self._assistant.state = AssistantState.DETECTING_SPEECH
 
-    @action
-    def stop_conversation(self, *_, **__):
-        """
-        Programmatically stop a running conversation with the assistant
-        """
+    def _stop_conversation(self, *_, **__):
+        super()._stop_conversation()
         if not self._assistant:
             self.logger.warning('Assistant not initialized')
             return
