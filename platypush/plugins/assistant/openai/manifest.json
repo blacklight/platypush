@@ -1,0 +1,44 @@
+{
+  "manifest": {
+    "package": "platypush.plugins.assistant.openai",
+    "type": "plugin",
+    "events": [
+      "platypush.message.event.assistant.ConversationEndEvent",
+      "platypush.message.event.assistant.ConversationStartEvent",
+      "platypush.message.event.assistant.ConversationTimeoutEvent",
+      "platypush.message.event.assistant.HotwordDetectedEvent",
+      "platypush.message.event.assistant.IntentRecognizedEvent",
+      "platypush.message.event.assistant.MicMutedEvent",
+      "platypush.message.event.assistant.MicUnmutedEvent",
+      "platypush.message.event.assistant.NoResponseEvent",
+      "platypush.message.event.assistant.ResponseEndEvent",
+      "platypush.message.event.assistant.ResponseEvent",
+      "platypush.message.event.assistant.SpeechRecognizedEvent"
+    ],
+    "install": {
+      "apk": [
+        "ffmpeg",
+        "py3-numpy"
+      ],
+      "apt": [
+        "ffmpeg",
+        "python3-numpy",
+        "python3-pydub"
+      ],
+      "dnf": [
+        "ffmpeg",
+        "python-numpy"
+      ],
+      "pacman": [
+        "ffmpeg",
+        "python-numpy",
+        "python-sounddevice"
+      ],
+      "pip": [
+        "numpy",
+        "pydub",
+        "sounddevice"
+      ]
+    }
+  }
+}

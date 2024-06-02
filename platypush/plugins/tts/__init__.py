@@ -55,5 +55,18 @@ class TtsPlugin(Plugin):
 
         self._playback(url, **player_args)
 
+    @action
+    def stop(self):
+        """
+        Stop the playback.
+        """
+        try:
+            audio = get_plugin('sound')
+        except Exception:
+            return
+
+        if audio:
+            audio.stop_playback()
+
 
 # vim:sw=4:ts=4:et:
