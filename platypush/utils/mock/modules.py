@@ -93,6 +93,7 @@ mock_imports = [
     "pychromecast",
     "pyclip",
     "pydbus",
+    "pydub",
     "pyfirmata2",
     "pyngrok",
     "pyotp",

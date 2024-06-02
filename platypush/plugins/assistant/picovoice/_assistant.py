@@ -7,6 +7,7 @@ from typing import Any, Dict, Optional, Sequence
 
 import pvporcupine
 
+from platypush.common.assistant import AudioRecorder
 from platypush.context import get_plugin
 from platypush.message.event.assistant import (
     AssistantEvent,
@@ -16,8 +17,6 @@ from platypush.message.event.assistant import (
     SpeechRecognizedEvent,
 )
 from platypush.plugins.tts.picovoice import TtsPicovoicePlugin
-
-from ._recorder import AudioRecorder
 from ._speech import SpeechProcessor
 from ._state import AssistantState
 
