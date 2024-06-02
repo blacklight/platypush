@@ -1,5 +1,6 @@
 #!/bin/sh
 
+export SRCDIR="$PWD"
 export SKIPCI="$PWD/.skipci"
 rm -rf "$SKIPCI"
 
@@ -29,6 +30,7 @@ fi
 # Create a .skipci file to mark the fact that the next steps should be skipped
 # (we're going to do another push anyway, so another pipeline will be triggered)
 touch "$SKIPCI"
+cd "$SRCDIR"
 
 . .drone/macros/configure-ssh.sh
 . .drone/macros/configure-gpg.sh
