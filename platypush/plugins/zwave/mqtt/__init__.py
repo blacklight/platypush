@@ -377,9 +377,11 @@ class ZwaveMqttPlugin(
             'device_id': device_id.replace('0x', ''),
             'name': node.get('name'),
             'capabilities': capabilities,
-            'manufacturer_id': f'0x{node["manufacturerId"]:04x}'
-            if node.get('manufacturerId')
-            else None,
+            'manufacturer_id': (
+                f'0x{node["manufacturerId"]:04x}'
+                if node.get('manufacturerId')
+                else None
+            ),
             'manufacturer_name': node.get('manufacturer'),
             'location': node.get('loc'),
             'status': node.get('status'),
@@ -397,12 +399,12 @@ class ZwaveMqttPlugin(
             'is_security_device': node.get('supportsSecurity'),
             'is_sleeping': node.get('ready') and node.get('status') == 'Asleep',
             'last_update': cls._convert_timestamp(node.get('lastActive')),
-            'product_id': f'0x{node["productId"]:04x}'
-            if node.get('productId')
-            else None,
-            'product_type': f'0x{node["productType"]:04x}'
-            if node.get('productType')
-            else None,
+            'product_id': (
+                f'0x{node["productId"]:04x}' if node.get('productId') else None
+            ),
+            'product_type': (
+                f'0x{node["productType"]:04x}' if node.get('productType') else None
+            ),
             'product_name': ' '.join(
                 [node.get('productLabel', ''), node.get('productDescription', '')]
             ),
@@ -1048,7 +1050,7 @@ class ZwaveMqttPlugin(
         """
         Get the current status of the Z-Wave values.
 
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._filter_values(**kwargs)
@@ -1058,7 +1060,7 @@ class ZwaveMqttPlugin(
         """
         Get the status of the controller.
 
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         msg_queue: queue.Queue = queue.Queue()
@@ -1105,7 +1107,7 @@ class ZwaveMqttPlugin(
         :param do_security: Whether to initialize the Network Key on the device if it supports the Security CC
         :param timeout: How long the inclusion process should last, in seconds (default: 30). Specify zero or null
             for no timeout.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         self._api_request(
@@ -1128,7 +1130,7 @@ class ZwaveMqttPlugin(
         Remove a node from the network (or, better, start the exclusion process).
 
         :param timeout: How long the exclusion process should last, in seconds (default: 30).
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         self._api_request('startExclusion', **kwargs)
@@ -1144,7 +1146,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Filter by node_id.
         :param node_name: Filter by node name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         if node_name:
@@ -1162,7 +1164,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Filter by node_id.
         :param node_name: Filter by node name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         if node_name:
@@ -1180,7 +1182,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Filter by node_id.
         :param node_name: Filter by node name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         if node_name:
@@ -1194,7 +1196,7 @@ class ZwaveMqttPlugin(
         """
         Request a neighbours list update.
 
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         self._api_request('refreshNeighbors', **kwargs)
@@ -1208,7 +1210,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Filter by node_id.
         :param node_name: Filter by node name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
 
         :return: List of paired devices. Example output:
@@ -1362,7 +1364,7 @@ class ZwaveMqttPlugin(
                   }
                 }
 
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         if node_id or node_name:
@@ -1386,7 +1388,7 @@ class ZwaveMqttPlugin(
         :param new_name: New name for the node.
         :param node_id: Filter by node_id.
         :param node_name: Filter by current node name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         if node_name:
@@ -1417,7 +1419,7 @@ class ZwaveMqttPlugin(
         :param location: Node location.
         :param node_id: Filter by node_id.
         :param node_name: Filter by current node name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         if node_name:
@@ -1442,7 +1444,7 @@ class ZwaveMqttPlugin(
         Heal network by requesting nodes rediscover their neighbours.
 
         :param timeout: Duration of the healing process in seconds (default: 60). Set to zero or null for no timeout.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         self._api_request('beginHealingNetwork', **kwargs)
@@ -1469,7 +1471,7 @@ class ZwaveMqttPlugin(
         :param value_label: Select value by [node_id/node_name, value_label]
         :param node_id: Select value by [node_id/node_name, value_label]
         :param node_name: Select value by [node_id/node_name, value_label]
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._get_value(
@@ -1503,7 +1505,7 @@ class ZwaveMqttPlugin(
         :param value_label: Select value by [node_id/node_name, value_label]
         :param node_id: Select value by [node_id/node_name, value_label]
         :param node_name: Select value by [node_id/node_name, value_label]
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         # Compatibility layer with the .set_value format used by
@@ -1558,7 +1560,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by label.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         if node_name:
@@ -1575,7 +1577,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by label.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         self.node_heal(node_id=node_id, node_name=node_name, **kwargs)
@@ -1590,7 +1592,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by label.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         self.node_heal(node_id=node_id, node_name=node_name, **kwargs)
@@ -1604,7 +1606,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by label.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         if node_name:
@@ -1620,7 +1622,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by label.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._filter_values(
@@ -1639,7 +1641,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by label.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._filter_values(
@@ -1663,7 +1665,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._filter_values(
@@ -1679,7 +1681,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._filter_values(
@@ -1695,7 +1697,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._filter_values(
@@ -1715,7 +1717,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._filter_values(
@@ -1735,7 +1737,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._filter_values(
@@ -1755,7 +1757,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._filter_values(
@@ -1771,7 +1773,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._filter_values(
@@ -1787,7 +1789,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._filter_values(
@@ -1803,7 +1805,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._filter_values(
@@ -1830,7 +1832,7 @@ class ZwaveMqttPlugin(
 
         :param node_id: Select node by node_id.
         :param node_name: Select node by name.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         return self._filter_values(
@@ -1842,7 +1844,7 @@ class ZwaveMqttPlugin(
         """
         Get the groups on the network.
 
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
 
         :return: A list of the available groups. Example:
@@ -1885,7 +1887,7 @@ class ZwaveMqttPlugin(
         """
         Get the scenes configured on the network.
 
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         :return: dict with the following format:
 
@@ -1919,7 +1921,7 @@ class ZwaveMqttPlugin(
         Create a new scene.
 
         :param label: Scene label.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         self._api_request('_createScene', label, **kwargs)
@@ -1936,7 +1938,7 @@ class ZwaveMqttPlugin(
 
         :param scene_id: Select by scene_id.
         :param scene_label: Select by scene label.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         scene = self._get_scene(scene_id=scene_id, scene_label=scene_label, **kwargs)
@@ -1954,7 +1956,7 @@ class ZwaveMqttPlugin(
 
         :param scene_id: Select by scene_id.
         :param scene_label: Select by scene label.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         scene = self._get_scene(scene_id=scene_id, scene_label=scene_label, **kwargs)
@@ -1984,7 +1986,7 @@ class ZwaveMqttPlugin(
         :param node_name: Select value by [node_id/node_name, value_label]
         :param scene_id: Select scene by scene_id.
         :param scene_label: Select scene by scene label.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         value = self._get_value(
@@ -2032,7 +2034,7 @@ class ZwaveMqttPlugin(
         :param node_name: Select value by [node_id/node_name, value_label]
         :param scene_id: Select scene by scene_id.
         :param scene_label: Select scene by scene label.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         value = self._get_value(
@@ -2058,7 +2060,7 @@ class ZwaveMqttPlugin(
 
         :param scene_id: Select by scene_id.
         :param scene_label: Select by scene label.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         scene = self._get_scene(scene_id=scene_id, scene_label=scene_label, **kwargs)
@@ -2078,7 +2080,7 @@ class ZwaveMqttPlugin(
         :param group_id: Group ID.
         :param node_id: Node ID to be added.
         :param endpoint: Add a specific endpoint of the node to the group (default: add a node association).
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         group = self._get_group(group_id, **kwargs)
@@ -2102,7 +2104,7 @@ class ZwaveMqttPlugin(
         :param group_id: Group ID.
         :param node_id: Node ID to be added.
         :param endpoint: Node endpoint to remove (default: remove node association).
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         group = self._get_group(group_id, **kwargs)
@@ -2128,7 +2130,7 @@ class ZwaveMqttPlugin(
         Turn on a switch on a device.
 
         :param device: ``id_on_network`` of the value to be switched on.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         self.set_value(data=True, id_on_network=device, **kwargs)
@@ -2139,7 +2141,7 @@ class ZwaveMqttPlugin(
         Turn off a switch on a device.
 
         :param device: ``id_on_network`` of the value to be switched off.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         self.set_value(data=False, id_on_network=device, **kwargs)
@@ -2152,7 +2154,7 @@ class ZwaveMqttPlugin(
         Toggle a switch on a device.
 
         :param device: ``id_on_network`` of the value to be toggled.
-        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish``
+        :param kwargs: Extra arguments to be passed to :meth:`platypush.plugins.mqtt.MqttPlugin.publish`
             (default: query the default configured device).
         """
         value = self._get_value(id_on_network=device, use_cache=False, **kwargs)
