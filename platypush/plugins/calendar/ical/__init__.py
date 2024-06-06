@@ -1,6 +1,8 @@
 import datetime
-import requests
 from typing import Optional
+
+import requests
+from dateutil.tz import gettz
 
 from platypush.plugins import Plugin, action
 from platypush.plugins.calendar import CalendarInterface
@@ -21,19 +23,20 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
         self.url = url
 
     @staticmethod
-    def _convert_timestamp(event, attribute: str) -> Optional[str]:
+    def _convert_timestamp(event: dict, attribute: str) -> Optional[str]:
         t = event.get(attribute)
         if not t:
-            return
+            return None
 
-        if isinstance(t.dt, datetime.date):
+        if isinstance(t.dt, datetime.date) and not isinstance(t.dt, datetime.datetime):
             return datetime.datetime(
-                t.dt.year, t.dt.month, t.dt.day, tzinfo=datetime.timezone.utc
+                t.dt.year, t.dt.month, t.dt.day, tzinfo=gettz()
             ).isoformat()
 
         return (
-            datetime.datetime.utcfromtimestamp(t.dt.timestamp())
-            .replace(tzinfo=datetime.timezone.utc)
+            datetime.datetime.fromtimestamp(t.dt.timestamp())
+            .replace(tzinfo=t.dt.tzinfo or gettz())
+            .astimezone(datetime.timezone.utc)
             .isoformat()
         )
 
@@ -82,10 +85,10 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
         from icalendar import Calendar
 
         events = []
-        response = requests.get(self.url)
-        assert response.ok, "HTTP error while getting events from {}: {}".format(
-            self.url, response.text
-        )
+        response = requests.get(self.url, timeout=20)
+        assert (
+            response.ok
+        ), f"HTTP error while getting events from {self.url}: {response.text}"
 
         calendar = Calendar.from_ical(response.text)
         for event in calendar.walk():
@@ -97,7 +100,8 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
             if (
                 event['status'] != 'cancelled'
                 and event['end'].get('dateTime')
-                and event['end']['dateTime'] >= utcnow().isoformat()
+                and datetime.datetime.fromisoformat(event['end']['dateTime'])
+                >= utcnow()
                 and (
                     (
                         only_participating
