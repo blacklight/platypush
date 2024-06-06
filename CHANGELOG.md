@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.1.0] - 2024-06-06
 
 - [#405] Fixed timezone/timestamp rendering issues for `calendar.ical` events.
 - [#403] Included inherited actions in plugins docs.
