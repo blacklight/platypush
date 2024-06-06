@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - [#405] Fixed timezone/timestamp rendering issues for `calendar.ical` events.
+- [#403] Included inherited actions in plugins docs.
 
 ## [1.0.7] - 2024-06-02
 
