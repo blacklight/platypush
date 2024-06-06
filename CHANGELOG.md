@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- [#405] Fixed timezone/timestamp rendering issues for `calendar.ical` events.
+
 ## [1.0.7] - 2024-06-02
 
 - [#384] Added `assistant.openai` and `tts.openai` plugins.
