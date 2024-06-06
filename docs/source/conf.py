@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.abspath("./_ext"))
 # -- Project information -----------------------------------------------------
 
 project = 'Platypush'
-copyright = '2017-2023, Fabio Manganiello'
+copyright = '2017-2024, Fabio Manganiello'
 author = 'Fabio Manganiello <fabio@manganiello.tech>'
 
 # The short X.Y version
@@ -199,6 +199,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 autodoc_default_options = {
     'members': True,
     'show-inheritance': True,
+    'inherited-members': True,
 }
 
 sys.path.insert(0, os.path.abspath('../..'))
