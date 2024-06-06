@@ -1,10 +1,12 @@
-import warnings
+import logging
 
 from marshmallow import Schema, fields, pre_dump, post_dump
 
 from platypush.context import get_plugin
 
 from . import MediaArtistSchema, MediaCollectionSchema, MediaVideoSchema
+
+logger = logging.getLogger(__name__)
 
 
 class JellyfinSchema(Schema):
@@ -20,9 +22,10 @@ class JellyfinSchema(Schema):
     @post_dump
     def gen_img_url(self, data: dict, **_) -> dict:
         if 'image' in self.fields:
+            plugin = get_plugin('media.jellyfin')
+            assert plugin, 'The media.jellyfin plugin is not configured'
             data['image'] = (
-                get_plugin('media.jellyfin').server
-                + f'/Items/{data["id"]}'  # type: ignore
+                plugin.server + f'/Items/{data["id"]}'  # type: ignore
                 '/Images/Primary?fillHeight=333&fillWidth=222&quality=96'
             )
 
@@ -43,9 +46,8 @@ class JellyfinSchema(Schema):
 
         if not video_format:
             if not available_containers:
-                warnings.warn(
-                    f'The media ID {data["Id"]} has no available video containers',
-                    stacklevel=2,
+                logger.warning(
+                    'The media ID %s has no available video containers', data["Id"]
                 )
 
                 return data

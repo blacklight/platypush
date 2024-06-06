@@ -17,8 +17,6 @@ from typing import (
     Set,
     Union,
 )
-import warnings
-
 from platypush.config import Config
 from platypush.context import get_bus
 from platypush.entities import Entity, LightEntityManager
@@ -86,11 +84,7 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
 
         poll_seconds = kwargs.pop('poll_seconds', None)
         if poll_seconds is not None:
-            warnings.warn(
-                'poll_seconds is deprecated, use poll_interval instead',
-                DeprecationWarning,
-                stacklevel=2,
-            )
+            self.logger.warning('poll_seconds is deprecated, use poll_interval instead')
 
             if poll_interval is None:
                 poll_interval = poll_seconds
@@ -1156,12 +1150,16 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
                         temperature=entity.get('state', {}).get('ct'),
                         colormode=entity.get('colormode'),
                         reachable=entity.get('state', {}).get('reachable'),
-                        x=entity['state']['xy'][0]
-                        if entity.get('state', {}).get('xy')
-                        else None,
-                        y=entity['state']['xy'][1]
-                        if entity.get('state', {}).get('xy')
-                        else None,
+                        x=(
+                            entity['state']['xy'][0]
+                            if entity.get('state', {}).get('xy')
+                            else None
+                        ),
+                        y=(
+                            entity['state']['xy'][1]
+                            if entity.get('state', {}).get('xy')
+                            else None
+                        ),
                         effect=entity.get('state', {}).get('effect'),
                         **(
                             {
