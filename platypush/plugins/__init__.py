@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import threading
-import warnings
 
 from abc import ABC, abstractmethod
 from functools import wraps
@@ -168,11 +167,7 @@ class RunnablePlugin(Plugin):
         self._thread: Optional[threading.Thread] = None
 
         if kwargs.get('poll_seconds') is not None:
-            warnings.warn(
-                'poll_seconds is deprecated, use poll_interval instead',
-                DeprecationWarning,
-                stacklevel=2,
-            )
+            self.logger.warning('poll_seconds is deprecated, use poll_interval instead')
 
             if self.poll_interval is None:
                 self.poll_interval = kwargs['poll_seconds']

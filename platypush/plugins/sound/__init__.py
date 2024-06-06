@@ -1,5 +1,4 @@
 from dataclasses import asdict
-import warnings
 from typing import Iterable, List, Optional, Union
 
 from platypush.plugins import RunnablePlugin, action
@@ -184,10 +183,8 @@ class SoundPlugin(RunnablePlugin):
         blocksize = blocksize or self.output_blocksize
 
         if file:
-            warnings.warn(
+            self.logger.warning(
                 'file is deprecated, use resource instead',
-                DeprecationWarning,
-                stacklevel=1,
             )
             if not resource:
                 resource = file
@@ -232,10 +229,8 @@ class SoundPlugin(RunnablePlugin):
         """
         Deprecated alias for :meth:`.record`.
         """
-        warnings.warn(
+        self.logger.warning(
             'sound.stream_recording is deprecated, use sound.record instead',
-            DeprecationWarning,
-            stacklevel=1,
         )
 
         return self.record(*args, **kwargs)
@@ -319,10 +314,8 @@ class SoundPlugin(RunnablePlugin):
         """
         Deprecated alias for :meth:`.record`.
         """
-        warnings.warn(
+        self.logger.warning(
             'sound.recordplay is deprecated, use sound.record with `play_audio=True` instead',
-            DeprecationWarning,
-            stacklevel=1,
         )
 
         kwargs['play_audio'] = True
@@ -398,10 +391,8 @@ class SoundPlugin(RunnablePlugin):
         Deprecated alias for :meth:`.status`.
         """
 
-        warnings.warn(
+        self.logger.warning(
             'sound.query_streams is deprecated, use sound.status instead',
-            DeprecationWarning,
-            stacklevel=1,
         )
 
         return self.status()

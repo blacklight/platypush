@@ -1,7 +1,6 @@
 from collections.abc import Collection
 import time
 from typing import List, Optional, Union
-import warnings
 
 from platypush.context import get_bus
 from platypush.entities.distance import DistanceSensor
@@ -45,10 +44,8 @@ class SensorHcsr04Plugin(GpioPlugin, SensorPlugin):
 
         measurement_interval = kwargs.pop('measurement_interval', None)
         if measurement_interval is not None:
-            warnings.warn(
+            self.logger.warning(
                 'measurement_interval is deprecated, use poll_interval instead',
-                DeprecationWarning,
-                stacklevel=2,
             )
             poll_interval = measurement_interval
 
