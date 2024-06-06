@@ -18,7 +18,7 @@
     "register-service-worker": "^1.7.2",
     "sass": "^1.75.0",
     "sass-loader": "^10.5.2",
-    "vue": "^3.4.23",
+    "vue": "^3.4.24",
     "vue-router": "^4.3.2",
     "vue-skycons": "^4.3.4",
     "w3css": "^2.7.0"
