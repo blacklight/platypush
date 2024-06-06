@@ -1,12 +1,13 @@
 #!/bin/sh
 
 export SRCDIR="$PWD"
+export WEBAPP_DIR="$SRCDIR/platypush/backend/http/webapp"
 export SKIPCI="$PWD/.skipci"
 rm -rf "$SKIPCI"
 
 . .drone/macros/configure-git.sh
 
-cd platypush/backend/http/webapp
+cd "$WEBAPP_DIR"
 if [ $(git log --pretty=oneline $DRONE_COMMIT_AFTER...$DRONE_COMMIT_BEFORE . | wc -l) -eq 0 ]; then
   echo "No UI changes detected, skipping build"
   exit 0
@@ -35,8 +36,8 @@ cd "$SRCDIR"
 . .drone/macros/configure-ssh.sh
 . .drone/macros/configure-gpg.sh
 
-git add dist
-git commit dist -S -m "[Automatic] Updated UI files" --no-verify
+git add "${WEBAPP_DIR}/dist"
+git commit "${WEBAPP_DIR}/dist" -S -m "[Automatic] Updated UI files" --no-verify
 git remote rm origin
 git remote add origin git@git.platypush.tech:platypush/platypush.git
 git push -f origin master
