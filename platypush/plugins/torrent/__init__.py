@@ -1,11 +1,10 @@
+import inspect
 import os
 import pathlib
-import queue
 import random
 import threading
 import time
-from urllib.parse import quote_plus
-from typing import Iterable, List, Optional, Union
+from typing import Dict, Iterable, Optional, Union
 
 import requests
 
@@ -24,6 +23,9 @@ from platypush.message.event.torrent import (
 )
 from platypush.utils import get_default_downloads_dir
 
+from . import _search as search_module
+from ._search import TorrentSearchProvider
+
 
 class TorrentPlugin(Plugin):
     """
@@ -38,75 +40,164 @@ class TorrentPlugin(Plugin):
     default_torrent_ports = (6881, 6891)
     torrent_state = {}
     transfers = {}
-    default_popcorn_base_url = 'https://shows.cf'
 
     def __init__(
         self,
         download_dir: Optional[str] = None,
         torrent_ports: Iterable[int] = default_torrent_ports,
-        popcorn_base_url: str = default_popcorn_base_url,
+        search_providers: Optional[
+            Union[Dict[str, dict], Iterable[TorrentSearchProvider]]
+        ] = None,
         **kwargs,
     ):
         """
         :param download_dir: Directory where the videos/torrents will be
             downloaded (default: ``~/Downloads``).
         :param torrent_ports: Torrent ports to listen on (default: 6881 and 6891)
-        :param popcorn_base_url: Custom base URL to use for the PopcornTime API.
-        """
+        :param search_providers: List of search providers to use. Each provider
+            has its own supported configuration and needs to be an instance of
+            :class:`TorrentSearchProvider`. Currently supported providers:
 
+                * :class:`platypush.plugins.torrent._search.PopcornTimeSearchProvider`
+                * :class:`platypush.plugins.torrent._search.TorrentCsvSearchProvider`
+
+            Configuration example:
+
+            .. code-block:: yaml
+
+                torrent:
+                  # ...
+
+                  search_providers:
+                    torrent_csv:
+                      # Default: True
+                      # enabled: true
+                      # Base URL of the torrent-csv API.
+                      # See https://git.torrents-csv.com/heretic/torrents-csv-server
+                      # for how to run your own torrent-csv API server.
+                      api_url: https://torrents-csv.com/service
+                      # Alternatively, you can also use a local checkout of the
+                      # torrent.csv file. Clone
+                      # https://git.torrents-csv.com/heretic/torrents-csv-data
+                      # and provide the path to the torrent.csv file here.
+                      # csv_file: /path/to/torrent.csv
+                    popcorn_time:
+                      # Default: False
+                      # enabled: false
+                      # Required: PopcornTime API base URL.
+                      # See https://github.com/popcorn-time-ru/popcorn-ru for
+                      # how to run your own PopcornTime API server.
+                      api_url: https://popcorntime.app
+
+        """
         super().__init__(**kwargs)
 
         self.torrent_ports = torrent_ports
         self.download_dir = os.path.abspath(
             os.path.expanduser(download_dir or get_default_downloads_dir())
         )
+        self._search_providers = self._load_search_providers(search_providers)
         self._sessions = {}
         self._lt_session = None
-        self.popcorn_base_url = popcorn_base_url
-        self.torrent_base_urls = {
-            'movies': f'{popcorn_base_url}/movie/{{}}',
-            'tv': f'{popcorn_base_url}/show/{{}}',
-        }
-
         pathlib.Path(self.download_dir).mkdir(parents=True, exist_ok=True)
+
+    def _load_search_providers(
+        self,
+        search_providers: Optional[
+            Union[Dict[str, dict], Iterable[TorrentSearchProvider]]
+        ],
+    ) -> Iterable[TorrentSearchProvider]:
+        if not search_providers:
+            return []
+
+        parsed_providers = []
+        if isinstance(search_providers, dict):
+            providers_dict = {}
+            provider_classes = {
+                cls.provider_name(): cls
+                for _, cls in inspect.getmembers(search_module, inspect.isclass)
+                if issubclass(cls, TorrentSearchProvider)
+                and cls != TorrentSearchProvider
+            }
+
+            # Configure the search providers explicitly passed in the configuration
+            for provider_name, provider_config in search_providers.items():
+                if provider_name not in provider_classes:
+                    self.logger.warning(
+                        'Unsupported search provider %s. Supported providers: %s',
+                        provider_name,
+                        list(provider_classes.keys()),
+                    )
+                    continue
+
+                provider_class = provider_classes[provider_name]
+                providers_dict[provider_name] = provider_class(
+                    **{'enabled': True, **provider_config}
+                )
+
+            # Enable the search providers that have `default_enabled` set to True
+            # and that are not explicitly disabled
+            for provider_name, provider in provider_classes.items():
+                if provider.default_enabled() and provider_name not in search_providers:
+                    providers_dict[provider_name] = provider()
+
+            parsed_providers = list(providers_dict.values())
+        else:
+            parsed_providers = search_providers
+
+        assert all(
+            isinstance(provider, TorrentSearchProvider) for provider in parsed_providers
+        ), 'All search providers must be instances of TorrentSearchProvider'
+
+        return parsed_providers
 
     @action
     def search(
         self,
         query: str,
+        providers: Optional[Union[str, Iterable[str]]] = None,
         *args,
-        category: Optional[Union[str, Iterable[str]]] = None,
-        language: Optional[str] = None,
-        **kwargs,
+        **filters,
     ):
         """
         Perform a search of video torrents.
 
         :param query: Query string, video name or partial name
-        :param category: Category to search. Supported types: "movies", "tv".
-            Default: None (search all categories)
-        :param language: Language code for the results - example: "en" (default: None, no filter)
+        :param providers: Override the default search providers by specifying
+            the provider names to use for this search.
+        :param filters: Additional filters to apply to the search, depending on
+            what the configured search providers support. For example,
+            ``category`` and ``language`` are supported by the PopcornTime.
+        :return: .. schema:: torrent.TorrentResultSchema(many=True)
         """
 
         results = []
-        if isinstance(category, str):
-            category = [category]
 
-        def worker(cat):
-            if cat not in self.categories:
-                raise RuntimeError(
-                    f'Unsupported category {cat}. Supported categories: '
-                    f'{list(self.categories.keys())}'
-                )
-
-            self.logger.info('Searching %s torrents for "%s"', cat, query)
-            results.extend(
-                self.categories[cat](self, query, *args, language=language, **kwargs)
+        def worker(provider: TorrentSearchProvider):
+            self.logger.debug(
+                'Searching torrents on provider %s, query: %s',
+                provider.provider_name(),
+                query,
             )
+            results.extend(provider.search(query, *args, **filters))
+
+        if providers:
+            providers = [providers] if isinstance(providers, str) else providers
+            search_providers = [
+                provider
+                for provider in self._search_providers
+                if provider.provider_name() in providers
+            ]
+        else:
+            search_providers = self._search_providers
+
+        if not search_providers:
+            self.logger.warning('No search providers enabled')
+            return []
 
         workers = [
-            threading.Thread(target=worker, kwargs={'cat': category})
-            for category in (category or self.categories.keys())
+            threading.Thread(target=worker, kwargs={'provider': provider})
+            for provider in search_providers
         ]
 
         for wrk in workers:
@@ -114,170 +205,7 @@ class TorrentPlugin(Plugin):
         for wrk in workers:
             wrk.join()
 
-        return results
-
-    def _imdb_query(self, query: str, category: str):
-        if not query:
-            return []
-
-        if category == 'movies':
-            imdb_category = 'movie'
-        elif category == 'tv':
-            imdb_category = 'tvSeries'
-        else:
-            raise RuntimeError(f'Unsupported category: {category}')
-
-        imdb_url = f'https://v3.sg.media-imdb.com/suggestion/x/{quote_plus(query)}.json?includeVideos=1'
-        response = requests.get(imdb_url, timeout=self._http_timeout)
-        response.raise_for_status()
-        response = response.json()
-        assert not response.get('errorMessage'), response['errorMessage']
-        return [
-            item for item in response.get('d', []) if item.get('qid') == imdb_category
-        ]
-
-    def _torrent_search_worker(self, imdb_id: str, category: str, q: queue.Queue):
-        base_url = self.torrent_base_urls.get(category)
-        assert base_url, f'No such category: {category}'
-        try:
-            results = requests.get(
-                base_url.format(imdb_id), timeout=self._http_timeout
-            ).json()
-            q.put(results)
-        except Exception as e:
-            q.put(e)
-
-    def _search_torrents(self, query, category):
-        imdb_results = self._imdb_query(query, category)
-        result_queues = [queue.Queue()] * len(imdb_results)
-        workers = [
-            threading.Thread(
-                target=self._torrent_search_worker,
-                kwargs={
-                    'imdb_id': imdb_results[i]['id'],
-                    'category': category,
-                    'q': result_queues[i],
-                },
-            )
-            for i in range(len(imdb_results))
-        ]
-
-        results = []
-        errors = []
-
-        for worker in workers:
-            worker.start()
-        for q in result_queues:
-            res_ = q.get()
-            if isinstance(res_, Exception):
-                errors.append(res_)
-            else:
-                results.append(res_)
-        for worker in workers:
-            worker.join()
-
-        if errors:
-            self.logger.warning('Torrent search errors: %s', [str(e) for e in errors])
-
-        return results
-
-    @staticmethod
-    def _results_to_movies_response(
-        results: List[dict], language: Optional[str] = None
-    ):
-        return sorted(
-            [
-                {
-                    'imdb_id': result.get('imdb_id'),
-                    'type': 'movies',
-                    'file': item.get('file'),
-                    'title': (
-                        result.get('title', '[No Title]')
-                        + f' [movies][{lang}][{quality}]'
-                    ),
-                    'duration': int(result.get('runtime') or 0) * 60,
-                    'year': int(result.get('year') or 0),
-                    'synopsis': result.get('synopsis'),
-                    'trailer': result.get('trailer'),
-                    'genres': result.get('genres', []),
-                    'image': result.get('images', {}).get('poster'),
-                    'rating': result.get('rating', {}),
-                    'language': lang,
-                    'quality': quality,
-                    'size': item.get('size'),
-                    'provider': item.get('provider'),
-                    'seeds': item.get('seed'),
-                    'peers': item.get('peer'),
-                    'url': item.get('url'),
-                }
-                for result in results
-                for (lang, items) in (result.get('torrents', {}) or {}).items()
-                if not language or language == lang
-                for (quality, item) in items.items()
-                if quality != '0'
-            ],
-            key=lambda item: item.get('seeds', 0),
-            reverse=True,
-        )
-
-    @staticmethod
-    def _results_to_tv_response(results: List[dict]):
-        return sorted(
-            [
-                {
-                    'imdb_id': result.get('imdb_id'),
-                    'tvdb_id': result.get('tvdb_id'),
-                    'type': 'tv',
-                    'file': item.get('file'),
-                    'series': result.get('title'),
-                    'title': (
-                        result.get('title', '[No Title]')
-                        + f'[S{episode.get("season", 0):02d}E{episode.get("episode", 0):02d}] '
-                        + f'{episode.get("title", "[No Title]")} [tv][{quality}]'
-                    ),
-                    'duration': int(result.get('runtime') or 0) * 60,
-                    'year': int(result.get('year') or 0),
-                    'synopsis': result.get('synopsis'),
-                    'overview': episode.get('overview'),
-                    'season': episode.get('season'),
-                    'episode': episode.get('episode'),
-                    'num_seasons': result.get('num_seasons'),
-                    'country': result.get('country'),
-                    'network': result.get('network'),
-                    'status': result.get('status'),
-                    'genres': result.get('genres', []),
-                    'image': result.get('images', {}).get('fanart'),
-                    'rating': result.get('rating', {}),
-                    'quality': quality,
-                    'provider': item.get('provider'),
-                    'seeds': item.get('seeds'),
-                    'peers': item.get('peers'),
-                    'url': item.get('url'),
-                }
-                for result in results
-                for episode in result.get('episodes', [])
-                for quality, item in (episode.get('torrents', {}) or {}).items()
-                if quality != '0'
-            ],
-            key=lambda item: (
-                '.'.join(
-                    [
-                        item.get('series', ''),
-                        item.get('quality', ''),
-                        str(item.get('season', 0)).zfill(2),
-                        str(item.get('episode', 0)).zfill(2),
-                    ]
-                )
-            ),
-        )
-
-    def search_movies(self, query, language=None):
-        return self._results_to_movies_response(
-            self._search_torrents(query, 'movies'), language=language
-        )
-
-    def search_tv(self, query, **_):
-        return self._results_to_tv_response(self._search_torrents(query, 'tv'))
+        return [result.to_dict() for result in results]
 
     def _get_torrent_info(self, torrent, download_dir):
         import libtorrent as lt
@@ -618,11 +546,6 @@ class TorrentPlugin(Plugin):
         for _ in range(0, length):
             name += hex(random.randint(0, 15))[2:].upper()
         return name + '.torrent'
-
-    categories = {
-        'movies': search_movies,
-        'tv': search_tv,
-    }
 
 
 # vim:sw=4:ts=4:et:

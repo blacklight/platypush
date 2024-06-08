@@ -36,11 +36,6 @@
       <div class="right side" v-text="item.num_seasons" />
     </div>
 
-    <div class="row" v-if="item?.synopsis">
-      <div class="left side">Synopsis</div>
-      <div class="right side" v-text="item.synopsis" />
-    </div>
-
     <div class="row" v-if="item?.description">
       <div class="left side">Description</div>
       <div class="right side" v-text="item.description" />
@@ -80,7 +75,7 @@
 
     <div class="row" v-if="item?.rating">
       <div class="left side">Rating</div>
-      <div class="right side">{{ item.rating.percentage }}%</div>
+      <div class="right side">{{ item.rating }}%</div>
     </div>
 
     <div class="row" v-if="item?.critic_rating">
@@ -93,9 +88,9 @@
       <div class="right side">{{ item.community_rating }}%</div>
     </div>
 
-    <div class="row" v-if="item?.rating">
+    <div class="row" v-if="item?.votes">
       <div class="left side">Votes</div>
-      <div class="right side" v-text="item.rating.votes" />
+      <div class="right side" v-text="item.votes" />
     </div>
 
     <div class="row" v-if="item?.genres">

@@ -10,12 +10,12 @@
 
 - [[#405](https://git.platypush.tech/platypush/platypush/issues/405)] Fixed
   timezone/timestamp rendering issues for `calendar.ical` events.
-- [[#403]((https://git.platypush.tech/platypush/platypush/issues/403))]
+- [[#403]((https://git.platypush.tech/platypush/platypush/issues/403)]
   Included inherited actions in plugins docs.
 
 ## [1.0.7] - 2024-06-02
 
-- [[#384]((https://git.platypush.tech/platypush/platypush/issues/384))] Added
+- [[#384]((https://git.platypush.tech/platypush/platypush/issues/384)] Added
   `assistant.openai` and `tts.openai` plugins.
 
 ## [1.0.6] - 2024-06-01
