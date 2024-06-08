@@ -14,7 +14,9 @@ class StrippedString(fields.Function):  # lgtm [py/missing-call-to-init]
         super().__init__(*args, **kwargs)
 
     def _serialize(self, value, attr, obj, **kwargs) -> Optional[str]:
-        if obj.get(attr) is not None:
+        if getattr(obj, attr, None) is not None:
+            return self._strip(getattr(obj, attr))
+        if getattr(obj, 'get', lambda _: None)(attr) is not None:
             return self._strip(obj.get(attr))
 
     @staticmethod
