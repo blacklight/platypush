@@ -16,7 +16,7 @@
     "lato-font": "^3.0.0",
     "mitt": "^2.1.0",
     "register-service-worker": "^1.7.2",
-    "sass": "^1.76.0",
+    "sass": "^1.77.2",
     "sass-loader": "^10.5.2",
     "vue": "^3.4.27",
     "vue-router": "^4.3.2",
