@@ -30,6 +30,86 @@ from ._search import TorrentSearchProvider
 class TorrentPlugin(Plugin):
     """
     Plugin to search and download torrents.
+
+    Search
+    ------
+
+    You can search for torrents using the :meth:`search` method. The method will
+    use the search providers configured in the ``search_providers`` attribute of
+    the plugin configuration. Currently supported search providers:
+
+        * ``popcorntime`:
+            :class:`platypush.plugins.torrent._search.PopcornTimeSearchProvider`
+        * ``torrents.csv``:
+            :class:`platypush.plugins.torrent._search.TorrentsCsvSearchProvider`
+
+    ``torrents.csv`` will be enabled by default unless you explicitly disable
+    it. ``torrents.csv`` also supports both:
+
+        * A remote API via the ``api_url`` attribute (default:
+           `https://torrents-csv.com/service``). You can also run your own API
+           server by following the instructions at `heretic/torrents-csv-server
+           <https://git.torrents-csv.com/heretic/torrents-csv-server>`_.
+
+        * A local checkout of the ``torrents.csv`` file. Clone the
+          `heretic/torrents-csv-data
+          <https://git.torrents-csv.com/heretic/torrents-csv-data>`_ and provide
+          the path to the ``torrents.csv`` file in the ``csv_file`` attribute.
+
+        * A local checkout of the ``torrents.db`` file built from the
+          ``torrents.csv`` file. Follow the instructions at
+          `heretic/torrents-csv-data
+          <https://git.torrents-csv.com/heretic/torrents-csv-data>`_ on how to
+          build the ``torrents.db`` file from the ``torrents.csv`` file.
+
+    If you opt for a local checkout of the ``torrents.csv`` file, then
+    Platypush will build the SQLite database from the CSV file for you - no need
+    to use external services. This however means that the first search will be
+    slower as the database is being built. Subsequent searches will be faster,
+    unless you modify the CSV file - in this case, an updated database will be
+    built from the latest CSV file.
+
+    You can also specify the ``download_csv`` property in the configuration. In
+    this case, Platypush will automatically download the latest ``torrents.csv``
+    file locally and build the SQLite database from it. On startup, Platypush
+    will check if either the local or remote CSV file has been updated, and
+    rebuild the database if necessary.
+
+    ``popcorntime`` will be disabled by default unless you explicitly enable it.
+    That's because, at the time of writing (June 2024), there are no publicly
+    available PopcornTime API servers. You can run your own PopcornTime API
+    server by following the instructions at `popcorn-time-ru/popcorn-ru
+    <https://github.com/popcorn-time-ru/popcorn-ru>`_.
+
+    Configuration example:
+
+    .. code-block:: yaml
+
+        torrent:
+          # ...
+
+          search_providers:
+            torrents.csv:
+              # Default: True
+              # enabled: true
+              # Base URL of the torrents.csv API.
+              api_url: https://torrents-csv.com/service
+
+              # Alternatively, you can also use a local checkout of the
+              # torrents.csv file.
+              # csv_file: /path/to/torrents.csv
+
+              # Or a manually built SQLite database from the torrents.csv file.
+              # db_file: /path/to/torrents.db
+
+              # Or automatically download the latest torrents.csv file.
+              # download_csv: true
+            popcorn_time:
+              # Default: false
+              # enabled: false
+              # Required: PopcornTime API base URL.
+              api_url: https://popcorntime.app
+
     """
 
     _http_timeout = 20
@@ -54,41 +134,7 @@ class TorrentPlugin(Plugin):
         :param download_dir: Directory where the videos/torrents will be
             downloaded (default: ``~/Downloads``).
         :param torrent_ports: Torrent ports to listen on (default: 6881 and 6891)
-        :param search_providers: List of search providers to use. Each provider
-            has its own supported configuration and needs to be an instance of
-            :class:`TorrentSearchProvider`. Currently supported providers:
-
-                * :class:`platypush.plugins.torrent._search.PopcornTimeSearchProvider`
-                * :class:`platypush.plugins.torrent._search.TorrentCsvSearchProvider`
-
-            Configuration example:
-
-            .. code-block:: yaml
-
-                torrent:
-                  # ...
-
-                  search_providers:
-                    torrent_csv:
-                      # Default: True
-                      # enabled: true
-                      # Base URL of the torrent-csv API.
-                      # See https://git.torrents-csv.com/heretic/torrents-csv-server
-                      # for how to run your own torrent-csv API server.
-                      api_url: https://torrents-csv.com/service
-                      # Alternatively, you can also use a local checkout of the
-                      # torrent.csv file. Clone
-                      # https://git.torrents-csv.com/heretic/torrents-csv-data
-                      # and provide the path to the torrent.csv file here.
-                      # csv_file: /path/to/torrent.csv
-                    popcorn_time:
-                      # Default: False
-                      # enabled: false
-                      # Required: PopcornTime API base URL.
-                      # See https://github.com/popcorn-time-ru/popcorn-ru for
-                      # how to run your own PopcornTime API server.
-                      api_url: https://popcorntime.app
-
+        :param search_providers: List of search providers to use.
         """
         super().__init__(**kwargs)
 
@@ -96,7 +142,13 @@ class TorrentPlugin(Plugin):
         self.download_dir = os.path.abspath(
             os.path.expanduser(download_dir or get_default_downloads_dir())
         )
+
         self._search_providers = self._load_search_providers(search_providers)
+        self.logger.info(
+            'Loaded search providers: %s',
+            [provider.provider_name() for provider in self._search_providers],
+        )
+
         self._sessions = {}
         self._lt_session = None
         pathlib.Path(self.download_dir).mkdir(parents=True, exist_ok=True)
@@ -107,18 +159,22 @@ class TorrentPlugin(Plugin):
             Union[Dict[str, dict], Iterable[TorrentSearchProvider]]
         ],
     ) -> Iterable[TorrentSearchProvider]:
+        provider_classes = {
+            cls.provider_name(): cls
+            for _, cls in inspect.getmembers(search_module, inspect.isclass)
+            if issubclass(cls, TorrentSearchProvider) and cls != TorrentSearchProvider
+        }
+
         if not search_providers:
-            return []
+            return [
+                provider()
+                for provider in provider_classes.values()
+                if provider.default_enabled()
+            ]
 
         parsed_providers = []
         if isinstance(search_providers, dict):
             providers_dict = {}
-            provider_classes = {
-                cls.provider_name(): cls
-                for _, cls in inspect.getmembers(search_module, inspect.isclass)
-                if issubclass(cls, TorrentSearchProvider)
-                and cls != TorrentSearchProvider
-            }
 
             # Configure the search providers explicitly passed in the configuration
             for provider_name, provider_config in search_providers.items():
@@ -523,7 +579,9 @@ class TorrentPlugin(Plugin):
         :type torrent: str
         """
 
-        assert torrent in self.transfers, f"No transfer in progress for {torrent}"
+        if not self.transfers.get(torrent):
+            self.logger.info('No transfer in progress for %s', torrent)
+            return
 
         self.transfers[torrent].pause()
         del self.torrent_state[torrent]

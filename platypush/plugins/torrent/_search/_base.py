@@ -49,7 +49,7 @@ class TorrentSearchProvider(ABC):
             )
             return []
 
-        self.logger.debug('Searching for %r', query)
+        self.logger.debug("Searching for %r", query)
         return self._search(query, *args, **kwargs)
 
     @classmethod

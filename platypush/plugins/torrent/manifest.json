@@ -3,16 +3,20 @@
     "events": {},
     "install": {
       "apk": [
-        "py3-libtorrent-rasterbar"
+        "py3-libtorrent-rasterbar",
+        "sqlite3"
       ],
       "apt": [
-        "python3-libtorrent"
+        "python3-libtorrent",
+        "sqlite3"
       ],
       "dnf": [
-        "rb_libtorrent-python3"
+        "rb_libtorrent-python3",
+        "sqlite3"
       ],
       "pacman": [
-        "libtorrent-rasterbar"
+        "libtorrent-rasterbar",
+        "sqlite3"
       ],
       "pip": [
         "libtorrent"
