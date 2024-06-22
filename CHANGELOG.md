@@ -6,6 +6,10 @@
   replaced `warnings.warn` with `logging.warning`, as there is no easy and
   reliable way of routing `warnings.warn` to `logging`.
 
+- [[#263](https://git.platypush.tech/platypush/platypush/issues/263)]
+  added torrents.csv search provider, and support for generic torrent search
+  providers. Torrents.csv supports search both via API and local checkout.
+
 ## [1.1.0] - 2024-06-06
 
 - [[#405](https://git.platypush.tech/platypush/platypush/issues/405)] Fixed
