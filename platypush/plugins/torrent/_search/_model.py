@@ -25,6 +25,7 @@ class TorrentSearchResult:
     peers: int = 0
     image: Optional[str] = None
     description: Optional[str] = None
+    is_media: bool = False
     imdb_id: Optional[str] = None
     tvdb_id: Optional[str] = None
     year: Optional[int] = None

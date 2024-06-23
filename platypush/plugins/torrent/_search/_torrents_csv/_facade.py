@@ -78,7 +78,11 @@ class TorrentsCsvSearchProvider(TorrentsCsvBaseProvider):
         :param limit: Number of results to return (default: 25).
         :param page: Page number (default: 1).
         """
-        return list(self._delegate.search(query=query, limit=limit, page=page))
+        results = list(self._delegate.search(query=query, limit=limit, page=page))
+        for result in results:
+            result.provider = self.provider_name()
+
+        return results
 
 
 # vim:sw=4:ts=4:et:

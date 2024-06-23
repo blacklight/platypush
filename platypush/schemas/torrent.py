@@ -60,6 +60,13 @@ class TorrentResultSchema(Schema):
         },
     )
 
+    is_media = fields.Boolean(
+        metadata={
+            'description': 'True if the torrent is a media file',
+            'example': True,
+        },
+    )
+
     size = fields.Integer(
         missing=0,
         metadata={

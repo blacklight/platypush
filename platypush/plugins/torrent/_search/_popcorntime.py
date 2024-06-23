@@ -160,6 +160,7 @@ class PopcornTimeSearchProvider(TorrentSearchProvider):
             [
                 TorrentSearchResult(
                     provider=cls.provider_name(),
+                    is_media=True,
                     imdb_id=result.get('imdb_id'),
                     type='movies',
                     title=result.get('title', '[No Title]')
@@ -196,6 +197,7 @@ class PopcornTimeSearchProvider(TorrentSearchProvider):
             [
                 TorrentSearchResult(
                     provider=cls.provider_name(),
+                    is_media=True,
                     imdb_id=result.get('imdb_id'),
                     tvdb_id=result.get('tvdb_id'),
                     type='tv',
