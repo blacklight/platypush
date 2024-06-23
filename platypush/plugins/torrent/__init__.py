@@ -211,8 +211,10 @@ class TorrentPlugin(Plugin):
     def search(
         self,
         query: str,
-        providers: Optional[Union[str, Iterable[str]]] = None,
         *args,
+        providers: Optional[Union[str, Iterable[str]]] = None,
+        limit: int = 25,
+        page: int = 1,
         **filters,
     ):
         """
@@ -224,9 +226,10 @@ class TorrentPlugin(Plugin):
         :param filters: Additional filters to apply to the search, depending on
             what the configured search providers support. For example,
             ``category`` and ``language`` are supported by the PopcornTime.
+        :param limit: Maximum number of results to return (default: 25).
+        :param page: Page number (default: 1).
         :return: .. schema:: torrent.TorrentResultSchema(many=True)
         """
-
         results = []
 
         def worker(provider: TorrentSearchProvider):
@@ -235,7 +238,9 @@ class TorrentPlugin(Plugin):
                 provider.provider_name(),
                 query,
             )
-            results.extend(provider.search(query, *args, **filters))
+            results.extend(
+                provider.search(query, *args, limit=limit, page=page, **filters)
+            )
 
         if providers:
             providers = [providers] if isinstance(providers, str) else providers

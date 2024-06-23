@@ -242,7 +242,7 @@ class PopcornTimeSearchProvider(TorrentSearchProvider):
             ),
         )
 
-    def search_movies(self, query, language=None):
+    def search_movies(self, query, language=None, **_):
         return self._results_to_movies_response(
             self._search_torrents(query, 'movies'), language=language
         )
