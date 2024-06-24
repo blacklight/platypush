@@ -180,7 +180,7 @@ class TorrentResultSchema(Schema):
         metadata={
             'description': (
                 'Rating of the torrent or the underlying product, as a '
-                'percentage between 0 and 100',
+                'percentage between 0 and 100'
             ),
             'example': 86.0,
         },

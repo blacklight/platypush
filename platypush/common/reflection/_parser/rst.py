@@ -48,6 +48,8 @@ class RstExtensionsMixin:
                         "Could not import module %s: %s", match.group("name"), e
                     )
 
+                    cls.logger.exception(e)
+
         return docstr
 
     @classmethod
