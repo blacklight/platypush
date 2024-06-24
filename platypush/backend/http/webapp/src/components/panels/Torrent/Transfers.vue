@@ -9,8 +9,8 @@
       <div class="col-8 left side">
         <i class="icon fa" :class="{
           'fa-check': torrent.finish_date != null,
-          'fa-play': !torrent.finish_date && torrent.state === 'downloading',
-          'fa-pause': !torrent.finish_date && torrent.state === 'paused',
+          'fa-play': !torrent.finish_date && torrent.state === 'downloading' && !torrent.paused,
+          'fa-pause': !torrent.finish_date && torrent.state === 'downloading' && torrent.paused,
           'fa-stop': !torrent.finish_date && torrent.state === 'stopped',
         }" />
         <div class="title" v-text="torrent.name || torrent.hash || torrent.url" />
@@ -22,11 +22,11 @@
 
       <div class="col-2 right side">
         <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" @click="selectedItem = i">
-          <DropdownItem icon-class="fa fa-pause" text="Pause transfer" @click="pause(torrentId(torrent))"
-                        v-if="torrent.state === 'downloading'" />
-          <DropdownItem icon-class="fa fa-play" text="Resume transfer" @click="resume(torrentId(torrent))"
-                        v-if="torrent.state === 'paused'" />
-          <DropdownItem icon-class="fa fa-trash" text="Remove transfer" @click="remove(torrentId(torrent))" />
+          <DropdownItem icon-class="fa fa-pause" text="Pause transfer" @click="$emit('pause', torrent)"
+                        v-if="torrent.state === 'downloading' && !torrent.paused" />
+          <DropdownItem icon-class="fa fa-play" text="Resume transfer" @click="$emit('resume', torrent)"
+                        v-if="torrent.state === 'downloading' && torrent.paused" />
+          <DropdownItem icon-class="fa fa-trash" text="Remove transfer" @click="$emit('remove', torrent)" />
           <DropdownItem icon-class="fa fa-folder" text="View files" @click="$refs.torrentFiles.isVisible = true" />
           <DropdownItem icon-class="fa fa-info" text="Torrent info" @click="$refs.torrentInfo.isVisible = true" />
         </Dropdown>
@@ -96,6 +96,15 @@
           <div class="attr">Save path</div>
           <div class="value" v-text="transfers[selectedItem].save_path" />
         </div>
+
+        <div class="row" v-if="transfers[selectedItem].files">
+          <div class="attr">Files</div>
+          <div class="value">
+            <div class="file" v-for="(file, i) in transfers[selectedItem].files" :key="i">
+              <a :href="`/file?path=${encodeURIComponent(file)}`" target="_blank" v-text="file" />
+            </div>
+          </div>
+        </div>
       </div>
     </Modal>
 
@@ -126,26 +135,31 @@ import Dropdown from "@/components/elements/Dropdown";
 import DropdownItem from "@/components/elements/DropdownItem";
 
 export default {
-  name: "View",
-  emits: ['play', 'play-with-captions'],
+  emits: [
+    'pause',
+    'play',
+    'play-with-captions',
+    'refresh',
+    'remove',
+    'resume',
+  ],
   components: {Dropdown, DropdownItem, Loading, Modal},
   mixins: [Utils, MediaUtils],
   props: {
-    pluginName: {
-      type: String,
-      required: true,
-    },
-
     isMedia: {
       type: Boolean,
       default: false,
+    },
+
+    transfers: {
+      type: Object,
+      default: () => ({}),
     },
   },
 
   data() {
     return {
       loading: false,
-      transfers: {},
       selectedItem: null,
     }
   },
@@ -157,79 +171,6 @@ export default {
 
       return this.transfers[this.selectedItem].files.map((file) => file.split('/').pop())
     },
-  },
-
-  methods: {
-    torrentId(torrent) {
-      if (torrent?.hash && torrent.hash.length)
-        return torrent.hash
-
-      return torrent.url
-    },
-
-    async refresh() {
-      this.loading = true
-
-      try {
-        this.transfers = Object.values(await this.request(`${this.pluginName}.status`) || {})
-            .reduce((obj, torrent) => {
-              obj[this.torrentId(torrent)] = torrent
-              return obj
-            }, {})
-      } finally {
-        this.loading = false
-      }
-    },
-
-    async pause(torrent) {
-      await this.request(`${this.pluginName}.pause`, {torrent: torrent})
-      await this.refresh()
-    },
-
-    async resume(torrent) {
-      await this.request(`${this.pluginName}.resume`, {torrent: torrent})
-      await this.refresh()
-    },
-
-    async remove(torrent) {
-      await this.request(`${this.pluginName}.remove`, {torrent: torrent})
-      await this.refresh()
-    },
-
-    onTorrentUpdate(torrent) {
-      this.transfers[this.torrentId(torrent)] = torrent
-    },
-
-    onTorrentRemove(torrent) {
-      const torrentId = this.torrentId(torrent)
-      if (torrentId in this.transfers)
-        delete this.transfers[torrentId]
-    },
-  },
-
-  mounted() {
-    this.refresh()
-
-    this.subscribe(
-        this.onTorrentUpdate,'on-torrent-update',
-        'platypush.message.event.torrent.TorrentQueuedEvent',
-        'platypush.message.event.torrent.TorrentDownloadedMetadataEvent',
-        'platypush.message.event.torrent.TorrentDownloadStartEvent',
-        'platypush.message.event.torrent.TorrentDownloadProgressEvent',
-        'platypush.message.event.torrent.TorrentResumedEvent',
-        'platypush.message.event.torrent.TorrentPausedEvent',
-        'platypush.message.event.torrent.TorrentSeedingStartEvent',
-        'platypush.message.event.torrent.TorrentStateChangeEvent',
-        'platypush.message.event.torrent.TorrentDownloadStopEvent',
-        'platypush.message.event.torrent.TorrentDownloadCompletedEvent')
-
-    this.subscribe(this.onTorrentRemove,'on-torrent-remove',
-        'platypush.message.event.torrent.TorrentRemovedEvent')
-  },
-
-  destroy() {
-    this.unsubscribe('on-torrent-update')
-    this.unsubscribe('on-torrent-remove')
   },
 }
 </script>

@@ -46,7 +46,7 @@
                        @download="download"
                        v-if="selectedView === 'search'" />
 
-              <TorrentView :plugin-name="torrentPlugin"
+              <Transfers :plugin-name="torrentPlugin"
                            :is-media="true"
                            @play="play"
                            v-else-if="selectedView === 'torrents'" />
@@ -92,7 +92,7 @@ import MediaView from "@/components/Media/View";
 import Nav from "@/components/panels/Media/Nav";
 import Results from "@/components/panels/Media/Results";
 import Subtitles from "@/components/panels/Media/Subtitles";
-import TorrentView from "@/components/panels/Torrent/View";
+import Transfers from "@/components/panels/Torrent/Transfers";
 import UrlPlayer from "@/components/panels/Media/UrlPlayer";
 
 export default {
@@ -107,7 +107,7 @@ export default {
     Nav,
     Results,
     Subtitles,
-    TorrentView,
+    Transfers,
     UrlPlayer,
   },
 

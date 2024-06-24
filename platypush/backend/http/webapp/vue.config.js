@@ -38,6 +38,7 @@ module.exports = {
       '^/ws/requests': wsProxy,
       '^/ws/shell': wsProxy,
       '^/execute': httpProxy,
+      '^/file': httpProxy,
       '^/auth': httpProxy,
       '^/camera/': httpProxy,
       '^/sound/': httpProxy,
