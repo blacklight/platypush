@@ -1,25 +1,26 @@
 # Changelog
 
-## [Unreleased]
+## [1.1.1] - 2024-06-24
+
+- [`torrent`]: [[#263](https://git.platypush.tech/platypush/platypush/issues/263)], [[#375](https://git.platypush.tech/platypush/platypush/issues/375)],
+  [[#407](https://git.platypush.tech/platypush/platypush/issues/407)] and
+  [[#408](https://git.platypush.tech/platypush/platypush/issues/408)]: added
+  torrents.csv search provider and rewritten torrents UI.
 
 - [[#281](https://git.platypush.tech/platypush/platypush/issues/281)]
   replaced `warnings.warn` with `logging.warning`, as there is no easy and
   reliable way of routing `warnings.warn` to `logging`.
 
-- [[#263](https://git.platypush.tech/platypush/platypush/issues/263)]
-  added torrents.csv search provider, and support for generic torrent search
-  providers. Torrents.csv supports search both via API and local checkout.
-
 ## [1.1.0] - 2024-06-06
 
 - [[#405](https://git.platypush.tech/platypush/platypush/issues/405)] Fixed
   timezone/timestamp rendering issues for `calendar.ical` events.
-- [[#403]((https://git.platypush.tech/platypush/platypush/issues/403)]
+- [[#403](https://git.platypush.tech/platypush/platypush/issues/403)]
   Included inherited actions in plugins docs.
 
 ## [1.0.7] - 2024-06-02
 
-- [[#384]((https://git.platypush.tech/platypush/platypush/issues/384)] Added
+- [[#384](https://git.platypush.tech/platypush/platypush/issues/384)] Added
   `assistant.openai` and `tts.openai` plugins.
 
 ## [1.0.6] - 2024-06-01
