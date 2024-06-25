@@ -42,6 +42,7 @@ class StreamingRoute(RequestHandler, PubSubMixin, ABC):
         Make sure that errors are always returned in JSON format.
         """
         self.set_header("Content-Type", "application/json")
+        self.set_status(status_code)
         self.finish(
             json.dumps(
                 {"status": status_code, "error": error or responses.get(status_code)}
