@@ -60,7 +60,12 @@ class YoutubePlugin(Plugin):
         return f"{self._piped_api_url}/{path}"
 
     def _request(
-        self, path: str, body: Optional[str] = None, auth: bool = True, **kwargs
+        self,
+        path: str,
+        method: str = 'get',
+        body: Optional[str] = None,
+        auth: bool = True,
+        **kwargs,
     ):
         timeout = kwargs.pop('timeout', self._timeout)
         if auth:
@@ -72,9 +77,14 @@ class YoutubePlugin(Plugin):
         if body:
             kwargs['data'] = body
 
-        rs = requests.get(self._api_url(path), timeout=timeout, **kwargs)
+        func = getattr(requests, method.lower())
+        rs = func(self._api_url(path), timeout=timeout, **kwargs)
         rs.raise_for_status()
-        return rs.json()
+
+        try:
+            return rs.json()
+        except (TypeError, ValueError):
+            return {}
 
     @lru_cache(maxsize=10)  # noqa
     def _get_channel(self, id: str) -> dict:  # pylint: disable=redefined-builtin
@@ -195,6 +205,159 @@ class YoutubePlugin(Plugin):
             response = self._request(f'channel/{id}')
 
         return PipedChannelSchema().dump(response) or {}  # type: ignore
+
+    @action
+    def add_to_playlist(self, video_id: str, playlist_id: str):
+        """
+        Add a video to a playlist.
+
+        :param video_id: YouTube video ID.
+        :param playlist_id: Piped playlist ID.
+        """
+        self._request(
+            'playlists/add',
+            method='post',
+            json={
+                'videoIds': [video_id],
+                'playlistId': playlist_id,
+            },
+        )
+
+    @action
+    def remove_from_playlist(
+        self,
+        playlist_id: str,
+        video_id: Optional[str] = None,
+        index: Optional[int] = None,
+    ):
+        """
+        Remove a video from a playlist.
+
+        Note that either the video ID or the index must be provided.
+
+        :param video_id: YouTube video ID.
+        :param index: (0-based) index of the video in the playlist.
+        :param playlist_id: Piped playlist ID.
+        """
+        assert video_id or index, 'Either the video ID or the index must be provided'
+
+        if index is None:
+            index = next(
+                (
+                    i
+                    for i, v in enumerate(
+                        self._request(f'playlists/{playlist_id}').get(
+                            'relatedStreams', []
+                        )
+                    )
+                    if v.get('id') == video_id
+                ),
+                None,
+            )
+
+        if index is None:
+            self.logger.warning(
+                'Video %s not found in the playlist %s', video_id, playlist_id
+            )
+            return
+
+        self._request(
+            'playlists/remove',
+            method='post',
+            json={
+                'index': index,
+                'playlistId': playlist_id,
+            },
+        )
+
+    @action
+    def create_playlist(self, name: str) -> dict:
+        """
+        Create a new playlist.
+
+        :param name: Playlist name.
+        :return: Playlist information.
+        """
+        playlist_id = self._request(
+            'playlists/create',
+            method='post',
+            json={'name': name},
+        ).get('playlistId')
+
+        assert playlist_id, 'Failed to create the playlist'
+        playlists = self._request('user/playlists')
+        new_playlist = next((p for p in playlists if p.get('id') == playlist_id), None)
+
+        assert new_playlist, 'Failed to retrieve the new playlist'
+        return dict(PipedPlaylistSchema().dump(new_playlist) or {})
+
+    @action
+    def rename_playlist(
+        self, id: str, name: Optional[str] = None, description: Optional[str] = None
+    ):  # pylint: disable=redefined-builtin
+        """
+        Rename a playlist.
+
+        :param id: Piped playlist ID.
+        :param name: New playlist name.
+        :param description: New playlist description.
+        """
+        args = {}
+        if name:
+            args['newName'] = name
+        if description:
+            args['description'] = description
+        if not args:
+            self.logger.info('No new name or description provided')
+            return
+
+        self._request(
+            'playlists/rename',
+            method='post',
+            json={
+                'playlistId': id,
+                **args,
+            },
+        )
+
+    @action
+    def delete_playlist(self, id: str):  # pylint: disable=redefined-builtin
+        """
+        Delete a playlist.
+
+        :param id: Piped playlist ID.
+        """
+        self._request(
+            'playlists/delete',
+            method='post',
+            json={'playlistId': id},
+        )
+
+    @action
+    def subscribe(self, channel_id: str):
+        """
+        Subscribe to a channel.
+
+        :param channel_id: YouTube channel ID.
+        """
+        self._request(
+            'subscribe',
+            method='post',
+            json={'channelId': channel_id},
+        )
+
+    @action
+    def unsubscribe(self, channel_id: str):
+        """
+        Unsubscribe from a channel.
+
+        :param channel_id: YouTube channel ID.
+        """
+        self._request(
+            'unsubscribe',
+            method='post',
+            json={'channelId': channel_id},
+        )
 
 
 # vim:sw=4:ts=4:et:
