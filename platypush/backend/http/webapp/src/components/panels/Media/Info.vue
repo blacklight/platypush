@@ -16,6 +16,35 @@
       </div>
     </div>
 
+    <div class="row direct-url" v-if="directUrl">
+      <div class="left side">Direct URL</div>
+      <div class="right side">
+        <a :href="directUrl" title="Direct URL" target="_blank">
+          <i class="fas fa-external-link-alt" />
+        </a>
+        <button @click="copyToClipboard(directUrl)" title="Copy URL to clipboard">
+          <i class="fas fa-clipboard" />
+        </button>
+      </div>
+    </div>
+
+    <div class="row direct-url" v-else-if="item?.type === 'youtube' && item?.url">
+      <div class="left side">Direct URL</div>
+      <div class="right side">
+        <a :href="youtubeUrl" title="Direct URL" target="_blank" v-if="youtubeUrl">
+          <i class="fas fa-external-link-alt" />
+        </a>
+        <button @click="copyToClipboard(youtubeUrl)" title="Copy URL to clipboard" v-if="youtubeUrl">
+          <i class="fas fa-clipboard" />
+        </button>
+
+        <Loading v-if="loadingUrl" />
+        <button @click="getYoutubeUrl" title="Refresh direct URL" v-else>
+          <i class="fas fa-sync-alt" />
+        </button>
+      </div>
+    </div>
+
     <div class="row" v-if="item?.series">
       <div class="left side">TV Series</div>
       <div class="right side" v-text="item.series" />
@@ -156,25 +185,32 @@
 
 <script>
 import Utils from "@/Utils";
+import Loading from "@/components/Loading";
 import MediaUtils from "@/components/Media/Utils";
 import MediaImage from "./MediaImage";
 import Icons from "./icons.json";
 
 export default {
   name: "Info",
-  components: {MediaImage},
+  components: {Loading, MediaImage},
   mixins: [Utils, MediaUtils],
   emits: ['play'],
   props: {
     item: {
       type: Object,
       default: () => {},
-    }
+    },
+
+    pluginName: {
+      type: String,
+    },
   },
 
   data() {
     return {
       typeIcons: Icons,
+      loadingUrl: false,
+      youtubeUrl: null,
     }
   },
 
@@ -208,6 +244,35 @@ export default {
         return this.formatDate(this.item.created_at, true)
 
       return null
+    },
+
+    directUrl() {
+      if (this.item?.type === 'file' && this.item?.url) {
+        const path = this.item.url.replace(/^file:\/\//, '')
+        return window.location.origin + '/file?path=' + encodeURIComponent(path)
+      }
+
+      return null
+    },
+  },
+
+  methods: {
+    async getYoutubeUrl() {
+      if (!(this.item?.type === 'youtube' && this.item?.url)) {
+        return null
+      }
+
+      try {
+        this.loadingUrl = true
+        this.youtubeUrl = await this.request(
+          `${this.pluginName}.get_youtube_url`,
+          {url: this.item.url},
+        )
+
+        return this.youtubeUrl
+      } finally {
+        this.loadingUrl = false
+      }
     },
   },
 }
@@ -275,6 +340,24 @@ export default {
       &.right {
         width: 75%;
         justify-content: right;
+      }
+    }
+  }
+}
+
+.direct-url {
+  .right.side {
+    position: relative;
+
+    button {
+      background: none;
+      border: none;
+      padding: 0;
+      margin-left: 1em;
+
+      &:hover {
+        color: $default-hover-fg;
+        cursor: pointer;
       }
     }
   }

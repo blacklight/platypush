@@ -15,6 +15,7 @@
 
     <Modal ref="infoModal" title="Media info" @close="$emit('select', null)">
       <Info :item="results[selectedResult]"
+            :pluginName="pluginName"
             @play="$emit('play', results[selectedResult])"
             v-if="selectedResult != null" />
     </Modal>
@@ -34,6 +35,10 @@ export default {
     loading: {
       type: Boolean,
       default: false,
+    },
+
+    pluginName: {
+      type: String,
     },
 
     results: {
@@ -114,6 +119,7 @@ export default {
   width: 100%;
   height: 100%;
   background: $background-color;
+  position: relative;
 
   .grid {
     height: 100%;

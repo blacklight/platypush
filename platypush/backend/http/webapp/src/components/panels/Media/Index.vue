@@ -1,8 +1,6 @@
 <template>
   <keep-alive>
     <div class="media-plugin fade-in">
-      <Loading v-if="loading" />
-
       <MediaView :plugin-name="pluginName" :status="selectedPlayer?.status || {}" :track="selectedPlayer?.status || {}"
                  :buttons="mediaButtons" @play="pause" @pause="pause" @stop="stop" @set-volume="setVolume"
                  @seek="seek" @search="search" @mute="toggleMute" @unmute="toggleMute">
@@ -38,6 +36,7 @@
               <Results :results="results"
                        :selected-result="selectedResult"
                        :sources="sources"
+                       :plugin-name="pluginName"
                        :loading="loading"
                        :filter="browserFilter"
                        @select="onResultSelect($event)"
@@ -81,7 +80,6 @@
 </template>
 
 <script>
-import Loading from "@/components/Loading";
 import Modal from "@/components/Modal";
 import Utils from "@/Utils";
 
@@ -101,7 +99,6 @@ export default {
   components: {
     Browser,
     Header,
-    Loading,
     MediaView,
     Modal,
     Nav,
