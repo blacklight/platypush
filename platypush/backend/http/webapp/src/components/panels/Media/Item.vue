@@ -4,6 +4,7 @@
     :class="{selected: selected}"
     @click.right.prevent="$refs.dropdown.toggle()"
     v-if="!hidden">
+
     <div class="thumbnail">
       <MediaImage :item="item" @play="$emit('play')" />
     </div>
@@ -19,6 +20,10 @@
                           v-if="item.type === 'torrent'" />
             <DropdownItem icon-class="fa fa-window-maximize" text="View in browser" @click="$emit('view')"
                           v-if="item.type === 'file'" />
+            <DropdownItem icon-class="fa fa-list" text="Add to playlist" @click="$emit('add-to-playlist')"
+                          v-if="item.type === 'youtube'" />
+            <DropdownItem icon-class="fa fa-trash" text="Remove from playlist" @click="$refs.confirmPlaylistRemove.open()"
+                          v-if="playlist" />
             <DropdownItem icon-class="fa fa-info-circle" text="Info" @click="$emit('select')" />
           </Dropdown>
         </div>
@@ -35,10 +40,15 @@
         {{ formatDateTime(item.created_at, true) }}
       </div>
     </div>
+
+    <ConfirmDialog ref="confirmPlaylistRemove" @input="$emit('remove-from-playlist')">
+      Are you sure you want to remove this item from the playlist?
+    </ConfirmDialog>
   </div>
 </template>
 
 <script>
+import ConfirmDialog from "@/components/elements/ConfirmDialog";
 import Dropdown from "@/components/elements/Dropdown";
 import DropdownItem from "@/components/elements/DropdownItem";
 import Icons from "./icons.json";
@@ -46,9 +56,23 @@ import MediaImage from "./MediaImage";
 import Utils from "@/Utils";
 
 export default {
-  components: {Dropdown, DropdownItem, MediaImage},
   mixins: [Utils],
-  emits: ['play', 'select', 'view', 'download'],
+  components: {
+    ConfirmDialog,
+    Dropdown,
+    DropdownItem,
+    MediaImage,
+  },
+
+  emits: [
+    'add-to-playlist',
+    'download',
+    'play',
+    'remove-from-playlist',
+    'select',
+    'view',
+  ],
+
   props: {
     item: {
       type: Object,
@@ -63,6 +87,10 @@ export default {
     selected: {
       type: Boolean,
       default: false,
+    },
+
+    playlist: {
+      default: null,
     },
   },
 
@@ -86,6 +114,10 @@ export default {
   margin-bottom: 5px;
   border: 1px solid transparent;
   border-bottom: 1px solid transparent !important;
+
+  @include from($tablet) {
+    max-height: max(25em, 25%);
+  }
 
   &.selected {
     box-shadow: $border-shadow-bottom;

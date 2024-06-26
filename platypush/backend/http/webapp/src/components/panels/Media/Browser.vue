@@ -23,9 +23,11 @@
         <component
             :is="mediaProvider"
             :filter="filter"
+            @add-to-playlist="$emit('add-to-playlist', $event)"
             @back="mediaProvider = null"
             @path-change="$emit('path-change', $event)"
-            @play="$emit('play', $event)" />
+            @play="$emit('play', $event)"
+        />
       </div>
     </div>
   </keep-alive>
@@ -39,8 +41,17 @@ import Utils from "@/Utils";
 import providersMetadata from "./Providers/meta.json";
 
 export default {
-  emits: ['path-change', 'play'],
   mixins: [Utils],
+  emits: [
+    'add-to-playlist',
+    'create-playlist',
+    'path-change',
+    'play',
+    'remove-from-playlist',
+    'remove-playlist',
+    'rename-playlist',
+  ],
+
   components: {
     Browser,
     Loading,

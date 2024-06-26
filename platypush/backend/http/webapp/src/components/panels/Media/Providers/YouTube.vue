@@ -8,17 +8,27 @@
 
       <div class="body" v-else>
         <Feed :filter="filter"
-              @play="$emit('play', $event)" v-if="selectedView === 'feed'" />
+              @add-to-playlist="$emit('add-to-playlist', $event)"
+              @play="$emit('play', $event)"
+              v-if="selectedView === 'feed'"
+        />
+
         <Playlists :filter="filter"
                    :selected-playlist="selectedPlaylist"
+                   @add-to-playlist="$emit('add-to-playlist', $event)"
                    @play="$emit('play', $event)"
+                   @remove-from-playlist="removeFromPlaylist"
                    @select="onPlaylistSelected"
-                   v-else-if="selectedView === 'playlists'" />
+                   v-else-if="selectedView === 'playlists'"
+        />
+
         <Subscriptions :filter="filter"
                        :selected-channel="selectedChannel"
                        @play="$emit('play', $event)"
                        @select="onChannelSelected"
-                       v-else-if="selectedView === 'subscriptions'" />
+                       v-else-if="selectedView === 'subscriptions'"
+        />
+
         <Index @select="selectView" v-else />
       </div>
     </div>
@@ -82,6 +92,21 @@ export default {
       this.loading = true
       try {
         this.youtubeConfig = (await this.request('config.get_plugins')).youtube
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async removeFromPlaylist(event) {
+      const playlistId = event.playlist_id
+      const videoId = event.item.url
+      this.loading = true
+
+      try {
+        await this.request('youtube.remove_from_playlist', {
+          playlist_id: playlistId,
+          video_id: videoId,
+        })
       } finally {
         this.loading = false
       }

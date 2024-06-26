@@ -39,6 +39,7 @@
                        :plugin-name="pluginName"
                        :loading="loading"
                        :filter="browserFilter"
+                       @add-to-playlist="addToPlaylistItem = $event"
                        @select="onResultSelect($event)"
                        @play="play"
                        @view="view"
@@ -51,6 +52,7 @@
                            v-else-if="selectedView === 'torrents'" />
 
               <Browser :filter="browserFilter"
+                       @add-to-playlist="addToPlaylistItem = $event"
                        @path-change="browserFilter = ''"
                        @play="play($event)"
                        v-else-if="selectedView === 'browser'" />
@@ -75,6 +77,16 @@
           <UrlPlayer :value="urlPlay" @input="urlPlay = $event.target.value" @play="playUrl($event)" />
         </Modal>
       </div>
+
+      <div class="add-to-playlist-container" v-if="addToPlaylistItem">
+        <Modal title="Add to playlist" :visible="addToPlaylistItem != null" @close="addToPlaylistItem = null">
+          <PlaylistAdder
+            :item="addToPlaylistItem"
+            @done="addToPlaylistItem = null"
+            @close="addToPlaylistItem = null"
+          />
+        </Modal>
+      </div>
     </div>
   </keep-alive>
 </template>
@@ -88,6 +100,7 @@ import Header from "@/components/panels/Media/Header";
 import MediaUtils from "@/components/Media/Utils";
 import MediaView from "@/components/Media/View";
 import Nav from "@/components/panels/Media/Nav";
+import PlaylistAdder from "@/components/panels/Media/PlaylistAdder";
 import Results from "@/components/panels/Media/Results";
 import Subtitles from "@/components/panels/Media/Subtitles";
 import Transfers from "@/components/panels/Torrent/Transfers";
@@ -102,6 +115,7 @@ export default {
     MediaView,
     Modal,
     Nav,
+    PlaylistAdder,
     Results,
     Subtitles,
     Transfers,
@@ -139,6 +153,7 @@ export default {
       awaitingPlayTorrent: null,
       urlPlay: null,
       browserFilter: null,
+      addToPlaylistItem: null,
       torrentPlugin: null,
       torrentPlugins: [
         'torrent',
@@ -485,6 +500,12 @@ export default {
     .item {
       padding: 1em;
     }
+  }
+}
+
+:deep(.add-to-playlist-container) {
+  .body {
+    padding: 0 !important;
   }
 }
 </style>

@@ -9,6 +9,7 @@
              :filter="filter"
              :sources="{'youtube': true}"
              :selected-result="selectedResult"
+             @add-to-playlist="$emit('add-to-playlist', $event)"
              @select="selectedResult = $event"
              @play="$emit('play', $event)"
              v-else />
@@ -22,8 +23,12 @@ import Results from "@/components/panels/Media/Results";
 import Utils from "@/Utils";
 
 export default {
-  emits: ['play'],
   mixins: [Utils],
+  emits: [
+    'add-to-playlist',
+    'play',
+  ],
+
   components: {
     Loading,
     NoItems,

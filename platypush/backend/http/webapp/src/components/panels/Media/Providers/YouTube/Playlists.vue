@@ -18,7 +18,14 @@
     </div>
 
     <div class="playlist-body" v-else>
-      <Playlist :id="selectedPlaylist" :filter="filter" @play="$emit('play', $event)" />
+      <Playlist
+        :id="selectedPlaylist"
+        :filter="filter"
+        :playlist="playlist"
+        @add-to-playlist="$emit('add-to-playlist', $event)"
+        @remove-from-playlist="$emit('remove-from-playlist', {item: $event, playlist_id: selectedPlaylist})"
+        @play="$emit('play', $event)"
+      />
     </div>
   </div>
 </template>
@@ -31,8 +38,17 @@ import Playlist from "./Playlist";
 import Utils from "@/Utils";
 
 export default {
-  emits: ['play', 'select'],
   mixins: [Utils],
+  emits: [
+    'add-to-playlist',
+    'create-playlist',
+    'play',
+    'remove-from-playlist',
+    'remove-playlist',
+    'rename-playlist',
+    'select',
+  ],
+
   components: {
     Loading,
     MediaImage,
