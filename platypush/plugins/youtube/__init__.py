@@ -1,4 +1,5 @@
 import base64
+import re
 from functools import lru_cache
 from typing import List, Optional
 
@@ -98,6 +99,14 @@ class YoutubePlugin(Plugin):
         return (
             PipedChannelSchema().dump(self._request(f'channel/{id}')) or {}  # type: ignore
         )
+
+    @staticmethod
+    def _get_video_id(id_or_url: str) -> str:
+        m = re.search(r'/watch\?v=([^&]+)', id_or_url)
+        if m:
+            return m.group(1)
+
+        return id_or_url
 
     @action
     def search(self, query: str, **_) -> List[dict]:
@@ -215,10 +224,10 @@ class YoutubePlugin(Plugin):
         :param playlist_id: Piped playlist ID.
         """
         self._request(
-            'playlists/add',
+            'user/playlists/add',
             method='post',
             json={
-                'videoIds': [video_id],
+                'videoIds': [self._get_video_id(video_id)],
                 'playlistId': playlist_id,
             },
         )
@@ -235,13 +244,15 @@ class YoutubePlugin(Plugin):
 
         Note that either the video ID or the index must be provided.
 
-        :param video_id: YouTube video ID.
+        :param video_id: YouTube video ID or URL.
         :param index: (0-based) index of the video in the playlist.
         :param playlist_id: Piped playlist ID.
         """
         assert video_id or index, 'Either the video ID or the index must be provided'
 
         if index is None:
+            assert video_id
+            video_id = self._get_video_id(video_id)
             index = next(
                 (
                     i
@@ -250,7 +261,7 @@ class YoutubePlugin(Plugin):
                             'relatedStreams', []
                         )
                     )
-                    if v.get('id') == video_id
+                    if self._get_video_id(v.get('url')) == video_id
                 ),
                 None,
             )
@@ -262,7 +273,7 @@ class YoutubePlugin(Plugin):
             return
 
         self._request(
-            'playlists/remove',
+            'user/playlists/remove',
             method='post',
             json={
                 'index': index,
@@ -278,8 +289,11 @@ class YoutubePlugin(Plugin):
         :param name: Playlist name.
         :return: Playlist information.
         """
+        name = name.strip()
+        assert name, 'Playlist name cannot be empty'
+
         playlist_id = self._request(
-            'playlists/create',
+            'user/playlists/create',
             method='post',
             json={'name': name},
         ).get('playlistId')
@@ -312,7 +326,7 @@ class YoutubePlugin(Plugin):
             return
 
         self._request(
-            'playlists/rename',
+            'user/playlists/rename',
             method='post',
             json={
                 'playlistId': id,
@@ -328,7 +342,7 @@ class YoutubePlugin(Plugin):
         :param id: Piped playlist ID.
         """
         self._request(
-            'playlists/delete',
+            'user/playlists/delete',
             method='post',
             json={'playlistId': id},
         )
