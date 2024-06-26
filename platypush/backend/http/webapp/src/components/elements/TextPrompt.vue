@@ -59,7 +59,10 @@ export default {
 
   methods: {
     onConfirm() {
-      this.$emit('input', this.value_)
+      if (this.value_?.trim()?.length) {
+        this.$emit('input', this.value_)
+      }
+
       this.close()
     },
 
@@ -120,6 +123,8 @@ export default {
 <style lang="scss" scoped>
 :deep(.modal) {
   .dialog-content {
+    display: flex;
+    flex-direction: column;
     padding: 1em;
   }
 

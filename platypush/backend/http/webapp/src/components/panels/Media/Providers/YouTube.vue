@@ -112,6 +112,15 @@ export default {
       }
     },
 
+    async createPlaylist(name) {
+      this.loading = true
+      try {
+        await this.request('youtube.create_playlist', {name: name})
+      } finally {
+        this.loading = false
+      }
+    },
+
     selectView(view) {
       this.selectedView = view
       if (view === 'playlists')
