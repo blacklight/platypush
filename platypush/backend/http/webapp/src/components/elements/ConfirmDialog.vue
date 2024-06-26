@@ -43,12 +43,20 @@ export default {
       this.close()
     },
 
-    show() {
+    open() {
       this.$refs.modal.show()
     },
 
     close() {
       this.$refs.modal.hide()
+    },
+
+    show() {
+      this.open()
+    },
+
+    hide() {
+      this.close()
     },
   },
 }

@@ -3,7 +3,7 @@
     <form @submit.prevent="onConfirm">
       <div class="dialog-content">
         <slot />
-        <input type="text" ref="input" />
+        <input type="text" ref="input" v-model="value_" />
       </div>
 
       <div class="buttons">
@@ -38,26 +38,79 @@ export default {
       type: String,
       default: "Cancel",
     },
+
+    visible: {
+      type: Boolean,
+      default: false,
+    },
+
+    value: {
+      type: String,
+      default: "",
+    },
+  },
+
+  data() {
+    return {
+      value_: "",
+      visible_: false,
+    }
   },
 
   methods: {
     onConfirm() {
-      this.$emit('input', this.$refs.input.value)
+      this.$emit('input', this.value_)
       this.close()
     },
 
-    show() {
+    open() {
+      if (this.visible_)
+        return
+
+      this.value_ = this.value
       this.$refs.modal.show()
+      this.visible_ = true
+      this.focus()
     },
 
     close() {
+      if (!this.visible_)
+        return
+
+      this.value_ = ""
       this.$refs.modal.hide()
+      this.visible_ = false
+    },
+
+    show() {
+      this.open()
+    },
+
+    hide() {
+      this.close()
+    },
+
+    focus() {
+      this.$nextTick(() => {
+        this.$refs.input.focus()
+      })
+    },
+  },
+
+  watch: {
+    visible(val) {
+      if (val) {
+        this.open()
+      } else {
+        this.close()
+      }
     },
   },
 
   mounted() {
+    this.visible_ = this.visible
+    this.value_ = this.value || ""
     this.$nextTick(() => {
-      this.$refs.input.value = ""
       this.$refs.input.focus()
     })
   },

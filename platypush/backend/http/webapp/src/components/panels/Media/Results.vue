@@ -4,9 +4,12 @@
     <div class="grid" ref="grid" v-if="results?.length" @scroll="onScroll">
       <Item v-for="(item, i) in visibleResults"
             :key="i"
-            :item="item"
-            :selected="selectedResult === i"
             :hidden="!!Object.keys(sources || {}).length && !sources[item.type]"
+            :item="item"
+            :playlist="playlist"
+            :selected="selectedResult === i"
+            @add-to-playlist="$emit('add-to-playlist', item)"
+            @remove-from-playlist="$emit('remove-from-playlist', item)"
             @select="$emit('select', i)"
             @play="$emit('play', item)"
             @view="$emit('view', item)"
@@ -30,7 +33,16 @@ import Modal from "@/components/Modal";
 
 export default {
   components: {Info, Item, Loading, Modal},
-  emits: ['select', 'play', 'view', 'download', 'scroll-end'],
+  emits: [
+    'add-to-playlist',
+    'download',
+    'play',
+    'remove-from-playlist',
+    'scroll-end',
+    'select',
+    'view',
+  ],
+
   props: {
     loading: {
       type: Boolean,
@@ -63,6 +75,10 @@ export default {
     resultIndexStep: {
       type: Number,
       default: 25,
+    },
+
+    playlist: {
+      default: null,
     },
   },
 

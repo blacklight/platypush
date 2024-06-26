@@ -2,8 +2,18 @@
 import Utils from "@/Utils";
 
 export default {
-  emits: ['back', 'path-change', 'play'],
   mixins: [Utils],
+  emits: [
+    'add-to-playlist',
+    'back',
+    'create-playlist',
+    'path-change',
+    'play',
+    'remove-from-playlist',
+    'remove-playlist',
+    'rename-playlist',
+  ],
+
   props: {
     filter: {
       type: String,
