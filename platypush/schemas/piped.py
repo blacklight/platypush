@@ -19,6 +19,14 @@ class PipedVideoSchema(Schema):
 
         unknown = EXCLUDE
 
+    item_type = fields.Constant(
+        'video',
+        metadata={
+            'description': 'Item type',
+            'example': 'video',
+        },
+    )
+
     url = fields.Url(
         required=True,
         metadata={
@@ -119,6 +127,14 @@ class PipedPlaylistSchema(Schema):
 
         unknown = EXCLUDE
 
+    item_type = fields.Constant(
+        'playlist',
+        metadata={
+            'description': 'Item type',
+            'example': 'playlist',
+        },
+    )
+
     id = fields.UUID(
         required=True,
         metadata={
@@ -159,6 +175,45 @@ class PipedPlaylistSchema(Schema):
         },
     )
 
+    channel = fields.String(
+        attribute='uploaderName',
+        metadata={
+            'description': 'Channel name',
+            'example': 'My Channel',
+        },
+    )
+
+    channel_url = fields.Url(
+        attribute='uploaderUrl',
+        metadata={
+            'description': 'Channel URL',
+            'example': 'https://youtube.com/channel/1234567890',
+        },
+    )
+
+    channel_image = fields.Url(
+        attribute='uploaderAvatar',
+        metadata={
+            'description': 'Channel image URL',
+            'example': 'https://i.ytimg.com/vi/1234567890/hqdefault.jpg',
+        },
+    )
+
+    @pre_dump
+    def fill_urls(self, data: dict, **_):
+        for attr in ('url', 'uploaderUrl'):
+            if data.get(attr) and not data[attr].startswith('https://'):
+                data[attr] = f'https://youtube.com{data[attr]}'
+
+        return data
+
+    @pre_dump
+    def normalize_timestamps(self, data: dict, **_):
+        if data.get('uploaded') and isinstance(data['uploaded'], int):
+            data['uploaded'] = datetime.fromtimestamp(data["uploaded"] / 1000)
+
+        return data
+
 
 class PipedChannelSchema(Schema):
     """
@@ -177,6 +232,14 @@ class PipedChannelSchema(Schema):
         metadata={
             'description': 'Channel ID',
             'example': '1234567890',
+        },
+    )
+
+    item_type = fields.Constant(
+        'channel',
+        metadata={
+            'description': 'Item type',
+            'example': 'channel',
         },
     )
 
