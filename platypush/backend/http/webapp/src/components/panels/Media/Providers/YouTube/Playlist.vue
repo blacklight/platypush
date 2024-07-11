@@ -48,6 +48,11 @@ export default {
       type: String,
       default: null,
     },
+
+    playlist: {
+      type: Object,
+      default: null,
+    },
   },
 
   data() {

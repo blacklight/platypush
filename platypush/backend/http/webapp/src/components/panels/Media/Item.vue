@@ -3,37 +3,41 @@
     class="item media-item"
     :class="{selected: selected}"
     @click.right.prevent="$refs.dropdown.toggle()"
-    v-if="!hidden">
-
+    v-if="!hidden"
+  >
     <div class="thumbnail">
-      <MediaImage :item="item" @play="$emit('play')" />
+      <MediaImage :item="item" @play="play" />
     </div>
 
     <div class="body">
       <div class="row title">
-        <div class="col-11 left side" v-text="item.title" @click="$emit('select')" />
+        <div class="col-11 left side" v-text="item.title || item.name" @click="select" />
         <div class="col-1 right side">
           <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" ref="dropdown">
-            <DropdownItem icon-class="fa fa-play" text="Play" @click="$emit('play')"
-                          v-if="item.type !== 'torrent'" />
+            <DropdownItem icon-class="fa fa-play" text="Play" @click="play"
+                          v-if="item.type !== 'torrent' && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
             <DropdownItem icon-class="fa fa-download" text="Download" @click="$emit('download')"
-                          v-if="item.type === 'torrent'" />
+                          v-if="item.type === 'torrent' && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
             <DropdownItem icon-class="fa fa-window-maximize" text="View in browser" @click="$emit('view')"
-                          v-if="item.type === 'file'" />
+                          v-if="item.type === 'file' && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
             <DropdownItem icon-class="fa fa-list" text="Add to playlist" @click="$emit('add-to-playlist')"
-                          v-if="item.type === 'youtube'" />
+                          v-if="item.type === 'youtube' && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
             <DropdownItem icon-class="fa fa-trash" text="Remove from playlist" @click="$refs.confirmPlaylistRemove.open()"
-                          v-if="playlist" />
-            <DropdownItem icon-class="fa fa-info-circle" text="Info" @click="$emit('select')" />
+                          v-if="playlist && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
+            <DropdownItem icon-class="fa fa-info-circle" text="Info" @click="select" />
           </Dropdown>
         </div>
       </div>
 
-      <div class="row subtitle" v-if="item.channel">
+      <div class="row subtitle" v-if="item.channel_url">
         <a class="channel" :href="item.channel_url" target="_blank">
           <img :src="item.channel_image" class="channel-image" v-if="item.channel_image" />
           <span class="channel-name" v-text="item.channel" />
         </a>
+      </div>
+
+      <div class="row subtitle" v-if="item.item_type && item.item_type !== 'video'">
+        <span class="type" v-text="item.item_type[0].toUpperCase() + item.item_type.slice(1)" />
       </div>
 
       <div class="row creation-date" v-if="item.created_at">
@@ -98,6 +102,21 @@ export default {
     return {
       typeIcons: Icons,
     }
+  },
+
+  methods: {
+    play() {
+      if (this.item.item_type === 'playlist') {
+        this.select()
+        return
+      }
+
+      this.$emit('play');
+    },
+
+    select() {
+      this.$emit('select');
+    },
   },
 }
 </script>

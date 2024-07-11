@@ -118,6 +118,11 @@ export default {
 
   mounted() {
     this.$watch('selectedResult', (value) => {
+      if (value?.item_type === 'playlist') {
+        this.$emit('select', null)
+        return
+      }
+
       if (value == null)
         this.$refs.infoModal?.close()
       else
