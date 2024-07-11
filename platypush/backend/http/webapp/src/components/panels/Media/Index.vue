@@ -148,6 +148,7 @@ export default {
       selectedPlayer: null,
       selectedView: 'search',
       selectedSubtitles: null,
+      prevSelectedView: null,
       showSubtitlesModal: false,
       forceShowNav: false,
       awaitingPlayTorrent: null,
@@ -393,6 +394,16 @@ export default {
         this.selectedSubtitles = null
       } else {
         this.selectedResult = null
+      }
+
+      if (this.selectedResult != null && this.results[this.selectedResult]?.item_type === 'playlist') {
+        if (this.prevSelectedView != this.selectedView) {
+          this.prevSelectedView = this.selectedView
+        }
+
+        this.selectedView = 'browser'
+      } else {
+        this.selectedView = this.prevSelectedView || 'search'
       }
     },
 
