@@ -38,7 +38,7 @@ class TorrentPlugin(Plugin):
     use the search providers configured in the ``search_providers`` attribute of
     the plugin configuration. Currently supported search providers:
 
-        * ``popcorntime`:
+        * ``popcorntime``:
             :class:`platypush.plugins.torrent._search.PopcornTimeSearchProvider`
         * ``torrents.csv``:
             :class:`platypush.plugins.torrent._search.TorrentsCsvSearchProvider`
