@@ -361,6 +361,19 @@ class YoutubePlugin(Plugin):
         )
 
     @action
+    def is_subscribed(self, channel_id: str) -> bool:
+        """
+        Check if the user is subscribed to a channel.
+
+        :param channel_id: YouTube channel ID.
+        :return: True if the user is subscribed to the channel, False otherwise.
+        """
+        return self._request(
+            'subscribed',
+            params={'channelId': channel_id},
+        ).get('subscribed', False)
+
+    @action
     def subscribe(self, channel_id: str):
         """
         Subscribe to a channel.
