@@ -11,15 +11,27 @@
         <div class="row info-container">
           <div class="info">
             <div class="row">
-              <a :href="channel.url" target="_blank" rel="noopener noreferrer" v-if="channel?.image?.length">
-                <div class="image">
-                  <img :src="channel.image" />
-                </div>
-              </a>
+              <div class="title-container">
+                <a :href="channel.url" target="_blank" rel="noopener noreferrer" v-if="channel?.image?.length">
+                  <div class="image">
+                    <img :src="channel.image" />
+                  </div>
+                </a>
 
-              <a class="title" :href="channel.url" target="_blank" rel="noopener noreferrer">
-                {{ channel?.name }}
-              </a>
+                <a class="title" :href="channel.url" target="_blank" rel="noopener noreferrer">
+                  {{ channel?.name }}
+                </a>
+              </div>
+
+              <div class="actions">
+                <button :title="subscribed ? 'Unsubscribe' : 'Subscribe'" @click="toggleSubscription">
+                  {{ subscribed ? 'Unsubscribe' : 'Subscribe' }}
+                </button>
+
+                <div class="subscribers" v-if="channel.subscribers != null && (channel.subscribers || 0) >= 0">
+                  {{ channel.subscribers }} subscribers
+                </div>
+              </div>
             </div>
 
             <div class="description" v-if="channel?.description">
@@ -70,6 +82,7 @@ export default {
       loading: false,
       loadingNextPage: false,
       selectedResult: null,
+      subscribed: false,
     }
   },
 
@@ -87,6 +100,7 @@ export default {
       this.loading = true
       try {
         this.channel = await this.request('youtube.get_channel', {id: this.id})
+        this.subscribed = await this.request('youtube.is_subscribed', {channel_id: this.id})
       } finally {
         this.loading = false
       }
@@ -108,6 +122,12 @@ export default {
       } finally {
         this.loadingNextPage = false
       }
+    },
+
+    async toggleSubscription() {
+      const action = this.subscribed ? 'unsubscribe' : 'subscribe'
+      await this.request(`youtube.${action}`, {channel_id: this.id})
+      this.subscribed = !this.subscribed
     },
 
     onScroll(e) {
@@ -138,6 +158,33 @@ export default {
 
   .channel {
     height: 100%;
+  }
+
+  .header {
+    .title-container {
+      flex: 1;
+    }
+
+    .actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      button {
+        background: $default-bg-7;
+        padding: 0.5em 1em;
+        border-radius: 0.5em;
+        cursor: pointer;
+
+        &:hover {
+          background: $hover-bg;
+        }
+      }
+    }
+
+    .subscribers {
+      font-size: 0.8em;
+    }
   }
 }
 </style>
