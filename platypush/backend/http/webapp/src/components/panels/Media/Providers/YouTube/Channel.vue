@@ -1,8 +1,8 @@
 <template>
-  <div class="media-youtube-channel" @scroll="onScroll">
+  <div class="media-youtube-channel">
     <Loading v-if="loading" />
 
-    <div class="channel" @scroll="onScroll" v-else-if="channel">
+    <div class="channel" v-else-if="channel">
       <div class="header">
         <div class="banner">
           <img :src="channel.banner" v-if="channel?.banner?.length" />
@@ -45,8 +45,10 @@
                :filter="filter"
                :selected-result="selectedResult"
                ref="results"
+               @play="$emit('play', $event)"
+               @scroll-end="loadNextPage"
                @select="selectedResult = $event"
-               @play="$emit('play', $event)" />
+      />
     </div>
   </div>
 </template>
@@ -135,7 +137,7 @@ export default {
       if (!el)
         return
 
-      const bottom = (el.scrollHeight - el.scrollTop) <= el.clientHeight + 150
+      const bottom = (el.scrollHeight - el.scrollTop) <= el.clientHeight + 100
       if (!bottom)
         return
 
