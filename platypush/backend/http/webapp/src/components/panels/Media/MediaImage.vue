@@ -2,7 +2,7 @@
   <div class="image-container"
        :class="{ 'with-image': !!item?.image }">
     <div class="play-overlay" @click="$emit('play', item)" v-if="hasPlay">
-      <i class="fas fa-play" />
+      <i :class="overlayIconClass" />
     </div>
 
     <span class="icon type-icon" v-if="typeIcons[item?.type]">
@@ -16,7 +16,7 @@
     <img class="image" :src="item.image" :alt="item.title" v-if="item?.image" />
     <div class="image" v-else>
       <div class="inner">
-        <i class="fas fa-play" />
+        <i :class="iconClass" />
       </div>
     </div>
 
@@ -57,6 +57,33 @@ export default {
     return {
       typeIcons: Icons,
     }
+  },
+
+  computed: {
+    iconClass() {
+      switch (this.item?.item_type) {
+        case 'channel':
+          return 'fas fa-user'
+        case 'playlist':
+          return 'fas fa-list'
+        case 'folder':
+          return 'fas fa-folder'
+        default:
+          return 'fas fa-play'
+      }
+    },
+
+    overlayIconClass() {
+      if (
+        this.item?.item_type === 'channel' ||
+        this.item?.item_type === 'playlist' ||
+        this.item?.item_type === 'folder'
+      ) {
+        return 'fas fa-folder-open'
+      }
+
+      return 'fas fa-play'
+    },
   },
 }
 </script>

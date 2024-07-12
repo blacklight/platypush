@@ -23,7 +23,7 @@
         />
 
         <Subscriptions :filter="filter"
-                       :selected-channel="selectedChannel"
+                       :selected-channel="selectedChannel_"
                        @play="$emit('play', $event)"
                        @select="onChannelSelected"
                        v-else-if="selectedView === 'subscriptions'"
@@ -63,7 +63,7 @@ export default {
       youtubeConfig: null,
       selectedView: null,
       selectedPlaylist_: null,
-      selectedChannel: null,
+      selectedChannel_: null,
       path: [],
     }
   },
@@ -126,7 +126,7 @@ export default {
       if (view === 'playlists')
         this.selectedPlaylist_ = null
       else if (view === 'subscriptions')
-        this.selectedChannel = null
+        this.selectedChannel_ = null
 
       if (view?.length) {
         this.path = [
@@ -152,7 +152,11 @@ export default {
     },
 
     onChannelSelected(channel) {
-      this.selectedChannel = channel.id
+      this.selectedChannel_ = channel
+      if (!channel)
+        return
+
+      this.selectedView = 'subscriptions'
       this.path.push({
         title: channel.name,
       })
@@ -163,11 +167,16 @@ export default {
     selectedPlaylist() {
       this.onPlaylistSelected(this.selectedPlaylist)
     },
+
+    selectedChannel() {
+      this.onChannelSelected(this.selectedChannel)
+    },
   },
 
   mounted() {
     this.loadYoutubeConfig()
     this.onPlaylistSelected(this.selectedPlaylist)
+    this.onChannelSelected(this.selectedChannel)
   },
 }
 </script>

@@ -118,7 +118,7 @@ export default {
 
   mounted() {
     this.$watch('selectedResult', (value) => {
-      if (value?.item_type === 'playlist') {
+      if (value?.item_type === 'playlist' || value?.item_type === 'channel') {
         this.$emit('select', null)
         return
       }

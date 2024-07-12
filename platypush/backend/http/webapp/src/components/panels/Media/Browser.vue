@@ -24,6 +24,7 @@
             :is="mediaProvider"
             :filter="filter"
             :selected-playlist="selectedPlaylist"
+            :selected-channel="selectedChannel"
             @add-to-playlist="$emit('add-to-playlist', $event)"
             @back="back"
             @path-change="$emit('path-change', $event)"
@@ -66,6 +67,10 @@ export default {
     },
 
     selectedPlaylist: {
+      type: Object,
+    },
+
+    selectedChannel: {
       type: Object,
     },
   },
@@ -116,7 +121,7 @@ export default {
         this.registerMediaProvider('YouTube')
     },
 
-    async onPlaylistChange() {
+    onPlaylistChange() {
       if (!this.selectedPlaylist)
         return
 
@@ -127,17 +132,34 @@ export default {
         this.mediaProvider = this.mediaProviders[playlistMediaProvider]
       }
     },
+
+    onChannelChange() {
+      if (!this.selectedChannel)
+        return
+
+      const channelType = this.selectedChannel.type?.toLowerCase()
+      const channelMediaProvider = this.mediaProvidersLookup[channelType]
+
+      if (channelMediaProvider) {
+        this.mediaProvider = this.mediaProviders[channelMediaProvider]
+      }
+    },
   },
 
   watch: {
     selectedPlaylist() {
       this.onPlaylistChange()
     },
+
+    selectedChannel() {
+      this.onChannelChange()
+    },
   },
 
   async mounted() {
     await this.refreshMediaProviders()
-    await this.onPlaylistChange()
+    this.onPlaylistChange()
+    this.onChannelChange()
   },
 }
 </script>

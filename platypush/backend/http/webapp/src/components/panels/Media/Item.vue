@@ -106,7 +106,7 @@ export default {
 
   methods: {
     play() {
-      if (this.item.item_type === 'playlist') {
+      if (this.item.item_type === 'playlist' || this.item.item_type === 'channel') {
         this.select()
         return
       }

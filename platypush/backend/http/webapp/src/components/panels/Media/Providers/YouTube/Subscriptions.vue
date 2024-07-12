@@ -1,6 +1,6 @@
 <template>
   <div class="media-youtube-subscriptions">
-    <div class="subscriptions-index" v-if="!selectedChannel">
+    <div class="subscriptions-index" v-if="!selectedChannel?.id">
       <Loading v-if="loading" />
       <NoItems :with-shadow="false" v-else-if="!channels?.length">
         No channels found.
@@ -20,7 +20,7 @@
     </div>
 
     <div class="subscription-body" v-else>
-      <Channel :id="selectedChannel" :filter="filter" @play="$emit('play', $event)" />
+      <Channel :id="selectedChannel.id" :filter="filter" @play="$emit('play', $event)" />
     </div>
   </div>
 </template>
@@ -42,7 +42,7 @@ export default {
 
   props: {
     selectedChannel: {
-      type: String,
+      type: Object,
       default: null,
     },
 

@@ -53,6 +53,7 @@
 
               <Browser :filter="browserFilter"
                        :selected-playlist="selectedPlaylist"
+                       :selected-channel="selectedChannel"
                        @add-to-playlist="addToPlaylistItem = $event"
                        @back="selectedResult = null"
                        @path-change="browserFilter = ''"
@@ -204,6 +205,17 @@ export default {
 
       const selectedItem = this.results[this.selectedResult]
       if (selectedItem?.item_type !== 'playlist')
+        return null
+
+      return this.results[this.selectedResult]
+    },
+
+    selectedChannel() {
+      if (this.selectedResult == null)
+        return null
+
+      const selectedItem = this.results[this.selectedResult]
+      if (selectedItem?.item_type !== 'channel')
         return null
 
       return this.results[this.selectedResult]
@@ -410,14 +422,14 @@ export default {
       }
 
       const selectedItem = this.results[this.selectedResult]
-      if (this.selectedResult != null && selectedItem?.item_type === 'playlist') {
-        this.onPlaylistSelect()
+      if (this.selectedResult != null && (selectedItem?.item_type === 'playlist' || selectedItem?.item_type === 'channel')) {
+        this.onBrowserItemSelect()
       } else {
         this.selectedView = this.prevSelectedView || 'search'
       }
     },
 
-    onPlaylistSelect() {
+    onBrowserItemSelect() {
       if (this.prevSelectedView != this.selectedView) {
         this.prevSelectedView = this.selectedView
       }
