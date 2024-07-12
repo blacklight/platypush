@@ -14,7 +14,7 @@
         />
 
         <Playlists :filter="filter"
-                   :selected-playlist="selectedPlaylist"
+                   :selected-playlist="selectedPlaylist_"
                    @add-to-playlist="$emit('add-to-playlist', $event)"
                    @play="$emit('play', $event)"
                    @remove-from-playlist="removeFromPlaylist"
@@ -62,7 +62,7 @@ export default {
     return {
       youtubeConfig: null,
       selectedView: null,
-      selectedPlaylist: null,
+      selectedPlaylist_: null,
       selectedChannel: null,
       path: [],
     }
@@ -124,7 +124,7 @@ export default {
     selectView(view) {
       this.selectedView = view
       if (view === 'playlists')
-        this.selectedPlaylist = null
+        this.selectedPlaylist_ = null
       else if (view === 'subscriptions')
         this.selectedChannel = null
 
@@ -141,7 +141,11 @@ export default {
     },
 
     onPlaylistSelected(playlist) {
-      this.selectedPlaylist = playlist.id
+      this.selectedPlaylist_ = playlist
+      if (!playlist)
+        return
+
+      this.selectedView = 'playlists'
       this.path.push({
         title: playlist.name,
       })
@@ -155,8 +159,15 @@ export default {
     },
   },
 
+  watch: {
+    selectedPlaylist() {
+      this.onPlaylistSelected(this.selectedPlaylist)
+    },
+  },
+
   mounted() {
     this.loadYoutubeConfig()
+    this.onPlaylistSelected(this.selectedPlaylist)
   },
 }
 </script>

@@ -8,18 +8,23 @@
           <img :src="channel.banner" v-if="channel?.banner?.length" />
         </div>
 
-        <div class="row">
-          <a :href="channel.url" target="_blank" rel="noopener noreferrer">
-            <div class="image">
-              <img :src="channel.image" v-if="channel?.image?.length" />
-            </div>
-          </a>
-
+        <div class="row info-container">
           <div class="info">
-            <a class="title" :href="channel.url" target="_blank" rel="noopener noreferrer">
-              {{ channel?.name }}
-            </a>
-            <div class="description">{{ channel?.description }}</div>
+            <div class="row">
+              <a :href="channel.url" target="_blank" rel="noopener noreferrer" v-if="channel?.image?.length">
+                <div class="image">
+                  <img :src="channel.image" />
+                </div>
+              </a>
+
+              <a class="title" :href="channel.url" target="_blank" rel="noopener noreferrer">
+                {{ channel?.name }}
+              </a>
+            </div>
+
+            <div class="description" v-if="channel?.description">
+              {{ channel.description }}
+            </div>
           </div>
         </div>
       </div>
@@ -125,64 +130,14 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "header.scss";
+
 .media-youtube-channel {
   height: 100%;
   overflow-y: auto;
 
-  .header {
-    border-bottom: $default-border-2;
-    padding-bottom: 0.5em;
-
-    .banner {
-      max-height: 200px;
-      display: flex;
-      justify-content: center;
-
-      img {
-        max-width: 100%;
-        max-height: 100%;
-      }
-    }
-
-    .image {
-      height: 100px;
-      margin: -2.5em 2em 0.5em 0.5em;
-
-      img {
-        height: 100%;
-        border-radius: 50%;
-      }
-    }
-
-    .row {
-      display: flex;
-
-      @include from($desktop) {
-        flex-direction: row;
-      }
-
-      .info {
-        display: flex;
-        flex-direction: column;
-      }
-    }
-
-    .title {
-      color: $default-fg-2;
-      font-size: 1.7em;
-      font-weight: bold;
-      margin: 0.5em 0;
-      text-decoration: dotted;
-
-      &:hover {
-        color: $default-hover-fg;
-      }
-    }
-
-    .description {
-      font-size: 0.9em;
-      margin-right: 0.5em;
-    }
+  .channel {
+    height: 100%;
   }
 }
 </style>

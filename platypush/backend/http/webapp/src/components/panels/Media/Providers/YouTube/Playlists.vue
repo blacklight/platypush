@@ -1,6 +1,6 @@
 <template>
   <div class="media-youtube-playlists">
-    <div class="playlists-index" v-if="!selectedPlaylist">
+    <div class="playlists-index" v-if="!selectedPlaylist?.id">
       <Loading v-if="loading" />
       <NoItems :with-shadow="false" v-else-if="!playlists?.length">
         No playlists found.
@@ -27,11 +27,11 @@
 
     <div class="playlist-body" v-else>
       <Playlist
-        :id="selectedPlaylist"
+        :id="selectedPlaylist.id"
         :filter="filter"
-        :playlist="playlist"
+        :metadata="playlistsById[selectedPlaylist.id] || selectedPlaylist"
         @add-to-playlist="$emit('add-to-playlist', $event)"
-        @remove-from-playlist="$emit('remove-from-playlist', {item: $event, playlist_id: selectedPlaylist})"
+        @remove-from-playlist="$emit('remove-from-playlist', {item: $event, playlist_id: selectedPlaylist.id})"
         @play="$emit('play', $event)"
       />
     </div>
@@ -130,7 +130,7 @@ export default {
 
   props: {
     selectedPlaylist: {
-      type: String,
+      type: Object,
       default: null,
     },
 

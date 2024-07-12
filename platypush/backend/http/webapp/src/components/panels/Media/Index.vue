@@ -8,7 +8,7 @@
           <div class="nav-container from tablet" :style="navContainerStyle">
             <Nav :selected-view="selectedView"
                  :torrent-plugin="torrentPlugin"
-                 @input="selectedView = $event"
+                 @input="onNavInput"
                  @toggle="forceShowNav = !forceShowNav" />
           </div>
 
@@ -52,7 +52,9 @@
                            v-else-if="selectedView === 'torrents'" />
 
               <Browser :filter="browserFilter"
+                       :selected-playlist="selectedPlaylist"
                        @add-to-playlist="addToPlaylistItem = $event"
+                       @back="selectedResult = null"
                        @path-change="browserFilter = ''"
                        @play="play($event)"
                        v-else-if="selectedView === 'browser'" />
@@ -192,6 +194,17 @@ export default {
         )
       )
         return this.selectedPlayer.status
+
+      return this.results[this.selectedResult]
+    },
+
+    selectedPlaylist() {
+      if (this.selectedResult == null)
+        return null
+
+      const selectedItem = this.results[this.selectedResult]
+      if (selectedItem?.item_type !== 'playlist')
+        return null
 
       return this.results[this.selectedResult]
     },
@@ -396,15 +409,20 @@ export default {
         this.selectedResult = null
       }
 
-      if (this.selectedResult != null && this.results[this.selectedResult]?.item_type === 'playlist') {
-        if (this.prevSelectedView != this.selectedView) {
-          this.prevSelectedView = this.selectedView
-        }
-
-        this.selectedView = 'browser'
+      const selectedItem = this.results[this.selectedResult]
+      if (this.selectedResult != null && selectedItem?.item_type === 'playlist') {
+        this.onPlaylistSelect()
       } else {
         this.selectedView = this.prevSelectedView || 'search'
       }
+    },
+
+    onPlaylistSelect() {
+      if (this.prevSelectedView != this.selectedView) {
+        this.prevSelectedView = this.selectedView
+      }
+
+      this.selectedView = 'browser'
     },
 
     showPlayUrlModal() {
@@ -423,6 +441,13 @@ export default {
         this.$refs.playUrlModal.close()
       } finally {
         this.loading = false
+      }
+    },
+
+    onNavInput(event) {
+      this.selectedView = event
+      if (event === 'search') {
+        this.selectedResult = null
       }
     },
   },
