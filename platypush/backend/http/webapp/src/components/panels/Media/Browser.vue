@@ -23,8 +23,9 @@
         <component
             :is="mediaProvider"
             :filter="filter"
+            :selected-playlist="selectedPlaylist"
             @add-to-playlist="$emit('add-to-playlist', $event)"
-            @back="mediaProvider = null"
+            @back="back"
             @path-change="$emit('path-change', $event)"
             @play="$emit('play', $event)"
         />
@@ -44,6 +45,7 @@ export default {
   mixins: [Utils],
   emits: [
     'add-to-playlist',
+    'back',
     'create-playlist',
     'path-change',
     'play',
@@ -62,6 +64,10 @@ export default {
       type: String,
       default: '',
     },
+
+    selectedPlaylist: {
+      type: Object,
+    },
   },
 
   data() {
@@ -73,7 +79,22 @@ export default {
     }
   },
 
+  computed: {
+    mediaProvidersLookup() {
+      return Object.keys(this.mediaProviders)
+        .reduce((acc, key) => {
+          acc[key.toLowerCase()] = key
+          return acc
+        }, {})
+    },
+  },
+
   methods: {
+    back() {
+      this.mediaProvider = null
+      this.$emit('back')
+    },
+
     registerMediaProvider(type) {
       const component = shallowRef(
         defineAsyncComponent(
@@ -94,10 +115,29 @@ export default {
       if (config.youtube)
         this.registerMediaProvider('YouTube')
     },
+
+    async onPlaylistChange() {
+      if (!this.selectedPlaylist)
+        return
+
+      const playlistType = this.selectedPlaylist.type?.toLowerCase()
+      const playlistMediaProvider = this.mediaProvidersLookup[playlistType]
+
+      if (playlistMediaProvider) {
+        this.mediaProvider = this.mediaProviders[playlistMediaProvider]
+      }
+    },
   },
 
-  mounted() {
-    this.refreshMediaProviders()
+  watch: {
+    selectedPlaylist() {
+      this.onPlaylistChange()
+    },
+  },
+
+  async mounted() {
+    await this.refreshMediaProviders()
+    await this.onPlaylistChange()
   },
 }
 </script>

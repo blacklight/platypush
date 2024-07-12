@@ -19,6 +19,10 @@ export default {
       type: String,
       default: '',
     },
+
+    selectedPlaylist: {
+      default: null,
+    },
   },
 
   data() {
