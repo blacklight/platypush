@@ -468,10 +468,12 @@ class MediaMpvPlugin(MediaPlugin):
             'audio_channels': getattr(self._player, 'audio_channels', None),
             'audio_codec': getattr(self._player, 'audio_codec_name', None),
             'delay': getattr(self._player, 'delay', None),
-            'duration': getattr(self._player, 'playback_time', 0)
-            + getattr(self._player, 'playtime_remaining', 0)
-            if getattr(self._player, 'playtime_remaining', None)
-            else None,
+            'duration': (
+                (getattr(self._player, 'playback_time', 0) or 0)
+                + getattr(self._player, 'playtime_remaining', 0)
+                if getattr(self._player, 'playtime_remaining', None)
+                else None
+            ),
             'filename': getattr(self._player, 'filename', None),
             'file_size': getattr(self._player, 'file_size', None),
             'fullscreen': getattr(self._player, 'fs', None),
