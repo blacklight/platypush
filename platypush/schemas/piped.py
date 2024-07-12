@@ -199,11 +199,21 @@ class PipedPlaylistSchema(Schema):
         },
     )
 
+    url = fields.Url(
+        metadata={
+            'description': 'Playlist URL',
+            'example': 'https://youtube.com/playlist?list=1234567890',
+        },
+    )
+
     @pre_dump
     def fill_urls(self, data: dict, **_):
         for attr in ('url', 'uploaderUrl'):
             if data.get(attr) and not data[attr].startswith('https://'):
                 data[attr] = f'https://youtube.com{data[attr]}'
+
+        if not data.get('id') and data.get('url'):
+            data['id'] = data['url'].split('=')[-1]
 
         return data
 
