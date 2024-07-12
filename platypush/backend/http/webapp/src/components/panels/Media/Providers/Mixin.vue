@@ -23,6 +23,10 @@ export default {
     selectedPlaylist: {
       default: null,
     },
+
+    selectedChannel: {
+      default: null,
+    },
   },
 
   data() {
