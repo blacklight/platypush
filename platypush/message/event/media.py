@@ -1,11 +1,12 @@
+from abc import ABC
 from platypush.message.event import Event
 
 
 class MediaEvent(Event):
     """Base class for media events"""
 
-    def __init__(self, player=None, plugin=None, status=None, *args, **kwargs):
-        super().__init__(player=player, plugin=plugin, status=status, *args, **kwargs)
+    def __init__(self, *args, player=None, plugin=None, status=None, **kwargs):
+        super().__init__(*args, player=player, plugin=plugin, status=status, **kwargs)
 
 
 class MediaPlayRequestEvent(MediaEvent):
@@ -124,6 +125,67 @@ class NewPlayingMediaEvent(MediaEvent):
         super().__init__(
             *args, player=player, plugin=plugin, resource=resource, **kwargs
         )
+
+
+class MediaDownloadEvent(MediaEvent, ABC):
+    """
+    Base class for media download events.
+    """
+
+    def __init__(
+        self, *args, player=None, plugin=None, resource=None, target=None, **kwargs
+    ):
+        """
+        :param resource: File name or URI of the downloaded resource
+        :type resource: str
+        :param target: Target file name or URI of the downloaded resource
+        :type target: str
+        """
+
+        super().__init__(
+            *args,
+            player=player,
+            plugin=plugin,
+            resource=resource,
+            target=target,
+            **kwargs
+        )
+
+
+class MediaDownloadStartedEvent(MediaDownloadEvent):
+    """
+    Event triggered when a media download is started.
+    """
+
+
+class MediaDownloadProgressEvent(MediaDownloadEvent):
+    """
+    Event triggered when a media download is in progress.
+    """
+
+    def __init__(self, progress: float, *args, **kwargs):
+        """
+        :param progress: Download progress in percentage, between 0 and 100.
+        """
+        super().__init__(*args, progress=progress, **kwargs)
+
+
+class MediaDownloadCompletedEvent(MediaDownloadEvent):
+    """
+    Event triggered when a media download is completed.
+    """
+
+
+class MediaDownloadErrorEvent(MediaDownloadEvent):
+    """
+    Event triggered when a media download fails.
+    """
+
+    def __init__(self, error: str, *args, **kwargs):
+        """
+        :param error: Error message.
+        """
+        super().__init__(*args, error=error, **kwargs)
 
 
 # vim:sw=4:ts=4:et:
