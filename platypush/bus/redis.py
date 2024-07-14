@@ -1,6 +1,5 @@
 import logging
 import threading
-from typing import Optional
 
 from platypush.bus import Bus
 from platypush.message import Message
@@ -24,25 +23,39 @@ class RedisBus(Bus):
         self.redis_queue = redis_queue or self.DEFAULT_REDIS_QUEUE
         self.on_message = on_message
         self.thread_id = threading.get_ident()
+        self._pubsub = None
+        self._pubsub_lock = threading.RLock()
 
-    def get(self) -> Optional[Message]:
+    @property
+    def pubsub(self):
+        with self._pubsub_lock:
+            if not self._pubsub:
+                self._pubsub = self.redis.pubsub()
+            return self._pubsub
+
+    def poll(self):
         """
-        Reads one message from the Redis queue
+        Polls the Redis queue for new messages
         """
-        try:
-            if self.should_stop():
-                return None
+        with self.pubsub as pubsub:
+            pubsub.subscribe(self.redis_queue)
+            try:
+                for msg in pubsub.listen():
+                    if msg.get('type') != 'message':
+                        continue
 
-            msg = self.redis.blpop(self.redis_queue, timeout=1)
-            if not msg or msg[1] is None:
-                return None
+                    if self.should_stop():
+                        break
 
-            msg = msg[1].decode('utf-8')
-            return Message.build(msg)
-        except Exception as e:
-            logger.exception(e)
-
-        return None
+                    try:
+                        data = msg.get('data', b'').decode('utf-8')
+                        parsed_msg = Message.build(data)
+                        if parsed_msg and self.on_message:
+                            self.on_message(parsed_msg)
+                    except Exception as e:
+                        logger.exception(e)
+            finally:
+                pubsub.unsubscribe(self.redis_queue)
 
     def post(self, msg):
         """
@@ -51,14 +64,12 @@ class RedisBus(Bus):
         from redis import exceptions
 
         try:
-            return self.redis.rpush(self.redis_queue, str(msg))
+            self.redis.publish(self.redis_queue, str(msg))
         except exceptions.ConnectionError as e:
             if not self.should_stop():
                 # Raise the exception only if the bus it not supposed to be
                 # stopped
                 raise e
-
-            return None
 
     def stop(self):
         super().stop()

@@ -181,6 +181,8 @@ class Application:
             or os.environ.get('PLATYPUSH_REDIS_QUEUE')
             or RedisBus.DEFAULT_REDIS_QUEUE
         )
+
+        os.environ['PLATYPUSH_REDIS_QUEUE'] = self.redis_queue
         self.config_file = config_file or os.environ.get('PLATYPUSH_CONFIG')
         self.verbose = verbose
         self.db_engine = db or os.environ.get('PLATYPUSH_DB')

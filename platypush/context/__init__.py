@@ -1,6 +1,7 @@
 import asyncio
 import importlib
 import logging
+import os
 
 from dataclasses import dataclass, field
 from threading import RLock
@@ -194,11 +195,20 @@ def get_bus() -> Bus:
     Get or register the main application bus.
     """
     from platypush.bus.redis import RedisBus
+    from platypush.utils import get_redis_conf
 
     if _ctx.bus:
         return _ctx.bus
 
-    _ctx.bus = RedisBus()
+    redis_queue = (
+        os.environ.get('PLATYPUSH_REDIS_QUEUE') or RedisBus.DEFAULT_REDIS_QUEUE
+    )
+
+    _ctx.bus = RedisBus(
+        redis_queue=redis_queue,
+        **get_redis_conf(),
+    )
+
     return _ctx.bus
 
 
