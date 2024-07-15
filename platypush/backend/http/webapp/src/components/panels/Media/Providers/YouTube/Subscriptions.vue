@@ -20,7 +20,13 @@
     </div>
 
     <div class="subscription-body" v-else>
-      <Channel :id="selectedChannel.id" :filter="filter" @play="$emit('play', $event)" />
+      <Channel
+        :id="selectedChannel.id"
+        :filter="filter"
+        @add-to-playlist="$emit('add-to-playlist', $event)"
+        @download="$emit('download', $event)"
+        @play="$emit('play', $event)"
+      />
     </div>
   </div>
 </template>
@@ -32,8 +38,14 @@ import Loading from "@/components/Loading";
 import Utils from "@/Utils";
 
 export default {
-  emits: ['play', 'select'],
   mixins: [Utils],
+  emits: [
+    'add-to-playlist',
+    'download',
+    'play',
+    'select',
+  ],
+
   components: {
     Channel,
     Loading,

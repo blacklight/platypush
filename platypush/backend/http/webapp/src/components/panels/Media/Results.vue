@@ -90,14 +90,18 @@ export default {
 
   computed: {
     visibleResults() {
-      return this.results
+      let results = this.results
         .filter((item) => {
-          if (!this.filter)
+          if (!this.filter?.length)
             return true
 
           return item.title.toLowerCase().includes(this.filter.toLowerCase())
         })
-        .slice(0, this.maxResultIndex)
+
+      if (this.maxResultIndex != null)
+        results = results.slice(0, this.maxResultIndex)
+
+      return results
     },
   },
 
@@ -112,7 +116,9 @@ export default {
         return
 
       this.$emit('scroll-end')
-      this.maxResultIndex += this.resultIndexStep
+
+      if (this.resultIndexStep != null)
+        this.maxResultIndex += this.resultIndexStep
     },
   },
 
