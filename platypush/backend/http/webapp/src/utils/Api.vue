@@ -72,7 +72,11 @@ export default {
         action: action,
         args: args,
       }, timeout, showError);
-    }
+    },
+
+    timeout(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    },
   },
 }
 </script>
