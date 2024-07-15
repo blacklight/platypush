@@ -91,10 +91,18 @@ export default {
         this.loading = false
       }
     },
+
+    initView() {
+      const args = this.getUrlArgs()
+      if (args.channel) {
+        this.$emit('select', {id: args.channel})
+      }
+    },
   },
 
-  mounted() {
-    this.loadSubscriptions()
+  async mounted() {
+    await this.loadSubscriptions()
+    this.initView()
   },
 }
 </script>
