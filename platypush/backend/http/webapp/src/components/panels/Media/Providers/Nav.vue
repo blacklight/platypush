@@ -48,6 +48,9 @@ export default {
 @import "../style.scss";
 
 .nav {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+
   .path .token .icon {
     margin-right: 0.5em;
   }

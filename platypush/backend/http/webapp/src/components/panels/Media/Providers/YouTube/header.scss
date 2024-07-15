@@ -1,6 +1,18 @@
-$banner-height: 100px;
+$banner-height: var(--banner-height);
 $info-bg: rgba(0, 0, 0, 0.5);
 $info-fg: rgba(255, 255, 255, 0.9);
+
+@include until($tablet) {
+  .playlist-container, .channel {
+    --banner-height: 5em;
+  }
+}
+
+@include from($tablet) {
+  .playlist-container, .channel {
+    --banner-height: 100px;
+  }
+}
 
 .header {
   border-bottom: $default-border-2;
@@ -86,7 +98,14 @@ $info-fg: rgba(255, 255, 255, 0.9);
     }
   }
 
+  .title-container {
+    max-height: var(--banner-height);
+    overflow-y: hidden;
+  }
+
   .title {
+    height: 100%;
+    align-content: center;
     color: $default-fg-2;
     font-size: 1.7em;
     font-weight: bold;

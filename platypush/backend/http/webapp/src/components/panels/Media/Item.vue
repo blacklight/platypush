@@ -97,6 +97,8 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
+  max-height: 23.5em;
+  height: 100%;
   cursor: initial !important;
   margin-bottom: 5px;
   border: 1px solid transparent;
