@@ -162,8 +162,13 @@ export default {
     },
   },
 
-  mounted() {
-    this.loadChannel()
+  async mounted() {
+    this.setUrlArgs({channel: this.id})
+    await this.loadChannel()
+  },
+
+  unmounted() {
+    this.setUrlArgs({channel: null})
   },
 }
 </script>
@@ -187,7 +192,7 @@ export default {
     .actions {
       display: flex;
       flex-direction: column;
-      align-items: center;
+      align-items: flex-end;
 
       button {
         background: $default-bg-7;

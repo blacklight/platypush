@@ -132,7 +132,12 @@ export default {
   },
 
   mounted() {
+    this.setUrlArgs({playlist: this.id})
     this.loadItems()
+  },
+
+  unmounted() {
+    this.setUrlArgs({playlist: null})
   },
 }
 </script>

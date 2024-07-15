@@ -234,8 +234,22 @@ export default {
     },
   },
 
-  mounted() {
-    this.loadPlaylists()
+  async mounted() {
+    await this.loadPlaylists()
+
+    const args = this.getUrlArgs()
+    if (args.playlist) {
+      const playlist = this.playlistsById[args.playlist]
+      if (playlist) {
+        this.$emit('select', playlist)
+      } else {
+        this.$emit('select', {id: args.playlist})
+      }
+    }
+  },
+
+  unmouted() {
+    this.setUrlArgs({section: null})
   },
 }
 </script>

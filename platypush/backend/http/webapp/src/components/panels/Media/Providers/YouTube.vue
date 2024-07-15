@@ -165,6 +165,16 @@ export default {
         title: channel.name,
       })
     },
+
+    initView() {
+      const args = this.getUrlArgs()
+
+      if (args.section)
+        this.selectedView = args.section
+
+      if (this.selectedView)
+        this.selectView(this.selectedView)
+    },
   },
 
   watch: {
@@ -172,15 +182,34 @@ export default {
       this.onPlaylistSelected(this.selectedPlaylist)
     },
 
+    selectedPlaylist_(value) {
+      if (value == null)
+        this.setUrlArgs({playlist: null})
+    },
+
     selectedChannel() {
       this.onChannelSelected(this.selectedChannel)
+    },
+
+    selectedChannel_(value) {
+      if (value == null)
+        this.setUrlArgs({channel: null})
+    },
+
+    selectedView() {
+      this.setUrlArgs({section: this.selectedView})
     },
   },
 
   mounted() {
     this.loadYoutubeConfig()
+    this.initView()
     this.onPlaylistSelected(this.selectedPlaylist)
     this.onChannelSelected(this.selectedChannel)
+  },
+
+  unmounted() {
+    this.setUrlArgs({section: null})
   },
 }
 </script>
