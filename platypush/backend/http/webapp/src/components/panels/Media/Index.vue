@@ -19,7 +19,7 @@
             <Nav :selected-view="selectedView"
                  :torrent-plugin="torrentPlugin"
                  :download-icon-class="downloadIconClass"
-                 @input="onNavInput"
+                 @input="setView"
                  @toggle="forceShowNav = !forceShowNav"
             />
           </div>
@@ -544,10 +544,17 @@ export default {
       }, {})
     },
 
-    onNavInput(event) {
-      this.selectedView = event
-      if (event === 'search') {
+    setView(title) {
+      this.selectedView = title
+      if (title === 'search') {
         this.selectedResult = null
+      }
+    },
+
+    updateView() {
+      const args = this.getUrlArgs()
+      if (args.view) {
+        this.selectedView = args.view
       }
     },
 
@@ -679,6 +686,7 @@ export default {
       this.sources.jellyfin = true
 
     await this.refreshDownloads()
+    this.updateView()
   },
 
   destroy() {
