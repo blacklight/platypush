@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import Optional
 from platypush.message.event import Event
 
 
@@ -133,23 +134,47 @@ class MediaDownloadEvent(MediaEvent, ABC):
     """
 
     def __init__(
-        self, *args, player=None, plugin=None, resource=None, target=None, **kwargs
+        self,
+        *args,
+        plugin: str,
+        resource: str,
+        state: str,
+        path: str,
+        player: Optional[str] = None,
+        size: Optional[int] = None,
+        timeout: Optional[int] = None,
+        progress: Optional[float] = None,
+        started_at: Optional[float] = None,
+        ended_at: Optional[float] = None,
+        **kwargs
     ):
         """
         :param resource: File name or URI of the downloaded resource
-        :type resource: str
-        :param target: Target file name or URI of the downloaded resource
-        :type target: str
+        :param url: Alias for resource
+        :param path: Path where the resource is downloaded
+        :param state: Download state
+        :param size: Size of the downloaded resource in bytes
+        :param timeout: Download timeout in seconds
+        :param progress: Download progress in percentage, between 0 and 100
+        :param started_at: Download start time
+        :param ended_at: Download end time
         """
 
-        super().__init__(
-            *args,
-            player=player,
-            plugin=plugin,
-            resource=resource,
-            target=target,
-            **kwargs
+        kwargs.update(
+            {
+                "resource": resource,
+                "path": path,
+                "url": resource,
+                "state": state,
+                "size": size,
+                "timeout": timeout,
+                "progress": progress,
+                "started_at": started_at,
+                "ended_at": ended_at,
+            }
         )
+
+        super().__init__(*args, player=player, plugin=plugin, **kwargs)
 
 
 class MediaDownloadStartedEvent(MediaDownloadEvent):
@@ -162,12 +187,6 @@ class MediaDownloadProgressEvent(MediaDownloadEvent):
     """
     Event triggered when a media download is in progress.
     """
-
-    def __init__(self, progress: float, *args, **kwargs):
-        """
-        :param progress: Download progress in percentage, between 0 and 100.
-        """
-        super().__init__(*args, progress=progress, **kwargs)
 
 
 class MediaDownloadCompletedEvent(MediaDownloadEvent):
@@ -186,6 +205,30 @@ class MediaDownloadErrorEvent(MediaDownloadEvent):
         :param error: Error message.
         """
         super().__init__(*args, error=error, **kwargs)
+
+
+class MediaDownloadPausedEvent(MediaDownloadEvent):
+    """
+    Event triggered when a media download is paused.
+    """
+
+
+class MediaDownloadResumedEvent(MediaDownloadEvent):
+    """
+    Event triggered when a media download is resumed.
+    """
+
+
+class MediaDownloadCancelledEvent(MediaDownloadEvent):
+    """
+    Event triggered when a media download is cancelled.
+    """
+
+
+class MediaDownloadClearEvent(MediaDownloadEvent):
+    """
+    Event triggered when a download is cleared from the queue.
+    """
 
 
 # vim:sw=4:ts=4:et:
