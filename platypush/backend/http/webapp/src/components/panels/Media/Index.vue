@@ -556,6 +556,14 @@ export default {
       if (args.view) {
         this.selectedView = args.view
       }
+
+      if (args.player && this.players?.length) {
+        this.selectedPlayer = this.players.find((player) => player.name === args.player)
+      }
+
+      if (args.subtitles) {
+        this.selectedSubtitles = args.subtitles
+      }
     },
 
     onDownloadStarted(event) {
@@ -637,21 +645,29 @@ export default {
     },
   },
 
-  async mounted() {
-    this.$watch(() => this.selectedPlayer, (player) => {
+  watch: {
+    selectedPlayer(player) {
+      this.setUrlArgs({player: player?.name})
       if (player)
         this.refresh()
-    })
+    },
 
-    this.$watch(() => this.selectedSubtitles, (subs) => {
+    selectedSubtitles(subs) {
+      this.setUrlArgs({subtitles: this.selectedSubtitles})
       if (new Set(['play', 'pause']).has(this.selectedPlayer?.status?.state)) {
         if (subs)
           this.selectedPlayer.component.addSubtitles(subs)
         else
           this.selectedPlayer.component.removeSubtitles()
       }
-    })
+    },
 
+    selectedView() {
+      this.setUrlArgs({view: this.selectedView})
+    },
+  },
+
+  async mounted() {
     this.torrentPlugin = this.getTorrentPlugin()
     this.subscribe(this.onTorrentQueued,'on-torrent-queued',
         'platypush.message.event.torrent.TorrentQueuedEvent')

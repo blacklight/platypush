@@ -37,7 +37,7 @@
 </template>
 
 <script>
-import { defineAsyncComponent, shallowRef } from "vue";
+import { defineAsyncComponent, ref } from "vue";
 import Browser from "@/components/File/Browser";
 import Loading from "@/components/Loading";
 import Utils from "@/Utils";
@@ -103,7 +103,7 @@ export default {
     },
 
     registerMediaProvider(type) {
-      const component = shallowRef(
+      const component = ref(
         defineAsyncComponent(
           () => import(`@/components/panels/Media/Providers/${type}`)
         )
@@ -146,9 +146,41 @@ export default {
         this.mediaProvider = this.mediaProviders[channelMediaProvider]
       }
     },
+
+    updateView() {
+      if (this.getUrlArgs().provider?.length) {
+        const provider = this.getUrlArgs().provider
+        const providerName = this.mediaProvidersLookup[provider.toLowerCase()]
+
+        if (!providerName?.length)
+          return
+
+        this.mediaProvider = this.mediaProviders[providerName]
+      }
+
+      if (this.selectedPlaylist)
+        this.onPlaylistChange()
+      else if (this.selectedChannel)
+        this.onChannelChange()
+    },
   },
 
   watch: {
+    mediaProvider(provider) {
+      if (!provider) {
+        this.setUrlArgs({provider: null})
+        return
+      }
+
+      const providerName = Object.entries(this.mediaProviders)
+        .filter((pair) => pair[1] === provider)?.[0]?.[0]?.toLowerCase()
+
+      if (!providerName?.length)
+        return
+
+      this.setUrlArgs({provider: providerName})
+    },
+
     selectedPlaylist() {
       this.onPlaylistChange()
     },
@@ -160,8 +192,11 @@ export default {
 
   async mounted() {
     await this.refreshMediaProviders()
-    this.onPlaylistChange()
-    this.onChannelChange()
+    this.updateView()
+  },
+
+  unmounted() {
+    this.setUrlArgs({provider: null})
   },
 }
 </script>
