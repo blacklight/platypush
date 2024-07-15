@@ -5,14 +5,17 @@
     </button>
 
     <li v-for="(view, name) in displayedViews" :key="name" :title="view.displayName"
-        :class="{selected: name === selectedView, ...customClasses[name]}" @click="$emit('input', name)">
+        :class="{selected: name === selectedView, ...customClasses[name]}" @click="input(name)">
       <i :class="view.iconClass" />
     </li>
   </nav>
 </template>
 
 <script>
+import Utils from '@/Utils';
+
 export default {
+  mixins: [Utils],
   emits: ['input', 'toggle'],
   props: {
     selectedView: {
@@ -76,6 +79,13 @@ export default {
           return acc
         }, {}),
       }
+    },
+  },
+
+  methods: {
+    input(view) {
+      this.$emit('input', view)
+      this.setUrlArgs({view: view})
     },
   },
 }
