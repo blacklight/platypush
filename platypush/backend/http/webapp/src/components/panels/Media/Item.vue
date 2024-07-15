@@ -17,6 +17,10 @@
                           v-if="item.type !== 'torrent'" />
             <DropdownItem icon-class="fa fa-download" text="Download" @click="$emit('download')"
                           v-if="(item.type === 'torrent' || item.type === 'youtube') && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
+            <DropdownItem icon-class="fa fa-list" text="Add to playlist" @click="$emit('add-to-playlist')"
+                          v-if="item.type === 'youtube'" />
+            <DropdownItem icon-class="fa fa-trash" text="Remove from playlist" @click="$emit('remove-from-playlist')"
+                          v-if="item.type === 'youtube' && playlist?.length" />
             <DropdownItem icon-class="fa fa-window-maximize" text="View in browser" @click="$emit('view')"
                           v-if="item.type === 'file'" />
             <DropdownItem icon-class="fa fa-info-circle" text="Info" @click="$emit('select')" />
@@ -48,7 +52,15 @@ import Utils from "@/Utils";
 export default {
   components: {Dropdown, DropdownItem, MediaImage},
   mixins: [Utils],
-  emits: ['play', 'select', 'view', 'download'],
+  emits: [
+    'add-to-playlist',
+    'download',
+    'play',
+    'remove-from-playlist',
+    'select',
+    'view',
+  ],
+
   props: {
     item: {
       type: Object,
@@ -63,6 +75,10 @@ export default {
     selected: {
       type: Boolean,
       default: false,
+    },
+
+    playlist: {
+      type: String,
     },
   },
 

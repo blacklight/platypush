@@ -26,6 +26,8 @@
 
         <Subscriptions :filter="filter"
                        :selected-channel="selectedChannel_"
+                       @add-to-playlist="$emit('add-to-playlist', $event)"
+                       @download="$emit('download', $event)"
                        @play="$emit('play', $event)"
                        @select="onChannelSelected"
                        v-else-if="selectedView === 'subscriptions'"
@@ -196,6 +198,7 @@ export default {
   .body {
     height: calc(100% - $media-nav-height - 2px);
     margin-top: 2px;
+    overflow-y: auto;
   }
 }
 </style>

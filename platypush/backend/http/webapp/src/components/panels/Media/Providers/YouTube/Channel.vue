@@ -43,8 +43,10 @@
 
       <Results :results="channel.items"
                :filter="filter"
+               :result-index-step="null"
                :selected-result="selectedResult"
                ref="results"
+               @add-to-playlist="$emit('add-to-playlist', $event)"
                @download="$emit('download', $event)"
                @play="$emit('play', $event)"
                @scroll-end="loadNextPage"
@@ -60,8 +62,13 @@ import Results from "@/components/panels/Media/Results";
 import Utils from "@/Utils";
 
 export default {
-  emits: ['download', 'play'],
   mixins: [Utils],
+  emits: [
+    'add-to-playlist',
+    'download',
+    'play',
+  ],
+
   components: {
     Loading,
     Results,
@@ -102,26 +109,47 @@ export default {
     async loadChannel() {
       this.loading = true
       try {
-        this.channel = await this.request('youtube.get_channel', {id: this.id})
+        await this.updateChannel(true)
         this.subscribed = await this.request('youtube.is_subscribed', {channel_id: this.id})
       } finally {
         this.loading = false
       }
     },
 
+    async updateChannel(init) {
+      const channel = await this.request(
+        'youtube.get_channel',
+        {id: this.id, next_page_token: this.channel?.next_page_token}
+      )
+
+      const itemsByUrl = this.itemsByUrl || {}
+      let items = channel.items
+        .filter(item => !itemsByUrl[item.url])
+        .map(item => {
+          return {
+            type: 'youtube',
+            ...item,
+          }
+        })
+
+      if (!init) {
+        items = this.channel.items.concat(items)
+      }
+
+      this.channel = channel
+      this.channel.items = items
+    },
+
     async loadNextPage() {
-      if (!this.channel?.next_page_token || this.loadingNextPage)
+      if (!this.channel?.next_page_token || this.loadingNextPage) {
         return
+      }
+
+      this.loadingNextPage = true
 
       try {
-        const nextPage = await this.request(
-          'youtube.get_channel',
-          {id: this.id, next_page_token: this.channel.next_page_token}
-        )
-
-        this.channel.items.push(...nextPage.items.filter(item => !this.itemsByUrl[item.url]))
-        this.channel.next_page_token = nextPage.next_page_token
-        this.$refs.results.maxResultIndex += this.$refs.results.resultIndexStep
+        await this.timeout(500)
+        await this.updateChannel()
       } finally {
         this.loadingNextPage = false
       }
@@ -131,18 +159,6 @@ export default {
       const action = this.subscribed ? 'unsubscribe' : 'subscribe'
       await this.request(`youtube.${action}`, {channel_id: this.id})
       this.subscribed = !this.subscribed
-    },
-
-    onScroll(e) {
-      const el = e.target
-      if (!el)
-        return
-
-      const bottom = (el.scrollHeight - el.scrollTop) <= el.clientHeight + 100
-      if (!bottom)
-        return
-
-      this.loadNextPage()
     },
   },
 
