@@ -50,6 +50,7 @@
                :playlist="id"
                :selected-result="selectedResult"
                @add-to-playlist="$emit('add-to-playlist', $event)"
+               @download="$emit('download', $event)"
                @play="$emit('play', $event)"
                @remove-from-playlist="$emit('remove-from-playlist', $event)"
                @select="selectedResult = $event"
@@ -68,6 +69,7 @@ export default {
   mixins: [Utils],
   emits: [
     'add-to-playlist',
+    'download',
     'play',
     'remove-from-playlist',
   ],

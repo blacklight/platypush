@@ -27,6 +27,7 @@
             :selected-channel="selectedChannel"
             @add-to-playlist="$emit('add-to-playlist', $event)"
             @back="back"
+            @download="$emit('download', $event)"
             @path-change="$emit('path-change', $event)"
             @play="$emit('play', $event)"
         />
@@ -48,6 +49,7 @@ export default {
     'add-to-playlist',
     'back',
     'create-playlist',
+    'download',
     'path-change',
     'play',
     'remove-from-playlist',

@@ -31,6 +31,7 @@
         :filter="filter"
         :metadata="playlistsById[selectedPlaylist.id] || selectedPlaylist"
         @add-to-playlist="$emit('add-to-playlist', $event)"
+        @download="$emit('download', $event)"
         @remove-from-playlist="$emit('remove-from-playlist', {item: $event, playlist_id: selectedPlaylist.id})"
         @play="$emit('play', $event)"
       />
@@ -110,6 +111,7 @@ export default {
   emits: [
     'add-to-playlist',
     'create-playlist',
+    'download',
     'play',
     'remove-from-playlist',
     'remove-playlist',

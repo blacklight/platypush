@@ -7,6 +7,7 @@ export default {
     'add-to-playlist',
     'back',
     'create-playlist',
+    'download',
     'path-change',
     'play',
     'remove-from-playlist',

@@ -10,6 +10,7 @@
              :sources="{'youtube': true}"
              :selected-result="selectedResult"
              @add-to-playlist="$emit('add-to-playlist', $event)"
+             @download="$emit('download', $event)"
              @select="selectedResult = $event"
              @play="$emit('play', $event)"
              v-else />
@@ -26,6 +27,7 @@ export default {
   mixins: [Utils],
   emits: [
     'add-to-playlist',
+    'download',
     'play',
   ],
 
