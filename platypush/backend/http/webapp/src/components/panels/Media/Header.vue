@@ -22,6 +22,14 @@
         </form>
       </div>
 
+      <div class="col-s-8 col-m-7 left side" v-else-if="selectedView === 'downloads'">
+        <form @submit.prevent="$emit('filter-downloads', downloadFilter)">
+          <label class="search-box">
+            <input type="search" placeholder="Filter" v-model="downloadFilter">
+          </label>
+        </form>
+      </div>
+
       <div class="col-s-8 col-m-7 left side" v-else-if="selectedView === 'browser'">
         <label class="search-box">
           <input type="search" placeholder="Filter" :value="browserFilter" @change="$emit('filter', $event.target.value)"
@@ -65,6 +73,7 @@ export default {
   components: {Players},
   emits: [
     'filter',
+    'filter-downloads',
     'play-url',
     'player-status',
     'search',
@@ -119,6 +128,7 @@ export default {
       filterVisible: false,
       query: '',
       torrentURL: '',
+      downloadFilter: '',
     }
   },
 

@@ -9,6 +9,7 @@
       <div class="body" v-else>
         <Feed :filter="filter"
               @add-to-playlist="$emit('add-to-playlist', $event)"
+              @download="$emit('download', $event)"
               @play="$emit('play', $event)"
               v-if="selectedView === 'feed'"
         />
@@ -16,6 +17,7 @@
         <Playlists :filter="filter"
                    :selected-playlist="selectedPlaylist_"
                    @add-to-playlist="$emit('add-to-playlist', $event)"
+                   @download="$emit('download', $event)"
                    @play="$emit('play', $event)"
                    @remove-from-playlist="removeFromPlaylist"
                    @select="onPlaylistSelected"

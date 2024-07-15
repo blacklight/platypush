@@ -45,6 +45,7 @@
                :filter="filter"
                :selected-result="selectedResult"
                ref="results"
+               @download="$emit('download', $event)"
                @play="$emit('play', $event)"
                @scroll-end="loadNextPage"
                @select="selectedResult = $event"
@@ -59,7 +60,7 @@ import Results from "@/components/panels/Media/Results";
 import Utils from "@/Utils";
 
 export default {
-  emits: ['play'],
+  emits: ['download', 'play'],
   mixins: [Utils],
   components: {
     Loading,
