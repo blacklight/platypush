@@ -1,7 +1,7 @@
 <template>
   <div class="image-container"
        :class="{ 'with-image': !!item?.image }">
-    <div class="play-overlay" @click="$emit('play', item)" v-if="hasPlay">
+    <div class="play-overlay" @click="$emit(clickEvent, item)" v-if="hasPlay">
       <i :class="overlayIconClass" />
     </div>
 
@@ -40,7 +40,7 @@ import MediaUtils from "@/components/Media/Utils";
 
 export default {
   mixins: [Icons, MediaUtils],
-  emits: ['play'],
+  emits: ['play', 'select'],
   props: {
     item: {
       type: Object,
@@ -60,6 +60,17 @@ export default {
   },
 
   computed: {
+    clickEvent() {
+      switch (this.item?.item_type) {
+        case 'channel':
+        case 'playlist':
+        case 'folder':
+          return 'select'
+        default:
+          return 'play'
+      }
+    },
+
     iconClass() {
       switch (this.item?.item_type) {
         case 'channel':

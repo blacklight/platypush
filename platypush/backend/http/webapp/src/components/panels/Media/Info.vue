@@ -2,7 +2,7 @@
   <div class="media-info">
     <div class="row header">
       <div class="image-container">
-        <MediaImage :item="item" @play="$emit('play')" />
+        <MediaImage :item="item" @play="$emit('play')" @select="$emit('select')" />
       </div>
 
       <div class="title">

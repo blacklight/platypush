@@ -5,7 +5,7 @@
     @click.right.prevent="$refs.dropdown.toggle()"
     v-if="!hidden">
     <div class="thumbnail">
-      <MediaImage :item="item" @play="$emit('play')" />
+      <MediaImage :item="item" @play="$emit('play')" @select="$emit('select')" />
     </div>
 
     <div class="body">
