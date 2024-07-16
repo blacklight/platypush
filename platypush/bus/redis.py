@@ -37,8 +37,12 @@ class RedisBus(Bus):
         """
         Polls the Redis queue for new messages
         """
+        from platypush.message.event.application import ApplicationStartedEvent
+
         with self.pubsub as pubsub:
             pubsub.subscribe(self.redis_queue)
+            self.post(ApplicationStartedEvent())
+
             try:
                 for msg in pubsub.listen():
                     if msg.get('type') != 'message':

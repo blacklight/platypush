@@ -19,7 +19,6 @@ from platypush.entities import init_entities_engine, EntitiesEngine
 from platypush.event.processor import EventProcessor
 from platypush.logger import Logger
 from platypush.message.event import Event
-from platypush.message.event.application import ApplicationStartedEvent
 from platypush.message.request import Request
 from platypush.message.response import Response
 from platypush.utils import get_enabled_plugins, get_redis_conf
@@ -462,7 +461,6 @@ class Application:
             self.cron_scheduler.start()
 
         assert self.bus, 'The bus is not running'
-        self.bus.post(ApplicationStartedEvent())
 
         # Poll for messages on the bus
         try:
