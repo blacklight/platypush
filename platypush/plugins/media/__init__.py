@@ -791,6 +791,8 @@ class MediaPlugin(RunnablePlugin, ABC):
         :param timeout: Network timeout in seconds (default: 10).
         :param sync: If set to True, the download will be synchronous and the
             action will return only when the download is completed.
+        :param only_audio: If set to True, only the audio track will be downloaded
+            (only supported for yt-dlp-compatible URLs for now).
         :param youtube_format: Override the default ``youtube_format`` setting.
         :return: The absolute path to the downloaded file.
         """
