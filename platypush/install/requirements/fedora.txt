@@ -10,7 +10,6 @@ python-magic
 python-marshmallow
 python-mypy_extensions
 python-psutil
-python-pytz
 python-redis
 python-requests
 python-rsa
