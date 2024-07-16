@@ -17,5 +17,3 @@ python-websocket-client
 python-websockets
 python-yaml
 python-zeroconf
-redis
-sudo
