@@ -60,6 +60,7 @@
                        @play="play"
                        @view="view"
                        @download="download"
+                       @download-audio="downloadAudio"
                        v-if="selectedView === 'search'"
               />
 
@@ -82,6 +83,7 @@
                        @add-to-playlist="addToPlaylistItem = $event"
                        @back="selectedResult = null"
                        @download="download"
+                       @download-audio="downloadAudio"
                        @path-change="browserFilter = ''"
                        @play="play($event)"
                        v-else-if="selectedView === 'browser'"
@@ -344,13 +346,17 @@ export default {
       window.open(ret.url, '_blank')
     },
 
-    async download(item) {
+    async download(item, args) {
       switch (item.type) {
         case 'torrent':
-          return await this.downloadTorrent(item)
+          return await this.downloadTorrent(item, args)
         case 'youtube':
-          return await this.downloadYoutube(item)
+          return await this.downloadYoutube(item, args)
       }
+    },
+
+    async downloadAudio(item) {
+      await this.download(item, {onlyAudio: true})
     },
 
     async refresh() {
@@ -454,7 +460,7 @@ export default {
       return await this.request(`${torrentPlugin}.download`, {torrent: item.url || item})
     },
 
-    async downloadYoutube(item) {
+    async downloadYoutube(item, args) {
       if (!item?.url) {
         this.notify({
           text: 'No YouTube URL available',
@@ -464,10 +470,13 @@ export default {
         return
       }
 
-      await this.request(
-        `${this.pluginName}.download`,
-        {url: item.url},
-      )
+      const requestArgs = {url: item.url}
+      const onlyAudio = !!args?.onlyAudio
+      if (onlyAudio) {
+        requestArgs.only_audio = true
+      }
+
+      await this.request(`${this.pluginName}.download`, requestArgs)
     },
 
     async selectSubtitles(item) {

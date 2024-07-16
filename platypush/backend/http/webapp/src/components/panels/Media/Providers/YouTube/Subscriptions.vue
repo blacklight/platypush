@@ -25,6 +25,7 @@
         :filter="filter"
         @add-to-playlist="$emit('add-to-playlist', $event)"
         @download="$emit('download', $event)"
+        @download-audio="$emit('download-audio', $event)"
         @play="$emit('play', $event)"
       />
     </div>
@@ -42,6 +43,7 @@ export default {
   emits: [
     'add-to-playlist',
     'download',
+    'download-audio',
     'play',
     'select',
   ],

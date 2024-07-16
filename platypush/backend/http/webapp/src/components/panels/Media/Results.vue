@@ -14,7 +14,9 @@
             @select="$emit('select', i)"
             @play="$emit('play', item)"
             @view="$emit('view', item)"
-            @download="$emit('download', item)" />
+            @download="$emit('download', item)"
+            @download-audio="$emit('download-audio', item)"
+      />
     </div>
 
     <Modal ref="infoModal" title="Media info" @close="$emit('select', null)">
@@ -37,6 +39,7 @@ export default {
   emits: [
     'add-to-playlist',
     'download',
+    'download-audio',
     'open-channel',
     'play',
     'remove-from-playlist',

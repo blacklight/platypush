@@ -51,6 +51,7 @@
                :selected-result="selectedResult"
                @add-to-playlist="$emit('add-to-playlist', $event)"
                @download="$emit('download', $event)"
+               @download-audio="$emit('download-audio', $event)"
                @open-channel="$emit('open-channel', $event)"
                @play="$emit('play', $event)"
                @remove-from-playlist="$emit('remove-from-playlist', $event)"
@@ -71,6 +72,7 @@ export default {
   emits: [
     'add-to-playlist',
     'download',
+    'download-audio',
     'open-channel',
     'play',
     'remove-from-playlist',
