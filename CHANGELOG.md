@@ -1,7 +1,7 @@
 # Changelog
 
 
-## [1.1.2] - 2024-07-16
+## [1.1.3] - 2024-07-16
 
 - [`core`]: New architecture for the Redis bus - now leveraging pub/sub with a
   connection pool instead of a single-connection queue. It makes the
