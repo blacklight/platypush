@@ -2,7 +2,7 @@
   <div class="media-info">
     <div class="row header">
       <div class="image-container">
-        <MediaImage :item="item" @play="$emit('play')" />
+        <MediaImage :item="item" @play="$emit('play')" @select="$emit('select')" />
       </div>
 
       <div class="title">
@@ -13,6 +13,18 @@
         </i>
         <a :href="item.url" target="_blank" v-if="item.url" v-text="item.title" />
         <span v-else v-text="item.title" />
+      </div>
+    </div>
+
+    <div class="row direct-url" v-if="directUrl">
+      <div class="left side">Direct URL</div>
+      <div class="right side">
+        <a :href="directUrl" title="Direct URL" target="_blank">
+          <i class="fas fa-external-link-alt" />
+        </a>
+        <button @click="copyToClipboard(directUrl)" title="Copy URL to clipboard">
+          <i class="fas fa-clipboard" />
+        </button>
       </div>
     </div>
 
@@ -169,12 +181,18 @@ export default {
     item: {
       type: Object,
       default: () => {},
-    }
+    },
+
+    pluginName: {
+      type: String,
+    },
   },
 
   data() {
     return {
       typeIcons: Icons,
+      loadingUrl: false,
+      youtubeUrl: null,
     }
   },
 
@@ -206,6 +224,15 @@ export default {
         return this.formatDate(this.item.publishedAt, true)
       if (this.item?.created_at)
         return this.formatDate(this.item.created_at, true)
+
+      return null
+    },
+
+    directUrl() {
+      if (this.item?.type === 'file' && this.item?.url) {
+        const path = this.item.url.replace(/^file:\/\//, '')
+        return window.location.origin + '/file?path=' + encodeURIComponent(path)
+      }
 
       return null
     },
@@ -275,6 +302,24 @@ export default {
       &.right {
         width: 75%;
         justify-content: right;
+      }
+    }
+  }
+}
+
+.direct-url {
+  .right.side {
+    position: relative;
+
+    button {
+      background: none;
+      border: none;
+      padding: 0;
+      margin-left: 1em;
+
+      &:hover {
+        color: $default-hover-fg;
+        cursor: pointer;
       }
     }
   }

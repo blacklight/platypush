@@ -5,14 +5,17 @@
     </button>
 
     <li v-for="(view, name) in displayedViews" :key="name" :title="view.displayName"
-        :class="{selected: name === selectedView}" @click="$emit('input', name)">
+        :class="{selected: name === selectedView, ...customClasses[name]}" @click="input(name)">
       <i :class="view.iconClass" />
     </li>
   </nav>
 </template>
 
 <script>
+import Utils from '@/Utils';
+
 export default {
+  mixins: [Utils],
   emits: ['input', 'toggle'],
   props: {
     selectedView: {
@@ -28,6 +31,10 @@ export default {
       type: String,
     },
 
+    downloadIconClass: {
+      type: String,
+    },
+
     views: {
       type: Object,
       default: () => {
@@ -40,6 +47,11 @@ export default {
           browser: {
             iconClass: 'fa fa-folder',
             displayName: 'Browser',
+          },
+
+          downloads: {
+            iconClass: 'fa fa-download',
+            displayName: 'Downloads',
           },
 
           torrents: {
@@ -58,6 +70,22 @@ export default {
         delete views.torrents
 
       return views
+    },
+
+    customClasses() {
+      return {
+        downloads: this.downloadIconClass.split(' ').reduce((acc, cls) => {
+          acc[cls] = true
+          return acc
+        }, {}),
+      }
+    },
+  },
+
+  methods: {
+    input(view) {
+      this.$emit('input', view)
+      this.setUrlArgs({view: view})
     },
   },
 }
@@ -107,12 +135,8 @@ nav {
     list-style: none;
     padding: .6em;
     opacity: 0.7;
-
-    &.selected,
-    &:hover {
-      border-radius: 1.2em;
-      margin: 0 0.2em;
-    }
+    border-radius: 1.2em;
+    margin: 0 0.2em;
 
     &:hover {
       background: $nav-entry-collapsed-hover-bg;
@@ -122,6 +146,9 @@ nav {
       background: $nav-entry-collapsed-selected-bg;
     }
 
+    &.completed {
+      color: $ok-fg;
+    }
   }
 }
 </style>

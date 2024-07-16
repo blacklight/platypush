@@ -4,17 +4,24 @@
     <div class="grid" ref="grid" v-if="results?.length" @scroll="onScroll">
       <Item v-for="(item, i) in visibleResults"
             :key="i"
-            :item="item"
-            :selected="selectedResult === i"
             :hidden="!!Object.keys(sources || {}).length && !sources[item.type]"
+            :item="item"
+            :playlist="playlist"
+            :selected="selectedResult === i"
+            @add-to-playlist="$emit('add-to-playlist', item)"
+            @open-channel="$emit('open-channel', item)"
+            @remove-from-playlist="$emit('remove-from-playlist', item)"
             @select="$emit('select', i)"
             @play="$emit('play', item)"
             @view="$emit('view', item)"
-            @download="$emit('download', item)" />
+            @download="$emit('download', item)"
+            @download-audio="$emit('download-audio', item)"
+      />
     </div>
 
     <Modal ref="infoModal" title="Media info" @close="$emit('select', null)">
       <Info :item="results[selectedResult]"
+            :pluginName="pluginName"
             @play="$emit('play', results[selectedResult])"
             v-if="selectedResult != null" />
     </Modal>
@@ -29,11 +36,26 @@ import Modal from "@/components/Modal";
 
 export default {
   components: {Info, Item, Loading, Modal},
-  emits: ['select', 'play', 'view', 'download', 'scroll-end'],
+  emits: [
+    'add-to-playlist',
+    'download',
+    'download-audio',
+    'open-channel',
+    'play',
+    'remove-from-playlist',
+    'scroll-end',
+    'select',
+    'view',
+  ],
+
   props: {
     loading: {
       type: Boolean,
       default: false,
+    },
+
+    pluginName: {
+      type: String,
     },
 
     results: {
@@ -59,6 +81,10 @@ export default {
       type: Number,
       default: 25,
     },
+
+    playlist: {
+      default: null,
+    },
   },
 
   data() {
@@ -69,14 +95,18 @@ export default {
 
   computed: {
     visibleResults() {
-      return this.results
+      let results = this.results
         .filter((item) => {
-          if (!this.filter)
+          if (!this.filter?.length)
             return true
 
           return item.title.toLowerCase().includes(this.filter.toLowerCase())
         })
-        .slice(0, this.maxResultIndex)
+
+      if (this.maxResultIndex != null)
+        results = results.slice(0, this.maxResultIndex)
+
+      return results
     },
   },
 
@@ -91,12 +121,19 @@ export default {
         return
 
       this.$emit('scroll-end')
-      this.maxResultIndex += this.resultIndexStep
+
+      if (this.resultIndexStep != null)
+        this.maxResultIndex += this.resultIndexStep
     },
   },
 
   mounted() {
     this.$watch('selectedResult', (value) => {
+      if (value?.item_type === 'playlist' || value?.item_type === 'channel') {
+        this.$emit('select', null)
+        return
+      }
+
       if (value == null)
         this.$refs.infoModal?.close()
       else
@@ -114,6 +151,7 @@ export default {
   width: 100%;
   height: 100%;
   background: $background-color;
+  position: relative;
 
   .grid {
     height: 100%;

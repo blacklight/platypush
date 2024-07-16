@@ -3,13 +3,17 @@ export default {
   name: "DateTime",
   methods: {
     formatDate(date, year=false) {
-      if (typeof date === 'string')
+      if (typeof date === 'number')
+        date = new Date(date * 1000)
+      else if (typeof date === 'string')
         date = new Date(Date.parse(date))
 
       return date.toDateString().substring(0, year ? 15 : 10)
     },
 
     formatTime(date, seconds=true) {
+      if (typeof date === 'number')
+        date = new Date(date * 1000)
       if (typeof date === 'string')
         date = new Date(Date.parse(date))
 
@@ -17,6 +21,8 @@ export default {
     },
 
     formatDateTime(date, year=false, seconds=true, skipTimeIfMidnight=false) {
+      if (typeof date === 'number')
+        date = new Date(date * 1000)
       if (typeof date === 'string')
         date = new Date(Date.parse(date))
 

@@ -134,6 +134,7 @@ export default {
       try {
         this.files = await this.request('file.list', {path: this.path})
         this.$emit('path-change', this.path)
+        this.setUrlArgs({path: decodeURIComponent(this.path)})
       } finally {
         this.loading = false
       }
@@ -165,7 +166,15 @@ export default {
   },
 
   mounted() {
+    const args = this.getUrlArgs()
+    if (args.path)
+      this.path = args.path
+
     this.refresh()
+  },
+
+  unmounted() {
+    this.setUrlArgs({path: null})
   },
 }
 </script>

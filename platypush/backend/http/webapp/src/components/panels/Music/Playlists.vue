@@ -16,6 +16,7 @@
       @add-to-queue="$emit('load-tracks', {tracks: $event, play: false})"
       @add-to-queue-and-play="$emit('load-tracks', {tracks: $event, play: true})"
       @back="$emit('playlist-edit', null)"
+      @download="$emit('download', $event)"
       @info="$emit('info', $event)"
       @move="$emit('track-move', {...$event, playlist: editedPlaylist})"
       @play="$emit('load-tracks', {tracks: [$event], play: true})"
@@ -104,6 +105,7 @@ export default {
 
   emits: [
     'add-to-playlist',
+    'download',
     'info',
     'load',
     'load-tracks',
