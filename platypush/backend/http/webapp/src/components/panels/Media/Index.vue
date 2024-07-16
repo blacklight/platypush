@@ -55,6 +55,7 @@
                        :loading="loading"
                        :filter="browserFilter"
                        @add-to-playlist="addToPlaylistItem = $event"
+                       @open-channel="selectChannelFromItem"
                        @select="onResultSelect($event)"
                        @play="play"
                        @view="view"
@@ -642,6 +643,26 @@ export default {
     onDownloadClear(event) {
       if (event.path in this.downloads)
         delete this.downloads[event.path]
+    },
+
+    selectChannelFromItem(item) {
+      const mediaProvider = item?.type
+      const channelId = (
+        item?.channel_id ||
+        item?.channel?.id ||
+        item?.channel_url.split('/').pop()
+      )
+
+      if (!mediaProvider && channelId == null)
+        return
+
+      this.setUrlArgs({
+        provider: mediaProvider,
+        section: 'subscriptions',
+        channel: channelId,
+      })
+
+      this.selectedView = 'browser'
     },
   },
 

@@ -9,6 +9,7 @@
             :playlist="playlist"
             :selected="selectedResult === i"
             @add-to-playlist="$emit('add-to-playlist', item)"
+            @open-channel="$emit('open-channel', item)"
             @remove-from-playlist="$emit('remove-from-playlist', item)"
             @select="$emit('select', i)"
             @play="$emit('play', item)"
@@ -36,6 +37,7 @@ export default {
   emits: [
     'add-to-playlist',
     'download',
+    'open-channel',
     'play',
     'remove-from-playlist',
     'scroll-end',

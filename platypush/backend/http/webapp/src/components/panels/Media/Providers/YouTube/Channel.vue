@@ -48,6 +48,7 @@
                ref="results"
                @add-to-playlist="$emit('add-to-playlist', $event)"
                @download="$emit('download', $event)"
+               @open-channel="$emit('open-channel', $event)"
                @play="$emit('play', $event)"
                @scroll-end="loadNextPage"
                @select="selectedResult = $event"
@@ -66,6 +67,7 @@ export default {
   emits: [
     'add-to-playlist',
     'download',
+    'open-channel',
     'play',
   ],
 

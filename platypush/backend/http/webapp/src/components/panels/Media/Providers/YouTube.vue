@@ -10,6 +10,7 @@
         <Feed :filter="filter"
               @add-to-playlist="$emit('add-to-playlist', $event)"
               @download="$emit('download', $event)"
+              @open-channel="selectChannelFromItem"
               @play="$emit('play', $event)"
               v-if="selectedView === 'feed'"
         />
@@ -18,6 +19,7 @@
                    :selected-playlist="selectedPlaylist_"
                    @add-to-playlist="$emit('add-to-playlist', $event)"
                    @download="$emit('download', $event)"
+                   @open-channel="selectChannelFromItem"
                    @play="$emit('play', $event)"
                    @remove-from-playlist="removeFromPlaylist"
                    @select="onPlaylistSelected"
@@ -174,6 +176,21 @@ export default {
 
       if (this.selectedView)
         this.selectView(this.selectedView)
+    },
+
+    async selectChannelFromItem(item) {
+      if (!item.channel_url)
+        return
+
+      const channel = await this.request(
+        'youtube.get_channel',
+        {id: item.channel_url.split('/').pop()}
+      )
+
+      if (!channel)
+        return
+
+      this.onChannelSelected(channel)
     },
   },
 
