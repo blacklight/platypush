@@ -5,7 +5,6 @@ python3-croniter
 python3-dateutil
 python3-docutils
 python3-flask
-python3-frozendict
 python3-greenlet
 python3-magic
 python3-marshmallow

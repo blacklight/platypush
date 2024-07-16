@@ -6,7 +6,6 @@ alembic
 croniter
 docutils
 flask
-frozendict
 marshmallow
 marshmallow_dataclass
 paho-mqtt

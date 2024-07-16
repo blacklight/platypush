@@ -4,7 +4,6 @@ python-croniter
 python-dateutil
 python-docutils
 python-flask
-python-frozendict
 python-magic
 python-marshmallow
 python-pip

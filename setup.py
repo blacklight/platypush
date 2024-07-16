@@ -108,7 +108,6 @@ setup(
         'croniter',
         'docutils',
         'flask',
-        'frozendict',
         'marshmallow',
         'marshmallow_dataclass',
         'psutil',

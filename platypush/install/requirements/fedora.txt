@@ -5,7 +5,6 @@ python-croniter
 python-dateutil
 python-docutils
 python-flask
-python-frozendict
 python-greenlet
 python-magic
 python-marshmallow
