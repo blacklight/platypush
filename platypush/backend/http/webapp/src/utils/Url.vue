@@ -16,7 +16,7 @@ export default {
         .reduce((acc, obj) => {
           const tokens = obj.split('=')
           if (tokens[0]?.length)
-            acc[tokens[0]] = tokens[1]
+            acc[tokens[0]] = decodeURIComponent(tokens[1])
           return acc
         }, {})
     },
@@ -40,10 +40,24 @@ export default {
       window.location.href = location
     },
 
+    encodeValue(value) {
+      if (!value?.length || value === 'null' || value === 'undefined')
+        return ''
+
+      // Don't re-encode the value if it's already encoded
+      if (value.match(/%[0-9A-F]{2}/i))
+        return value
+
+      return encodeURIComponent(value)
+    },
+
     fragmentFromArgs(args) {
       return Object.entries(args)
+        .filter(
+          ([key, value]) => this.encodeValue(key)?.length && this.encodeValue(value)?.length
+        )
         .map(
-          ([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+          ([key, value]) => `${this.encodeValue(key)}=${this.encodeValue(value)}`
         )
         .join('&')
     },
