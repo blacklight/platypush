@@ -17,6 +17,8 @@
                           v-if="item.type !== 'torrent'" />
             <DropdownItem icon-class="fa fa-download" text="Download" @click="$emit('download')"
                           v-if="(item.type === 'torrent' || item.type === 'youtube') && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
+            <DropdownItem icon-class="fa fa-volume-high" text="Download Audio" @click="$emit('download-audio')"
+                          v-if="item.type === 'youtube' && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
             <DropdownItem icon-class="fa fa-list" text="Add to playlist" @click="$emit('add-to-playlist')"
                           v-if="item.type === 'youtube'" />
             <DropdownItem icon-class="fa fa-trash" text="Remove from playlist" @click="$emit('remove-from-playlist')"
@@ -55,6 +57,7 @@ export default {
   emits: [
     'add-to-playlist',
     'download',
+    'download-audio',
     'open-channel',
     'play',
     'remove-from-playlist',

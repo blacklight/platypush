@@ -28,6 +28,7 @@
             @add-to-playlist="$emit('add-to-playlist', $event)"
             @back="back"
             @download="$emit('download', $event)"
+            @download-audio="$emit('download-audio', $event)"
             @path-change="$emit('path-change', $event)"
             @play="$emit('play', $event)"
         />
@@ -50,6 +51,7 @@ export default {
     'back',
     'create-playlist',
     'download',
+    'download-audio',
     'path-change',
     'play',
     'remove-from-playlist',

@@ -8,6 +8,7 @@ export default {
     'back',
     'create-playlist',
     'download',
+    'download-audio',
     'path-change',
     'play',
     'remove-from-playlist',
