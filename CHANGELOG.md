@@ -1,5 +1,6 @@
 # Changelog
 
+
 ## [1.1.2] - 2024-07-16
 
 - [`core`]: New architecture for the Redis bus - now leveraging pub/sub with a
