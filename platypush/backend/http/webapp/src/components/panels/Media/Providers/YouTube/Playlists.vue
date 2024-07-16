@@ -32,6 +32,7 @@
         :metadata="playlistsById[selectedPlaylist.id] || selectedPlaylist"
         @add-to-playlist="$emit('add-to-playlist', $event)"
         @download="$emit('download', $event)"
+        @open-channel="$emit('open-channel', $event)"
         @remove-from-playlist="$emit('remove-from-playlist', {item: $event, playlist_id: selectedPlaylist.id})"
         @play="$emit('play', $event)"
       />
@@ -112,6 +113,7 @@ export default {
     'add-to-playlist',
     'create-playlist',
     'download',
+    'open-channel',
     'play',
     'remove-from-playlist',
     'remove-playlist',

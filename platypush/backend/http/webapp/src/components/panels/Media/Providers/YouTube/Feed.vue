@@ -11,6 +11,7 @@
              :selected-result="selectedResult"
              @add-to-playlist="$emit('add-to-playlist', $event)"
              @download="$emit('download', $event)"
+             @open-channel="$emit('open-channel', $event)"
              @select="selectedResult = $event"
              @play="$emit('play', $event)"
              v-else />
@@ -28,6 +29,7 @@ export default {
   emits: [
     'add-to-playlist',
     'download',
+    'open-channel',
     'play',
   ],
 

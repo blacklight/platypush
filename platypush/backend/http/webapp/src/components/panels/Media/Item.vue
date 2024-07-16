@@ -29,7 +29,7 @@
       </div>
 
       <div class="row subtitle" v-if="item.channel">
-        <a class="channel" :href="item.channel_url" target="_blank">
+        <a class="channel" href="#" target="_blank" @click.prevent="$emit('open-channel')">
           <img :src="item.channel_image" class="channel-image" v-if="item.channel_image" />
           <span class="channel-name" v-text="item.channel" />
         </a>
@@ -55,6 +55,7 @@ export default {
   emits: [
     'add-to-playlist',
     'download',
+    'open-channel',
     'play',
     'remove-from-playlist',
     'select',
