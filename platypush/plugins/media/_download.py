@@ -224,11 +224,17 @@ class YouTubeDownloadThread(DownloadThread):
     """
 
     def __init__(
-        self, *args, ytdl: str, youtube_format: Optional[str] = None, **kwargs
+        self,
+        *args,
+        ytdl: str,
+        youtube_format: Optional[str] = None,
+        only_audio: bool = False,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self._ytdl = ytdl
         self._youtube_format = youtube_format
+        self._only_audio = only_audio
         self._proc = None
         self._proc_lock = threading.Lock()
 
@@ -265,6 +271,7 @@ class YouTubeDownloadThread(DownloadThread):
             str(self._progress_update_interval),
             '--progress-template',
             '%(progress)j',
+            *(['-x'] if self._only_audio else []),
             *(['-f', self._youtube_format] if self._youtube_format else []),
             self.url,
             '-o',

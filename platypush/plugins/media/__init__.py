@@ -765,6 +765,7 @@ class MediaPlugin(RunnablePlugin, ABC):
         directory: Optional[str] = None,
         timeout: int = 10,
         sync: bool = False,
+        only_audio: bool = False,
         youtube_format: Optional[str] = None,
     ):
         """
@@ -790,7 +791,7 @@ class MediaPlugin(RunnablePlugin, ABC):
         :param timeout: Network timeout in seconds (default: 10).
         :param sync: If set to True, the download will be synchronous and the
             action will return only when the download is completed.
-        :param youtube_format: Override the default YouTube format selection.
+        :param youtube_format: Override the default ``youtube_format`` setting.
         :return: The absolute path to the downloaded file.
         """
         path = self._get_download_path(
@@ -799,9 +800,14 @@ class MediaPlugin(RunnablePlugin, ABC):
 
         if self._is_youtube_resource(url):
             dl_thread = self._download_youtube_url(
-                url, path, youtube_format=youtube_format
+                url, path, youtube_format=youtube_format, only_audio=only_audio
             )
         else:
+            if only_audio:
+                self.logger.warning(
+                    'Only audio download is not supported for non-YouTube URLs'
+                )
+
             dl_thread = self._download_url(url, path, timeout=timeout)
 
         if sync:
@@ -969,12 +975,17 @@ class MediaPlugin(RunnablePlugin, ABC):
         return download_thread
 
     def _download_youtube_url(
-        self, url: str, path: str, youtube_format: Optional[str] = None
+        self,
+        url: str,
+        path: str,
+        youtube_format: Optional[str] = None,
+        only_audio: bool = False,
     ) -> YouTubeDownloadThread:
         download_thread = YouTubeDownloadThread(
             url=url,
             path=path,
             ytdl=self._ytdl,
+            only_audio=only_audio,
             youtube_format=youtube_format or self.youtube_format,
             on_start=self._on_download_start,
             post_event=self._post_event,
