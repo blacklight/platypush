@@ -121,7 +121,6 @@ setup(
         'tornado',
         'websocket-client',
         'websockets',
-        'wheel',
         'zeroconf>=0.27.0',
     ],
     extras_require=parse_manifests(),

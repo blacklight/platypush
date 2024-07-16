@@ -18,7 +18,6 @@ python3-tornado
 python3-tz
 python3-websocket
 python3-websockets
-python3-wheel
 python3-yaml
 python3-zeroconf
 redis

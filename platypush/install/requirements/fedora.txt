@@ -17,7 +17,6 @@ python-sqlalchemy
 python-tornado
 python-websocket-client
 python-websockets
-python-wheel
 python-yaml
 python-zeroconf
 redis
