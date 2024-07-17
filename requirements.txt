@@ -8,7 +8,6 @@ docutils
 flask
 marshmallow
 marshmallow_dataclass
-paho-mqtt
 psutil
 python-dateutil
 python-magic

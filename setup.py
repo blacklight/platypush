@@ -104,24 +104,9 @@ setup(
         "Development Status :: 4 - Beta",
     ],
     install_requires=[
-        'alembic',
-        'croniter',
-        'docutils',
-        'flask',
-        'marshmallow',
-        'marshmallow_dataclass',
-        'psutil',
-        'python-dateutil',
-        'python-magic',
-        'pyyaml',
-        'redis',
-        'requests',
-        'rsa',
-        'sqlalchemy',
-        'tornado',
-        'websocket-client',
-        'websockets',
-        'zeroconf>=0.27.0',
+        line.split('#')[0].strip()
+        for line in readfile('requirements.txt').splitlines()
+        if line.strip().split('#')[0].strip()
     ],
     extras_require=parse_manifests(),
 )
