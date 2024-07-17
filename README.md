@@ -1178,6 +1178,15 @@ redis:
   password: redis-pass
 ```
 
+If `--start-redis` is set, the application can be configured to start a custom
+`redis-server` executable through the:
+
+1. `--redis-bin` command-line option.
+2. `PLATYPUSH_REDIS_BIN` environment variable.
+
+Alternative drop-in implementations such as `keydb-server`, `valkey` or
+`redict` are also supported.
+
 ### nginx
 
 If you want to access your Platypush web panel outside your home network, it may

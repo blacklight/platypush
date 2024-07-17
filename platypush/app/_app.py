@@ -32,6 +32,9 @@ class Application:
     # Default Redis port
     _default_redis_port = 6379
 
+    # Default Redis binary, if --start-redis is set
+    _default_redis_bin = 'redis-server'
+
     # backend_name => backend_obj map
     backends = None
 
@@ -55,6 +58,7 @@ class Application:
         start_redis: bool = False,
         redis_host: Optional[str] = None,
         redis_port: Optional[int] = None,
+        redis_bin: Optional[str] = None,
         ctrl_sock: Optional[str] = None,
     ):
         """
@@ -142,10 +146,11 @@ class Application:
         :param verbose: Enable debug/verbose logging, overriding the stored
             configuration (default: False).
         :param start_redis: If set, it starts a managed Redis instance upon
-            boot (it requires the ``redis-server`` executable installed on the
-            server). This is particularly useful when running the application
-            inside of Docker containers, without relying on ``docker-compose``
-            to start multiple containers, and in tests (default: False).
+            boot (it requires Redis installed on the server, see
+            ``redis_bin``). This is particularly useful when running the
+            application inside of Docker containers, without relying on
+            ``docker-compose`` to start multiple containers, and in tests
+            (default: False).
         :param redis_host: Host of the Redis server to be used. The order of
             precedence is:
 
@@ -167,6 +172,16 @@ class Application:
                 - The ``backend.redis`` -> ``redis_args`` -> ``port`` field in
                   the configuration file.
                 - ``6379``
+
+        :param redis_bin: Path to the Redis server executable, if ``start_redis``
+            is set. Alternative drop-in Redis implementations such as
+            ``keydb-server``, ``valkey``, ``redict`` can be used. The order of
+            precedence is:
+
+                - The ``redis_bin`` parameter (or the ``--redis-bin`` command
+                  line argument).
+                - The ``PLATYPUSH_REDIS_BIN`` environment variable.
+                - ``redis-server``
 
         :param ctrl_sock: If set, it identifies a path to a UNIX domain socket
             that the application can use to send control messages (e.g. STOP
@@ -211,6 +226,11 @@ class Application:
         self.start_redis = start_redis
         self.redis_host = redis_host or os.environ.get('PLATYPUSH_REDIS_HOST')
         self.redis_port = redis_port or os.environ.get('PLATYPUSH_REDIS_PORT')
+        self.redis_bin = (
+            redis_bin
+            or os.environ.get('PLATYPUSH_REDIS_BIN')
+            or self._default_redis_bin
+        )
         self._redis_conf = {
             'host': self.redis_host or 'localhost',
             'port': self.redis_port or self._default_redis_port,
@@ -262,7 +282,7 @@ class Application:
         port = self._redis_conf['port']
         log.info('Starting local Redis instance on %s', port)
         redis_cmd_args = [
-            'redis-server',
+            self.redis_bin,
             '--bind',
             'localhost',
             '--port',
