@@ -56,6 +56,7 @@ class TvSamsungWsPlugin(Plugin):
     ) -> SamsungTVWS:
         host, port = self._get_host_and_port(host, port)
         if (host, port) not in self._connections:
+            self.logger.info('Connecting to %s:%s', host, port)
             self._connections[(host, port)] = SamsungTVWS(
                 host=host,
                 port=port,
@@ -65,6 +66,19 @@ class TvSamsungWsPlugin(Plugin):
             )
 
         return self._connections[(host, port)]
+
+    def disconnect(
+        self, host: Optional[str] = None, port: Optional[int] = None
+    ) -> None:
+        host, port = self._get_host_and_port(host, port)
+        if (host, port) in self._connections:
+            self.logger.info('Disconnecting from %s:%s', host, port)
+            try:
+                self._connections[(host, port)].close()
+            except Exception as e:
+                self.logger.warning('Connection close error: %s: %s', type(e), str(e))
+            finally:
+                self._connections.pop((host, port), None)
 
     def exec(
         self,
@@ -78,6 +92,7 @@ class TvSamsungWsPlugin(Plugin):
         try:
             return func(tv)
         except Exception as e:
+            self.disconnect(host, port)
             self.logger.warning(str(e))
             if n_tries <= 0:
                 raise e
