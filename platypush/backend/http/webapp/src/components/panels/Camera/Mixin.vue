@@ -113,18 +113,10 @@ export default {
       const rot = degToRad(this.params.rotate)
       const outerWidth = this.$refs.frameContainer.parentElement.offsetWidth
       const outerHeight = this.$refs.frameContainer.parentElement.offsetHeight
-
-      let width = (
-        Math.round(
-          this.params.scale_x * Math.abs(this.params.resolution[0] * Math.cos(rot) + this.params.resolution[1] * Math.sin(rot))
-        ) + 'px'
-      )
-
-      let height = (
-        Math.round(
-          this.params.scale_y * Math.abs(this.params.resolution[0] * Math.sin(rot) + this.params.resolution[1] * Math.cos(rot))
-        ) + 'px'
-      )
+      const maxWidth = this.$refs.cameraRoot?.offsetWidth || outerWidth
+      const maxHeight = this.$refs.cameraRoot?.offsetHeight || outerHeight
+      let width = '100%'
+      let height = '100%'
 
       if (this.fullscreen_) {
         if (this.params.resolution[0] > this.params.resolution[1]) {
@@ -134,6 +126,20 @@ export default {
           height = '100%'
           width = (outerWidth * (this.params.resolution[0] / this.params.resolution[1])) + 'px'
         }
+      } else {
+        width = Math.min(
+          maxWidth,
+          Math.round(
+            this.params.scale_x * Math.abs(this.params.resolution[0] * Math.cos(rot) + this.params.resolution[1] * Math.sin(rot))
+          )
+        ) + 'px'
+
+        height = Math.min(
+          maxHeight,
+          Math.round(
+            this.params.scale_y * Math.abs(this.params.resolution[0] * Math.sin(rot) + this.params.resolution[1] * Math.cos(rot))
+          )
+        ) + 'px'
       }
 
       this.$refs.frameContainer.style.width = width
