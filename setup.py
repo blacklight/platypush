@@ -66,7 +66,7 @@ backend = pkg_files('platypush/backend')
 
 setup(
     name="platypush",
-    version="1.1.1",
+    version="1.1.3",
     author="Fabio Manganiello",
     author_email="fabio@manganiello.tech",
     description="Platypush service",
@@ -104,26 +104,9 @@ setup(
         "Development Status :: 4 - Beta",
     ],
     install_requires=[
-        'alembic',
-        'croniter',
-        'docutils',
-        'flask',
-        'frozendict',
-        'marshmallow',
-        'marshmallow_dataclass',
-        'psutil',
-        'python-dateutil',
-        'python-magic',
-        'pyyaml',
-        'redis',
-        'requests',
-        'rsa',
-        'sqlalchemy',
-        'tornado',
-        'websocket-client',
-        'websockets',
-        'wheel',
-        'zeroconf>=0.27.0',
+        line.split('#')[0].strip()
+        for line in readfile('requirements.txt').splitlines()
+        if line.strip().split('#')[0].strip()
     ],
     extras_require=parse_manifests(),
 )

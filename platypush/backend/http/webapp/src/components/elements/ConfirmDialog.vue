@@ -1,5 +1,5 @@
 <template>
-  <Modal ref="modal" :title="title">
+  <Modal ref="modal" :title="title" @close="close">
     <div class="dialog-content">
       <slot />
     </div>
@@ -19,7 +19,7 @@
 import Modal from "@/components/Modal";
 
 export default {
-  emits: ['input', 'click', 'touch'],
+  emits: ['input', 'click', 'close', 'touch'],
   components: {Modal},
   props: {
     title: {
@@ -43,12 +43,21 @@ export default {
       this.close()
     },
 
-    show() {
+    open() {
       this.$refs.modal.show()
     },
 
     close() {
       this.$refs.modal.hide()
+      this.$emit('close')
+    },
+
+    show() {
+      this.open()
+    },
+
+    hide() {
+      this.close()
     },
   },
 }

@@ -22,11 +22,13 @@ from threading import Event, Lock as TLock
 from typing import Generator, Optional, Tuple, Type, Union
 
 from dateutil import parser, tz
-from redis import Redis
+from redis import ConnectionPool, Redis
 from rsa.key import PublicKey, PrivateKey, newkeys
 
 logger = logging.getLogger('utils')
 Lock = Union[PLock, TLock]  # type: ignore
+
+redis_pools: dict[Tuple[str, int], ConnectionPool] = {}
 
 
 def get_module_and_method_from_action(action):
@@ -608,6 +610,29 @@ def get_enabled_backends() -> dict:
     return backends
 
 
+def get_redis_pool(*args, **kwargs) -> ConnectionPool:
+    """
+    Get a Redis connection pool on the basis of the Redis configuration.
+
+    The Redis configuration can be loaded from:
+
+        1. The ``redis`` plugin.
+        2. The ``backend.redis`` configuration (``redis_args`` attribute)
+
+    """
+    if not (args or kwargs):
+        kwargs = get_redis_conf()
+
+    pool_key = (kwargs.get('host', 'localhost'), kwargs.get('port', 6379))
+    pool = redis_pools.get(pool_key)
+
+    if not pool:
+        pool = ConnectionPool(*args, **kwargs)
+        redis_pools[pool_key] = pool
+
+    return pool
+
+
 def get_redis_conf() -> dict:
     """
     Get the Redis connection arguments from the configuration.
@@ -631,10 +656,7 @@ def get_redis(*args, **kwargs) -> Redis:
         2. The ``backend.redis`` configuration (``redis_args`` attribute)
 
     """
-    if not (args or kwargs):
-        kwargs = get_redis_conf()
-
-    return Redis(*args, **kwargs)
+    return Redis(connection_pool=get_redis_pool(*args, **kwargs))
 
 
 def to_datetime(t: Union[str, int, float, datetime.datetime]) -> datetime.datetime:

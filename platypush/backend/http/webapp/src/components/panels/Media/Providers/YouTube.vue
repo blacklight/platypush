@@ -8,17 +8,36 @@
 
       <div class="body" v-else>
         <Feed :filter="filter"
-              @play="$emit('play', $event)" v-if="selectedView === 'feed'" />
+              @add-to-playlist="$emit('add-to-playlist', $event)"
+              @download="$emit('download', $event)"
+              @download-audio="$emit('download-audio', $event)" 
+              @open-channel="selectChannelFromItem"
+              @play="$emit('play', $event)"
+              v-if="selectedView === 'feed'"
+        />
+
         <Playlists :filter="filter"
-                   :selected-playlist="selectedPlaylist"
+                   :selected-playlist="selectedPlaylist_"
+                   @add-to-playlist="$emit('add-to-playlist', $event)"
+                   @download="$emit('download', $event)"
+                   @download-audio="$emit('download-audio', $event)"
+                   @open-channel="selectChannelFromItem"
                    @play="$emit('play', $event)"
+                   @remove-from-playlist="removeFromPlaylist"
                    @select="onPlaylistSelected"
-                   v-else-if="selectedView === 'playlists'" />
+                   v-else-if="selectedView === 'playlists'"
+        />
+
         <Subscriptions :filter="filter"
-                       :selected-channel="selectedChannel"
+                       :selected-channel="selectedChannel_"
+                       @add-to-playlist="$emit('add-to-playlist', $event)"
+                       @download="$emit('download', $event)"
+                       @download-audio="$emit('download-audio', $event)"
                        @play="$emit('play', $event)"
                        @select="onChannelSelected"
-                       v-else-if="selectedView === 'subscriptions'" />
+                       v-else-if="selectedView === 'subscriptions'"
+        />
+
         <Index @select="selectView" v-else />
       </div>
     </div>
@@ -52,8 +71,8 @@ export default {
     return {
       youtubeConfig: null,
       selectedView: null,
-      selectedPlaylist: null,
-      selectedChannel: null,
+      selectedPlaylist_: null,
+      selectedChannel_: null,
       path: [],
     }
   },
@@ -87,12 +106,36 @@ export default {
       }
     },
 
+    async removeFromPlaylist(event) {
+      const playlistId = event.playlist_id
+      const videoId = event.item.url
+      this.loading = true
+
+      try {
+        await this.request('youtube.remove_from_playlist', {
+          playlist_id: playlistId,
+          video_id: videoId,
+        })
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async createPlaylist(name) {
+      this.loading = true
+      try {
+        await this.request('youtube.create_playlist', {name: name})
+      } finally {
+        this.loading = false
+      }
+    },
+
     selectView(view) {
       this.selectedView = view
       if (view === 'playlists')
-        this.selectedPlaylist = null
+        this.selectedPlaylist_ = null
       else if (view === 'subscriptions')
-        this.selectedChannel = null
+        this.selectedChannel_ = null
 
       if (view?.length) {
         this.path = [
@@ -107,22 +150,86 @@ export default {
     },
 
     onPlaylistSelected(playlist) {
-      this.selectedPlaylist = playlist.id
+      this.selectedPlaylist_ = playlist
+      if (!playlist)
+        return
+
+      this.selectedView = 'playlists'
       this.path.push({
         title: playlist.name,
       })
     },
 
     onChannelSelected(channel) {
-      this.selectedChannel = channel.id
+      this.selectedChannel_ = channel
+      if (!channel)
+        return
+
+      this.selectedView = 'subscriptions'
       this.path.push({
         title: channel.name,
       })
+    },
+
+    initView() {
+      const args = this.getUrlArgs()
+
+      if (args.section)
+        this.selectedView = args.section
+
+      if (this.selectedView)
+        this.selectView(this.selectedView)
+    },
+
+    async selectChannelFromItem(item) {
+      if (!item.channel_url)
+        return
+
+      const channel = await this.request(
+        'youtube.get_channel',
+        {id: item.channel_url.split('/').pop()}
+      )
+
+      if (!channel)
+        return
+
+      this.onChannelSelected(channel)
+    },
+  },
+
+  watch: {
+    selectedPlaylist() {
+      this.onPlaylistSelected(this.selectedPlaylist)
+    },
+
+    selectedPlaylist_(value) {
+      if (value == null)
+        this.setUrlArgs({playlist: null})
+    },
+
+    selectedChannel() {
+      this.onChannelSelected(this.selectedChannel)
+    },
+
+    selectedChannel_(value) {
+      if (value == null)
+        this.setUrlArgs({channel: null})
+    },
+
+    selectedView() {
+      this.setUrlArgs({section: this.selectedView})
     },
   },
 
   mounted() {
     this.loadYoutubeConfig()
+    this.initView()
+    this.onPlaylistSelected(this.selectedPlaylist)
+    this.onChannelSelected(this.selectedChannel)
+  },
+
+  unmounted() {
+    this.setUrlArgs({section: null})
   },
 }
 </script>
@@ -140,6 +247,7 @@ export default {
   .body {
     height: calc(100% - $media-nav-height - 2px);
     margin-top: 2px;
+    overflow-y: auto;
   }
 }
 </style>

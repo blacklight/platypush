@@ -8,8 +8,8 @@
           </button>
         </div>
         <div class="col-4">&nbsp;</div>
-        <div class="col-4">
-          <button @click="power" class="power pull-right" value="power" title="Power Off">
+        <div class="col-4 pull-right">
+          <button @click="power" class="power" value="power" title="Power Off">
             <i class="fas fa-power-off" />
           </button>
         </div>
@@ -278,6 +278,7 @@ export default {
   width: 100%;
   height: 100%;
   display: flex;
+  align-items: center;
   justify-content: center;
 
   .controls {
@@ -292,6 +293,11 @@ export default {
     border: $default-border-2;
     border-radius: 2em;
     box-shadow: 0 2px 9px 2px #bbb;
+
+    @include until($tablet) {
+      height: calc(100% - 1em);
+      margin: 0;
+    }
 
     @include from($tablet) {
       justify-content: center;
@@ -347,7 +353,10 @@ export default {
   }
 
   .colors {
+    height: 4em;
     text-align: center;
+    border: none;
+    margin-top: -1em;
 
     .color {
       width: 3em;

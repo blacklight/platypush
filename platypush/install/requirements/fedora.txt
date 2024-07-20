@@ -5,13 +5,11 @@ python-croniter
 python-dateutil
 python-docutils
 python-flask
-python-frozendict
 python-greenlet
 python-magic
 python-marshmallow
 python-mypy_extensions
 python-psutil
-python-pytz
 python-redis
 python-requests
 python-rsa
@@ -19,7 +17,6 @@ python-sqlalchemy
 python-tornado
 python-websocket-client
 python-websockets
-python-wheel
 python-yaml
 python-zeroconf
 redis

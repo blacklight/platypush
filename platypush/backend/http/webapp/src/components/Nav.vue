@@ -34,11 +34,18 @@
       <li v-for="name in panelNames" :key="name" class="entry" :class="{selected: name === selectedPanel}"
           :title="name" @click="onItemClick(name)">
         <a :href="`/#${name}`">
-        <span class="icon">
-          <i :class="icons[name].class" v-if="specialPlugins.includes(name)" />
-          <ExtensionIcon :name="name" size="1.5em" v-else />
-        </span>
-        <span class="name" v-if="!collapsed" v-text="displayName(name)" />
+          <span class="icon">
+            <i :class="icons[name].class" v-if="specialPlugins.includes(name)" />
+            <ExtensionIcon :name="name" size="1.5em" v-else />
+          </span>
+
+          <span class="name" v-if="!collapsed" v-text="displayName(name)" />
+
+          <span class="expander" v-if="name === selectedPanel && !collapsed">
+            <button title="Expanded view" @click="openPluginView(name)">
+              <i class="fas fa-up-right-from-square" />
+            </button>
+          </span>
         </a>
       </li>
     </ul>
@@ -153,6 +160,10 @@ export default {
     setConnected(connected) {
       this.connected = connected
     },
+
+    openPluginView(name) {
+      window.open(`/plugin/${name}`, '_blank')
+    },
   },
 
   data() {
@@ -253,6 +264,7 @@ nav {
 
     .name {
       margin-left: 0.5em;
+      flex-grow: 1;
     }
 
     .icon {
@@ -313,6 +325,19 @@ nav {
       .extension-icon {
         margin-left: 0;
         display: inline-flex;
+      }
+    }
+
+    .expander {
+      button {
+        background: none;
+        color: $nav-fg;
+        border: none;
+        padding: 0;
+
+        &:hover {
+          color: $default-hover-fg;
+        }
       }
     }
   }

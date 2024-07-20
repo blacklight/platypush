@@ -179,21 +179,6 @@ class MediaKodiPlugin(MediaPlugin):
         :param resource: URL or path to the media to be played
         """
 
-        youtube_id = self.get_youtube_id(resource)
-        if youtube_id:
-            try:
-                resource = self.get_youtube_url(youtube_id).output
-            except Exception as e:
-                self.logger.warning(
-                    'youtube-dl error, falling back to Kodi YouTube plugin: {}'.format(
-                        str(e)
-                    )
-                )
-                resource = (
-                    'plugin://plugin.video.youtube/?action=play_video&videoid='
-                    + youtube_id
-                )
-
         if resource.startswith('file://'):
             resource = resource[7:]
 
@@ -585,7 +570,7 @@ class MediaKodiPlugin(MediaPlugin):
         :type position: float
         :param player_id: ID of the target player (default: configured/current player).
         """
-        return self.seek(position=position, player_id=player_id, *args, **kwargs)
+        return self.seek(*args, position=position, player_id=player_id, **kwargs)
 
     @action
     def back(self, offset=30, player_id=None, *args, **kwargs):

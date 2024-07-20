@@ -108,6 +108,19 @@ class YoutubePlugin(Plugin):
 
         return id_or_url
 
+    @staticmethod
+    def _dump_item(item: dict) -> dict:
+        if item.get('type') == 'stream':
+            return dict(PipedVideoSchema().dump(item))
+
+        if item.get('type') == 'channel':
+            return dict(PipedChannelSchema().dump(item))
+
+        if item.get('type') == 'playlist':
+            return dict(PipedPlaylistSchema().dump(item))
+
+        return item
+
     @action
     def search(self, query: str, **_) -> List[dict]:
         """
@@ -118,9 +131,9 @@ class YoutubePlugin(Plugin):
         """
         self.logger.info('Searching YouTube for "%s"', query)
         rs = self._request('search', auth=False, params={'q': query, 'filter': 'all'})
-        results = PipedVideoSchema(many=True).dump(rs.get("items", [])) or []
+        results = [self._dump_item(item) for item in rs.get('items', [])]
         self.logger.info(
-            '%d YouTube video results for the search query "%s"',
+            '%d YouTube results for the search query "%s"',
             len(results),
             query,
         )
@@ -346,6 +359,19 @@ class YoutubePlugin(Plugin):
             method='post',
             json={'playlistId': id},
         )
+
+    @action
+    def is_subscribed(self, channel_id: str) -> bool:
+        """
+        Check if the user is subscribed to a channel.
+
+        :param channel_id: YouTube channel ID.
+        :return: True if the user is subscribed to the channel, False otherwise.
+        """
+        return self._request(
+            'subscribed',
+            params={'channelId': channel_id},
+        ).get('subscribed', False)
 
     @action
     def subscribe(self, channel_id: str):

@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[2245],{2751:function(n,u,t){t.r(u),t.d(u,{default:function(){return s}});var e=t(6252);function r(n,u,t,r,a,c){return(0,e.wg)(),(0,e.iD)("h1",null,"Object not found")}var a={name:"NotFound"},c=t(3744);const o=(0,c.Z)(a,[["render",r]]);var s=o}}]);
+//# sourceMappingURL=notfound.46477842.js.map

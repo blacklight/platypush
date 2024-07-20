@@ -1,24 +1,57 @@
+from multiprocessing import Lock
+
 from platypush.bus.redis import RedisBus
+from platypush.context import get_bus
 from platypush.config import Config
-from platypush.context import get_backend
 from platypush.message import Message
 from platypush.message.request import Request
-from platypush.utils import get_redis_conf, get_message_response
+from platypush.utils import get_message_response
 
 from .logger import logger
 
-_bus = None
+
+class BusWrapper:  # pylint: disable=too-few-public-methods
+    """
+    Lazy singleton wrapper for the bus object.
+    """
+
+    def __init__(self):
+        self._redis_queue = None
+        self._bus = None
+        self._bus_lock = Lock()
+
+    @property
+    def bus(self) -> RedisBus:
+        """
+        Lazy getter/initializer for the bus object.
+        """
+        with self._bus_lock:
+            if not self._bus:
+                self._bus = get_bus()
+
+        bus_: RedisBus = self._bus  # type: ignore
+        return bus_
+
+    def post(self, msg):
+        """
+        Send a message to the bus.
+
+        :param msg: The message to send.
+        """
+        try:
+            self.bus.post(msg)
+        except Exception as e:
+            logger().exception(e)
+
+
+_bus = BusWrapper()
 
 
 def bus():
     """
     Lazy getter/initializer for the bus object.
     """
-    global _bus  # pylint: disable=global-statement
-    if _bus is None:
-        redis_queue = get_backend('http').bus.redis_queue  # type: ignore
-        _bus = RedisBus(**get_redis_conf(), redis_queue=redis_queue)
-    return _bus
+    return _bus.bus
 
 
 def send_message(msg, wait_for_response=True):

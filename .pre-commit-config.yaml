@@ -11,7 +11,7 @@ repos:
     - id: check-xml
     - id: check-symlinks
     - id: check-added-large-files
-      args: ['--maxkb=1500']
+      args: ['--maxkb=3000']
 
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-nodejs
     rev: v1.1.2
