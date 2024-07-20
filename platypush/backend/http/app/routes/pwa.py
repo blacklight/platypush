@@ -123,7 +123,7 @@ def manifest_json():
             "gcm_user_visible_only": True,
             "start_url": start_url,
             "permissions": ["gcm"],
-            "orientation": "portrait",
+            "orientation": "any",
             "display": "standalone",
             "theme_color": "#000000",
             "background_color": "#ffffff",
