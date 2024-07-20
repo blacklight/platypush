@@ -1,9 +1,16 @@
 <template>
-  <div class="camera">
-    <div class="camera-container">
-      <div class="frame-container" ref="frameContainer">
-        <div class="no-frame" v-if="!streaming && !capturing && !captured">The camera is not active</div>
-        <img class="frame" :src="url" ref="frame" alt="">
+  <div class="camera" ref="cameraRoot">
+    <div class="camera-container"
+         :class="{fullscreen: fullscreen_}"
+         ref="cameraContainer">
+      <div class="frame-canvas" ref="frameCanvas">
+        <div class="frame-container"
+             :class="{vertical: isCameraVertical, horizontal: !isCameraVertical}"
+             :style="{aspectRatio: aspectRatio}"
+             ref="frameContainer">
+          <div class="no-frame" v-if="!streaming && !capturing && !captured">The camera is not active</div>
+          <img class="frame" :src="url" ref="frame" alt="">
+        </div>
       </div>
 
       <div class="controls">
@@ -33,6 +40,14 @@
 
           <button type="button" @click="$refs.paramsModal.show()" title="Settings">
             <i class="fas fa-cog" />
+          </button>
+
+          <button type="button"
+                  :title="fullscreen_ ? 'Exit fullscreen' : 'Fullscreen'"
+                  @click="fullscreen_ = !fullscreen_"
+                  v-if="!fullscreen">
+            <i class="fas fa-expand" v-if="!fullscreen_" />
+            <i class="fas fa-compress" v-else />
           </button>
         </div>
       </div>
@@ -104,7 +119,7 @@
           <input name="grayscale" type="checkbox" v-model="attrs.grayscale" @change="onGrayscaleChanged"/>
         </label>
 
-        <Slot />
+        <slot />
       </div>
     </Modal>
   </div>
@@ -118,12 +133,6 @@ export default {
   name: "Camera",
   components: {Modal},
   mixins: [CameraMixin],
-  props: {
-    cameraPlugin: {
-      type: String,
-      required: true,
-    },
-  },
 
   computed: {
     fullURL() {

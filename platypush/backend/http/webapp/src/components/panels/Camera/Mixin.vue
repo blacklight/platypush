@@ -6,6 +6,11 @@ export default {
   mixins: [Utils],
 
   props: {
+    fullscreen: {
+      type: Boolean,
+      default: false,
+    },
+
     cameraPlugin: {
       type: String,
       required: true,
@@ -17,9 +22,11 @@ export default {
       streaming: false,
       capturing: false,
       captured: false,
+      fullscreen_: false,
       audioOn: false,
       url: null,
       attrs: {},
+      resizeObserver: null,
     }
   },
 
@@ -36,6 +43,20 @@ export default {
         fps: parseFloat(this.attrs.fps),
         grayscale: parseInt(0 + this.attrs.grayscale),
       }
+    },
+
+    aspectRatio() {
+      if (!this.attrs?.resolution)
+        return 1
+
+      return `${this.attrs.resolution[0]}/${this.attrs.resolution[1]}`
+    },
+
+    isCameraVertical() {
+      if (!this.attrs?.resolution)
+        return false
+
+      return this.attrs.resolution[1] > this.attrs.resolution[0]
     },
   },
 
@@ -82,25 +103,41 @@ export default {
     },
 
     onDeviceChanged() {},
-    onFlipChanged() {},
+
+    onFlipChanged() {
+      this.onSizeChanged()
+    },
+
     onSizeChanged() {
       const degToRad = (deg) => (deg * Math.PI)/180
       const rot = degToRad(this.params.rotate)
-      let width = Math.round(this.params.scale_x * Math.abs(this.params.resolution[0] * Math.cos(rot) + this.params.resolution[1] * Math.sin(rot)))
-      let height = Math.round(this.params.scale_y * Math.abs(this.params.resolution[0] * Math.sin(rot) + this.params.resolution[1] * Math.cos(rot)))
+      const outerWidth = this.$refs.frameContainer.parentElement.offsetWidth
+      const outerHeight = this.$refs.frameContainer.parentElement.offsetHeight
 
-      if (width > window.innerWidth) {
-        height = Math.round(height * (window.innerWidth / width))
-        width = window.innerWidth
+      let width = (
+        Math.round(
+          this.params.scale_x * Math.abs(this.params.resolution[0] * Math.cos(rot) + this.params.resolution[1] * Math.sin(rot))
+        ) + 'px'
+      )
+
+      let height = (
+        Math.round(
+          this.params.scale_y * Math.abs(this.params.resolution[0] * Math.sin(rot) + this.params.resolution[1] * Math.cos(rot))
+        ) + 'px'
+      )
+
+      if (this.fullscreen_) {
+        if (this.params.resolution[0] > this.params.resolution[1]) {
+          width = '100%'
+          height = (outerHeight * (this.params.resolution[1] / this.params.resolution[0])) + 'px'
+        } else {
+          height = '100%'
+          width = (outerWidth * (this.params.resolution[0] / this.params.resolution[1])) + 'px'
+        }
       }
 
-      if (height > window.innerHeight) {
-        width = Math.round(width * (window.innerHeight / height))
-        height = window.innerHeight
-      }
-
-      this.$refs.frameContainer.style.width = `${width}px`
-      this.$refs.frameContainer.style.height = `${height}px`
+      this.$refs.frameContainer.style.width = width
+      this.$refs.frameContainer.style.height = height
     },
 
     onFpsChanged() {},
@@ -133,6 +170,7 @@ export default {
   },
 
   mounted() {
+    this.fullscreen_ = this.fullscreen
     this.$refs.frame.addEventListener('load', this.onFrameLoaded)
     this.onSizeChanged()
     this.$watch(() => this.attrs.resolution, this.onSizeChanged)
@@ -141,6 +179,21 @@ export default {
     this.$watch(() => this.attrs.rotate, this.onSizeChanged)
     this.$watch(() => this.attrs.scale_x, this.onSizeChanged)
     this.$watch(() => this.attrs.scale_y, this.onSizeChanged)
+
+    const onOrientationOrSizeChange = () => {
+      this.onSizeChanged()
+    }
+
+    onOrientationOrSizeChange()
+
+    this.$nextTick(() => {
+      this.resizeObserver = new ResizeObserver(onOrientationOrSizeChange)
+      this.resizeObserver.observe(this.$refs?.frameContainer?.parentElement)
+    })
+  },
+
+  unmouted() {
+    this.resizeObserver?.disconnect()
   },
 }
 </script>
