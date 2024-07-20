@@ -13,7 +13,7 @@ from typing import Mapping, Optional
 import psutil
 
 from tornado.httpserver import HTTPServer
-from tornado.netutil import bind_sockets
+from tornado.netutil import bind_sockets, bind_unix_socket
 from tornado.process import cpu_count, fork_processes
 from tornado.wsgi import WSGIContainer
 from tornado.web import Application, FallbackHandler
@@ -200,7 +200,8 @@ class HttpBackend(Backend):
     def __init__(
         self,
         port: int = DEFAULT_HTTP_PORT,
-        bind_address: str = '0.0.0.0',
+        bind_address: Optional[str] = '0.0.0.0',
+        bind_socket: Optional[str] = None,
         resource_dirs: Optional[Mapping[str, str]] = None,
         secret_key_file: Optional[str] = None,
         num_workers: Optional[int] = None,
@@ -209,7 +210,16 @@ class HttpBackend(Backend):
     ):
         """
         :param port: Listen port for the web server (default: 8008)
-        :param bind_address: Address/interface to bind to (default: 0.0.0.0, accept connection from any IP)
+        :param bind_address: Address/interface to bind to (default: 0.0.0.0,
+            accept connection from any IP). You can set it to null to disable
+            the network interface binding, but then you must set ``bind_socket``
+            as an alternative.
+        :param bind_socket: Path to the Unix socket to bind to. If set, the
+            server will bind to the path of the specified Unix socket. If set to
+            ``true``, then a socket will be automatically initialized on
+            ``<workdir>/platypush-<device_id>.sock``. If not set, the server will
+            only listen on the specified bind address and port. Note that either
+            ``bind_socket`` or ``socket_path`` must be set.
         :param resource_dirs: Static resources directories that will be
             accessible through ``/resources/<path>``. It is expressed as a map
             where the key is the relative path under ``/resources`` to expose and
@@ -231,10 +241,22 @@ class HttpBackend(Backend):
 
         super().__init__(**kwargs)
 
+        assert (
+            bind_address or bind_socket
+        ), 'Either bind_address or bind_socket must be set'
         self.port = port
         self._server_proc: Optional[Process] = None
         self._service_registry_thread = None
         self.bind_address = bind_address
+
+        if bind_socket is True:
+            bind_socket = os.path.join(
+                Config.get_workdir(), f'platypush-{Config.get_device_id()}.sock'
+            )
+
+        self.socket_path = None
+        if bind_socket:
+            self.socket_path = os.path.expanduser(bind_socket)
 
         if resource_dirs:
             self.resource_dirs = {
@@ -260,8 +282,8 @@ class HttpBackend(Backend):
         super().on_stop()
         self.logger.info('Received STOP event on HttpBackend')
         start = time()
-        remaining_time: partial[float] = partial(  # type: ignore
-            get_remaining_timeout, timeout=self._STOP_TIMEOUT, start=start
+        remaining_time: partial[float] = partial(
+            get_remaining_timeout, timeout=self._STOP_TIMEOUT, start=start  # type: ignore
         )
 
         if self._server_proc:
@@ -364,6 +386,7 @@ class HttpBackend(Backend):
         )
 
         if self.use_werkzeug_server:
+            assert self.bind_address, 'bind_address must be set when using Werkzeug'
             application.config['redis_queue'] = self.bus.redis_queue  # type: ignore
             application.run(
                 host=self.bind_address,
@@ -372,9 +395,13 @@ class HttpBackend(Backend):
                 debug=True,
             )
         else:
-            sockets = bind_sockets(
-                self.port, address=self.bind_address, reuse_port=True
-            )
+            sockets = []
+
+            if self.bind_address:
+                sockets.extend(bind_sockets(self.port, address=self.bind_address))
+
+            if self.socket_path:
+                sockets.append(bind_unix_socket(self.socket_path))
 
             try:
                 fork_processes(self.num_workers)
@@ -421,8 +448,8 @@ class HttpBackend(Backend):
 
         # Initialize the timeout
         start = time()
-        remaining_time: partial[int] = partial(  # type: ignore
-            get_remaining_timeout, timeout=self._STOP_TIMEOUT, start=start, cls=int
+        remaining_time: partial[int] = partial(
+            get_remaining_timeout, timeout=self._STOP_TIMEOUT, start=start, cls=int  # type: ignore
         )
 
         # Wait for all children to terminate (with timeout)
