@@ -39,10 +39,10 @@ class SoundPlugin(RunnablePlugin):
     ):
         """
         :param input_device: Index or name of the default input device. Use
-            :meth:`.query_devices` to get the available devices. Default: system
+            :meth:`.status` to get the available devices. Default: system
             default
         :param output_device: Index or name of the default output device.
-            Use :meth:`.query_devices` to get the available devices. Default:
+            Use :meth:`.status` to get the available devices. Default:
             system default
         :param input_blocksize: Blocksize to be applied to the input device.
             Try to increase this value if you get input overflow errors while
