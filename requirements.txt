@@ -21,4 +21,5 @@ websocket-client
 websockets
 zeroconf>=0.27.0
 werkzeug>=3.0.1 # not directly required, pinned by Snyk to avoid a vulnerability
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
 urllib3>=2.2.2 # not directly required, pinned by Snyk to avoid a vulnerability
