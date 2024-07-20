@@ -1,17 +1,63 @@
 <template>
   <div class="media-youtube-playlist">
     <Loading v-if="loading" />
-    <NoItems :with-shadow="false" v-else-if="!items?.length">
-      No videos found.
-    </NoItems>
 
-    <Results :results="items"
-             :sources="{'youtube': true}"
-             :filter="filter"
-             :selected-result="selectedResult"
-             @select="selectedResult = $event"
-             @play="$emit('play', $event)"
-             v-else />
+    <div class="playlist-container" v-else>
+      <div class="header">
+        <div class="banner">
+          <img :src="metadata?.image" v-if="metadata?.image?.length" />
+        </div>
+
+        <div class="row info-container">
+          <div class="info">
+            <div class="row">
+              <a class="title" :href="metadata?.url" target="_blank" rel="noopener noreferrer" v-if="metadata?.url">
+                {{ name }}
+              </a>
+
+              <span class="title" v-else>
+                {{ name }}
+              </span>
+
+              <div class="n-items">{{ nItems }} videos</div>
+            </div>
+
+            <div class="row" v-if="metadata?.description">
+              <div class="description">
+                {{ metadata?.description }}
+              </div>
+            </div>
+
+            <div class="row" v-if="metadata?.channel_url">
+              <div class="channel">
+                Uploaded by
+                <a :href="metadata.channel_url" target="_blank" rel="noopener noreferrer">
+                  {{ metadata?.channel }}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <NoItems :with-shadow="false" v-if="!nItems">
+        No videos found.
+      </NoItems>
+
+      <Results :results="items"
+               :sources="{'youtube': true}"
+               :filter="filter"
+               :playlist="id"
+               :selected-result="selectedResult"
+               @add-to-playlist="$emit('add-to-playlist', $event)"
+               @download="$emit('download', $event)"
+               @download-audio="$emit('download-audio', $event)"
+               @open-channel="$emit('open-channel', $event)"
+               @play="$emit('play', $event)"
+               @remove-from-playlist="$emit('remove-from-playlist', $event)"
+               @select="selectedResult = $event"
+               v-else />
+    </div>
   </div>
 </template>
 
@@ -22,8 +68,16 @@ import Results from "@/components/panels/Media/Results";
 import Utils from "@/Utils";
 
 export default {
-  emits: ['play'],
   mixins: [Utils],
+  emits: [
+    'add-to-playlist',
+    'download',
+    'download-audio',
+    'open-channel',
+    'play',
+    'remove-from-playlist',
+  ],
+
   components: {
     Loading,
     NoItems,
@@ -40,6 +94,11 @@ export default {
       type: String,
       default: null,
     },
+
+    metadata: {
+      type: Object,
+      default: null,
+    },
   },
 
   data() {
@@ -48,6 +107,16 @@ export default {
       loading: false,
       selectedResult: null,
     }
+  },
+
+  computed: {
+    name() {
+      return this.metadata?.title || this.metadata?.name
+    },
+
+    nItems() {
+      return this.metadata?.videos || this.items?.length || 0
+    },
   },
 
   methods: {
@@ -67,13 +136,36 @@ export default {
   },
 
   mounted() {
+    this.setUrlArgs({playlist: this.id})
     this.loadItems()
+  },
+
+  unmounted() {
+    this.setUrlArgs({playlist: null})
   },
 }
 </script>
 
 <style lang="scss" scoped>
+@import "header.scss";
+
 .media-youtube-playlist {
   height: 100%;
+
+  .playlist-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header {
+    .banner {
+      opacity: 0.75;
+    }
+
+    .channel {
+      flex: 1;
+    }
+  }
 }
 </style>

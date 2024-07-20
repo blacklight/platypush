@@ -1,35 +1,59 @@
 <template>
-  <div class="media-youtube-channel" @scroll="onScroll">
+  <div class="media-youtube-channel">
     <Loading v-if="loading" />
 
-    <div class="channel" @scroll="onScroll" v-else-if="channel">
+    <div class="channel" v-else-if="channel">
       <div class="header">
         <div class="banner">
           <img :src="channel.banner" v-if="channel?.banner?.length" />
         </div>
 
-        <div class="row">
-          <a :href="channel.url" target="_blank" rel="noopener noreferrer">
-            <div class="image">
-              <img :src="channel.image" v-if="channel?.image?.length" />
-            </div>
-          </a>
-
+        <div class="row info-container">
           <div class="info">
-            <a class="title" :href="channel.url" target="_blank" rel="noopener noreferrer">
-              {{ channel?.name }}
-            </a>
-            <div class="description">{{ channel?.description }}</div>
+            <div class="row">
+              <div class="title-container">
+                <a :href="channel.url" target="_blank" rel="noopener noreferrer" v-if="channel?.image?.length">
+                  <div class="image">
+                    <img :src="channel.image" />
+                  </div>
+                </a>
+
+                <a class="title" :href="channel.url" target="_blank" rel="noopener noreferrer">
+                  {{ channel?.name }}
+                </a>
+              </div>
+
+              <div class="actions">
+                <button :title="subscribed ? 'Unsubscribe' : 'Subscribe'" @click="toggleSubscription">
+                  {{ subscribed ? 'Unsubscribe' : 'Subscribe' }}
+                </button>
+
+                <div class="subscribers" v-if="channel.subscribers != null && (channel.subscribers || 0) >= 0">
+                  {{ channel.subscribers }} subscribers
+                </div>
+              </div>
+            </div>
+
+            <div class="description" v-if="channel?.description">
+              {{ channel.description }}
+            </div>
           </div>
         </div>
       </div>
 
       <Results :results="channel.items"
                :filter="filter"
+               :result-index-step="null"
                :selected-result="selectedResult"
                ref="results"
+               @add-to-playlist="$emit('add-to-playlist', $event)"
+               @download="$emit('download', $event)"
+               @download-audio="$emit('download-audio', $event)"
+               @open-channel="$emit('open-channel', $event)"
+               @play="$emit('play', $event)"
+               @scroll-end="loadNextPage"
                @select="selectedResult = $event"
-               @play="$emit('play', $event)" />
+      />
     </div>
   </div>
 </template>
@@ -40,8 +64,15 @@ import Results from "@/components/panels/Media/Results";
 import Utils from "@/Utils";
 
 export default {
-  emits: ['play'],
   mixins: [Utils],
+  emits: [
+    'add-to-playlist',
+    'download',
+    'download-audio',
+    'open-channel',
+    'play',
+  ],
+
   components: {
     Loading,
     Results,
@@ -65,6 +96,7 @@ export default {
       loading: false,
       loadingNextPage: false,
       selectedResult: null,
+      subscribed: false,
     }
   },
 
@@ -81,107 +113,105 @@ export default {
     async loadChannel() {
       this.loading = true
       try {
-        this.channel = await this.request('youtube.get_channel', {id: this.id})
+        await this.updateChannel(true)
+        this.subscribed = await this.request('youtube.is_subscribed', {channel_id: this.id})
       } finally {
         this.loading = false
       }
     },
 
+    async updateChannel(init) {
+      const channel = await this.request(
+        'youtube.get_channel',
+        {id: this.id, next_page_token: this.channel?.next_page_token}
+      )
+
+      const itemsByUrl = this.itemsByUrl || {}
+      let items = channel.items
+        .filter(item => !itemsByUrl[item.url])
+        .map(item => {
+          return {
+            type: 'youtube',
+            ...item,
+          }
+        })
+
+      if (!init) {
+        items = this.channel.items.concat(items)
+      }
+
+      this.channel = channel
+      this.channel.items = items
+    },
+
     async loadNextPage() {
-      if (!this.channel?.next_page_token || this.loadingNextPage)
+      if (!this.channel?.next_page_token || this.loadingNextPage) {
         return
+      }
+
+      this.loadingNextPage = true
 
       try {
-        const nextPage = await this.request(
-          'youtube.get_channel',
-          {id: this.id, next_page_token: this.channel.next_page_token}
-        )
-
-        this.channel.items.push(...nextPage.items.filter(item => !this.itemsByUrl[item.url]))
-        this.channel.next_page_token = nextPage.next_page_token
-        this.$refs.results.maxResultIndex += this.$refs.results.resultIndexStep
+        await this.timeout(500)
+        await this.updateChannel()
       } finally {
         this.loadingNextPage = false
       }
     },
 
-    onScroll(e) {
-      const el = e.target
-      if (!el)
-        return
-
-      const bottom = (el.scrollHeight - el.scrollTop) <= el.clientHeight + 150
-      if (!bottom)
-        return
-
-      this.loadNextPage()
+    async toggleSubscription() {
+      const action = this.subscribed ? 'unsubscribe' : 'subscribe'
+      await this.request(`youtube.${action}`, {channel_id: this.id})
+      this.subscribed = !this.subscribed
     },
   },
 
-  mounted() {
-    this.loadChannel()
+  async mounted() {
+    this.setUrlArgs({channel: this.id})
+    await this.loadChannel()
+  },
+
+  unmounted() {
+    this.setUrlArgs({channel: null})
   },
 }
 </script>
 
 <style lang="scss" scoped>
+@import "header.scss";
+
 .media-youtube-channel {
   height: 100%;
   overflow-y: auto;
 
+  .channel {
+    height: 100%;
+  }
+
   .header {
-    border-bottom: $default-border-2;
-    padding-bottom: 0.5em;
+    .title-container {
+      flex: 1;
+    }
 
-    .banner {
-      max-height: 200px;
+    .actions {
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      align-items: flex-end;
 
-      img {
-        max-width: 100%;
-        max-height: 100%;
+      button {
+        background: $default-bg-7;
+        padding: 0.5em 1em;
+        border-radius: 0.5em;
+        cursor: pointer;
+
+        &:hover {
+          background: $hover-bg;
+        }
       }
     }
 
-    .image {
-      height: 100px;
-      margin: -2.5em 2em 0.5em 0.5em;
-
-      img {
-        height: 100%;
-        border-radius: 50%;
-      }
-    }
-
-    .row {
-      display: flex;
-
-      @include from($desktop) {
-        flex-direction: row;
-      }
-
-      .info {
-        display: flex;
-        flex-direction: column;
-      }
-    }
-
-    .title {
-      color: $default-fg-2;
-      font-size: 1.7em;
-      font-weight: bold;
-      margin: 0.5em 0;
-      text-decoration: dotted;
-
-      &:hover {
-        color: $default-hover-fg;
-      }
-    }
-
-    .description {
-      font-size: 0.9em;
-      margin-right: 0.5em;
+    .subscribers {
+      font-size: 0.8em;
     }
   }
 }

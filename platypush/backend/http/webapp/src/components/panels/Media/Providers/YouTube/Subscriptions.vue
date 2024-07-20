@@ -1,6 +1,6 @@
 <template>
   <div class="media-youtube-subscriptions">
-    <div class="subscriptions-index" v-if="!selectedChannel">
+    <div class="subscriptions-index" v-if="!selectedChannel?.id">
       <Loading v-if="loading" />
       <NoItems :with-shadow="false" v-else-if="!channels?.length">
         No channels found.
@@ -20,7 +20,14 @@
     </div>
 
     <div class="subscription-body" v-else>
-      <Channel :id="selectedChannel" :filter="filter" @play="$emit('play', $event)" />
+      <Channel
+        :id="selectedChannel.id"
+        :filter="filter"
+        @add-to-playlist="$emit('add-to-playlist', $event)"
+        @download="$emit('download', $event)"
+        @download-audio="$emit('download-audio', $event)"
+        @play="$emit('play', $event)"
+      />
     </div>
   </div>
 </template>
@@ -32,8 +39,15 @@ import Loading from "@/components/Loading";
 import Utils from "@/Utils";
 
 export default {
-  emits: ['play', 'select'],
   mixins: [Utils],
+  emits: [
+    'add-to-playlist',
+    'download',
+    'download-audio',
+    'play',
+    'select',
+  ],
+
   components: {
     Channel,
     Loading,
@@ -42,7 +56,7 @@ export default {
 
   props: {
     selectedChannel: {
-      type: String,
+      type: Object,
       default: null,
     },
 
@@ -79,10 +93,18 @@ export default {
         this.loading = false
       }
     },
+
+    initView() {
+      const args = this.getUrlArgs()
+      if (args.channel) {
+        this.$emit('select', {id: args.channel})
+      }
+    },
   },
 
-  mounted() {
-    this.loadSubscriptions()
+  async mounted() {
+    await this.loadSubscriptions()
+    this.initView()
   },
 }
 </script>

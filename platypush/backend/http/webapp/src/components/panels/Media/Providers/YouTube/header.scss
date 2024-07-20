@@ -1,0 +1,128 @@
+$banner-height: var(--banner-height);
+$info-bg: rgba(0, 0, 0, 0.5);
+$info-fg: rgba(255, 255, 255, 0.9);
+
+@include until($tablet) {
+  .playlist-container, .channel {
+    --banner-height: 5em;
+  }
+}
+
+@include from($tablet) {
+  .playlist-container, .channel {
+    --banner-height: 100px;
+  }
+}
+
+.header {
+  border-bottom: $default-border-2;
+  margin-bottom: 0.5em;
+  position: relative;
+  overflow-y: auto;
+
+  .banner {
+    height: $banner-height;
+    display: flex;
+    background-color: black;
+    justify-content: center;
+
+    img {
+      max-width: 800px;
+      max-height: 100%;
+      flex: 1;
+    }
+  }
+
+  .image {
+    height: 100px;
+    margin: -2.5em 2em 0.5em 0.5em;
+
+    img {
+      height: 100%;
+      border-radius: 50%;
+    }
+  }
+
+  .row {
+    display: flex;
+
+    @include from($desktop) {
+      flex-direction: row;
+    }
+
+    .info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      background-color: $info-bg;
+
+      .row {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex: 1;
+        padding: 0 0.5em;
+      }
+    }
+  }
+
+  .info-container {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: $info-bg;
+    color: $info-fg;
+    display: flex;
+    flex-direction: column;
+
+    a {
+      color: $info-fg !important;
+
+      &:hover {
+        color: $default-hover-fg !important;
+      }
+    }
+
+    .title {
+      letter-spacing: 0.1em;
+      color: $info-fg !important;
+    }
+
+    .n-items {
+      /* Align to the right */
+      margin-left: auto;
+      padding: 0 0.5em;
+    }
+  }
+
+  .title-container {
+    max-height: var(--banner-height);
+    overflow-y: hidden;
+  }
+
+  .title {
+    height: 100%;
+    align-content: center;
+    color: $default-fg-2;
+    font-size: 1.7em;
+    font-weight: bold;
+    margin: 0.5em 0;
+    text-decoration: dotted;
+
+    &:hover {
+      color: $default-hover-fg;
+    }
+  }
+
+  .description {
+    font-size: 0.9em;
+    margin-right: 0.5em;
+  }
+}
+
+.media-results {
+  height: calc(100% - #{$banner-height} - 1em);
+}

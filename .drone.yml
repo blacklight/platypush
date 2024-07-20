@@ -114,10 +114,38 @@ steps:
     - . .drone/update-components-cache.sh
 
 ###
-### Update the Arch packages
+### Update the Arch git package
+### Note: This is probably no longer required, as the platypush-git PKGBUILD
+### #now includes a dynamic pkgver() function.
+### See https://aur.archlinux.org/packages/platypush-git#comment-982845
 ###
 
-- name: update-arch-packages
+# - name: update-arch-git-package
+#   image: python:3.11-alpine
+#   environment:
+#     WORKDIR: /tmp/workdir
+#     SSH_PUBKEY:
+#       from_secret: ssh_pubkey
+#     SSH_PRIVKEY:
+#       from_secret: ssh_privkey
+# 
+#   when:
+#     branch:
+#       - master
+#     event:
+#       - push
+# 
+#   depends_on:
+#     - update-components-cache
+# 
+#   commands:
+#     - . .drone/update-arch-git-package.sh
+
+###
+### Update the Arch stable package
+###
+
+- name: update-arch-stable-package
   image: python:3.11-alpine
   environment:
     WORKDIR: /tmp/workdir
@@ -127,16 +155,11 @@ steps:
       from_secret: ssh_privkey
 
   when:
-    branch:
-      - master
     event:
-      - push
-
-  depends_on:
-    - update-components-cache
+      - tag
 
   commands:
-    - . .drone/update-arch-packages.sh
+    - . .drone/update-arch-stable-package.sh
 
 ###
 ### Update the Debian (stable) packages
@@ -325,7 +348,7 @@ steps:
       - push
 
   depends_on:
-    - update-arch-packages
+    # - update-arch-git-package
     - update-rpm-repo
     - update-apt-repo
 
@@ -348,6 +371,7 @@ steps:
 
   depends_on:
     - update-pip-package
+    - update-arch-stable-package
 
   commands:
     - apk add --update --no-cache curl

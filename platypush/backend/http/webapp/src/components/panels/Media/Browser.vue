@@ -23,24 +23,42 @@
         <component
             :is="mediaProvider"
             :filter="filter"
-            @back="mediaProvider = null"
+            :selected-playlist="selectedPlaylist"
+            :selected-channel="selectedChannel"
+            @add-to-playlist="$emit('add-to-playlist', $event)"
+            @back="back"
+            @download="$emit('download', $event)"
+            @download-audio="$emit('download-audio', $event)"
             @path-change="$emit('path-change', $event)"
-            @play="$emit('play', $event)" />
+            @play="$emit('play', $event)"
+        />
       </div>
     </div>
   </keep-alive>
 </template>
 
 <script>
-import { defineAsyncComponent, shallowRef } from "vue";
+import { defineAsyncComponent, ref } from "vue";
 import Browser from "@/components/File/Browser";
 import Loading from "@/components/Loading";
 import Utils from "@/Utils";
 import providersMetadata from "./Providers/meta.json";
 
 export default {
-  emits: ['path-change', 'play'],
   mixins: [Utils],
+  emits: [
+    'add-to-playlist',
+    'back',
+    'create-playlist',
+    'download',
+    'download-audio',
+    'path-change',
+    'play',
+    'remove-from-playlist',
+    'remove-playlist',
+    'rename-playlist',
+  ],
+
   components: {
     Browser,
     Loading,
@@ -50,6 +68,14 @@ export default {
     filter: {
       type: String,
       default: '',
+    },
+
+    selectedPlaylist: {
+      type: Object,
+    },
+
+    selectedChannel: {
+      type: Object,
     },
   },
 
@@ -62,9 +88,24 @@ export default {
     }
   },
 
+  computed: {
+    mediaProvidersLookup() {
+      return Object.keys(this.mediaProviders)
+        .reduce((acc, key) => {
+          acc[key.toLowerCase()] = key
+          return acc
+        }, {})
+    },
+  },
+
   methods: {
+    back() {
+      this.mediaProvider = null
+      this.$emit('back')
+    },
+
     registerMediaProvider(type) {
-      const component = shallowRef(
+      const component = ref(
         defineAsyncComponent(
           () => import(`@/components/panels/Media/Providers/${type}`)
         )
@@ -83,10 +124,81 @@ export default {
       if (config.youtube)
         this.registerMediaProvider('YouTube')
     },
+
+    onPlaylistChange() {
+      if (!this.selectedPlaylist)
+        return
+
+      const playlistType = this.selectedPlaylist.type?.toLowerCase()
+      const playlistMediaProvider = this.mediaProvidersLookup[playlistType]
+
+      if (playlistMediaProvider) {
+        this.mediaProvider = this.mediaProviders[playlistMediaProvider]
+      }
+    },
+
+    onChannelChange() {
+      if (!this.selectedChannel)
+        return
+
+      const channelType = this.selectedChannel.type?.toLowerCase()
+      const channelMediaProvider = this.mediaProvidersLookup[channelType]
+
+      if (channelMediaProvider) {
+        this.mediaProvider = this.mediaProviders[channelMediaProvider]
+      }
+    },
+
+    updateView() {
+      if (this.getUrlArgs().provider?.length) {
+        const provider = this.getUrlArgs().provider
+        const providerName = this.mediaProvidersLookup[provider.toLowerCase()]
+
+        if (!providerName?.length)
+          return
+
+        this.mediaProvider = this.mediaProviders[providerName]
+      }
+
+      if (this.selectedPlaylist)
+        this.onPlaylistChange()
+      else if (this.selectedChannel)
+        this.onChannelChange()
+    },
   },
 
-  mounted() {
-    this.refreshMediaProviders()
+  watch: {
+    mediaProvider(provider) {
+      if (!provider) {
+        this.setUrlArgs({provider: null})
+        return
+      }
+
+      const providerName = Object.entries(this.mediaProviders)
+        .filter((pair) => pair[1] === provider)?.[0]?.[0]?.toLowerCase()
+
+      if (!providerName?.length)
+        return
+
+      this.setUrlArgs({provider: providerName})
+    },
+
+    selectedPlaylist() {
+      this.onPlaylistChange()
+    },
+
+    selectedChannel() {
+      this.onChannelChange()
+    },
+  },
+
+  async mounted() {
+    await this.refreshMediaProviders()
+    this.updateView()
+  },
+
+  unmounted() {
+    this.setUrlArgs({provider: null})
   },
 }
 </script>

@@ -1,5 +1,22 @@
 # Changelog
 
+
+## [1.1.3] - 2024-07-16
+
+- [`core`]: New architecture for the Redis bus - now leveraging pub/sub with a
+  connection pool instead of a single-connection queue. It makes the
+  application much faster and less prone to Redis deadlocks.
+
+- [`youtube`]:
+  [#391](https://git.platypush.tech/platypush/platypush/issues/391): added
+  support for:
+
+  - Add/remove playlists (UI)
+  - Add to/remove from playlist (UI)
+  - Subscribe/unsubscribe from channels (UI)
+  - Browse channels and playlists directly in the UI
+  - Download media and audio
+
 ## [1.1.1] - 2024-06-24
 
 - [`torrent`]: [[#263](https://git.platypush.tech/platypush/platypush/issues/263)], [[#375](https://git.platypush.tech/platypush/platypush/issues/375)],

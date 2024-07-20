@@ -160,6 +160,16 @@ def parse_cmdline(args: Sequence[str]) -> argparse.Namespace:
     )
 
     parser.add_argument(
+        '--redis-bin',
+        dest='redis_bin',
+        required=False,
+        default=None,
+        help="Path to the redis-server executable, if --start-redis is "
+        "specified. Drop-in replacements such as keydb-server, valkey or redict "
+        "are also supported",
+    )
+
+    parser.add_argument(
         '--ctrl-sock',
         dest='ctrl_sock',
         required=False,

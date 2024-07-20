@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[6640],{6640:function(l,a,e){e.r(a),e.d(a,{default:function(){return p}});var t=e(8637),n={mixins:[t.Z],emits:["add-to-playlist","back","create-playlist","download","download-audio","path-change","play","remove-from-playlist","remove-playlist","rename-playlist"],props:{filter:{type:String,default:""},selectedPlaylist:{default:null},selectedChannel:{default:null}},data(){return{loading:!1}}};const s=n;var p=s}}]);
+//# sourceMappingURL=6640.49b4564c.js.map

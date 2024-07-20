@@ -1,5 +1,3 @@
-from dataclasses import dataclass
-import enum
 import functools
 import inspect
 import json
@@ -10,47 +8,35 @@ import subprocess
 import tempfile
 import threading
 from abc import ABC, abstractmethod
-from typing import Iterable, Optional, List, Dict, Union
+from typing import (
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import requests
 
 from platypush.config import Config
 from platypush.context import get_plugin, get_backend
-from platypush.plugins import Plugin, action
-from platypush.utils import get_default_downloads_dir
+from platypush.message.event.media import MediaEvent
+from platypush.plugins import RunnablePlugin, action
+from platypush.utils import get_default_downloads_dir, get_plugin_name_by_class
+
+from ._download import (
+    DownloadState,
+    DownloadThread,
+    FileDownloadThread,
+    YouTubeDownloadThread,
+)
+from ._resource import MediaResource
+from ._state import PlayerState
 
 
-class PlayerState(enum.Enum):
-    """
-    Models the possible states of a media player
-    """
-
-    STOP = 'stop'
-    PLAY = 'play'
-    PAUSE = 'pause'
-    IDLE = 'idle'
-
-
-@dataclass
-class MediaResource:
-    """
-    Models a media resource
-    """
-
-    resource: str
-    url: str
-    title: Optional[str] = None
-    description: Optional[str] = None
-    filename: Optional[str] = None
-    image: Optional[str] = None
-    duration: Optional[float] = None
-    channel: Optional[str] = None
-    channel_url: Optional[str] = None
-    type: Optional[str] = None
-    resolution: Optional[str] = None
-
-
-class MediaPlugin(Plugin, ABC):
+class MediaPlugin(RunnablePlugin, ABC):
     """
     Generic plugin to interact with a media player.
 
@@ -170,7 +156,7 @@ class MediaPlugin(Plugin, ABC):
         env: Optional[Dict[str, str]] = None,
         volume: Optional[Union[float, int]] = None,
         torrent_plugin: str = 'torrent',
-        youtube_format: Optional[str] = 'best[height<=?1080][ext=mp4]',
+        youtube_format: Optional[str] = 'bv[height<=?1080][ext=mp4]+ba',
         youtube_dl: str = 'yt-dlp',
         **kwargs,
     ):
@@ -213,6 +199,7 @@ class MediaPlugin(Plugin, ABC):
             media_dirs = []
         player = None
         player_config = {}
+        self._download_threads: Dict[Tuple[str, str], DownloadThread] = {}
 
         if self.__class__.__name__ == 'MediaPlugin':
             # Abstract class, initialize with the default configured player
@@ -336,22 +323,23 @@ class MediaPlugin(Plugin, ABC):
             )
         elif self._is_youtube_resource(resource):
             info = self._get_youtube_info(resource)
-            url = info.get('url')
-            if url:
-                resource = url
-                self._latest_resource = MediaResource(
-                    resource=resource,
-                    url=resource,
-                    title=info.get('title'),
-                    description=info.get('description'),
-                    filename=info.get('filename'),
-                    image=info.get('thumbnail'),
-                    duration=float(info.get('duration') or 0) or None,
-                    channel=info.get('channel'),
-                    channel_url=info.get('channel_url'),
-                    resolution=info.get('resolution'),
-                    type=info.get('extractor'),
-                )
+            if info:
+                url = info.get('url')
+                if url:
+                    resource = url
+                    self._latest_resource = MediaResource(
+                        resource=resource,
+                        url=resource,
+                        title=info.get('title'),
+                        description=info.get('description'),
+                        filename=info.get('filename'),
+                        image=info.get('thumbnail'),
+                        duration=float(info.get('duration') or 0) or None,
+                        channel=info.get('channel'),
+                        channel_url=info.get('channel_url'),
+                        resolution=info.get('resolution'),
+                        type=info.get('extractor'),
+                    )
         elif resource.startswith('magnet:?'):
             self.logger.info(
                 'Downloading torrent %s to %s', resource, self.download_dir
@@ -399,8 +387,8 @@ class MediaPlugin(Plugin, ABC):
 
     @action
     @abstractmethod
-    def stop(self, **kwargs):
-        raise self._NOT_IMPLEMENTED_ERR
+    def stop(self, *args, **kwargs):  # type: ignore
+        super().stop()
 
     @action
     @abstractmethod
@@ -683,7 +671,15 @@ class MediaPlugin(Plugin, ABC):
             output = ytdl.communicate()[0].decode().strip()
             ytdl.wait()
 
-        stream_url, info = output.split('\n')
+        self.logger.debug('yt-dlp output: %s', output)
+        lines = output.split('\n')
+
+        if not lines:
+            self.logger.warning('No output from yt-dlp')
+            return None
+
+        stream_url = lines[1] if len(lines) > 2 else lines[0]
+        info = lines[-1]
         return {
             **json.loads(info),
             'url': stream_url,
@@ -705,15 +701,6 @@ class MediaPlugin(Plugin, ABC):
             m = pattern.search(url)
             if m:
                 return m.group(1)
-
-        return None
-
-    @action
-    def get_youtube_url(self, url, youtube_format: Optional[str] = None):
-        youtube_id = self.get_youtube_id(url)
-        if youtube_id:
-            url = f'https://www.youtube.com/watch?v={youtube_id}'
-            return self._get_youtube_info(url, youtube_format=youtube_format).get('url')
 
         return None
 
@@ -772,31 +759,261 @@ class MediaPlugin(Plugin, ABC):
 
     @action
     def download(
-        self, url: str, filename: Optional[str] = None, directory: Optional[str] = None
+        self,
+        url: str,
+        filename: Optional[str] = None,
+        directory: Optional[str] = None,
+        timeout: int = 10,
+        sync: bool = False,
+        only_audio: bool = False,
+        youtube_format: Optional[str] = None,
     ):
         """
-        Download a media URL to a local file on the Platypush host.
+        Download a media URL to a local file on the Platypush host (yt-dlp
+        required for YouTube URLs).
+
+        This action is non-blocking and returns the path to the downloaded file
+        once the download is initiated.
+
+        You can then subscribe to these events to monitor the download progress:
+
+            - :class:`platypush.message.event.media.MediaDownloadStartedEvent`
+            - :class:`platypush.message.event.media.MediaDownloadProgressEvent`
+            - :class:`platypush.message.event.media.MediaDownloadErrorEvent`
+            - :class:`platypush.message.event.media.MediaDownloadPausedEvent`
+            - :class:`platypush.message.event.media.MediaDownloadResumedEvent`
+            - :class:`platypush.message.event.media.MediaDownloadCancelledEvent`
+            - :class:`platypush.message.event.media.MediaDownloadCompletedEvent`
 
         :param url: Media URL.
         :param filename: Media filename (default: inferred from the URL basename).
         :param directory: Destination directory (default: ``download_dir``).
+        :param timeout: Network timeout in seconds (default: 10).
+        :param sync: If set to True, the download will be synchronous and the
+            action will return only when the download is completed.
+        :param only_audio: If set to True, only the audio track will be downloaded
+            (only supported for yt-dlp-compatible URLs for now).
+        :param youtube_format: Override the default ``youtube_format`` setting.
         :return: The absolute path to the downloaded file.
         """
+        path = self._get_download_path(
+            url, directory=directory, filename=filename, youtube_format=youtube_format
+        )
 
-        if not filename:
-            filename = url.split('/')[-1]
+        if self._is_youtube_resource(url):
+            dl_thread = self._download_youtube_url(
+                url, path, youtube_format=youtube_format, only_audio=only_audio
+            )
+        else:
+            if only_audio:
+                self.logger.warning(
+                    'Only audio download is not supported for non-YouTube URLs'
+                )
+
+            dl_thread = self._download_url(url, path, timeout=timeout)
+
+        if sync:
+            dl_thread.join()
+
+        return path
+
+    @action
+    def pause_download(self, url: Optional[str] = None, path: Optional[str] = None):
+        """
+        Pause a download in progress.
+
+        Either the URL or the path must be specified.
+
+        :param url: URL of the download.
+        :param path: Path of the download (default: any path associated with the URL).
+        """
+        for thread in self._get_downloads(url=url, path=path):
+            thread.pause()
+
+    @action
+    def resume_download(self, url: Optional[str] = None, path: Optional[str] = None):
+        """
+        Resume a paused download.
+
+        Either the URL or the path must be specified.
+
+        :param url: URL of the download.
+        :param path: Path of the download (default: any path associated with the URL).
+        """
+        for thread in self._get_downloads(url=url, path=path):
+            thread.resume()
+
+    @action
+    def cancel_download(self, url: Optional[str] = None, path: Optional[str] = None):
+        """
+        Cancel a download in progress.
+
+        Either the URL or the path must be specified.
+
+        :param url: URL of the download.
+        :param path: Path of the download (default: any path associated with the URL).
+        """
+        for thread in self._get_downloads(url=url, path=path):
+            thread.stop()
+
+    @action
+    def clear_downloads(self, url: Optional[str] = None, path: Optional[str] = None):
+        """
+        Clear completed/cancelled downloads from the queue.
+
+        :param url: URL of the download (default: all downloads).
+        :param path: Path of the download (default: any path associated with the URL).
+        """
+        threads = (
+            self._get_downloads(url=url, path=path)
+            if url
+            else list(self._download_threads.values())
+        )
+
+        for thread in threads:
+            if thread.state not in (DownloadState.COMPLETED, DownloadState.CANCELLED):
+                continue
+
+            dl = self._download_threads.pop((thread.url, thread.path), None)
+            if dl:
+                dl.clear()
+
+    @action
+    def get_downloads(self, url: Optional[str] = None, path: Optional[str] = None):
+        """
+        Get the download threads.
+
+        :param url: URL of the download (default: all downloads).
+        :param path: Path of the download (default: any path associated with the URL).
+        :return: .. schema:: media.download.MediaDownloadSchema(many=True)
+        """
+        from platypush.schemas.media.download import MediaDownloadSchema
+
+        return MediaDownloadSchema().dump(
+            (
+                self._get_downloads(url=url, path=path)
+                if url
+                else list(self._download_threads.values())
+            ),
+            many=True,
+        )
+
+    def _get_downloads(self, url: Optional[str] = None, path: Optional[str] = None):
+        assert url or path, 'URL or path must be specified'
+        threads = []
+
+        if url and path:
+            path = os.path.expanduser(path)
+            thread = self._download_threads.get((url, path))
+            if thread:
+                threads = [thread]
+        elif url:
+            threads = [
+                thread
+                for (url_, _), thread in self._download_threads.items()
+                if url_ == url
+            ]
+        elif path:
+            path = os.path.expanduser(path)
+            threads = [
+                thread
+                for (_, path_), thread in self._download_threads.items()
+                if path_ == path
+            ]
+
+        assert threads, f'No matching downloads found for [url={url}, path={path}]'
+        return threads
+
+    def _get_download_path(
+        self,
+        url: str,
+        directory: Optional[str] = None,
+        filename: Optional[str] = None,
+        youtube_format: Optional[str] = None,
+    ) -> str:
         if not directory:
             directory = self.download_dir
 
-        path = os.path.join(directory, filename)
+        directory = os.path.expanduser(directory)
+        youtube_format = youtube_format or self.youtube_format
 
-        with requests.get(url, timeout=20, stream=True) as r:
-            r.raise_for_status()
-            with open(path, 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
+        if self._is_youtube_resource(url):
+            with subprocess.Popen(
+                [
+                    self._ytdl,
+                    *(
+                        [
+                            '-f',
+                            youtube_format,
+                        ]
+                        if youtube_format
+                        else []
+                    ),
+                    '-O',
+                    '%(title)s.%(ext)s',
+                    url,
+                ],
+                stdout=subprocess.PIPE,
+            ) as proc:
+                assert proc.stdout, 'yt-dlp stdout is None'
+                filename = proc.stdout.read().decode()[:-1]
 
-        return path
+        if not filename:
+            filename = url.split('/')[-1]
+
+        return os.path.join(directory, filename)
+
+    def _download_url(self, url: str, path: str, timeout: int) -> FileDownloadThread:
+        download_thread = FileDownloadThread(
+            url=url,
+            path=path,
+            timeout=timeout,
+            on_start=self._on_download_start,
+            post_event=self._post_event,
+            stop_event=self._should_stop,
+        )
+
+        self._start_download(download_thread)
+        return download_thread
+
+    def _download_youtube_url(
+        self,
+        url: str,
+        path: str,
+        youtube_format: Optional[str] = None,
+        only_audio: bool = False,
+    ) -> YouTubeDownloadThread:
+        download_thread = YouTubeDownloadThread(
+            url=url,
+            path=path,
+            ytdl=self._ytdl,
+            only_audio=only_audio,
+            youtube_format=youtube_format or self.youtube_format,
+            on_start=self._on_download_start,
+            post_event=self._post_event,
+            stop_event=self._should_stop,
+        )
+
+        self._start_download(download_thread)
+        return download_thread
+
+    def _on_download_start(self, thread: DownloadThread):
+        self._download_threads[thread.url, thread.path] = thread
+
+    def _start_download(self, thread: DownloadThread):
+        if (thread.url, thread.path) in self._download_threads:
+            self.logger.warning(
+                'A download of %s to %s is already in progress', thread.url, thread.path
+            )
+            return
+
+        thread.start()
+
+    def _post_event(self, event_type: Type[MediaEvent], **kwargs):
+        evt = event_type(
+            player=get_plugin_name_by_class(self.__class__), plugin=self, **kwargs
+        )
+        self._bus.post(evt)
 
     def is_local(self):
         return self._is_local
@@ -819,6 +1036,16 @@ class MediaPlugin(Plugin, ABC):
         with f:
             f.write(content)
         return f.name
+
+    def main(self):
+        self.wait_stop()
+
+
+__all__ = [
+    'DownloadState',
+    'MediaPlugin',
+    'PlayerState',
+]
 
 
 # vim:sw=4:ts=4:et:

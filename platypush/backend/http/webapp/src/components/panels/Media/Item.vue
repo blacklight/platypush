@@ -5,18 +5,24 @@
     @click.right.prevent="$refs.dropdown.toggle()"
     v-if="!hidden">
     <div class="thumbnail">
-      <MediaImage :item="item" @play="$emit('play')" />
+      <MediaImage :item="item" @play="$emit('play')" @select="$emit('select')" />
     </div>
 
     <div class="body">
       <div class="row title">
-        <div class="col-11 left side" v-text="item.title" @click="$emit('select')" />
+        <div class="col-11 left side" v-text="item.title || item.name" @click="$emit('select')" />
         <div class="col-1 right side">
           <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" ref="dropdown">
             <DropdownItem icon-class="fa fa-play" text="Play" @click="$emit('play')"
                           v-if="item.type !== 'torrent'" />
             <DropdownItem icon-class="fa fa-download" text="Download" @click="$emit('download')"
-                          v-if="item.type === 'torrent'" />
+                          v-if="(item.type === 'torrent' || item.type === 'youtube') && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
+            <DropdownItem icon-class="fa fa-volume-high" text="Download Audio" @click="$emit('download-audio')"
+                          v-if="item.type === 'youtube' && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
+            <DropdownItem icon-class="fa fa-list" text="Add to playlist" @click="$emit('add-to-playlist')"
+                          v-if="item.type === 'youtube'" />
+            <DropdownItem icon-class="fa fa-trash" text="Remove from playlist" @click="$emit('remove-from-playlist')"
+                          v-if="item.type === 'youtube' && playlist?.length" />
             <DropdownItem icon-class="fa fa-window-maximize" text="View in browser" @click="$emit('view')"
                           v-if="item.type === 'file'" />
             <DropdownItem icon-class="fa fa-info-circle" text="Info" @click="$emit('select')" />
@@ -25,7 +31,7 @@
       </div>
 
       <div class="row subtitle" v-if="item.channel">
-        <a class="channel" :href="item.channel_url" target="_blank">
+        <a class="channel" href="#" target="_blank" @click.prevent="$emit('open-channel')">
           <img :src="item.channel_image" class="channel-image" v-if="item.channel_image" />
           <span class="channel-name" v-text="item.channel" />
         </a>
@@ -48,7 +54,17 @@ import Utils from "@/Utils";
 export default {
   components: {Dropdown, DropdownItem, MediaImage},
   mixins: [Utils],
-  emits: ['play', 'select', 'view', 'download'],
+  emits: [
+    'add-to-playlist',
+    'download',
+    'download-audio',
+    'open-channel',
+    'play',
+    'remove-from-playlist',
+    'select',
+    'view',
+  ],
+
   props: {
     item: {
       type: Object,
@@ -63,6 +79,10 @@ export default {
     selected: {
       type: Boolean,
       default: false,
+    },
+
+    playlist: {
+      type: String,
     },
   },
 
@@ -81,7 +101,8 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  max-height: 23.5em;
+  height: 100%;
   cursor: initial !important;
   margin-bottom: 5px;
   border: 1px solid transparent;
@@ -107,7 +128,6 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
-    flex: 1;
 
     .row {
       width: 100%;

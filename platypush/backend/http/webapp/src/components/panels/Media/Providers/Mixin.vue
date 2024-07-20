@@ -2,12 +2,32 @@
 import Utils from "@/Utils";
 
 export default {
-  emits: ['back', 'path-change', 'play'],
   mixins: [Utils],
+  emits: [
+    'add-to-playlist',
+    'back',
+    'create-playlist',
+    'download',
+    'download-audio',
+    'path-change',
+    'play',
+    'remove-from-playlist',
+    'remove-playlist',
+    'rename-playlist',
+  ],
+
   props: {
     filter: {
       type: String,
       default: '',
+    },
+
+    selectedPlaylist: {
+      default: null,
+    },
+
+    selectedChannel: {
+      default: null,
     },
   },
 

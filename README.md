@@ -9,6 +9,7 @@
 [![Join chat on Matrix](https://img.shields.io/matrix/platypush:matrix.platypush.tech.svg?server_fqdn=matrix.platypush.tech&label=chat&logo=matrix)](https://matrix.to/#/#platypush:matrix.platypush.tech)
 
 [![pip version](https://img.shields.io/pypi/v/platypush.svg?style=flat)](https://pypi.python.org/pypi/platypush/)
+[![CodeFactor](https://www.codefactor.io/repository/github/blacklight/platypush/badge)](https://www.codefactor.io/repository/github/blacklight/platypush)
 [![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://git.platypush.tech/platypush/platypush/src/branch/master/CONTRIBUTING.md)
 [![License](https://img.shields.io/github/license/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/src/branch/master/LICENSE.txt)
 [![Sponsor](https://img.shields.io/github/sponsors/blacklight)](https://github.com/sponsors/blacklight)
@@ -1177,6 +1178,15 @@ redis:
   username: redis-user
   password: redis-pass
 ```
+
+If `--start-redis` is set, the application can be configured to start a custom
+`redis-server` executable through the:
+
+1. `--redis-bin` command-line option.
+2. `PLATYPUSH_REDIS_BIN` environment variable.
+
+Alternative drop-in implementations such as `keydb-server`, `valkey` or
+`redict` are also supported.
 
 ### nginx
 

@@ -1,4 +1,7 @@
-from flask import Blueprint, jsonify, send_from_directory
+from typing import Optional
+from urllib.parse import urlparse
+
+from flask import Blueprint, jsonify, request, send_from_directory
 
 from platypush.config import Config
 from platypush.backend.http.app import template_folder
@@ -11,13 +14,37 @@ __routes__ = [
 ]
 
 
+def _get_plugin(url: Optional[str] = None) -> Optional[str]:
+    if not url:
+        return None
+
+    path = urlparse(url).path.lstrip('/').split('/')
+    if len(path) > 1 and path[0] == 'plugin':
+        return path[1]
+
+    return None
+
+
 @pwa.route('/manifest.json', methods=['GET'])
 def manifest_json():
     """Generated manifest file for the PWA"""
+
+    device_id = Config.get_device_id()
+    referer = request.headers.get('Referer')
+    plugin = _get_plugin(referer)
+    start_url = '/'
+    name = f'Platypush @ {device_id}'
+    short_name = device_id
+
+    if plugin:
+        start_url = f'/plugin/{plugin}'
+        name = f'{plugin} @ {device_id}'
+        short_name = plugin
+
     return jsonify(
         {
-            "name": f'Platypush @ {Config.get("device_id")}',
-            "short_name": Config.get('device_id'),
+            "name": name,
+            "short_name": short_name,
             "icons": [
                 {
                     "src": "/img/icons/favicon-16x16.png",
@@ -94,9 +121,9 @@ def manifest_json():
             ],
             "gcm_sender_id": "",
             "gcm_user_visible_only": True,
-            "start_url": "/",
+            "start_url": start_url,
             "permissions": ["gcm"],
-            "orientation": "portrait",
+            "orientation": "any",
             "display": "standalone",
             "theme_color": "#000000",
             "background_color": "#ffffff",

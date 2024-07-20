@@ -1,45 +1,39 @@
 import { createWebHistory, createRouter } from "vue-router";
-import Dashboard from "@/views/Dashboard.vue";
-import NotFound from "@/views/NotFound";
-import Login from "@/views/Login";
-import Register from "@/views/Register";
-import Panel from "@/views/Panel";
-import Plugin from "@/views/Plugin";
 
 const routes = [
   {
     path: "/",
     name: "Panel",
-    component: Panel,
+    component: () => import(/* webpackChunkName: "panel" */ "@/views/Panel"),
   },
 
   {
     path: "/dashboard/:name",
     name: "Dashboard",
-    component: Dashboard,
+    component: () => import(/* webpackChunkName: "dashboard" */ "@/views/Dashboard"),
   },
 
   {
     path: "/plugin/:plugin",
     name: "Plugin",
-    component: Plugin,
+    component: () => import(/* webpackChunkName: "plugin" */ "@/views/Plugin"),
   },
 
   {
     path: "/login",
     name: "Login",
-    component: Login,
+    component: () => import(/* webpackChunkName: "login" */ "@/views/Login"),
   },
 
   {
     path: "/register",
     name: "Register",
-    component: Register,
+    component: () => import(/* webpackChunkName: "register" */ "@/views/Register"),
   },
 
   {
     path: "/:catchAll(.*)",
-    component: NotFound,
+    component: () => import(/* webpackChunkName: "notfound" */ "@/views/NotFound"),
   },
 ];
 
