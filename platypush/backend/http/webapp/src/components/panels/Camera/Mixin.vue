@@ -185,6 +185,7 @@ export default {
     this.$watch(() => this.attrs.rotate, this.onSizeChanged)
     this.$watch(() => this.attrs.scale_x, this.onSizeChanged)
     this.$watch(() => this.attrs.scale_y, this.onSizeChanged)
+    screen.orientation.addEventListener('change', this.onSizeChanged)
 
     const onOrientationOrSizeChange = () => {
       this.onSizeChanged()
@@ -194,6 +195,7 @@ export default {
 
     this.$nextTick(() => {
       this.resizeObserver = new ResizeObserver(onOrientationOrSizeChange)
+      this.resizeObserver.observe(document.body)
       this.resizeObserver.observe(this.$refs?.frameContainer?.parentElement)
     })
   },
