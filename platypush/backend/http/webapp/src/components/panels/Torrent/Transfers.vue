@@ -99,7 +99,7 @@
 
         <div class="row" v-if="transfers[selectedItem].files">
           <div class="attr">Files</div>
-          <div class="value">
+          <div class="value files-container">
             <div class="file" v-for="(file, i) in transfers[selectedItem].files" :key="i">
               <a :href="`/file?path=${encodeURIComponent(file)}`" target="_blank" v-text="file" />
             </div>
@@ -214,6 +214,16 @@ export default {
         text-overflow: clip;
       }
     }
+  }
+
+  .files-container {
+    flex-direction: column;
+  }
+
+  .file {
+    margin-bottom: 0.5em;
+    padding-bottom: 0.5em;
+    border: $border-color-3;
   }
 }
 
