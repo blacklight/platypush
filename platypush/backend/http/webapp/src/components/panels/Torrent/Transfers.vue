@@ -22,13 +22,13 @@
 
       <div class="col-2 right side">
         <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" @click="selectedItem = i">
-          <DropdownItem icon-class="fa fa-pause" text="Pause transfer" @click="$emit('pause', torrent)"
+          <DropdownItem icon-class="fa fa-pause" text="Pause transfer" @input="$emit('pause', torrent)"
                         v-if="torrent.state === 'downloading' && !torrent.paused" />
-          <DropdownItem icon-class="fa fa-play" text="Resume transfer" @click="$emit('resume', torrent)"
+          <DropdownItem icon-class="fa fa-play" text="Resume transfer" @input="$emit('resume', torrent)"
                         v-if="torrent.state === 'downloading' && torrent.paused" />
-          <DropdownItem icon-class="fa fa-trash" text="Remove transfer" @click="$emit('remove', torrent)" />
-          <DropdownItem icon-class="fa fa-folder" text="View files" @click="$refs.torrentFiles.isVisible = true" />
-          <DropdownItem icon-class="fa fa-info" text="Torrent info" @click="$refs.torrentInfo.isVisible = true" />
+          <DropdownItem icon-class="fa fa-trash" text="Remove transfer" @input="$emit('remove', torrent)" />
+          <DropdownItem icon-class="fa fa-folder" text="View files" @input="$refs.torrentFiles.isVisible = true" />
+          <DropdownItem icon-class="fa fa-info" text="Torrent info" @input="$refs.torrentInfo.isVisible = true" />
         </Dropdown>
       </div>
     </div>
@@ -114,7 +114,7 @@
           <div class="col-1 icon">
             <Dropdown v-if="isMedia && mediaExtensions.has(file.split('.').pop())">
               <DropdownItem icon-class="fa fa-play" text="Play"
-                            @click="$emit('play', {url: `file://${transfers[selectedItem].files[i]}`, type: 'file'})" />
+                            @input="$emit('play', {url: `file://${transfers[selectedItem].files[i]}`, type: 'file'})" />
             </Dropdown>
 
             <i class="fa fa-file" v-else />

@@ -89,10 +89,10 @@
 
           <span class="actions">
             <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
-              <DropdownItem text="Play" icon-class="fa fa-play" @click="play(i)" />
-              <DropdownItem text="Add to queue" icon-class="fa fa-plus" @click="load(i)" />
-              <DropdownItem text="Add to playlist" icon-class="fa fa-list-ul" @click="$emit('add-to-playlist', result)" />
-              <DropdownItem text="Info" icon-class="fa fa-info" @click="$emit('info', result)" />
+              <DropdownItem text="Play" icon-class="fa fa-play" @input="play(i)" />
+              <DropdownItem text="Add to queue" icon-class="fa fa-plus" @input="load(i)" />
+              <DropdownItem text="Add to playlist" icon-class="fa fa-list-ul" @input="$emit('add-to-playlist', result)" />
+              <DropdownItem text="Info" icon-class="fa fa-info" @input="$emit('info', result)" />
             </Dropdown>
           </span>
         </div>

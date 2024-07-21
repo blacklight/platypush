@@ -1,5 +1,6 @@
 <template>
-  <div class="row item" :class="itemClass" @click="clicked">
+  <div class="row item" :class="{...itemClass_, disabled: disabled}"
+       :title="hoverText" @click="clicked">
     <div class="col-2 icon" v-if="iconClass?.length || iconUrl?.length">
       <Icon :class="iconClass" :url="iconUrl" />
     </div>
@@ -13,6 +14,7 @@ import { bus } from "@/bus";
 
 export default {
   components: {Icon},
+  emits: ['click', 'input'],
   props: {
     iconClass: {
       type: String,
@@ -26,6 +28,11 @@ export default {
       type: String,
     },
 
+    hoverText: {
+      type: String,
+      default: null,
+    },
+
     disabled: {
       type: Boolean,
       default: false,
@@ -34,13 +41,27 @@ export default {
     itemClass: {}
   },
 
-  methods: {
-    clicked() {
-      if (this.disabled)
-        return false
+  computed: {
+    itemClass_() {
+      if (typeof this.itemClass === 'string')
+        return {[this.itemClass]: true}
 
+      return this.itemClass
+    }
+  },
+
+  methods: {
+    clicked(event) {
       if (!this.$parent.keepOpenOnItemClick)
         bus.emit('dropdown-close')
+
+      if (this.disabled) {
+        event.stopPropagation()
+        event.preventDefault()
+        return false
+      }
+
+      this.$emit('input', event)
     }
   }
 }
@@ -69,7 +90,7 @@ export default {
 
   &.disabled {
     color: $dropdown-disabled-color;
-    cursor: initial;
+    cursor: initial !important;
   }
 
   .text {

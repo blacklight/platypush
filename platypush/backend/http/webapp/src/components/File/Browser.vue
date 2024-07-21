@@ -38,7 +38,7 @@
         <div class="col-2 actions" v-if="fileActions.length">
           <Dropdown>
             <DropdownItem icon-class="fa fa-play" text="Play"
-                          @click="$emit('play', {type: 'file', url: `file://${file.path}`})"
+                          @input="$emit('play', {type: 'file', url: `file://${file.path}`})"
                           v-if="hasPlay && file.type !== 'directory'" />
           </Dropdown>
         </div>

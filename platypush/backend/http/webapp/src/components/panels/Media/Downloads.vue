@@ -32,19 +32,19 @@
         <div class="col-2 right side">
           <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" @click="selectedItem = i">
             <DropdownItem icon-class="fa fa-play" text="Play"
-                          @click="$emit('play', {url: `file:///${media.path}`})"
+                          @input="$emit('play', {url: `file:///${media.path}`})"
                           v-if="media.state.toLowerCase() === 'completed'" />
-            <DropdownItem icon-class="fa fa-pause" text="Pause download" @click="pause(media)"
+            <DropdownItem icon-class="fa fa-pause" text="Pause download" @input="pause(media)"
                           v-if="media.state.toLowerCase() === 'downloading' || media.state.toLowerCase() === 'started'" />
-            <DropdownItem icon-class="fa fa-rotate-left" text="Resume download" @click="resume(media)"
+            <DropdownItem icon-class="fa fa-rotate-left" text="Resume download" @input="resume(media)"
                           v-if="media.state.toLowerCase() === 'paused'" />
-            <DropdownItem icon-class="fa fa-eraser" text="Clear from queue" @click="clear(media)"
+            <DropdownItem icon-class="fa fa-eraser" text="Clear from queue" @input="clear(media)"
                           v-if="media.state.toLowerCase() === 'completed'" />
-            <DropdownItem icon-class="fa fa-stop" text="Cancel" @click="cancel(media)"
+            <DropdownItem icon-class="fa fa-stop" text="Cancel" @input="cancel(media)"
                           v-if="media.state.toLowerCase() !== 'completed' && media.state.toLowerCase() !== 'cancelled'" />
-            <DropdownItem icon-class="fa fa-trash" text="Remove file" @click="onDeleteSelected(media)"
+            <DropdownItem icon-class="fa fa-trash" text="Remove file" @input="onDeleteSelected(media)"
                           v-if="media.state.toLowerCase() === 'completed' || media.state.toLowerCase() === 'cancelled'" />
-            <DropdownItem icon-class="fa fa-info" text="Media info" @click="$refs.mediaInfo.isVisible = true" />
+            <DropdownItem icon-class="fa fa-info" text="Media info" @input="$refs.mediaInfo.isVisible = true" />
           </Dropdown>
         </div>
       </div>

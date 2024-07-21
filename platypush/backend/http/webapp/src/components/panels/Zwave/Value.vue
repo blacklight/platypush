@@ -84,7 +84,7 @@
           <Dropdown title="Add to scene" icon-class="fa fa-plus">
             <DropdownItem v-for="(scene, i) in addValueToSceneItems" :key="i"
                           :text="scene.label" :disabled="commandRunning"
-                          @click="$emit('add-to-scene', {sceneId: scene.scene_id, valueId: value.id_on_network})" />
+                          @input="$emit('add-to-scene', {sceneId: scene.scene_id, valueId: value.id_on_network})" />
           </Dropdown>
         </div>
       </div>

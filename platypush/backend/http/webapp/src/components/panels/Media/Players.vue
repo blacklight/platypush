@@ -21,7 +21,7 @@
         <Loading v-if="loading" />
 
         <div class="refresh">
-          <DropdownItem text="Refresh" icon-class="fa fa-sync-alt" @click="refresh" />
+          <DropdownItem text="Refresh" icon-class="fa fa-sync-alt" @input="refresh" />
         </div>
 
         <div class="no-results" v-if="!players?.length">No players found</div>
@@ -29,7 +29,7 @@
         <div class="player" v-for="(player, i) in players" :key="i"
              :class="{selected: selectedPlayer != null && selectedPlayer.pluginName === player.pluginName
              && selectedPlayer.name === player.name}">
-          <DropdownItem :text="player.name" :icon-class="player.iconClass" @click="select(player)" />
+          <DropdownItem :text="player.name" :icon-class="player.iconClass" @input="select(player)" />
         </div>
       </Dropdown>
     </div>

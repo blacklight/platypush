@@ -45,9 +45,10 @@
         <div class="actions pull-right col-4">
           <Dropdown title="User Actions" icon-class="fa fa-ellipsis">
             <DropdownItem text="Change Password" :disabled="commandRunning" icon-class="fa fa-key"
-                          @click="showChangePasswordModal(user)" />
-            <DropdownItem text="Delete User" :disabled="commandRunning" icon-class="fa fa-trash"
-                          @click="selectedUser = user.username; $refs.deleteUserDialog.show()" />
+                          @input="showChangePasswordModal(user)" />
+            <DropdownItem text="Delete User" :disabled="commandRunning"
+                          icon-class="fa fa-trash" item-class="text-danger"
+                          @input="selectedUser = user.username; $refs.deleteUserDialog.show()" />
           </Dropdown>
         </div>
       </li>

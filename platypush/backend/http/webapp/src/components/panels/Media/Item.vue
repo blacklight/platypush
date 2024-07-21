@@ -13,19 +13,19 @@
         <div class="col-11 left side" v-text="item.title || item.name" @click="$emit('select')" />
         <div class="col-1 right side">
           <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" ref="dropdown">
-            <DropdownItem icon-class="fa fa-play" text="Play" @click="$emit('play')"
+            <DropdownItem icon-class="fa fa-play" text="Play" @input="$emit('play')"
                           v-if="item.type !== 'torrent'" />
-            <DropdownItem icon-class="fa fa-download" text="Download" @click="$emit('download')"
+            <DropdownItem icon-class="fa fa-download" text="Download" @input="$emit('download')"
                           v-if="(item.type === 'torrent' || item.type === 'youtube') && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
-            <DropdownItem icon-class="fa fa-volume-high" text="Download Audio" @click="$emit('download-audio')"
+            <DropdownItem icon-class="fa fa-volume-high" text="Download Audio" @input="$emit('download-audio')"
                           v-if="item.type === 'youtube' && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
-            <DropdownItem icon-class="fa fa-list" text="Add to playlist" @click="$emit('add-to-playlist')"
+            <DropdownItem icon-class="fa fa-list" text="Add to playlist" @input="$emit('add-to-playlist')"
                           v-if="item.type === 'youtube'" />
-            <DropdownItem icon-class="fa fa-trash" text="Remove from playlist" @click="$emit('remove-from-playlist')"
+            <DropdownItem icon-class="fa fa-trash" text="Remove from playlist" @input="$emit('remove-from-playlist')"
                           v-if="item.type === 'youtube' && playlist?.length" />
-            <DropdownItem icon-class="fa fa-window-maximize" text="View in browser" @click="$emit('view')"
+            <DropdownItem icon-class="fa fa-window-maximize" text="View in browser" @input="$emit('view')"
                           v-if="item.type === 'file'" />
-            <DropdownItem icon-class="fa fa-info-circle" text="Info" @click="$emit('select')" />
+            <DropdownItem icon-class="fa fa-info-circle" text="Info" @input="$emit('select')" />
           </Dropdown>
         </div>
       </div>

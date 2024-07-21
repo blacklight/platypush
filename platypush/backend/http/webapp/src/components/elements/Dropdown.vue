@@ -98,9 +98,19 @@ export default {
       return parseFloat(getComputedStyle(dropdown).height)
     },
 
-    onClick() {
+    onClick(event) {
       if (!this.keepOpenOnItemClick)
         this.close()
+
+      if (event.target.tagName === 'A') {
+        event.preventDefault()
+        return false
+      }
+
+      if (event.defaultPrevented) {
+        event.stopPropagation()
+        return false
+      }
     },
 
     close() {

@@ -44,12 +44,12 @@
 
               <span class="section right">
                 <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
-                  <DropdownItem text="Refresh" icon-class="fa fa-sync-alt" @click="refresh(group)" />
-                  <DropdownItem text="Hide" icon-class="fa fa-eye-slash" @click="hideGroup(group)" />
+                  <DropdownItem text="Refresh" icon-class="fa fa-sync-alt" @input="refresh(group)" />
+                  <DropdownItem text="Hide" icon-class="fa fa-eye-slash" @input="hideGroup(group)" />
                   <DropdownItem text="Collapse" icon-class="fa fa-caret-up"
-                    @click="collapsedGroups[group.name] = true" v-if="!collapsedGroups[group.name]" />
+                    @input="collapsedGroups[group.name] = true" v-if="!collapsedGroups[group.name]" />
                   <DropdownItem text="Expand" icon-class="fa fa-caret-down"
-                    @click="collapsedGroups[group.name] = false" v-else />
+                    @input="collapsedGroups[group.name] = false" v-else />
                 </Dropdown>
               </span>
             </div>

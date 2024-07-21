@@ -72,11 +72,11 @@
         </button>
 
         <Dropdown ref="networkCommandsDropdown" icon-class="fa fa-cog" title="Network commands">
-          <DropdownItem text="Network Info" :disabled="loading" @click="$refs.infoModal.show()" />
-          <DropdownItem text="Permit Join" :disabled="loading" @click="permitJoin(true)"
+          <DropdownItem text="Network Info" :disabled="loading" @input="$refs.infoModal.show()" />
+          <DropdownItem text="Permit Join" :disabled="loading" @input="permitJoin(true)"
                         v-if="!status.info?.permit_join" />
-          <DropdownItem text="Disable Join" :disabled="loading" @click="permitJoin(false)" v-else/>
-          <DropdownItem text="Factory Reset" :disabled="loading" @click="factoryReset" />
+          <DropdownItem text="Disable Join" :disabled="loading" @input="permitJoin(false)" v-else/>
+          <DropdownItem text="Factory Reset" :disabled="loading" @input="factoryReset" />
         </Dropdown>
 
         <button class="btn btn-default" title="Refresh network" :disabled="loading" @click="refresh">
