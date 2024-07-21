@@ -19,7 +19,7 @@
     "sass": "^1.77.3",
     "sass-loader": "^10.5.2",
     "vue": "^3.4.29",
-    "vue-router": "^4.3.3",
+    "vue-router": "^4.4.0",
     "vue-skycons": "^4.3.4",
     "w3css": "^2.7.0"
   },
