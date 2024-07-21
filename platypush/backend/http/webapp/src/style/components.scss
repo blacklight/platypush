@@ -72,6 +72,10 @@ a {
   cursor: pointer;
 }
 
+.text-danger {
+  color: $error-fg;
+}
+
 body {
   scrollbar-width: thin;
   scrollbar-color: $scrollbar-thumb-bg $scrollbar-track-bg;
