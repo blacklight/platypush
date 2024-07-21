@@ -27,10 +27,13 @@ export default {
                 resolve(response.output);
               } else {
                 const error = response.errors?.[0] || response
-                this.notify({
-                  text: error,
-                  error: true,
-                })
+
+                if (showError) {
+                  this.notify({
+                    text: error,
+                    error: true,
+                  })
+                }
 
                 reject(error)
               }
