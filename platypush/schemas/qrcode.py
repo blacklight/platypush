@@ -19,7 +19,7 @@ class QrcodeGeneratedSchema(Schema):
     text = fields.String(
         required=True,
         metadata={
-            'description': 'Text content of the QR code',
+            'description': 'Text content of the QR code, or base64-encoded binary data',
             'example': 'https://platypush.tech',
         },
     )
