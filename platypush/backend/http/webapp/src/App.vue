@@ -1,20 +1,30 @@
 <template>
-  <Events ref="events" v-if="hasWebsocket" />
-  <Notifications ref="notifications" />
-  <VoiceAssistant ref="voice-assistant" v-if="hasAssistant" />
-  <Pushbullet ref="pushbullet" v-if="hasPushbullet" />
-  <Ntfy ref="ntfy" v-if="hasNtfy" />
-  <ConfirmDialog ref="pwaDialog" @input="installPWA">
-    Would you like to install this application locally?
-  </ConfirmDialog>
+  <div id="error" v-if="initError">
+    <h1>Initialization error</h1>
+    <p>{{ initError }}</p>
+  </div>
 
-  <DropdownContainer />
-  <router-view />
+  <Loading v-else-if="!initialized" />
+
+  <div id="app-container" v-else>
+    <Events ref="events" v-if="hasWebsocket" />
+    <Notifications ref="notifications" />
+    <VoiceAssistant ref="voice-assistant" v-if="hasAssistant" />
+    <Pushbullet ref="pushbullet" v-if="hasPushbullet" />
+    <Ntfy ref="ntfy" v-if="hasNtfy" />
+    <ConfirmDialog ref="pwaDialog" @input="installPWA">
+      Would you like to install this application locally?
+    </ConfirmDialog>
+
+    <DropdownContainer />
+    <router-view />
+  </div>
 </template>
 
 <script>
 import ConfirmDialog from "@/components/elements/ConfirmDialog";
 import DropdownContainer from "@/components/elements/DropdownContainer";
+import Loading from "@/components/Loading";
 import Notifications from "@/components/Notifications";
 import Utils from "@/Utils";
 import Events from "@/Events";
@@ -29,6 +39,7 @@ export default {
     ConfirmDialog,
     DropdownContainer,
     Events,
+    Loading,
     Notifications,
     Ntfy,
     Pushbullet,
@@ -41,6 +52,8 @@ export default {
       userAuthenticated: false,
       connected: false,
       pwaInstallEvent: null,
+      initialized: false,
+      initError: null,
     }
   },
 
@@ -84,8 +97,18 @@ export default {
     }
   },
 
-  created() {
-    this.initConfig()
+  async created() {
+    try {
+      await this.initConfig()
+    } catch (e) {
+      const code = e?.response?.data?.code
+      if (![401, 403, 412].includes(code)) {
+        this.initError = e
+        console.error('Initialization error', e)
+      }
+    } finally {
+      this.initialized = true
+    }
   },
 
   beforeMount() {
@@ -123,6 +146,11 @@ html, body {
   height: 100%;
   margin: 0;
   overflow: auto;
+}
+
+#app-container {
+  width: 100%;
+  height: 100%;
 }
 
 #app {

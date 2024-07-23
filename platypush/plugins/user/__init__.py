@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Tuple, Union
 
 from platypush.plugins import Plugin, action
 from platypush.user import UserManager
@@ -66,15 +66,46 @@ class UserPlugin(Plugin):
         }
 
     @action
-    def authenticate_user(self, username, password):
+    def authenticate_user(
+        self,
+        username: str,
+        password: str,
+        code: Optional[str] = None,
+        return_details: bool = False,
+    ) -> Union[bool, Tuple[bool, str]]:
         """
         Authenticate a user.
 
-        :return: True if the provided username and password are correct, False
-            otherwise.
-        """
+        :param username: Username.
+        :param password: Password.
+        :param code: Optional 2FA code, if 2FA is enabled for the user.
+        :param return_error_details: If True then return the error details in
+            case of authentication failure.
+        :return: If ``return_details`` is False (default), the action returns
+            True if the provided credentials are valid, False otherwise.
+            If ``return_details`` is True then the action returns a tuple
+            (authenticated, error_details) where ``authenticated`` is True if
+            the provided credentials are valid, False otherwise, and
+            ``error_details`` is a string containing the error details in case
+            of authentication failure. Supported error details are:
 
-        return bool(self.user_manager.authenticate_user(username, password))
+                - ``invalid_credentials``: Invalid username or password.
+                - ``invalid_otp_code``: Invalid 2FA code.
+                - ``missing_otp_code``: Username/password are correct, but a 2FA
+                  code is required for the user.
+
+        """
+        response = self.user_manager.authenticate_user(
+            username, password, code=code, return_error=return_details
+        )
+
+        if return_details:
+            assert (
+                isinstance(response, tuple) and len(response) == 2
+            ), 'Invalid response from authenticate_user'
+            return response[0], response[1].value
+
+        return response
 
     @action
     def update_password(self, username, old_password, new_password):
@@ -111,7 +142,7 @@ class UserPlugin(Plugin):
             return None, "No such user: {}".format(username)
 
     @action
-    def create_session(self, username, password, expires_at=None):
+    def create_session(self, username, password, code=None, expires_at=None):
         """
         Create a user session.
 
@@ -130,7 +161,7 @@ class UserPlugin(Plugin):
         """
 
         session = self.user_manager.create_user_session(
-            username=username, password=password, expires_at=expires_at
+            username=username, password=password, code=code, expires_at=expires_at
         )
 
         if not session:
@@ -140,9 +171,9 @@ class UserPlugin(Plugin):
             'session_token': session.session_token,
             'user_id': session.user_id,
             'created_at': session.created_at.isoformat(),
-            'expires_at': session.expires_at.isoformat()
-            if session.expires_at
-            else None,
+            'expires_at': (
+                session.expires_at.isoformat() if session.expires_at else None  # type: ignore
+            ),
         }
 
     @action

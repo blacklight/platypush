@@ -5,7 +5,7 @@ from threading import Thread
 from tornado.ioloop import IOLoop
 from tornado.websocket import WebSocketHandler
 
-from platypush.backend.http.app.utils.auth import AuthStatus, get_auth_status
+from platypush.backend.http.app.utils.auth import UserAuthStatus, get_auth_status
 
 from ..mixins import MessageType, PubSubMixin
 
@@ -25,7 +25,7 @@ class WSRoute(WebSocketHandler, Thread, PubSubMixin, ABC):
 
     def open(self, *_, **__):
         auth_status = get_auth_status(self.request)
-        if auth_status != AuthStatus.OK:
+        if auth_status != UserAuthStatus.OK:
             self.close(code=1008, reason=auth_status.value.message)  # Policy Violation
             return
 

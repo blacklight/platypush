@@ -532,7 +532,12 @@ def generate_rsa_key_pair(
     private_key_str = priv_key.save_pkcs1('PEM').decode()
 
     if key_file:
+        pathlib.Path(os.path.dirname(os.path.expanduser(key_file))).mkdir(
+            parents=True, exist_ok=True
+        )
+
         logger.info('Saving private key to %s', key_file)
+
         with open(os.path.expanduser(key_file), 'w') as f1, open(
             os.path.expanduser(key_file) + '.pub', 'w'
         ) as f2:
@@ -543,14 +548,20 @@ def generate_rsa_key_pair(
     return pub_key, priv_key
 
 
-def get_or_generate_jwt_rsa_key_pair():
+def get_or_generate_stored_rsa_key_pair(
+    keyfile: str, size: int = 2048
+) -> Tuple[PublicKey, PrivateKey]:
     """
-    Get or generate a JWT RSA key pair.
-    """
-    from platypush.config import Config
+    Get or generate an RSA key pair and store it in the given key file.
 
-    key_dir = os.path.join(Config.get_workdir(), 'jwt')
-    priv_key_file = os.path.join(key_dir, 'id_rsa')
+    The private key will be stored in the given file, while the public key will
+    be stored in ``<keyfile>.pub``.
+
+    :param keyfile: Path to the key file.
+    :param size: Key size in bits (default: 2048).
+    """
+    keydir = os.path.dirname(os.path.expanduser(keyfile))
+    priv_key_file = os.path.join(keydir, os.path.basename(keyfile))
     pub_key_file = priv_key_file + '.pub'
 
     if os.path.isfile(priv_key_file) and os.path.isfile(pub_key_file):
@@ -560,8 +571,15 @@ def get_or_generate_jwt_rsa_key_pair():
                 PrivateKey.load_pkcs1(f2.read().encode()),
             )
 
-    pathlib.Path(key_dir).mkdir(parents=True, exist_ok=True, mode=0o755)
-    return generate_rsa_key_pair(priv_key_file, size=2048)
+    pub_key, priv_key = generate_rsa_key_pair(priv_key_file, size=size)
+    pathlib.Path(keydir).mkdir(parents=True, exist_ok=True, mode=0o755)
+
+    with open(pub_key_file, 'w') as f1, open(priv_key_file, 'w') as f2:
+        f1.write(pub_key.save_pkcs1('PEM').decode())
+        f2.write(priv_key.save_pkcs1('PEM').decode())
+        os.chmod(priv_key_file, 0o600)
+
+    return pub_key, priv_key
 
 
 def get_enabled_plugins() -> dict:

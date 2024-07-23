@@ -2,14 +2,14 @@ import base64
 from functools import wraps
 from typing import Optional
 
-from flask import request, redirect, jsonify
+from flask import request, redirect
 from flask.wrappers import Response
 
 from platypush.config import Config
 from platypush.user import UserManager
 
 from ..logger import logger
-from .status import AuthStatus
+from .status import UserAuthStatus
 
 user_manager = UserManager()
 
@@ -128,18 +128,18 @@ def authenticate(
                 skip_auth_methods=skip_auth_methods,
             )
 
-            if auth_status == AuthStatus.OK:
+            if auth_status == UserAuthStatus.OK:
                 return f(*args, **kwargs)
 
             if json:
-                return jsonify(auth_status.to_dict()), auth_status.value.code
+                return auth_status.to_response()
 
-            if auth_status == AuthStatus.NO_USERS:
+            if auth_status == UserAuthStatus.REGISTRATION_REQUIRED:
                 return redirect(
                     f'/register?redirect={redirect_page or request.url}', 307
                 )
 
-            if auth_status == AuthStatus.UNAUTHORIZED:
+            if auth_status == UserAuthStatus.INVALID_CREDENTIALS:
                 return redirect(f'/login?redirect={redirect_page or request.url}', 307)
 
             return Response(
@@ -154,7 +154,7 @@ def authenticate(
 
 
 # pylint: disable=too-many-return-statements
-def get_auth_status(req, skip_auth_methods=None) -> AuthStatus:
+def get_auth_status(req, skip_auth_methods=None) -> UserAuthStatus:
     """
     Check against the available authentication methods (except those listed in
     ``skip_auth_methods``) if the user is properly authenticated.
@@ -168,29 +168,33 @@ def get_auth_status(req, skip_auth_methods=None) -> AuthStatus:
     if n_users > 0 and 'http' not in skip_methods:
         http_auth_ok = authenticate_user_pass(req)
         if http_auth_ok:
-            return AuthStatus.OK
+            return UserAuthStatus.OK
 
     # Token-based authentication
     token_auth_ok = True
     if 'token' not in skip_methods:
         token_auth_ok = authenticate_token(req)
         if token_auth_ok:
-            return AuthStatus.OK
+            return UserAuthStatus.OK
 
     # Session token based authentication
     session_auth_ok = True
     if n_users > 0 and 'session' not in skip_methods:
-        return AuthStatus.OK if authenticate_session(req) else AuthStatus.UNAUTHORIZED
+        return (
+            UserAuthStatus.OK
+            if authenticate_session(req)
+            else UserAuthStatus.INVALID_CREDENTIALS
+        )
 
     # At least a user should be created before accessing an authenticated resource
     if n_users == 0 and 'session' not in skip_methods:
-        return AuthStatus.NO_USERS
+        return UserAuthStatus.REGISTRATION_REQUIRED
 
     if (  # pylint: disable=too-many-boolean-expressions
         ('http' not in skip_methods and http_auth_ok)
         or ('token' not in skip_methods and token_auth_ok)
         or ('session' not in skip_methods and session_auth_ok)
     ):
-        return AuthStatus.OK
+        return UserAuthStatus.OK
 
-    return AuthStatus.UNAUTHORIZED
+    return UserAuthStatus.INVALID_CREDENTIALS
