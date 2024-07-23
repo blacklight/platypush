@@ -1,7 +1,9 @@
 from .auth import (
+    UserAuthStatus,
     authenticate,
     authenticate_token,
     authenticate_user_pass,
+    current_user,
     get_auth_status,
 )
 from .bus import bus, send_message, send_request
@@ -17,10 +19,12 @@ from .streaming import get_streaming_routes
 from .ws import get_ws_routes
 
 __all__ = [
+    'UserAuthStatus',
     'authenticate',
     'authenticate_token',
     'authenticate_user_pass',
     'bus',
+    'current_user',
     'get_auth_status',
     'get_http_port',
     'get_ip_or_hostname',

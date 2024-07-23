@@ -7,6 +7,7 @@ import re
 
 from platypush.config import Config
 from platypush.backend.http.app import template_folder
+from platypush.backend.http.app.utils import current_user
 
 
 class HttpUtils:
@@ -129,6 +130,10 @@ class HttpUtils:
     def isfile(cls, *path):
         path = path[0] if len(path) == 1 else os.path.join(*path)
         return os.path.isfile(path)
+
+    @staticmethod
+    def current_user():
+        return current_user()
 
 
 # vim:sw=4:ts=4:et:

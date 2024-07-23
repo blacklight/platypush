@@ -1,7 +1,4 @@
-from dataclasses import dataclass, field
-import datetime
 import enum
-from typing import List, Optional
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 
@@ -80,20 +77,6 @@ class UserBackupCode(Base):
     code = Column(String, nullable=False, unique=True)
     created_at = Column(DateTime)
     expires_at = Column(DateTime)
-
-
-@dataclass
-class UserResponse:
-    """
-    Dataclass containing full information about a user (minus the password).
-    """
-
-    user_id: int
-    username: str
-    otp_secret: Optional[str] = None
-    session_token: Optional[str] = None
-    created_at: Optional[datetime.datetime] = None
-    backup_codes: List[str] = field(default_factory=list)
 
 
 # vim:sw=4:ts=4:et:

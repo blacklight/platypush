@@ -85,7 +85,9 @@ def _session_auth():
             return _dump_session(session, redirect_page)
 
         if status:
-            return status.to_response()  # type: ignore
+            auth_status = UserAuthStatus.by_status(status)
+            assert auth_status
+            return auth_status.to_response()
 
     return UserAuthStatus.INVALID_CREDENTIALS.to_response()
 
@@ -213,7 +215,5 @@ def auth_endpoint():
 
     return UserAuthStatus.INVALID_METHOD.to_response()
 
-
-# from flask import Blueprint, request, redirect, render_template, make_response, abort
 
 # vim:sw=4:ts=4:et:

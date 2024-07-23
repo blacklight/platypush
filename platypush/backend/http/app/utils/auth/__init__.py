@@ -1,12 +1,12 @@
 import base64
 from functools import wraps
-from typing import Optional
+from typing import Optional, Union
 
 from flask import request, redirect
 from flask.wrappers import Response
 
 from platypush.config import Config
-from platypush.user import UserManager
+from platypush.user import User, UserManager
 
 from ..logger import logger
 from .status import UserAuthStatus
@@ -41,8 +41,8 @@ def get_cookie(req, name: str) -> Optional[str]:
     return cookie.value
 
 
-def authenticate_token(req):
-    token = Config.get('token')
+def authenticate_token(req) -> Optional[User]:
+    global_token = Config.get('user.global_token')
     user_token = None
 
     if 'X-Token' in req.headers:
@@ -55,14 +55,18 @@ def authenticate_token(req):
         user_token = get_arg(req, 'token')
 
     if not user_token:
-        return False
+        return None
 
     try:
-        user_manager.validate_jwt_token(user_token)
-        return True
+        return user_manager.validate_jwt_token(user_token)
     except Exception as e:
-        logger().debug(str(e))
-        return bool(token and user_token == token)
+        # Legacy global token authentication.
+        # The global token should be specified in the configuration file,
+        # as a root parameter named `token`.
+        if bool(global_token and user_token == global_token):
+            return User(username='__token__', user_id=1)
+
+        logger().info('Invalid token: %s', e)
 
 
 def authenticate_user_pass(req):
@@ -91,7 +95,7 @@ def authenticate_user_pass(req):
     return user_manager.authenticate_user(username, password)
 
 
-def authenticate_session(req):
+def authenticate_session(req) -> Optional[User]:
     user = None
 
     # Check the X-Session-Token header
@@ -108,7 +112,7 @@ def authenticate_session(req):
     if user_session_token:
         user, _ = user_manager.authenticate_user_session(user_session_token)[:2]
 
-    return user is not None
+    return user
 
 
 def authenticate(
@@ -154,37 +158,40 @@ def authenticate(
 
 
 # pylint: disable=too-many-return-statements
-def get_auth_status(req, skip_auth_methods=None) -> UserAuthStatus:
+def _get_current_user_or_auth_status(
+    req, skip_auth_methods=None
+) -> Union[User, UserAuthStatus]:
     """
-    Check against the available authentication methods (except those listed in
-    ``skip_auth_methods``) if the user is properly authenticated.
+    Returns the current user if authenticated, and the authentication status if
+    ``with_status`` is True.
     """
-
     n_users = user_manager.get_user_count()
     skip_methods = skip_auth_methods or []
 
     # User/pass HTTP authentication
     http_auth_ok = True
     if n_users > 0 and 'http' not in skip_methods:
-        http_auth_ok = authenticate_user_pass(req)
-        if http_auth_ok:
-            return UserAuthStatus.OK
+        response = authenticate_user_pass(req)
+        if response:
+            user = response[0] if isinstance(response, tuple) else response
+            if user:
+                return user
 
     # Token-based authentication
     token_auth_ok = True
     if 'token' not in skip_methods:
-        token_auth_ok = authenticate_token(req)
-        if token_auth_ok:
-            return UserAuthStatus.OK
+        user = authenticate_token(req)
+        if user:
+            return user
 
     # Session token based authentication
     session_auth_ok = True
     if n_users > 0 and 'session' not in skip_methods:
-        return (
-            UserAuthStatus.OK
-            if authenticate_session(req)
-            else UserAuthStatus.INVALID_CREDENTIALS
-        )
+        user = authenticate_session(req)
+        if user:
+            return user
+
+        return UserAuthStatus.INVALID_CREDENTIALS
 
     # At least a user should be created before accessing an authenticated resource
     if n_users == 0 and 'session' not in skip_methods:
@@ -198,3 +205,20 @@ def get_auth_status(req, skip_auth_methods=None) -> UserAuthStatus:
         return UserAuthStatus.OK
 
     return UserAuthStatus.INVALID_CREDENTIALS
+
+
+def get_auth_status(req, skip_auth_methods=None) -> UserAuthStatus:
+    """
+    Check against the available authentication methods (except those listed in
+    ``skip_auth_methods``) if the user is properly authenticated.
+    """
+    ret = _get_current_user_or_auth_status(req, skip_auth_methods=skip_auth_methods)
+    return UserAuthStatus.OK if isinstance(ret, User) else ret
+
+
+def current_user() -> Optional[User]:
+    """
+    Returns the current user if authenticated.
+    """
+    ret = _get_current_user_or_auth_status(request)
+    return ret if isinstance(ret, User) else None

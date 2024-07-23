@@ -5,7 +5,7 @@ import json
 import os
 import random
 import time
-from typing import List, Optional, Dict, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import rsa
 
@@ -408,22 +408,16 @@ class UserManager:
             pub_key,
         )
 
-    def validate_jwt_token(self, token: str) -> Dict[str, str]:
+    def validate_jwt_token(self, token: str) -> User:
         """
         Validate a JWT token.
 
         :param token: Token to validate.
-        :return: On success, it returns the JWT payload with the following structure:
-
-            .. code-block:: json
-
-                {
-                    "username": "user ID/name",
-                    "created_at": "token creation timestamp",
-                    "expires_at": "token expiration timestamp"
-                }
-
-        :raises: :class:`platypush.exceptions.user.InvalidJWTTokenException` in case of invalid token.
+        :return: On success, it returns the user associated to the token.
+        :raises: :class:`platypush.exceptions.user.InvalidJWTTokenException` in
+            case of invalid token.
+        :raises: :class:`platypush.exceptions.user.InvalidCredentialsException`
+            in case of invalid credentials stored in the token.
         """
         _, priv_key = self._get_jwt_rsa_key_pair()
 
@@ -443,7 +437,7 @@ class UserManager:
         if not user:
             raise InvalidCredentialsException()
 
-        return payload
+        return user
 
     def _authenticate_user(
         self,

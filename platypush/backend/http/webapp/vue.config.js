@@ -41,6 +41,7 @@ module.exports = {
       '^/logo.svg': httpProxy,
       '^/logout': httpProxy,
       '^/media/': httpProxy,
+      '^/otp': httpProxy,
       '^/sound/': httpProxy,
       '^/ws/events': wsProxy,
       '^/ws/requests': wsProxy,
