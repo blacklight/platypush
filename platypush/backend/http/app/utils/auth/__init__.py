@@ -106,7 +106,7 @@ def authenticate_session(req):
         user_session_token = get_cookie(req, 'session_token')
 
     if user_session_token:
-        user, _ = user_manager.authenticate_user_session(user_session_token)
+        user, _ = user_manager.authenticate_user_session(user_session_token)[:2]
 
     return user is not None
 

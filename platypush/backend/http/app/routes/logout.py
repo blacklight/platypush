@@ -12,7 +12,7 @@ __routes__ = [
 
 
 @logout.route('/logout', methods=['GET', 'POST'])
-def logout():
+def logout_route():
     """Logout page"""
     user_manager = UserManager()
     redirect_page = request.args.get(
@@ -23,7 +23,7 @@ def logout():
     if not session_token:
         abort(417, 'Not logged in')
 
-    user, _ = user_manager.authenticate_user_session(session_token)
+    user, _ = user_manager.authenticate_user_session(session_token)[:2]
     if not user:
         abort(403, 'Invalid session token')
 

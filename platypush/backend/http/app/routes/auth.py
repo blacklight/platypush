@@ -63,7 +63,7 @@ def _session_auth():
     redirect_page = request.args.get('redirect') or '/'
 
     if session_token:
-        user, session = user_manager.authenticate_user_session(session_token)  # type: ignore
+        user, session = user_manager.authenticate_user_session(session_token)[:2]
         if user and session:
             return _dump_session(session, redirect_page)
 
@@ -78,7 +78,7 @@ def _session_auth():
             password=password,
             code=code,
             expires_at=expires,
-            error_on_invalid_credentials=True,
+            with_status=True,
         )
 
         if session:
@@ -97,7 +97,7 @@ def _register_route():
     redirect_page = request.args.get('redirect') or '/'
 
     if session_token:
-        user, session = user_manager.authenticate_user_session(session_token)  # type: ignore
+        user, session = user_manager.authenticate_user_session(session_token)[:2]
         if user and session:
             return _dump_session(session, redirect_page)
 
@@ -124,7 +124,7 @@ def _register_route():
         username=username,
         password=password,
         expires_at=(utcnow() + datetime.timedelta(days=365) if remember else None),
-        error_on_invalid_credentials=True,
+        with_status=True,
     )
 
     if session:
@@ -144,7 +144,7 @@ def _auth_get():
     session_token = request.cookies.get('session_token')
     redirect_page = request.args.get('redirect') or '/'
     user, session, status = user_manager.authenticate_user_session(  # type: ignore
-        session_token, with_error=True
+        session_token, with_status=True
     )
 
     if user and session:

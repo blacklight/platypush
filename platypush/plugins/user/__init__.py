@@ -21,7 +21,7 @@ class UserPlugin(Plugin):
         executing_user=None,
         executing_user_password=None,
         session_token=None,
-        **kwargs
+        **kwargs,
     ):
         """
         Create a user. This action needs to be executed by an already existing
@@ -50,7 +50,7 @@ class UserPlugin(Plugin):
         if not self.user_manager.authenticate_user(
             executing_user, executing_user_password
         ):
-            user, _ = self.user_manager.authenticate_user_session(session_token)
+            user, _ = self.user_manager.authenticate_user_session(session_token)[:2]
             if not user:
                 return None, "Invalid credentials and/or session_token"
 
@@ -132,14 +132,14 @@ class UserPlugin(Plugin):
         if not self.user_manager.authenticate_user(
             executing_user, executing_user_password
         ):
-            user, _ = self.user_manager.authenticate_user_session(session_token)
+            user, _ = self.user_manager.authenticate_user_session(session_token)[:2]
             if not user:
                 return None, "Invalid credentials and/or session_token"
 
         try:
             return self.user_manager.delete_user(username)
         except NameError:
-            return None, "No such user: {}".format(username)
+            return None, f"No such user: {username}"
 
     @action
     def create_session(self, username, password, code=None, expires_at=None):
@@ -163,6 +163,9 @@ class UserPlugin(Plugin):
         session = self.user_manager.create_user_session(
             username=username, password=password, code=code, expires_at=expires_at
         )
+
+        if isinstance(session, tuple):
+            session = session[0]
 
         if not session:
             return None, "Invalid credentials"
@@ -193,9 +196,7 @@ class UserPlugin(Plugin):
 
         """
 
-        user, _ = self.user_manager.authenticate_user_session(
-            session_token=session_token
-        )
+        user, _ = self.user_manager.authenticate_user_session(session_token)[:2]
         if not user:
             return None, 'Invalid session token'
 
