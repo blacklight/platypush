@@ -48,7 +48,7 @@ def send_request(
     args: Optional[dict] = None,
     parse_json: bool = True,
     authenticate: bool = True,
-    **kwargs
+    **kwargs,
 ):
     if not timeout:
         timeout = request_timeout
@@ -58,14 +58,15 @@ def send_request(
     auth = (test_user, test_pass) if authenticate else kwargs.pop('auth', ())
     set_timeout(seconds=timeout, on_timeout=on_timeout('Receiver response timed out'))
     response = requests.post(
-        '{}/execute'.format(base_url),
+        f'{base_url}/execute',
         auth=auth,
+        timeout=10,
         json={
             'type': 'request',
             'action': action,
             'args': args,
         },
-        **kwargs
+        **kwargs,
     )
 
     clear_timeout()
@@ -85,7 +86,7 @@ def register_user(username: Optional[str] = None, password: Optional[str] = None
         on_timeout=on_timeout('User registration response timed out'),
     )
     response = requests.post(
-        '{base_url}/register?redirect={base_url}/'.format(base_url=base_url),
+        f'{base_url}/auth?type=register&redirect={base_url}/',
         data={
             'username': username,
             'password': password,
@@ -106,7 +107,7 @@ def on_timeout(msg):
 
 def parse_response(response):
     response = Message.build(response.json())
-    assert isinstance(response, Response), 'Expected Response type, got {}'.format(
-        response.__class__.__name__
-    )
+    assert isinstance(
+        response, Response
+    ), f'Expected Response type, got {response.__class__.__name__}'
     return response

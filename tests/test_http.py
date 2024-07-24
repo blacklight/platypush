@@ -5,12 +5,12 @@ from .utils import register_user, send_request as _send_request
 
 @pytest.fixture(scope='module')
 def expected_registration_redirect(base_url):
-    yield '{base_url}/register?redirect={base_url}/execute'.format(base_url=base_url)
+    yield f'{base_url}/auth?type=register&redirect={base_url}/execute'
 
 
 @pytest.fixture(scope='module')
 def expected_login_redirect(base_url):
-    yield '{base_url}/login?redirect={base_url}/execute'.format(base_url=base_url)
+    yield f'{base_url}/auth?type=login&redirect={base_url}/execute'
 
 
 def send_request(**kwargs):
@@ -34,18 +34,14 @@ def test_first_user_registration(base_url):
     """
     response = register_user()
 
-    assert len(response.history) > 0, 'Redirect missing from the history'
-    assert (
-        'session_token' in response.history[0].cookies
+    assert response.json().get('status') == 'ok' and response.json().get(
+        'session_token'
     ), 'No session_token returned upon registration'
-    assert (
-        '{base_url}/'.format(base_url=base_url) == response.url
-    ), 'The registration form did not redirect to the main panel'
 
 
 def test_unauthorized_request_with_registered_user(base_url, expected_login_redirect):
     """
-    After a first user has been registered any unauthenticated call to /execute should redirect to /login.
+    After a first user has been registered any unauthenticated call to /execute should redirect to /auth.
     """
     response = send_request(authenticate=False, parse_json=False)
     assert response.status_code == 401, (
