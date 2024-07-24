@@ -79,7 +79,7 @@ class UserPlugin(Plugin):
         :param username: Username.
         :param password: Password.
         :param code: Optional 2FA code, if 2FA is enabled for the user.
-        :param return_error_details: If True then return the error details in
+        :param return_details: If True then return the error details in
             case of authentication failure.
         :return: If ``return_details`` is False (default), the action returns
             True if the provided credentials are valid, False otherwise.
@@ -96,7 +96,7 @@ class UserPlugin(Plugin):
 
         """
         response = self.user_manager.authenticate_user(
-            username, password, code=code, return_error=return_details
+            username, password, code=code, with_status=return_details
         )
 
         if return_details:

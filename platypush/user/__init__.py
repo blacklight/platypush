@@ -17,6 +17,7 @@ from platypush.context import get_plugin
 from platypush.exceptions.user import (
     InvalidJWTTokenException,
     InvalidCredentialsException,
+    OtpRecordAlreadyExistsException,
 )
 from platypush.utils import get_or_generate_stored_rsa_key_pair, utcnow
 
@@ -63,7 +64,7 @@ class UserManager:
         """
         Get or generate the OTP RSA key pair.
         """
-        return get_or_generate_stored_rsa_key_pair(cls._otp_keyfile, size=4096)
+        return get_or_generate_stored_rsa_key_pair(cls._otp_keyfile, size=2048)
 
     @staticmethod
     def _encrypt(data: Union[str, bytes, dict, list, tuple], key: rsa.PublicKey) -> str:
@@ -151,10 +152,17 @@ class UserManager:
             session.commit()
             return True
 
-    def authenticate_user(self, username, password, code=None, return_error=False):
+    def authenticate_user(
+        self, username, password, code=None, skip_2fa=False, with_status=False
+    ):
         with self._get_session() as session:
             return self._authenticate_user(
-                session, username, password, code=code, with_status=return_error
+                session,
+                username,
+                password,
+                code=code,
+                skip_2fa=skip_2fa,
+                with_status=with_status,
             )
 
     def authenticate_user_session(self, session_token, with_status=False):
@@ -268,33 +276,45 @@ class UserManager:
             )
 
     def create_otp_secret(
-        self, username: str, expires_at: Optional[datetime.datetime] = None
+        self,
+        username: str,
+        expires_at: Optional[datetime.datetime] = None,
+        otp_secret: Optional[str] = None,
+        dry_run: bool = False,
     ):
-        pubkey, _ = self._get_or_generate_otp_rsa_key_pair()
-
         # Generate a new OTP secret and encrypt it with the OTP RSA key pair
-        otp_secret = "".join(
+        otp_secret = otp_secret or "".join(
             random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567") for _ in range(32)
         )
 
-        encrypted_secret = self._encrypt(otp_secret, pubkey)
-
         with self._get_session(locked=True) as session:
             user = self._get_user(session, username)
-            assert user, f'No such user: {username}'
+            if not user:
+                raise InvalidCredentialsException()
 
             # Create a new OTP secret
             user_otp = UserOtp(
                 user_id=user.user_id,
-                otp_secret=encrypted_secret,
+                otp_secret=otp_secret,
                 created_at=utcnow(),
                 expires_at=expires_at,
             )
 
-            # Remove any existing OTP secret and replace it with the new one
-            session.query(UserOtp).filter_by(user_id=user.user_id).delete()
-            session.add(user_otp)
-            session.commit()
+            if not dry_run:
+                # Store a copy of the OTP secret encrypted with the RSA public key
+                pubkey, _ = self._get_or_generate_otp_rsa_key_pair()
+                encrypted_secret = self._encrypt(otp_secret, pubkey)
+                encrypted_otp = UserOtp(
+                    user_id=user_otp.user_id,
+                    otp_secret=encrypted_secret,
+                    created_at=user_otp.created_at,
+                    expires_at=user_otp.expires_at,
+                )
+
+                # Remove any existing OTP secret and replace it with the new one
+                session.query(UserOtp).filter_by(user_id=user.user_id).delete()
+                session.add(encrypted_otp)
+                session.commit()
 
         return user_otp
 
@@ -445,6 +465,7 @@ class UserManager:
         username: str,
         password: str,
         code: Optional[str] = None,
+        skip_2fa: bool = False,
         with_status: bool = False,
     ) -> Union[Optional['User'], Tuple[Optional['User'], 'AuthenticationStatus']]:
         """
@@ -478,7 +499,7 @@ class UserManager:
 
         # The user doesn't have 2FA enabled and the password is correct:
         # authentication successful
-        if not otp_secret:
+        if skip_2fa or not otp_secret:
             return user if not with_status else (user, AuthenticationStatus.OK)
 
         # The user has 2FA enabled but the code is missing
@@ -501,23 +522,27 @@ class UserManager:
 
         return user if not with_status else (user, AuthenticationStatus.OK)
 
-    def refresh_user_backup_codes(self, username: str):
+    def refresh_user_backup_codes(self, username: str) -> List[str]:
         """
         Refresh the backup codes for a user with 2FA enabled.
         """
+        backup_codes = [
+            "".join(
+                random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567") for _ in range(16)
+            )
+            for _ in range(10)
+        ]
+
         with self._get_session(locked=True) as session:
             user = self._get_user(session, username)
             if not user:
-                return False
+                return []
 
             session.query(UserBackupCode).filter_by(user_id=user.user_id).delete()
             pub_key, _ = self._get_or_generate_otp_rsa_key_pair()
+            stored_codes = []
 
-            for _ in range(10):
-                backup_code = "".join(
-                    random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567") for _ in range(16)
-                )
-
+            for backup_code in backup_codes:
                 user_backup_code = UserBackupCode(
                     user_id=user.user_id,
                     code=self._encrypt(backup_code, pub_key),
@@ -526,9 +551,10 @@ class UserManager:
                 )
 
                 session.add(user_backup_code)
+                stored_codes.append(backup_code)
 
             session.commit()
-            return True
+            return stored_codes
 
     def get_user_backup_codes(self, username: str) -> List['UserBackupCode']:
         with self._get_session() as session:
@@ -537,12 +563,17 @@ class UserManager:
                 return []
 
             _, priv_key = self._get_or_generate_otp_rsa_key_pair()
-            codes = session.query(UserBackupCode).filter_by(user_id=user.user_id).all()
-
-            for code in codes:
-                code.code = self._decrypt(code.code, priv_key)
-
-            return codes
+            return [
+                UserBackupCode(
+                    user_id=code.user_id,
+                    code=self._decrypt(code.code, priv_key),
+                    created_at=code.created_at,
+                    expires_at=code.expires_at,
+                )
+                for code in session.query(UserBackupCode)
+                .filter_by(user_id=user.user_id)
+                .all()
+            ]
 
     def validate_backup_code(self, username: str, code: str) -> bool:
         with self._get_session() as session:
@@ -583,7 +614,7 @@ class UserManager:
 
         return otp.verify_time_otp(otp=code, secret=otp_secret)
 
-    def disable_mfa(self, username: str):
+    def disable_otp(self, username: str):
         with self._get_session(locked=True) as session:
             user = self._get_user(session, username)
             if not user:
@@ -594,15 +625,30 @@ class UserManager:
             session.commit()
             return True
 
-    def enable_mfa(self, username: str):
+    def enable_otp(
+        self,
+        username: str,
+        dry_run: bool = False,
+        otp_secret: Optional[str] = None,
+    ):
         with self._get_session() as session:
             user = self._get_user(session, username)
             if not user:
-                return False
+                raise InvalidCredentialsException()
 
-            self.create_otp_secret(username)
-            self.refresh_user_backup_codes(username)
-            return True
+            user_otp = session.query(UserOtp).filter_by(user_id=user.user_id).first()
+            if user_otp:
+                raise OtpRecordAlreadyExistsException()
+
+            user_otp = self.create_otp_secret(
+                username, otp_secret=otp_secret, dry_run=dry_run
+            )
+
+            backup_codes = (
+                self.refresh_user_backup_codes(username) if not dry_run else []
+            )
+
+            return user_otp, backup_codes
 
 
 # vim:sw=4:ts=4:et:

@@ -3,7 +3,6 @@ from typing import Optional
 
 import pyotp
 
-from platypush import Response
 from platypush.config import Config
 from platypush.plugins import Plugin, action
 
@@ -19,7 +18,7 @@ class OtpPlugin(Plugin):
         secret: Optional[str] = None,
         secret_path: Optional[str] = None,
         provisioning_name: Optional[str] = None,
-        issuer_name: Optional[str] = None,
+        issuer: Optional[str] = None,
         **kwargs
     ):
         """
@@ -29,17 +28,17 @@ class OtpPlugin(Plugin):
             generated.
         :param provisioning_name: If you want to use the Google Authenticator, you can specify the default
             email address to associate to your OTPs for the provisioning process here.
-        :param issuer_name: If you want to use the Google Authenticator, you can specify the default
+        :param issuer: If you want to use the Google Authenticator, you can specify the default
             issuer name to display on your OTPs here.
         """
         super().__init__(**kwargs)
         if not secret_path:
-            secret_path = os.path.join(Config.get('workdir'), 'otp', 'secret')
+            secret_path = os.path.join(Config.get_workdir(), 'otp', 'secret')
 
         self.secret_path = secret_path
         self.secret = secret
         self.provisioning_name = provisioning_name
-        self.issuer_name = issuer_name
+        self.issuer = issuer
 
     def _get_secret_from_path(self, secret_path: str) -> str:
         if not os.path.isfile(secret_path):
@@ -75,7 +74,16 @@ class OtpPlugin(Plugin):
         return pyotp.HOTP(self._get_secret(secret, secret_path))
 
     @action
-    def refresh_secret(self, secret_path: Optional[str] = None) -> Response:
+    def generate_secret(self) -> str:
+        """
+        Generate a new secret token for key generation.
+
+        :return: The new secret token.
+        """
+        return pyotp.random_base32()
+
+    @action
+    def refresh_secret(self, secret_path: Optional[str] = None) -> str:
         """
         Refresh the secret token for key generation given a secret path.
 
@@ -162,7 +170,7 @@ class OtpPlugin(Plugin):
     def provision_time_otp(
         self,
         name: Optional[str] = None,
-        issuer_name: Optional[str] = None,
+        issuer: Optional[str] = None,
         secret: Optional[str] = None,
         secret_path: Optional[str] = None,
     ) -> str:
@@ -171,23 +179,23 @@ class OtpPlugin(Plugin):
 
         :param name: Name or e-mail address associated to the account used by the Google Authenticator.
             If None is specified then the value will be read from the configured ``provisioning_name``.
-        :param issuer_name: Name of the issuer of the OTP (default: default configured ``issuer_name`` or None).
+        :param issuer: Name of the issuer of the OTP (default: default configured ``issuer`` or None).
         :param secret: Secret token to be used (overrides configured ``secret``).
         :param secret_path: File containing the secret to be used (overrides configured ``secret_path``).
         :return: Generated provisioning URI.
         """
         name = name or self.provisioning_name
-        issuer_name = issuer_name or self.issuer_name
+        issuer = issuer or self.issuer
         assert name, 'No account name or default provisioning address provided'
 
         _otp = self._get_topt(secret, secret_path)
-        return _otp.provisioning_uri(name, issuer_name=issuer_name)
+        return _otp.provisioning_uri(name, issuer_name=issuer)
 
     @action
     def provision_counter_otp(
         self,
         name: Optional[str] = None,
-        issuer_name: Optional[str] = None,
+        issuer: Optional[str] = None,
         initial_count=0,
         secret: Optional[str] = None,
         secret_path: Optional[str] = None,
@@ -197,19 +205,19 @@ class OtpPlugin(Plugin):
 
         :param name: Name or e-mail address associated to the account used by the Google Authenticator.
             If None is specified then the value will be read from the configured ``provisioning_name``.
-        :param issuer_name: Name of the issuer of the OTP (default: default configured ``issuer_name`` or None).
+        :param issuer: Name of the issuer of the OTP (default: default configured ``issuer`` or None).
         :param initial_count: Initial value for the counter (default: 0).
         :param secret: Secret token to be used (overrides configured ``secret``).
         :param secret_path: File containing the secret to be used (overrides configured ``secret_path``).
         :return: Generated provisioning URI.
         """
         name = name or self.provisioning_name
-        issuer_name = issuer_name or self.issuer_name
+        issuer = issuer or self.issuer
         assert name, 'No account name or default provisioning address provided'
 
         _otp = self._get_hopt(secret, secret_path)
         return _otp.provisioning_uri(
-            name, issuer_name=issuer_name, initial_count=initial_count
+            name, issuer_name=issuer, initial_count=initial_count
         )
 
 

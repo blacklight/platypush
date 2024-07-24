@@ -1,6 +1,13 @@
 import enum
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import (
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    UniqueConstraint,
+)
 
 from platypush.common.db import Base
 
@@ -28,9 +35,8 @@ class User(Base):
     """Models the User table"""
 
     __tablename__ = 'user'
-    __table_args__ = {'sqlite_autoincrement': True}
 
-    user_id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String, unique=True, nullable=False)
     password = Column(String)
     password_salt = Column(String)
@@ -42,9 +48,8 @@ class UserSession(Base):
     """Models the UserSession table"""
 
     __tablename__ = 'user_session'
-    __table_args__ = {'sqlite_autoincrement': True}
 
-    session_id = Column(Integer, primary_key=True)
+    session_id = Column(Integer, primary_key=True, autoincrement=True)
     session_token = Column(String, unique=True, nullable=False)
     csrf_token = Column(String, unique=True)
     user_id = Column(Integer, ForeignKey('user.user_id'), nullable=False)
@@ -73,10 +78,13 @@ class UserBackupCode(Base):
 
     __tablename__ = 'user_backup_code'
 
-    user_id = Column(Integer, ForeignKey('user.user_id'), primary_key=True)
-    code = Column(String, nullable=False, unique=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('user.user_id'))
+    code = Column(String, nullable=False)
     created_at = Column(DateTime)
     expires_at = Column(DateTime)
+
+    UniqueConstraint(user_id, code)
 
 
 # vim:sw=4:ts=4:et:
