@@ -14,6 +14,7 @@ import socket
 import ssl
 import time
 import urllib.request
+from collections import defaultdict
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader, module_from_spec
 from multiprocessing import Lock as PLock
@@ -29,6 +30,7 @@ logger = logging.getLogger('utils')
 Lock = Union[PLock, TLock]  # type: ignore
 
 redis_pools: dict[Tuple[str, int], ConnectionPool] = {}
+key_locks: dict[str, Lock] = defaultdict(PLock)
 
 
 def get_module_and_method_from_action(action):
@@ -564,20 +566,21 @@ def get_or_generate_stored_rsa_key_pair(
     priv_key_file = os.path.join(keydir, os.path.basename(keyfile))
     pub_key_file = priv_key_file + '.pub'
 
-    if os.path.isfile(priv_key_file) and os.path.isfile(pub_key_file):
-        with open(pub_key_file, 'r') as f1, open(priv_key_file, 'r') as f2:
-            return (
-                PublicKey.load_pkcs1(f1.read().encode()),
-                PrivateKey.load_pkcs1(f2.read().encode()),
-            )
+    with key_locks[keyfile]:
+        if os.path.isfile(priv_key_file) and os.path.isfile(pub_key_file):
+            with open(pub_key_file, 'r') as f1, open(priv_key_file, 'r') as f2:
+                return (
+                    PublicKey.load_pkcs1(f1.read().encode()),
+                    PrivateKey.load_pkcs1(f2.read().encode()),
+                )
 
-    pub_key, priv_key = generate_rsa_key_pair(priv_key_file, size=size)
-    pathlib.Path(keydir).mkdir(parents=True, exist_ok=True, mode=0o755)
+        pub_key, priv_key = generate_rsa_key_pair(priv_key_file, size=size)
+        pathlib.Path(keydir).mkdir(parents=True, exist_ok=True, mode=0o755)
 
-    with open(pub_key_file, 'w') as f1, open(priv_key_file, 'w') as f2:
-        f1.write(pub_key.save_pkcs1('PEM').decode())
-        f2.write(priv_key.save_pkcs1('PEM').decode())
-        os.chmod(priv_key_file, 0o600)
+        with open(pub_key_file, 'w') as f1, open(priv_key_file, 'w') as f2:
+            f1.write(pub_key.save_pkcs1('PEM').decode())
+            f2.write(priv_key.save_pkcs1('PEM').decode())
+            os.chmod(priv_key_file, 0o600)
 
     return pub_key, priv_key
 
