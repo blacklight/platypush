@@ -12,19 +12,39 @@
 
       <div class="row">
         <label>
-          <input type="text" name="username" :disabled="authenticating" placeholder="Username" ref="username">
+          <input :type="requires2fa ? 'hidden' : 'text'"
+                 name="username"
+                 :disabled="authenticating"
+                 placeholder="Username"
+                 ref="username">
         </label>
       </div>
 
       <div class="row">
         <label>
-          <input type="password" name="password" :disabled="authenticating" placeholder="Password">
+          <input :type="requires2fa ? 'hidden' : 'password'"
+                 name="password"
+                 :disabled="authenticating"
+                 placeholder="Password">
+        </label>
+      </div>
+
+      <div class="row" v-if="requires2fa">
+        <label>
+          <input type="text"
+                 name="code"
+                 :disabled="authenticating"
+                 placeholder="2FA code"
+                 ref="code">
         </label>
       </div>
 
       <div class="row" v-if="register">
         <label>
-          <input type="password" name="confirm_password" :disabled="authenticating" placeholder="Confirm password">
+          <input type="password"
+                 name="confirm_password"
+                 :disabled="authenticating"
+                 placeholder="Confirm password">
         </label>
       </div>
 
@@ -85,6 +105,7 @@ export default {
       authenticating: false,
       isAuthenticated: false,
       initialized: false,
+      requires2fa: false,
     }
   },
 
@@ -116,16 +137,22 @@ export default {
           this.authError = "Invalid credentials"
         }
       } catch (e) {
-        this.authError = e.response.data.message || e.response.data.error
-
-        if (e.response?.status === 401) {
-          this.authError = this.authError || "Invalid credentials"
+        if (e.response?.data?.error === 'MISSING_OTP_CODE') {
+          this.requires2fa = true
+          this.$nextTick(() => {
+            this.$refs.code?.focus()
+          })
         } else {
-          this.authError = this.authError || "An error occurred while processing the request"
-          if (e.response)
-            console.error(e.response.status, e.response.data)
-          else
-            console.error(e)
+          this.authError = e.response.data.message || e.response.data.error
+          if (e.response?.status === 401) {
+            this.authError = this.authError || "Invalid credentials"
+          } else {
+            this.authError = this.authError || "An error occurred while processing the request"
+            if (e.response)
+              console.error(e.response.status, e.response.data)
+            else
+              console.error(e)
+          }
         }
       }
     },

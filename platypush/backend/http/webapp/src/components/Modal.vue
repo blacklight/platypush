@@ -89,6 +89,10 @@ export default {
       this.isVisible = true
     },
 
+    open() {
+      this.show()
+    },
+
     toggle() {
       if (this.isVisible)
         this.close()

@@ -36,7 +36,13 @@
         <input type="submit" class="btn btn-primary" value="Change Password" :disabled="commandRunning">
       </label>
     </form>
-  </modal>
+  </Modal>
+
+  <Modal title="Two-factor Authentication"
+         :visible="showOtpModal"
+         @close="showOtpModal = false">
+    <Otp v-if="showOtpModal" />
+  </Modal>
 
   <div class="body">
     <ul class="users-list">
@@ -46,6 +52,8 @@
           <Dropdown title="User Actions" icon-class="fa fa-ellipsis">
             <DropdownItem text="Change Password" :disabled="commandRunning" icon-class="fa fa-key"
                           @input="showChangePasswordModal(user)" />
+            <DropdownItem text="Set Up 2FA" :disabled="commandRunning || !supports2fa" icon-class="fa fa-lock"
+                          :title="mfaTitle" @input="showOtpModal = true" />
             <DropdownItem text="Delete User" :disabled="commandRunning"
                           icon-class="fa fa-trash" item-class="text-danger"
                           @input="selectedUser = user.username; $refs.deleteUserDialog.show()" />
@@ -67,13 +75,22 @@ import ConfirmDialog from "@/components/elements/ConfirmDialog";
 import Dropdown from "@/components/elements/Dropdown";
 import Modal from "@/components/Modal";
 import Loading from "@/components/Loading";
+import Otp from "./Otp";
 import Utils from "@/Utils";
 import DropdownItem from "@/components/elements/DropdownItem";
 import FloatingButton from "@/components/elements/FloatingButton";
 
 export default {
   name: "Users",
-  components: {ConfirmDialog, Dropdown, DropdownItem, FloatingButton, Loading, Modal},
+  components: {
+    ConfirmDialog,
+    Dropdown, 
+    DropdownItem,
+    FloatingButton,
+    Loading,
+    Modal,
+    Otp,
+  },
   mixins: [Utils],
 
   props: {
@@ -94,10 +111,65 @@ export default {
       commandRunning: false,
       loading: false,
       selectedUser: null,
+      hasOtpPlugin: false,
+      hasQrcodePlugin: false,
+      showOtpModal: false,
     }
   },
 
+  computed: {
+    supports2fa() {
+      return this.hasOtpPlugin && this.hasQrcodePlugin
+    },
+
+    mfaTitle() {
+      if (this.supports2fa)
+        return ''
+
+      const missing = []
+      if (!this.hasOtpPlugin)
+        missing.push('otp')
+      if (!this.hasQrcodePlugin)
+        missing.push('qrcode')
+
+      return 'The following plugin(s) are missing: ' + missing.join(', ')
+    },
+  },
+
   methods: {
+    async testOtp() {
+      this.commandRunning = true
+      this.hasOtpPlugin = false
+      this.hasQrcodePlugin = false
+
+      try {
+        this.hasOtpPlugin = true
+
+        // Test the OTP plugin
+        const otp = await this.request('otp.generate_secret', {}, 10000, false)
+
+        if (typeof otp === 'string' && otp.length) {
+          // Test the QR code plugin
+          const output = await this.request('qrcode.generate', {
+            content: 'test',
+          }, 10000, false)
+
+          if (output?.data?.length)
+            this.hasQrcodePlugin = true
+        }
+      } catch (e) {
+        if (!this.hasOtpPlugin) {
+          console.info('otp plugin not found. Enable/configure it to use 2FA')
+        }
+
+        if (!this.hasQrcodePlugin) {
+          console.info('qrcode plugin not found. Enable/configure it to use 2FA')
+        }
+      } finally {
+        this.commandRunning = false
+      }
+    },
+
     async refresh() {
       this.loading = true
       try {
@@ -243,8 +315,20 @@ export default {
     },
   },
 
-  mounted() {
-    this.refresh()
+  async mounted() {
+    await this.refresh()
+    await this.testOtp()
+
+    if (!this.supports2fa) {
+      this.notify({
+        title: 'Two-factor Authentication not available',
+        text: this.mfaTitle,
+        error: true,
+        image: {
+          iconClass: 'fas fa-exclamation-triangle',
+        },
+      })
+    }
   },
 }
 </script>
@@ -341,6 +425,13 @@ export default {
 :deep(.modal) {
   .btn {
     border-radius: 1em;
+  }
+}
+
+:deep(.otp-config-container) {
+  @include from($tablet) {
+    max-width: 50em;
+    margin: 0 auto;
   }
 }
 </style>
