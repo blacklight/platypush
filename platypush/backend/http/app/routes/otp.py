@@ -90,11 +90,9 @@ def _get_otp():
     username = _get_username()
     user_manager = UserManager()
     otp_secret = user_manager.get_otp_secret(username)
-    backup_codes = user_manager.get_user_backup_codes(username) if otp_secret else []
     return _dump_response(
         username=username,
         otp_secret=otp_secret,
-        backup_codes=[str(c.code) for c in backup_codes],
     )
 
 
@@ -202,6 +200,21 @@ def otp_route():
     except Exception as e:
         HttpUtils.log.error(f'Error while processing OTP request: {e}', exc_info=True)
         return jsonify({'error': str(e)}), 500
+
+
+@otp.route('/otp/refresh-codes', methods=['POST'])
+def refresh_codes():
+    """
+    :return: A new set of backup codes for the user.
+    """
+    username = _get_username()
+    user_manager = UserManager()
+    otp_secret = user_manager.get_otp_secret(username)
+    if not otp_secret:
+        return jsonify({'error': 'OTP not configured for the user'}), 400
+
+    backup_codes = user_manager.refresh_user_backup_codes(username)
+    return jsonify({'backup_codes': backup_codes})
 
 
 # vim:sw=4:ts=4:et:
