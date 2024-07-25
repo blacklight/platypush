@@ -419,7 +419,7 @@ class UserManager:
         :return: The generated JWT token as a string.
         :raises: :class:`platypush.exceptions.user.InvalidCredentialsException` in case of invalid credentials.
         """
-        user = self.authenticate_user(username, password)
+        user = self.authenticate_user(username, password, skip_2fa=True)
         if not user:
             raise InvalidCredentialsException()
 
@@ -457,7 +457,7 @@ class UserManager:
             raise InvalidJWTTokenException('Expired JWT token')
 
         user = self.authenticate_user(
-            payload.get('username', ''), payload.get('password', '')
+            payload.get('username', ''), payload.get('password', ''), skip_2fa=True
         )
 
         if not user:
