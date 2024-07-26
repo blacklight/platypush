@@ -58,15 +58,24 @@ def authenticate_token(req) -> Optional[User]:
         return None
 
     try:
-        return user_manager.validate_jwt_token(user_token)
+        # Stantard API token authentication
+        return user_manager.validate_api_token(user_token)
     except Exception as e:
-        # Legacy global token authentication.
-        # The global token should be specified in the configuration file,
-        # as a root parameter named `token`.
-        if bool(global_token and user_token == global_token):
-            return User(username='__token__', user_id=1)
+        try:
+            # Legacy JWT token authentication
+            return user_manager.validate_jwt_token(user_token)
+        except Exception as ee:
+            logger().debug(
+                'Invalid token. API token error: %s, JWT token error: %s', e, ee
+            )
 
-        logger().info('Invalid token: %s', e)
+            # Legacy global token authentication.
+            # The global token should be specified in the configuration file,
+            # as a root parameter named `token`.
+            if bool(global_token and user_token == global_token):
+                return User(username='__token__', user_id=1)
+
+            logger().info(e)
 
 
 def authenticate_user_pass(req):
@@ -158,7 +167,7 @@ def authenticate(
 
 
 # pylint: disable=too-many-return-statements
-def _get_current_user_or_auth_status(
+def get_current_user_or_auth_status(
     req, skip_auth_methods=None
 ) -> Union[User, UserAuthStatus]:
     """
@@ -212,7 +221,7 @@ def get_auth_status(req, skip_auth_methods=None) -> UserAuthStatus:
     Check against the available authentication methods (except those listed in
     ``skip_auth_methods``) if the user is properly authenticated.
     """
-    ret = _get_current_user_or_auth_status(req, skip_auth_methods=skip_auth_methods)
+    ret = get_current_user_or_auth_status(req, skip_auth_methods=skip_auth_methods)
     return UserAuthStatus.OK if isinstance(ret, User) else ret
 
 
@@ -220,5 +229,5 @@ def current_user() -> Optional[User]:
     """
     Returns the current user if authenticated.
     """
-    ret = _get_current_user_or_auth_status(request)
+    ret = get_current_user_or_auth_status(request)
     return ret if isinstance(ret, User) else None

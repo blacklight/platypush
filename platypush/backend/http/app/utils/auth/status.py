@@ -35,6 +35,12 @@ class UserAuthStatus(Enum):
     MISSING_PASSWORD = StatusValue(
         400, AuthenticationStatus.MISSING_PASSWORD, 'Missing password'
     )
+    INVALID_SESSION = StatusValue(
+        401, AuthenticationStatus.INVALID_CREDENTIALS, 'Invalid session'
+    )
+    INVALID_TOKEN = StatusValue(
+        400, AuthenticationStatus.INVALID_JWT_TOKEN, 'Invalid token'
+    )
     MISSING_USERNAME = StatusValue(
         400, AuthenticationStatus.MISSING_USERNAME, 'Missing username'
     )

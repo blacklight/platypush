@@ -8,20 +8,29 @@ import time
 from typing import List, Optional, Tuple, Union
 
 import rsa
-
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import make_transient
 
 from platypush.common.db import Base
 from platypush.config import Config
 from platypush.context import get_plugin
 from platypush.exceptions.user import (
-    InvalidJWTTokenException,
     InvalidCredentialsException,
+    InvalidJWTTokenException,
+    InvalidTokenException,
+    NoUserException,
     OtpRecordAlreadyExistsException,
 )
 from platypush.utils import get_or_generate_stored_rsa_key_pair, utcnow
 
-from ._model import User, UserSession, UserOtp, UserBackupCode, AuthenticationStatus
+from ._model import (
+    AuthenticationStatus,
+    User,
+    UserBackupCode,
+    UserOtp,
+    UserSession,
+    UserToken,
+)
 
 
 class UserManager:
@@ -645,6 +654,143 @@ class UserManager:
             )
 
             return user_otp, backup_codes
+
+    def generate_api_token(
+        self,
+        username: str,
+        name: Optional[str] = None,
+        expires_at: Optional[datetime.datetime] = None,
+    ) -> str:
+        """
+        Create a random API token for a user.
+
+        These are randomly generated tokens stored encrypted in the server's
+        database. They are recommended for API usage over JWT tokens because:
+
+            1. JWT tokens rely on the user's password and are invalidated if
+               the user changes the password.
+            2. JWT tokens are stateless and can't be revoked once generated -
+               unless the user changes the password.
+            3. They can end up exposing either the user's password, the
+               server's keys, or both, if not handled properly.
+
+        :param username: User name.
+        :param name: Name of the token (default: ``<username>__<random-string>``).
+        :param expires_at: Expiration datetime of the token.
+        :return: The generated token as a string.
+        :raises: :class:`platypush.exceptions.user.NoUserException` if the user
+            does not exist.
+        """
+        user = self.get_user(username)
+        if not user:
+            raise NoUserException()
+
+        token = (
+            username
+            + ':'
+            + ''.join(
+                random.choice(
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._"
+                )
+                for _ in range(32)
+            )
+        )
+
+        name = name or f'{username}__' + ''.join(
+            random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567") for _ in range(8)
+        )
+
+        with self._get_session() as session:
+            user_token = UserToken(
+                user_id=user.user_id,
+                name=name,
+                token=self._encrypt_password(
+                    token, user.password_salt, user.hmac_iterations
+                ),
+                created_at=utcnow(),
+                expires_at=expires_at,
+            )
+
+            session.add(user_token)
+            session.commit()
+
+        return token
+
+    @staticmethod
+    def _user_by_token(session, token: str) -> Optional[User]:
+        username = token.split(':')[0]
+        return session.query(User).filter_by(username=username).first()
+
+    def validate_api_token(self, token: str) -> User:
+        """
+        Validate an API token.
+
+        :param token: Token to validate.
+        :return: On success, it returns the user associated to the token.
+        :raises: :class:`platypush.exceptions.user.InvalidTokenException` in
+            case of invalid token.
+        """
+        with self._get_session() as session:
+            user = self._user_by_token(session, token)
+            if not user:
+                raise InvalidTokenException()
+
+            encrypted_token = self._encrypt_password(
+                token, user.password_salt, user.hmac_iterations  # type: ignore
+            )
+
+            user_token = (
+                session.query(UserToken)
+                .filter(
+                    and_(
+                        UserToken.token == encrypted_token,
+                        UserToken.user_id == user.user_id,
+                        or_(
+                            UserToken.expires_at.is_(None),
+                            UserToken.expires_at >= utcnow(),
+                        ),
+                    )
+                )
+                .first()
+            )
+
+            if not user_token:
+                raise InvalidTokenException()
+
+            return user
+
+    def delete_api_token(self, token: str) -> bool:
+        """
+        Delete an API token.
+
+        :param token: Token to delete.
+        :return: True if the token was successfully deleted, False otherwise.
+        """
+        with self._get_session() as session:
+            user = self._user_by_token(session, token)
+            if not user:
+                return False
+
+            encrypted_token = self._encrypt_password(
+                token, user.password_salt, user.hmac_iterations  # type: ignore
+            )
+
+            user_token = (
+                session.query(UserToken)
+                .filter_by(
+                    token=encrypted_token,
+                    user_id=user.user_id,
+                )
+                .first()
+            )
+
+            if not user_token:
+                return False
+
+            session.delete(user_token)
+            session.commit()
+
+        return True
 
 
 # vim:sw=4:ts=4:et:

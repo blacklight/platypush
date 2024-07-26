@@ -4,9 +4,12 @@ import logging
 
 from flask import Blueprint, request, abort, jsonify
 
-from platypush.backend.http.app.utils.auth import UserAuthStatus
+from platypush.backend.http.app.utils.auth import (
+    UserAuthStatus,
+    get_current_user_or_auth_status,
+)
 from platypush.exceptions.user import UserException
-from platypush.user import UserManager
+from platypush.user import User, UserManager
 from platypush.utils import utcnow
 
 auth = Blueprint('auth', __name__)
@@ -92,6 +95,71 @@ def _session_auth():
     return UserAuthStatus.INVALID_CREDENTIALS.to_response()
 
 
+def _create_token():
+    payload = {}
+    try:
+        payload = json.loads(request.get_data(as_text=True))
+    except json.JSONDecodeError:
+        pass
+
+    user = None
+    username = payload.get('username')
+    password = payload.get('password')
+    code = payload.get('code')
+    name = payload.get('name')
+    expiry_days = payload.get('expiry_days')
+    user_manager = UserManager()
+    response = get_current_user_or_auth_status(request)
+
+    # Try and authenticate with the credentials passed in the JSON payload
+    if username and password:
+        user = user_manager.authenticate_user(username, password, code=code)
+        if not isinstance(user, User):
+            return UserAuthStatus.INVALID_CREDENTIALS.to_response()
+
+    if not user:
+        if not (response and isinstance(response, User)):
+            return response.to_response()
+
+        user = response
+
+    expires_at = None
+    if expiry_days:
+        expires_at = datetime.datetime.now() + datetime.timedelta(days=expiry_days)
+
+    try:
+        token = UserManager().generate_api_token(
+            username=str(user.username), name=name, expires_at=expires_at
+        )
+        return jsonify({'token': token})
+    except UserException:
+        return UserAuthStatus.INVALID_CREDENTIALS.to_response()
+
+
+def _delete_token():
+    try:
+        payload = json.loads(request.get_data(as_text=True))
+        token = payload.get('token')
+        assert token
+    except (AssertionError, json.JSONDecodeError):
+        return UserAuthStatus.INVALID_TOKEN.to_response()
+
+    user_manager = UserManager()
+
+    try:
+        token = payload.get('token')
+        if not token:
+            return UserAuthStatus.INVALID_TOKEN.to_response()
+
+        ret = user_manager.delete_api_token(token)
+        if not ret:
+            return UserAuthStatus.INVALID_TOKEN.to_response()
+
+        return jsonify({'status': 'ok'})
+    except UserException:
+        return UserAuthStatus.INVALID_CREDENTIALS.to_response()
+
+
 def _register_route():
     """Registration endpoint"""
     user_manager = UserManager()
@@ -152,6 +220,14 @@ def _auth_get():
     if user and session:
         return _dump_session(session, redirect_page)
 
+    response = get_current_user_or_auth_status(request)
+    if isinstance(response, User):
+        user = response
+        return jsonify({'status': 'ok', 'user_id': user.id, 'username': user.username})
+
+    if response:
+        status = response
+
     if status:
         return UserAuthStatus.by_status(status).to_response()  # type: ignore
 
@@ -162,7 +238,10 @@ def _auth_post():
     """
     Authenticate the user session.
     """
-    auth_type = request.args.get('type') or 'jwt'
+    auth_type = request.args.get('type') or 'token'
+
+    if auth_type == 'token':
+        return _create_token()
 
     if auth_type == 'jwt':
         return _jwt_auth()
@@ -176,7 +255,35 @@ def _auth_post():
     return UserAuthStatus.INVALID_AUTH_TYPE.to_response()
 
 
-@auth.route('/auth', methods=['GET', 'POST'])
+def _auth_delete():
+    """
+    Logout/invalidate a token or the current user session.
+    """
+    # Delete the specified API token if it's passed on the JSON payload
+    token = None
+    try:
+        payload = json.loads(request.get_data(as_text=True))
+        token = payload.get('token')
+    except json.JSONDecodeError:
+        pass
+
+    if token:
+        return _delete_token()
+
+    user_manager = UserManager()
+    session_token = request.cookies.get('session_token')
+    redirect_page = request.args.get('redirect') or '/'
+
+    if session_token:
+        user, session = user_manager.authenticate_user_session(session_token)[:2]
+        if user and session:
+            user_manager.delete_user_session(session_token)
+            return jsonify({'status': 'ok', 'redirect': redirect_page})
+
+    return UserAuthStatus.INVALID_SESSION.to_response()
+
+
+@auth.route('/auth', methods=['GET', 'POST', 'DELETE'])
 def auth_endpoint():
     """
     Authentication endpoint. It validates the user credentials provided over a
@@ -212,6 +319,9 @@ def auth_endpoint():
 
     if request.method == 'POST':
         return _auth_post()
+
+    if request.method == 'DELETE':
+        return _auth_delete()
 
     return UserAuthStatus.INVALID_METHOD.to_response()
 

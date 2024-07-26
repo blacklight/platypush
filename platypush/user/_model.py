@@ -4,6 +4,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     UniqueConstraint,
@@ -23,6 +24,7 @@ class AuthenticationStatus(enum.Enum):
     INVALID_METHOD = 'invalid_method'
     INVALID_JWT_TOKEN = 'invalid_jwt_token'
     INVALID_OTP_CODE = 'invalid_otp_code'
+    INVALID_SESSION = 'invalid_session'
     MISSING_OTP_CODE = 'missing_otp_code'
     MISSING_PASSWORD = 'missing_password'
     MISSING_USERNAME = 'missing_username'
@@ -85,6 +87,23 @@ class UserBackupCode(Base):
     expires_at = Column(DateTime)
 
     UniqueConstraint(user_id, code)
+
+
+class UserToken(Base):
+    """Models the UserToken table"""
+
+    __tablename__ = 'user_token'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('user.user_id'), nullable=False)
+    token = Column(String, unique=True, nullable=False)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime)
+    expires_at = Column(DateTime)
+
+    Index('user_token_user_id_token_idx', user_id, token, unique=True)
+    Index('user_token_user_id_name_idx', user_id, name, unique=True)
+    Index('user_token_user_id_expires_at_idx', user_id, token, expires_at)
 
 
 # vim:sw=4:ts=4:et:

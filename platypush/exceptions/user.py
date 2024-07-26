@@ -13,6 +13,12 @@ class UserException(PlatypushException):
         self.user = user
 
 
+class NoUserException(UserException):
+    """
+    Exception raised when no user is found.
+    """
+
+
 class AuthenticationException(UserException):
     """
     Authentication error exception.
@@ -37,6 +43,15 @@ class InvalidCredentialsException(AuthenticationException):
     """
 
     def __init__(self, error='Invalid credentials', *args, **kwargs):
+        super().__init__(error, *args, **kwargs)
+
+
+class InvalidTokenException(InvalidTokenException):
+    """
+    Exception raised in case of wrong/invalid API token.
+    """
+
+    def __init__(self, error='Invalid API token', *args, **kwargs):
         super().__init__(error, *args, **kwargs)
 
 
