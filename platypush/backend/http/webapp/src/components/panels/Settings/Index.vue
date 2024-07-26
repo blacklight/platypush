@@ -20,6 +20,7 @@ export default {
   name: "Settings",
   components: {Application, Users, Token},
   mixins: [Utils],
+  emits: ['change-page'],
 
   props: {
     selectedPanel: {
@@ -41,8 +42,24 @@ export default {
     }
   },
 
-  mounted() {
-    this.refresh()
+  watch: {
+    selectedPanel(value) {
+      this.setUrlArgs({page: value})
+    },
+  },
+
+  async mounted() {
+    const args = this.getUrlArgs()
+    let page = null
+    if (args.page?.length) {
+      page = args.page
+    } else {
+      page = this.selectedPanel?.length ? this.selectedPanel : 'users'
+    }
+
+    this.$emit('change-page', page)
+    await this.refresh()
+    this.setUrlArgs({page: this.selectedPanel})
   }
 }
 </script>

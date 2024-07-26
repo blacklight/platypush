@@ -19,7 +19,7 @@
       <li v-for="config, name in configSections" :key="name" class="entry"
           :class="{selected: name === selectedConfigPanel}"
           :title="config.name" @click="$emit('select-config', name)">
-        <a href="/#settings">
+        <a :href="`/#settings?page=${name}`">
         <span class="icon">
           <i :class="config.icon['class']" v-if="config.icon?.['class']" />
           <img :src="config.icon?.imgUrl" v-else-if="config.icon?.imgUrl" alt="name"/>
