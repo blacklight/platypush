@@ -4,21 +4,21 @@
       <Application v-if="selectedPanel === 'application'" />
       <Users :session-token="sessionToken" :current-user="currentUser"
              v-if="selectedPanel === 'users' && currentUser" />
-      <Token :session-token="sessionToken" :current-user="currentUser"
-             v-else-if="selectedPanel === 'tokens' && currentUser" />
+      <Tokens :current-user="currentUser"
+              v-else-if="selectedPanel === 'tokens' && currentUser" />
     </main>
   </div>
 </template>
 
 <script>
 import Application from "@/components/panels/Settings/Application";
-import Token from "@/components/panels/Settings/Token";
+import Tokens from "@/components/panels/Settings/Tokens/Index";
 import Users from "@/components/panels/Settings/Users";
 import Utils from "@/Utils";
 
 export default {
   name: "Settings",
-  components: {Application, Users, Token},
+  components: {Application, Users, Tokens},
   mixins: [Utils],
   emits: ['change-page'],
 
@@ -39,32 +39,39 @@ export default {
     async refresh() {
       this.sessionToken = this.getCookies()['session_token']
       this.currentUser = await this.request('user.get_user_by_session', {session_token: this.sessionToken})
-    }
+    },
+
+    updatePage() {
+      const args = this.getUrlArgs()
+      let page = null
+      if (args.page?.length) {
+        page = args.page
+      } else {
+        page = this.selectedPanel?.length ? this.selectedPanel : 'users'
+      }
+
+      this.$emit('change-page', page)
+    },
   },
 
   watch: {
     selectedPanel(value) {
       this.setUrlArgs({page: value})
     },
+
+    $route() {
+      this.updatePage()
+    },
   },
 
   async mounted() {
-    const args = this.getUrlArgs()
-    let page = null
-    if (args.page?.length) {
-      page = args.page
-    } else {
-      page = this.selectedPanel?.length ? this.selectedPanel : 'users'
-    }
-
-    this.$emit('change-page', page)
+    this.updatePage()
     await this.refresh()
-    this.setUrlArgs({page: this.selectedPanel})
   }
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 $header-height: 3em;
 
 .settings-container {
@@ -90,19 +97,21 @@ $header-height: 3em;
     }
   }
 
-  main {
-    height: calc(100% - #{$header-height});
-    overflow: auto;
+  @include until($tablet) {
+    main {
+      height: calc(100% - #{$header-height});
+      overflow: auto;
+    }
+  }
+
+  @include from($tablet) {
+    main {
+      height: 100%;
+    }
   }
 
   button {
     background: none;
-    border: none;
-
-    &:hover {
-      border: none;
-      color: $default-hover-fg;
-    }
   }
 
   form {

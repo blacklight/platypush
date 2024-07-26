@@ -1,0 +1,124 @@
+.token-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  margin-top: .15em;
+
+  label {
+    width: 100%;
+  }
+
+  .body {
+    background: $background-color;
+    display: flex;
+    flex-direction: column;
+    padding: 2em;
+    text-align: left;
+  }
+
+  ul {
+    margin: 1em .5em;
+
+    li {
+      list-style: initial;
+    }
+  }
+
+  .form-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    label {
+      height: fit-content;
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 1em;
+    }
+  }
+
+  form {
+    max-width: 30em;
+
+    .note {
+      display: block;
+      font-size: .75em;
+      margin: -.75em 0 2em 0;
+    }
+
+    span {
+      input {
+        width: 100%;
+      }
+    }
+  }
+
+  .generate-btn-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  input[type=password] {
+    border-radius: 1em;
+  }
+
+  .modal {
+    .content {
+      width: 90%;
+    }
+
+    .body {
+      margin-top: 0;
+    }
+  }
+
+  .token-container {
+    label {
+      display: flex;
+      flex-direction: column;
+
+      span {
+        display: block;
+        width: 100%;
+      }
+    }
+
+    textarea {
+      width: 100%;
+      height: 10em;
+      margin-top: 1em;
+      border-radius: 1em;
+      border: none;
+      background: $active-glow-bg-1;
+      padding: 1em;
+    }
+  }
+
+  .btn {
+    border-radius: 1em;
+  }
+}
+
+@media screen and (max-width: calc(#{$desktop} - 1px)) {
+  .form-container {
+    justify-content: center;
+    box-shadow: $border-shadow-top;
+  }
+}
+
+@media screen and (min-width: $desktop) {
+  .token-container {
+    justify-content: center;
+    align-items: center;
+
+    .body {
+      max-width: 650pt;
+      justify-content: left;
+      margin-top: 1.5em;
+      border-radius: 1em;
+      border: $default-border-2;
+    }
+  }
+}

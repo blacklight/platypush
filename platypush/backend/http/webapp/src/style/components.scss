@@ -10,6 +10,11 @@ button, .btn, .btn-default {
     border: $selected-border;
   }
 
+  &:hover {
+    background: $hover-bg;
+    border: 1px solid $default-hover-fg;
+  }
+
   .icon {
     margin-right: .5em;
   }
