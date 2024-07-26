@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[3518],{3518:function(e,n,a){a.r(n),a.d(n,{default:function(){return i}});var u=a(6252);function t(e,n,a,t,r,p){const s=(0,u.up)("Media");return(0,u.wg)(),(0,u.j4)(s,{"plugin-name":"media.mplayer"})}var r=a(7493),p={name:"MediaMplayer",components:{Media:r["default"]}},s=a(3744);const c=(0,s.Z)(p,[["render",t]]);var i=c}}]);
+//# sourceMappingURL=3518.80661ba2.js.map

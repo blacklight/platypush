@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[813],{813:function(e,a,r){r.r(a),r.d(a,{default:function(){return m}});var n=r(6252);function t(e,a,r,t,u,s){const c=(0,n.up)("Camera");return(0,n.wg)(),(0,n.j4)(c,{"camera-plugin":"gstreamer"})}var u=r(7528),s={name:"CameraGstreamer",components:{Camera:u["default"]}},c=r(3744);const p=(0,c.Z)(s,[["render",t]]);var m=p}}]);
+//# sourceMappingURL=813.929554b4.js.map
