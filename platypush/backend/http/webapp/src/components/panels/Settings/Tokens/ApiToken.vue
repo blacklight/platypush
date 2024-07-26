@@ -58,12 +58,24 @@
       </div>
     </Modal>
 
+    <Modal title="API Tokens" ref="tokensModal" @close="showTokens = false">
+      <TokensList v-if="showTokens" />
+    </Modal>
+
     <div class="body">
-      <label class="generate-btn-container">
-        <button class="btn btn-primary" @click="$refs.tokenParamsModal.show()">
-          Generate API Token
-        </button>
-      </label>
+      <div class="buttons">
+        <label>
+          <button class="btn btn-primary" @click="$refs.tokenParamsModal.show()">
+            Generate API Token
+          </button>
+        </label>
+
+        <label>
+          <button class="btn btn-default" @click="showTokens = true">
+            Manage Tokens
+          </button>
+        </label>
+      </div>
 
       <p>
         <b>API tokens</b> are randomly generated tokens that are stored
@@ -99,6 +111,7 @@ import Description from "./Description";
 import Loading from "@/components/Loading";
 import Utils from "@/Utils";
 import Modal from "@/components/Modal";
+import TokensList from "./TokensList";
 
 export default {
   name: "Token",
@@ -107,6 +120,7 @@ export default {
     Description,
     Loading,
     Modal,
+    TokensList,
   },
 
   props: {
@@ -119,6 +133,7 @@ export default {
   data() {
     return {
       loading: false,
+      showTokens: false,
       token: null,
     }
   },
@@ -153,10 +168,34 @@ export default {
         this.loading = false
       }
     },
-  }
+  },
+
+  watch: {
+    showTokens(value) {
+      if (value) {
+        this.$refs.tokensModal.show()
+      } else {
+        this.$refs.tokensModal.close()
+      }
+    },
+  },
 }
 </script>
 
 <style lang="scss">
 @import "style.scss";
+
+.buttons {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  label {
+    width: 50%;
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+  }
+}
 </style>

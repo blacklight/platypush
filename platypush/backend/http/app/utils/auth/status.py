@@ -53,6 +53,9 @@ class UserAuthStatus(Enum):
     REGISTRATION_REQUIRED = StatusValue(
         412, AuthenticationStatus.REGISTRATION_REQUIRED, 'Please create a user first'
     )
+    UNKNOWN_ERROR = StatusValue(
+        500, AuthenticationStatus.UNKNOWN_ERROR, 'Unknown error'
+    )
 
     def to_dict(self):
         return {

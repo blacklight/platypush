@@ -759,38 +759,82 @@ class UserManager:
 
             return user
 
-    def delete_api_token(self, token: str) -> bool:
+    def delete_api_token(
+        self,
+        username: str,
+        token: Optional[str] = None,
+        token_id: Optional[int] = None,
+    ):
         """
         Delete an API token.
 
+        Either <token> or <token_id> must be provided.
+
         :param token: Token to delete.
+        :param username: User name.
+        :param token_id: Token ID.
         :return: True if the token was successfully deleted, False otherwise.
         """
+        assert token or token_id, 'Either token or token_id must be provided'
+
         with self._get_session() as session:
-            user = self._user_by_token(session, token)
-            if not user:
-                return False
+            if token:
+                user = self._user_by_token(session, token)
+            else:
+                user = self._get_user(session, username)
 
-            encrypted_token = self._encrypt_password(
-                token, user.password_salt, user.hmac_iterations  # type: ignore
-            )
+            assert user, 'No such user'
 
-            user_token = (
-                session.query(UserToken)
-                .filter_by(
-                    token=encrypted_token,
-                    user_id=user.user_id,
+            if token_id:
+                user_token = (
+                    session.query(UserToken)
+                    .filter_by(user_id=user.user_id, id=token_id)
+                    .first()
                 )
-                .first()
-            )
+            else:
+                encrypted_token = self._encrypt_password(
+                    token, user.password_salt, user.hmac_iterations  # type: ignore
+                )
 
-            if not user_token:
-                return False
+                user_token = (
+                    session.query(UserToken)
+                    .filter_by(
+                        token=encrypted_token,
+                        user_id=user.user_id,
+                    )
+                    .first()
+                )
 
+            assert user_token, 'No such token'
             session.delete(user_token)
             session.commit()
 
-        return True
+    def get_api_tokens(self, username: str) -> List[UserToken]:
+        """
+        Get all the API tokens for a user.
+
+        :param username: User name.
+        :return: List of tokens.
+        """
+        with self._get_session() as session:
+            user = self._get_user(session, username)
+            if not user:
+                return []
+
+            return (
+                session.query(UserToken)
+                .filter(
+                    and_(
+                        UserToken.user_id == user.user_id,
+                        or_(
+                            UserToken.expires_at.is_(None),
+                            UserToken.expires_at >= utcnow(),
+                        ),
+                    )
+                )
+                .order_by(UserToken.created_at.desc())
+                .all()
+            )
 
 
 # vim:sw=4:ts=4:et:

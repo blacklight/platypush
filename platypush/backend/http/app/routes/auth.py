@@ -4,8 +4,10 @@ import logging
 
 from flask import Blueprint, request, abort, jsonify
 
+from platypush.backend.http.app.utils import authenticate
 from platypush.backend.http.app.utils.auth import (
     UserAuthStatus,
+    current_user,
     get_current_user_or_auth_status,
 )
 from platypush.exceptions.user import UserException
@@ -223,7 +225,9 @@ def _auth_get():
     response = get_current_user_or_auth_status(request)
     if isinstance(response, User):
         user = response
-        return jsonify({'status': 'ok', 'user_id': user.id, 'username': user.username})
+        return jsonify(
+            {'status': 'ok', 'user_id': user.user_id, 'username': user.username}
+        )
 
     if response:
         status = response
@@ -283,6 +287,67 @@ def _auth_delete():
     return UserAuthStatus.INVALID_SESSION.to_response()
 
 
+def _tokens_get():
+    user = current_user()
+    if not user:
+        return UserAuthStatus.INVALID_CREDENTIALS.to_response()
+
+    tokens = UserManager().get_api_tokens(username=str(user.username))
+    return jsonify(
+        {
+            'tokens': [
+                {
+                    'id': t.id,
+                    'name': t.name,
+                    'created_at': t.created_at,
+                    'expires_at': t.expires_at,
+                }
+                for t in tokens
+            ]
+        }
+    )
+
+
+def _tokens_delete():
+    args = {}
+
+    try:
+        payload = json.loads(request.get_data(as_text=True))
+        token = payload.get('token')
+        if token:
+            args['token'] = token
+        else:
+            token_id = payload.get('token_id')
+            if token_id:
+                args['token_id'] = token_id
+
+        assert args, 'No token or token_id specified'
+    except (AssertionError, json.JSONDecodeError):
+        return UserAuthStatus.INVALID_TOKEN.to_response()
+
+    user_manager = UserManager()
+    user = current_user()
+    if not user:
+        return UserAuthStatus.INVALID_CREDENTIALS.to_response()
+
+    args['username'] = str(user.username)
+
+    try:
+        user_manager.delete_api_token(**args)
+        return jsonify({'status': 'ok'})
+    except AssertionError as e:
+        return (
+            jsonify({'status': 'error', 'error': 'bad_request', 'message': str(e)}),
+            400,
+        )
+    except UserException:
+        return UserAuthStatus.INVALID_CREDENTIALS.to_response()
+    except Exception as e:
+        log.error('Token deletion error', exc_info=e)
+
+    return UserAuthStatus.UNKNOWN_ERROR.to_response()
+
+
 @auth.route('/auth', methods=['GET', 'POST', 'DELETE'])
 def auth_endpoint():
     """
@@ -322,6 +387,24 @@ def auth_endpoint():
 
     if request.method == 'DELETE':
         return _auth_delete()
+
+    return UserAuthStatus.INVALID_METHOD.to_response()
+
+
+@auth.route('/tokens', methods=['GET', 'DELETE'])
+@authenticate()
+def tokens_route():
+    """
+    :return: The list of API tokens created by the logged in user.
+        Note that this endpoint is only accessible by authenticated users
+        and it won't return the clear-text token values, as those aren't
+        stored in the database anyway.
+    """
+    if request.method == 'GET':
+        return _tokens_get()
+
+    if request.method == 'DELETE':
+        return _tokens_delete()
 
     return UserAuthStatus.INVALID_METHOD.to_response()
 

@@ -31,6 +31,7 @@ class AuthenticationStatus(enum.Enum):
     PASSWORD_MISMATCH = 'password_mismatch'
     REGISTRATION_DISABLED = 'registration_disabled'
     REGISTRATION_REQUIRED = 'registration_required'
+    UNKNOWN_ERROR = 'unknown_error'
 
 
 class User(Base):

@@ -21,10 +21,14 @@ export default {
     },
 
     formatDateTime(date, year=false, seconds=true, skipTimeIfMidnight=false) {
+      const now = new Date()
+
       if (typeof date === 'number')
         date = new Date(date * 1000)
       if (typeof date === 'string')
         date = new Date(Date.parse(date))
+      if (now.getFullYear() !== date.getFullYear())
+        year = true
 
       if (skipTimeIfMidnight && date.getHours() === 0 && date.getMinutes() === 0 && date.getSeconds() === 0)
         return this.formatDate(date, year)

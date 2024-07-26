@@ -43,6 +43,7 @@ module.exports = {
       '^/media/': httpProxy,
       '^/otp': httpProxy,
       '^/sound/': httpProxy,
+      '^/tokens': httpProxy,
       '^/ws/events': wsProxy,
       '^/ws/requests': wsProxy,
       '^/ws/shell': wsProxy,
