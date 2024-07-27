@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+- Added static `/login` and `/register` Flask fallback routes to prevent 404 if
+  the client doesn't have JavaScript enabled.
+
+- Fixed `apt` packages for Debian oldstable after the `setup.py` to
+  `pyproject.toml` migration.
+
+- Fixed license string in the `pyproject.toml`.
 
 ## [1.2.0]
 
