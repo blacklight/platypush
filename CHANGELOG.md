@@ -1,7 +1,7 @@
 # Changelog
 
 
-## [Unreleased]
+## [1.2.0]
 
 - [#419](https://git.platypush.tech/platypush/platypush/issues/419): added
   support for randomly generated API tokens alongside JWT.
