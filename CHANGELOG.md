@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.2.2]
 
 - Fixed regression on older version of Python that don't fully support
   `pyproject.toml` and can't install data files the new way.
