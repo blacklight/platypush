@@ -11,4 +11,4 @@ git pull --rebase github "$(git branch | head -1 | awk '{print $2}')" || echo "N
 
 # Push the changes to the GitHub mirror
 git push --all -v github
-git push --tags origin master
+git push --tags
