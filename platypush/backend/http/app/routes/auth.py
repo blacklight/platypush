@@ -233,7 +233,11 @@ def _auth_get():
         status = response
 
     if status:
-        return UserAuthStatus.by_status(status).to_response()  # type: ignore
+        if not isinstance(status, UserAuthStatus):
+            status = UserAuthStatus.by_status(status)
+        if not status:
+            status = UserAuthStatus.INVALID_CREDENTIALS
+        return status.to_response()
 
     return UserAuthStatus.INVALID_CREDENTIALS.to_response()
 
