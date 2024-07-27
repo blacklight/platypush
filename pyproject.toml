@@ -1,7 +1,7 @@
 [project]
 name = "platypush"
 description = "A general-purpose framework for automation"
-dynamic = ["version", "dependencies"]
+dynamic = ["version", "dependencies", "optional-dependencies"]
 authors = [
   {name = "Fabio Manganiello", email = "fabio@manganiello.tech"},
 ]
