@@ -6,23 +6,6 @@ import os
 from setuptools import setup, find_packages
 
 
-def path(fname=''):
-    return os.path.abspath(os.path.join(os.path.dirname(__file__), fname))
-
-
-def readfile(fname):
-    with open(path(fname)) as f:
-        return f.read()
-
-
-def pkg_files(dir):
-    paths = []
-    for p, _, files in os.walk(dir):
-        for file in files:
-            paths.append(os.path.join('..', p, file))
-    return paths
-
-
 def scan_manifests():
     for root, _, files in os.walk('platypush'):
         for file in files:
@@ -61,51 +44,8 @@ def parse_manifests():
     return ret
 
 
-plugins = pkg_files('platypush/plugins')
-backend = pkg_files('platypush/backend')
-
 setup(
-    name="platypush",
-    author="Fabio Manganiello",
-    author_email="fabio@manganiello.tech",
-    description="Platypush service",
-    license="MIT",
-    python_requires='>= 3.6',
-    keywords="home-automation automation iot mqtt websockets redis dashboard notifications",
-    url="https://platypush.tech",
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
-    package_data={
-        'platypush': [
-            'migrations/alembic.ini',
-            'migrations/alembic/*',
-            'migrations/alembic/**/*',
-            'install/**',
-            'install/scripts/*',
-            'install/scripts/**/*',
-            'install/requirements/*',
-            'install/docker/*',
-            'components.json.gz',
-        ],
-    },
-    entry_points={
-        'console_scripts': [
-            'platypush=platypush:main',
-            'platydock=platypush.platydock:main',
-            'platyvenv=platypush.platyvenv:main',
-        ],
-    },
-    long_description=readfile('README.md'),
-    long_description_content_type='text/markdown',
-    classifiers=[
-        "Topic :: Utilities",
-        "License :: OSI Approved :: MIT License",
-        "Development Status :: 4 - Beta",
-    ],
-    install_requires=[
-        line.split('#')[0].strip()
-        for line in readfile('requirements.txt').splitlines()
-        if line.strip().split('#')[0].strip()
-    ],
     extras_require=parse_manifests(),
 )

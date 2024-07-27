@@ -1,7 +1,7 @@
 # Changelog
 
 
-## [1.2.0] - 2024-07-27
+## [Unreleased]
 
 - [#419](https://git.platypush.tech/platypush/platypush/issues/419): added
   support for randomly generated API tokens alongside JWT.
@@ -22,6 +22,8 @@
   support for page-specific PWAs. If you navigate to `/plugin/<plugin-name>`,
   and you install it as a PWA, you'll install a PWA only for that plugin - not
   for the whole Platypush UI.
+
+- Migrated project setup from `setup.py` to `pyproject.toml`.
 
 - [`70db33b4e`](https://git.platypush.tech/platypush/platypush/commit/70db33b4e):
   more application resilience in case Redis goes down.
