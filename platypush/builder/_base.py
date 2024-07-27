@@ -29,7 +29,7 @@ class BaseBuilder(ABC):
     and :module:`platypush.platydock` modules/scripts.
     """
 
-    REPO_URL: str = 'https://github.com/BlackLight/platypush.git'
+    REPO_URL: str = 'https://github.com/blacklight/platypush.git'
     """
     We use the Github URL here rather than the self-hosted Gitea URL to prevent
     too many requests to the Gitea server.
