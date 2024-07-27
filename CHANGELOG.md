@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+- Fixed regression on older version of Python that don't fully support
+  `pyproject.toml` and can't install data files the new way.
+
 ## [1.2.1]
 
 - Added static `/login` and `/register` Flask fallback routes to prevent 404 if
