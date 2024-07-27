@@ -17,7 +17,7 @@ def parse_deps(deps):
     ret = []
     for dep in deps:
         if dep.startswith('git+'):
-            continue  # Don't include git dependencies in the setup.py, or Twine will complain
+            continue  # Don't include git dependencies in pip, or Twine will complain
 
         ret.append(dep)
 

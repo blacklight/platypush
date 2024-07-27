@@ -91,8 +91,7 @@ class VenvBuilder(BaseBuilder):
         Otherwise, the source directory will be cloned from git into a
         temporary folder.
         """
-        setup_py_path = os.path.join(os.getcwd(), 'setup.py')
-        if os.path.isfile(setup_py_path):
+        if os.path.isfile(os.path.join(os.getcwd(), 'pyproject.toml')):
             logger.info('Using local checkout of the Platypush source code')
             yield os.getcwd()
         else:

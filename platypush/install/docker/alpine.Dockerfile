@@ -7,7 +7,7 @@ WORKDIR /var/lib/platypush
 RUN --mount=type=bind,source=.,target=/curdir \
     apk update && \
     # If the current directory is the Platypush repository, then we can copy the existing files \
-    if grep 'name="platypush"' /curdir/setup.py >/dev/null 2>&1; \
+    if grep 'name="platypush"' /curdir/pyproject.toml >/dev/null 2>&1; \
     then \
       cp -r /curdir /install; \
     # Otherwise, we need to clone the repository \
