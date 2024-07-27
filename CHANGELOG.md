@@ -1,6 +1,45 @@
 # Changelog
 
 
+## [1.2.0] - 2024-07-27
+
+- [#419](https://git.platypush.tech/platypush/platypush/issues/419): added
+  support for randomly generated API tokens alongside JWT.
+
+- [#339](https://git.platypush.tech/platypush/platypush/issues/339): added
+  support for 2FA with OTP codes.
+
+- [#393](https://git.platypush.tech/platypush/platypush/issues/393): added
+  `bind_socket` parameter to `backend.http`, so Platypush can listen on (or
+  exclusively if `listen_port` is null) on a local UNIX socket as well.
+
+- [#401](https://git.platypush.tech/platypush/platypush/issues/401): added
+  `--redis-bin` option / `PLATYPUSH_REDIS_BIN` environment variable to support
+  custom Redis (or drop-in replacements) executables when `--start-redis` is
+  specified.
+
+- [#413](https://git.platypush.tech/platypush/platypush/issues/401): added
+  support for page-specific PWAs. If you navigate to `/plugin/<plugin-name>`,
+  and you install it as a PWA, you'll install a PWA only for that plugin - not
+  for the whole Platypush UI.
+
+- [`70db33b4e`](https://git.platypush.tech/platypush/platypush/commit/70db33b4e):
+  more application resilience in case Redis goes down.
+
+- [`ee27b2c4`](https://git.platypush.tech/platypush/platypush/commit/ee27b2c4):
+  Refactor of all the authentication endpoints into a single `/auth` endpoint:
+
+  - `POST /register` → `POST /auth?type=register`
+  - `POST /login` → `POST /auth?type=login`
+  - `POST /auth` → `POST /auth?type=token`
+  - `POST /auth` → `POST /auth?type=jwt`
+
+- [`2ccf0050`](https://git.platypush.tech/platypush/platypush/commit/2ccf0050):
+  Added support for binary content to `qrcode.generate`.
+
+- [`b69e9500`](https://git.platypush.tech/platypush/platypush/commit/b69e9500):
+  Support for fullscreen mode on the `camera` plugins UI.
+
 ## [1.1.3] - 2024-07-16
 
 - [`core`]: New architecture for the Redis bus - now leveraging pub/sub with a
