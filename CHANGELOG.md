@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.2.1]
 
 - Added static `/login` and `/register` Flask fallback routes to prevent 404 if
   the client doesn't have JavaScript enabled.
