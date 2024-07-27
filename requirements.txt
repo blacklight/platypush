@@ -8,7 +8,6 @@ docutils
 flask
 marshmallow
 marshmallow_dataclass
-psutil
 python-dateutil
 python-magic
 pyyaml

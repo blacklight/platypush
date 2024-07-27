@@ -10,8 +10,6 @@ from multiprocessing import Process
 from time import time
 from typing import Mapping, Optional
 
-import psutil
-
 from tornado.httpserver import HTTPServer
 from tornado.netutil import bind_sockets, bind_unix_socket
 from tornado.process import cpu_count, fork_processes
@@ -421,6 +419,14 @@ class HttpBackend(Backend):
         workers when the server terminates:
         https://github.com/tornadoweb/tornado/issues/1912.
         """
+        try:
+            import psutil
+        except ImportError:
+            self.logger.warning(
+                'Could not import psutil, hanging worker processes might remain active'
+            )
+            return
+
         parent_pid = (
             self._server_proc.pid
             if self._server_proc and self._server_proc.pid
