@@ -6,6 +6,15 @@ import os
 from setuptools import setup, find_packages
 
 
+def path(fname=''):
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), fname))
+
+
+def readfile(fname):
+    with open(path(fname)) as f:
+        return f.read()
+
+
 def scan_manifests():
     for root, _, files in os.walk('platypush'):
         for file in files:
@@ -48,4 +57,29 @@ setup(
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
     extras_require=parse_manifests(),
+    package_data={
+        'platypush': [
+            'migrations/alembic.ini',
+            'migrations/alembic/*',
+            'migrations/alembic/**/*',
+            'install/**',
+            'install/scripts/*',
+            'install/scripts/**/*',
+            'install/requirements/*',
+            'install/docker/*',
+            'components.json.gz',
+        ],
+    },
+    entry_points={
+        'console_scripts': [
+            'platypush=platypush:main',
+            'platydock=platypush.platydock:main',
+            'platyvenv=platypush.platyvenv:main',
+        ],
+    },
+    install_requires=[
+        line.split('#')[0].strip()
+        for line in readfile('requirements.txt').splitlines()
+        if line.strip().split('#')[0].strip()
+    ],
 )
