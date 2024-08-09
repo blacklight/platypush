@@ -1154,6 +1154,14 @@ class ZigbeeMqttPlugin(
             if self._is_write_only(stored_property):
                 reply_topic = None
 
+        if property and reply_topic:
+            self.logger.debug(
+                'Waiting for updated value of %s for device %s, reply topic: %s',
+                property,
+                device,
+                reply_topic,
+            )
+
         properties = self._run_request(
             topic=self._topic(device + '/set'),
             reply_topic=reply_topic,
@@ -1162,9 +1170,22 @@ class ZigbeeMqttPlugin(
         )
 
         if property and reply_topic:
-            assert (
-                property in properties
-            ), f'Could not retrieve the new state for {property}'
+            if property not in (properties or {}):
+                self.logger.warning(
+                    (
+                        'Could not retrieve value of property %s on device %s, '
+                        'reply topic: %s, retrieved properties: %s',
+                    ),
+                    property,
+                    device,
+                    reply_topic,
+                    properties,
+                )
+
+                raise AssertionError(
+                    f'Cound not retrieve the new state for {property} on device {device}'
+                )
+
             return {property: properties[property]}
 
         return properties
@@ -1670,9 +1691,11 @@ class ZigbeeMqttPlugin(
             prop,
             prop_info.get(
                 'value_toggle',
-                'OFF'
-                if device_state.get(prop) == prop_info.get('value_on', 'ON')
-                else 'ON',
+                (
+                    'OFF'
+                    if device_state.get(prop) == prop_info.get('value_on', 'ON')
+                    else 'ON'
+                ),
             ),
         )
 
