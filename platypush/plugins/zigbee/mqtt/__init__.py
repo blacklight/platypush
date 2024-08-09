@@ -1131,7 +1131,6 @@ class ZigbeeMqttPlugin(
             the default configured device).
         """
         msg = (values or {}).copy()
-        reply_topic = None
         device_info = self._get_device_info(device, **kwargs)
         assert device_info, f'No such device: {device}'
         device = self._preferred_name(device_info)
@@ -1143,52 +1142,17 @@ class ZigbeeMqttPlugin(
                 return self.device_set_option(device, property, value, **kwargs)
 
             # Check if it's a property
-            reply_topic = self._topic(device)
             stored_property = self._get_properties(device_info).get(property)
             assert stored_property, f'No such property: {property}'
 
             # Set the new value on the message
             msg[property] = value
 
-            # Don't wait for an update from a value that is not readable
-            if self._is_write_only(stored_property):
-                reply_topic = None
-
-        if property and reply_topic:
-            self.logger.debug(
-                'Waiting for updated value of %s for device %s, reply topic: %s',
-                property,
-                device,
-                reply_topic,
-            )
-
-        properties = self._run_request(
+        self._run_request(
             topic=self._topic(device + '/set'),
-            reply_topic=reply_topic,
             msg=msg,
             **self._mqtt_args(**kwargs),
         )
-
-        if property and reply_topic:
-            if property not in (properties or {}):
-                self.logger.warning(
-                    (
-                        'Could not retrieve value of property %s on device %s, '
-                        'reply topic: %s, retrieved properties: %s',
-                    ),
-                    property,
-                    device,
-                    reply_topic,
-                    properties,
-                )
-
-                raise AssertionError(
-                    f'Cound not retrieve the new state for {property} on device {device}'
-                )
-
-            return {property: properties[property]}
-
-        return properties
 
     @action
     # pylint: disable=redefined-builtin
