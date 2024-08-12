@@ -954,11 +954,13 @@ class ZigbeeMqttPlugin(
         return device_info
 
     @staticmethod
-    def _preferred_name(device: dict) -> str:
+    def _preferred_name(device: Union[str, dict]) -> str:
         """
         Utility method that returns the preferred name of a device, on the basis
         of which attributes are exposed (friendly name or IEEE address).
         """
+        if isinstance(device, str):
+            return device
         return device.get('friendly_name') or device.get('ieee_address') or ''
 
     @classmethod
@@ -2212,14 +2214,14 @@ class ZigbeeMqttPlugin(
         elif msg_type == 'device_group_remove_all_failed':
             self._bus.post(ZigbeeMqttGroupRemoveAllFailedEvent(group=text, **args))
         elif msg_type == 'zigbee_publish_error':
-            self.logger.error('zigbee2mqtt error: {}'.format(text))
+            self.logger.error('zigbee2mqtt error: %s', text)
             self._bus.post(ZigbeeMqttErrorEvent(error=text, **args))
         elif msg.get('level') in ['warning', 'error']:
             log = getattr(self.logger, msg['level'])
             log(
-                'zigbee2mqtt {}: {}'.format(
-                    msg['level'], text or msg.get('error', msg.get('warning'))
-                )
+                'zigbee2mqtt %s: %s',
+                msg['level'],
+                text or msg.get('error', msg.get('warning')),
             )
 
     def _process_devices(self, client: MqttClient, msg):
