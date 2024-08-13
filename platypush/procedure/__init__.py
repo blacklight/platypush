@@ -565,9 +565,12 @@ def procedure(name_or_func: Optional[str] = None, *upper_args, **upper_kwargs):
         """
         Public decorator to mark a function as a procedure.
         """
+        import inspect
 
         f.procedure = True
         f.procedure_name = name
+        f._source = inspect.getsourcefile(f)  # pylint: disable=protected-access
+        f._line = inspect.getsourcelines(f)[1]  # pylint: disable=protected-access
 
         @wraps(f)
         def _execute_procedure(*args, **kwargs):

@@ -10,9 +10,10 @@ class ProcedureEncoder(json.JSONEncoder):
     def default(self, o):
         if callable(o):
             return {
-                'type': 'native_function',
+                'type': 'python',
                 'module': o.__module__,
-                'source': inspect.getsourcefile(o),
+                'source': getattr(o, "_source", inspect.getsourcefile(o)),
+                'line': getattr(o, "_line", inspect.getsourcelines(o)[1]),
                 'args': [
                     name
                     for name, arg in inspect.signature(o).parameters.items()

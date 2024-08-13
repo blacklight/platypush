@@ -422,6 +422,7 @@ class Config:
 
                 self.procedures[procedure_name] = {
                     '_async': _async,
+                    'type': 'config',
                     'actions': component,
                     'args': args,
                 }
