@@ -156,8 +156,9 @@ class MediaPlugin(RunnablePlugin, ABC):
         env: Optional[Dict[str, str]] = None,
         volume: Optional[Union[float, int]] = None,
         torrent_plugin: str = 'torrent',
-        youtube_format: Optional[str] = 'bv[height<=?1080][ext=mp4]+ba',
+        youtube_format: Optional[str] = None,
         youtube_dl: str = 'yt-dlp',
+        merge_output_format: str = 'mp4',
         **kwargs,
     ):
         """
@@ -182,8 +183,8 @@ class MediaPlugin(RunnablePlugin, ABC):
             YouTube videos - and any media supported by youtube-dl or the
             selected fork. See the `youtube-dl documentation
             <https://github.com/ytdl-org/youtube-dl#format-selection>`_ for more
-            info on supported formats. Default:
-            ``bv*[height<=?1080][ext=mp4]+bestaudio/best`` - select the best
+            info on supported formats. Example:
+            ``bestvideo[height<=?1080][ext=mp4]+bestaudio`` - select the best
             mp4 video with a resolution <= 1080p, and the best audio format.
 
         :param youtube_dl: Path to the ``youtube-dl`` executable, used to
@@ -191,6 +192,11 @@ class MediaPlugin(RunnablePlugin, ABC):
             Default: ``yt-dlp``. The default has changed from ``youtube-dl`` to
             the ``yt-dlp`` fork because the former is badly maintained and its
             latest release was pushed in 2021.
+
+        :param merge_output_format: If media download requires ``youtube_dl``,
+            and the upstream media contains both audio and video to be merged,
+            this can be used to specify the format of the output container -
+            e.g. ``mp4``, ``mkv``, ``avi``, ``flv``. Default: ``mp4``.
         """
 
         super().__init__(**kwargs)
@@ -247,6 +253,7 @@ class MediaPlugin(RunnablePlugin, ABC):
         self._youtube_proc = None
         self.torrent_plugin = torrent_plugin
         self.youtube_format = youtube_format
+        self.merge_output_format = merge_output_format
         self._latest_resource: Optional[MediaResource] = None
 
     @staticmethod
@@ -767,6 +774,7 @@ class MediaPlugin(RunnablePlugin, ABC):
         sync: bool = False,
         only_audio: bool = False,
         youtube_format: Optional[str] = None,
+        merge_output_format: Optional[str] = None,
     ):
         """
         Download a media URL to a local file on the Platypush host (yt-dlp
@@ -794,6 +802,8 @@ class MediaPlugin(RunnablePlugin, ABC):
         :param only_audio: If set to True, only the audio track will be downloaded
             (only supported for yt-dlp-compatible URLs for now).
         :param youtube_format: Override the default ``youtube_format`` setting.
+        :param merge_output_format: Override the default
+            ``merge_output_format`` setting.
         :return: The absolute path to the downloaded file.
         """
         path = self._get_download_path(
@@ -949,6 +959,11 @@ class MediaPlugin(RunnablePlugin, ABC):
                         if youtube_format
                         else []
                     ),
+                    *(
+                        ['--merge-output-format', self.merge_output_format]
+                        if self.merge_output_format
+                        else []
+                    ),
                     '-O',
                     '%(title)s.%(ext)s',
                     url,
@@ -981,6 +996,7 @@ class MediaPlugin(RunnablePlugin, ABC):
         url: str,
         path: str,
         youtube_format: Optional[str] = None,
+        merge_output_format: Optional[str] = None,
         only_audio: bool = False,
     ) -> YouTubeDownloadThread:
         download_thread = YouTubeDownloadThread(
@@ -989,6 +1005,7 @@ class MediaPlugin(RunnablePlugin, ABC):
             ytdl=self._ytdl,
             only_audio=only_audio,
             youtube_format=youtube_format or self.youtube_format,
+            merge_output_format=merge_output_format or self.merge_output_format,
             on_start=self._on_download_start,
             post_event=self._post_event,
             stop_event=self._should_stop,

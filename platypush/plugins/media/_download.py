@@ -228,12 +228,14 @@ class YouTubeDownloadThread(DownloadThread):
         *args,
         ytdl: str,
         youtube_format: Optional[str] = None,
+        merge_output_format: Optional[str] = None,
         only_audio: bool = False,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self._ytdl = ytdl
         self._youtube_format = youtube_format
+        self._merge_output_format = merge_output_format
         self._only_audio = only_audio
         self._proc = None
         self._proc_lock = threading.Lock()
@@ -273,6 +275,10 @@ class YouTubeDownloadThread(DownloadThread):
             '%(progress)j',
             *(['-x'] if self._only_audio else []),
             *(['-f', self._youtube_format] if self._youtube_format else []),
+            *(
+                ['--stream-output-format', self._merge_output_format]
+                if self._merge_output_format else []
+            ),
             self.url,
             '-o',
             self.path,
