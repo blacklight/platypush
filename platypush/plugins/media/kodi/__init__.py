@@ -730,5 +730,13 @@ class MediaKodiPlugin(MediaPlugin):
     def load(self, resource, *args, **kwargs):
         raise NotImplementedError
 
+    @property
+    def supports_local_media(self) -> bool:
+        return False
+
+    @property
+    def supports_local_pipe(self) -> bool:
+        return False
+
 
 # vim:sw=4:ts=4:et:

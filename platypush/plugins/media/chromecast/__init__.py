@@ -629,6 +629,15 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
             self._chromecasts_by_uuid[cc.uuid] = cc
             self._chromecasts_by_name[name] = cc
 
+    @property
+    def supports_local_media(self) -> bool:
+        # Chromecasts can't play local media: they always need an HTTP URL
+        return False
+
+    @property
+    def supports_local_pipe(self) -> bool:
+        return False
+
     def main(self):
         while not self.should_stop():
             try:

@@ -8,8 +8,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.sql.expression import func
 
 from platypush.config import Config
-from platypush.plugins.media import MediaPlugin
-from platypush.plugins.media.search import MediaSearcher
+from platypush.plugins.media._search import MediaSearcher
 
 from .db import (
     Base,
@@ -42,6 +41,9 @@ class LocalMediaSearcher(MediaSearcher):
         os.makedirs(db_dir, exist_ok=True)
         self.db_file = os.path.join(db_dir, 'media.db')
         self._db_engine = None
+
+    def supports(self, type: str) -> bool:
+        return type == 'file'
 
     def _get_db_session(self):
         if not self._db_engine:
@@ -124,6 +126,7 @@ class LocalMediaSearcher(MediaSearcher):
         Scans a media directory and stores the search results in the internal
         SQLite index
         """
+        from platypush.plugins.media import MediaPlugin
 
         if not session:
             session = self._get_db_session()

@@ -1,9 +1,16 @@
 from platypush.context import get_plugin
-from platypush.plugins.media.search import MediaSearcher
+from platypush.plugins.media._search import MediaSearcher
 
 
 class JellyfinMediaSearcher(MediaSearcher):
-    def search(self, query, **_):
+    """
+    Jellyfin media searcher.
+    """
+
+    def supports(self, type: str) -> bool:
+        return type == 'jellyfin'
+
+    def search(self, query, *_, **__):
         """
         Performs a search on a Jellyfin server using the configured
         :class:`platypush.plugins.media.jellyfin.MediaJellyfinPlugin`
@@ -18,9 +25,11 @@ class JellyfinMediaSearcher(MediaSearcher):
         if not media:
             return []
 
-        self.logger.info('Searching Jellyfin for "{}"'.format(query))
+        self.logger.info('Searching Jellyfin for "%s"', query)
         results = media.search(query=query).output
-        self.logger.info('{} Jellyfin results found for the search query "{}"'.format(len(results), query))
+        self.logger.info(
+            '%d Jellyfin results found for the search query "%s"', len(results), query
+        )
         return results
 
 
