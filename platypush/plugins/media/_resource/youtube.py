@@ -21,6 +21,25 @@ class YoutubeMediaResource(PopenMediaResource):
         )
         self.is_temporary = True
 
+    def _prepare_file(self, merge_output_format: str):
+        if not self.resource:
+            self._generate_file(merge_output_format)
+
+        filename = (
+            self.resource[len('file://') :]
+            if self.resource.startswith('file://')
+            else self.resource
+        )
+
+        # Remove the file if it already exists and it's empty, to avoid YTDL
+        # errors
+        if (
+            os.path.exists(os.path.abspath(filename))
+            and os.path.getsize(os.path.abspath(filename)) == 0
+        ):
+            self._logger.debug('Removing empty file: %s', filename)
+            os.unlink(os.path.abspath(filename))
+
     def open(
         self,
         *args,
@@ -35,8 +54,8 @@ class YoutubeMediaResource(PopenMediaResource):
                 not self._media.supports_local_pipe or cache_streams or self.resource
             )
 
-            if use_file and not self.resource:
-                self._generate_file(merge_output_format)
+            if use_file:
+                self._prepare_file(merge_output_format=merge_output_format)
 
             output = ['-o', self.resource] if use_file else ['-o', '-']
             youtube_format = youtube_format or self._media.youtube_format
