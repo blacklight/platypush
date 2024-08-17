@@ -1,4 +1,3 @@
-from threading import Timer
 from typing import Type
 
 from platypush.common.gstreamer import Pipeline
@@ -18,7 +17,9 @@ from platypush.plugins.media import MediaResource
 class MediaPipeline(Pipeline):
     def __init__(self, resource: MediaResource):
         super().__init__()
+
         self.resource = resource
+        self._first_play = True
         if resource.resource and resource.fd is None:
             self.add_source('playbin', uri=resource.resource)
         elif resource.fd is not None:
@@ -36,31 +37,29 @@ class MediaPipeline(Pipeline):
             kwargs.update(resource_args)
 
         evt = evt_class(**kwargs)
+        get_bus().post(evt)
 
-        # This is deferred to a timer because it may take a while for the
-        # pipeline to propagate its state to the GStreamer instance
-        Timer(1, get_bus().post, args=(evt,)).start()
+    def on_play(self):
+        super().on_play()
+        if self._first_play:
+            self.post_event(NewPlayingMediaEvent, resource=self.resource)
+            self._first_play = False
+
+        self.post_event(MediaPlayEvent)
+
+    def on_pause(self):
+        super().on_pause()
+        self.post_event(MediaPauseEvent)
 
     def play(self):
         from gi.repository import Gst
 
-        is_first_play = self.get_state() == Gst.State.NULL
+        self._first_play = self.get_state() == Gst.State.NULL
         super().play()
-
-        if is_first_play:
-            self.post_event(NewPlayingMediaEvent)
-        self.post_event(MediaPlayEvent)
-
-    def pause(self):
-        from gi.repository import Gst
-
-        super().pause()
-        self.post_event(
-            MediaPauseEvent if self.get_state() == Gst.State.PAUSED else MediaPlayEvent
-        )
 
     def stop(self):
         super().stop()
+        self._first_play = True
         self.post_event(MediaStopEvent)
 
     def mute(self):
