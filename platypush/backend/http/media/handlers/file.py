@@ -15,6 +15,9 @@ class FileHandler(MediaHandler):
     prefix_handlers = ['file://']
 
     def __init__(self, source, *args, **kwargs):
+        if isinstance(source, str) and os.path.exists(source):
+            source = f'file://{source}'
+
         super().__init__(source, *args, **kwargs)
 
         self.path = os.path.abspath(
