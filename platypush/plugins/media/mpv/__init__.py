@@ -1,10 +1,10 @@
 import os
-from dataclasses import asdict
 from typing import Any, Dict, Optional, Type
 from urllib.parse import quote
 
 from platypush.plugins import action
 from platypush.plugins.media import PlayerState, MediaPlugin
+from platypush.plugins.media._resource import MediaResource, YoutubeMediaResource
 from platypush.message.event.media import (
     MediaEvent,
     MediaPlayEvent,
@@ -23,7 +23,6 @@ class MediaMpvPlugin(MediaPlugin):
     """
 
     _default_mpv_args = {
-        'ytdl': True,
         'start_event_thread': True,
     }
 
@@ -49,16 +48,42 @@ class MediaMpvPlugin(MediaPlugin):
         self._player = None
         self._latest_state = PlayerState.STOP
 
-    def _init_mpv(self, args=None):
+    def _init_mpv(
+        self,
+        args: Optional[dict] = None,
+        resource: Optional[MediaResource] = None,
+        youtube_format: Optional[str] = None,
+        youtube_audio_format: Optional[str] = None,
+        only_audio: bool = False,
+    ):
         import mpv
 
-        mpv_args = self.args.copy()
+        mpv_args: dict = {**self.args}
+
+        if isinstance(resource, YoutubeMediaResource):
+            youtube_format = youtube_format or self.youtube_format
+            if only_audio:
+                youtube_format = (
+                    youtube_audio_format or self.youtube_audio_format or youtube_format
+                )
+
+            mpv_args.update(
+                {
+                    'ytdl': True,
+                    'ytdl_format': youtube_format,
+                    'script_opts': f'ytdl_hook-ytdl-path={self._ytdl}',
+                }
+            )
+
         if args:
             mpv_args.update(args)
+
+        mpv_args.pop('metadata', None)
 
         for k, v in self._env.items():
             os.environ[k] = v
 
+        self.logger.debug('Initializing mpv with args: %s', mpv_args)
         self._player = mpv.MPV(**mpv_args)
         self._player._event_callbacks += [self._event_callback()]
 
@@ -159,6 +184,10 @@ class MediaMpvPlugin(MediaPlugin):
         *_,
         subtitles: Optional[str] = None,
         fullscreen: Optional[bool] = None,
+        youtube_format: Optional[str] = None,
+        youtube_audio_format: Optional[str] = None,
+        only_audio: bool = False,
+        metadata: Optional[Dict[str, Any]] = None,
         **args,
     ):
         """
@@ -168,20 +197,31 @@ class MediaMpvPlugin(MediaPlugin):
         :param subtitles: Path to optional subtitle file
         :param args: Extra runtime arguments that will be passed to the
             mpv executable as a key-value dict (keys without `--` prefix)
+        :param fullscreen: Override the default fullscreen setting.
+        :param youtube_format: Override the default youtube format setting.
+        :param youtube_audio_format: Override the default youtube audio format
+            setting.
+        :param only_audio: Set to True if you want to play only the audio of a
+            youtube video.
+        :param metadata: Optional metadata to attach to the resource.
         """
 
         self._post_event(MediaPlayRequestEvent, resource=resource)
         if fullscreen is not None:
             args['fs'] = fullscreen
 
-        self._init_mpv(args)
-
-        resource = self._get_resource(resource)
-        if resource.startswith('file://'):
-            resource = resource[7:]
+        media = self._latest_resource = self._get_resource(resource, metadata=metadata)
+        self._init_mpv(
+            args,
+            resource=media,
+            youtube_format=youtube_format,
+            youtube_audio_format=youtube_audio_format,
+            only_audio=only_audio,
+        )
 
         assert self._cur_player, 'The player is not ready'
-        self._cur_player.play(resource)
+        self._cur_player.play(media.resource or media.url)
+
         if self.volume:
             self.set_volume(volume=self.volume)
         if subtitles:
@@ -498,7 +538,7 @@ class MediaMpvPlugin(MediaPlugin):
             status.update(
                 {
                     k: v
-                    for k, v in asdict(self._latest_resource).items()
+                    for k, v in self._latest_resource.to_dict().items()
                     if v is not None
                 }
             )
@@ -516,11 +556,9 @@ class MediaMpvPlugin(MediaPlugin):
         self._latest_state = self._state
         return status
 
-    def _get_resource(self, resource):
-        if self._is_youtube_resource(resource):
-            return resource  # mpv can handle YouTube streaming natively
-
-        return super()._get_resource(resource)
+    @property
+    def supports_local_pipe(self) -> bool:
+        return False
 
 
 # vim:sw=4:ts=4:et:
