@@ -32,7 +32,7 @@ class YoutubeMediaResource(PopenMediaResource):
         if self.proc is None:
             merge_output_format = merge_output_format or self._media.merge_output_format
             use_file = (
-                not self._media.supports_local_media or cache_streams or self.resource
+                not self._media.supports_local_pipe or cache_streams or self.resource
             )
 
             if use_file and not self.resource:

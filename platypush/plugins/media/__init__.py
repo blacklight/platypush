@@ -218,7 +218,11 @@ class MediaPlugin(RunnablePlugin, ABC):
         }
 
     def _get_resource(
-        self, resource: str, metadata: Optional[dict] = None, only_audio: bool = False
+        self,
+        resource: str,
+        metadata: Optional[dict] = None,
+        only_audio: bool = False,
+        **_,
     ):
         """
         :param resource: Resource to play/parse. Supported types:
