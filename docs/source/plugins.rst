@@ -77,7 +77,6 @@ Plugins
     platypush/plugins/media.kodi.rst
     platypush/plugins/media.mplayer.rst
     platypush/plugins/media.mpv.rst
-    platypush/plugins/media.omxplayer.rst
     platypush/plugins/media.plex.rst
     platypush/plugins/media.subtitles.rst
     platypush/plugins/media.vlc.rst
