@@ -67,10 +67,13 @@
 </template>
 
 <script>
-import Players from "@/components/panels/Media/Players";
+import Players from "@/components/panels/Media/Players"
+import Utils from '@/Utils'
+
 export default {
   name: "Header",
   components: {Players},
+  mixins: [Utils],
   emits: [
     'filter',
     'filter-downloads',
@@ -132,20 +135,36 @@ export default {
     }
   },
 
+  computed: {
+    enabledTypes() {
+      return Object.keys(this.sources).filter((source) => this.sources[source])
+    },
+  },
+
   methods: {
     search() {
-      const types = Object.keys(this.sources).filter((source) => this.sources[source])
-      if (!this.query?.length || !types?.length)
+      if (!this.query?.length || !this.enabledTypes?.length)
         return
 
       this.$emit('search', {
         query: this.query,
-        types: types,
+        types: this.enabledTypes,
       })
     },
   },
 
   mounted() {
+    this.$nextTick(() => {
+      const query = this.getUrlArgs()?.q
+      if (query) {
+        this.query = query
+        this.$emit('search', {
+          query: query,
+          types: this.enabledTypes,
+        })
+      }
+    })
+
     this.$watch(() => this.selectedView, () => {
       this.$emit('filter', '')
       this.torrentURL = ''

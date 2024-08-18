@@ -16,6 +16,10 @@ export default {
     indent(text, spaces = 2) {
       return text.split('\n').map((t) => `${' '.repeat(spaces)}${t}`).join('\n')
     },
+
+    formatNumber(number) {
+      return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+    },
   },
 }
 </script>

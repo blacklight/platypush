@@ -13,6 +13,7 @@
             @remove-from-playlist="$emit('remove-from-playlist', item)"
             @select="$emit('select', i)"
             @play="$emit('play', item)"
+            @play-cache="$emit('play-cache', item)"
             @view="$emit('view', item)"
             @download="$emit('download', item)"
             @download-audio="$emit('download-audio', item)"
@@ -22,7 +23,12 @@
     <Modal ref="infoModal" title="Media info" @close="$emit('select', null)">
       <Info :item="results[selectedResult]"
             :pluginName="pluginName"
+            @add-to-playlist="$emit('add-to-playlist', results[selectedResult])"
+            @download="$emit('download', results[selectedResult])"
+            @download-audio="$emit('download-audio', results[selectedResult])"
+            @open-channel="$emit('open-channel', results[selectedResult])"
             @play="$emit('play', results[selectedResult])"
+            @play-cache="$emit('play-cache', results[selectedResult])"
             v-if="selectedResult != null" />
     </Modal>
   </div>
@@ -42,6 +48,7 @@ export default {
     'download-audio',
     'open-channel',
     'play',
+    'play-cache',
     'remove-from-playlist',
     'scroll-end',
     'select',

@@ -54,6 +54,7 @@
                @download-audio="$emit('download-audio', $event)"
                @open-channel="$emit('open-channel', $event)"
                @play="$emit('play', $event)"
+               @play-cache="$emit('play-cache', $event)"
                @remove-from-playlist="$emit('remove-from-playlist', $event)"
                @select="selectedResult = $event"
                v-else />
@@ -75,6 +76,7 @@ export default {
     'download-audio',
     'open-channel',
     'play',
+    'play-cache',
     'remove-from-playlist',
   ],
 

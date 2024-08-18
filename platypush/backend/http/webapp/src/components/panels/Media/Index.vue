@@ -5,6 +5,7 @@
                  :status="selectedPlayer?.status || {}"
                  :track="selectedPlayer?.status || {}"
                  :buttons="mediaButtons"
+                 @info="infoTrack = $event"
                  @play="pause"
                  @pause="pause"
                  @stop="stop"
@@ -58,6 +59,7 @@
                        @open-channel="selectChannelFromItem"
                        @select="onResultSelect($event)"
                        @play="play"
+                       @play-cache="play($event, {cache: true})"
                        @view="view"
                        @download="download"
                        @download-audio="downloadAudio"
@@ -78,6 +80,7 @@
               />
 
               <Browser :filter="browserFilter"
+                       :loading="loading"
                        :selected-playlist="selectedPlaylist"
                        :selected-channel="selectedChannel"
                        @add-to-playlist="addToPlaylistItem = $event"
@@ -86,6 +89,7 @@
                        @download-audio="downloadAudio"
                        @path-change="browserFilter = ''"
                        @play="play($event)"
+                       @play-cache="play($event, {cache: true})"
                        v-else-if="selectedView === 'browser'"
               />
             </div>
@@ -119,6 +123,20 @@
           />
         </Modal>
       </div>
+
+      <div class="info-container" v-if="infoTrack != null">
+        <Modal ref="infoModal" title="Media info" :visible="infoTrack != null" @close="infoTrack = null">
+          <Info :item="infoTrack"
+                :pluginName="pluginName"
+                @add-to-playlist="addToPlaylistItem = $event"
+                @download="download"
+                @download-audio="downloadAudio"
+                @open-channel="selectChannelFromItem"
+                @play="play"
+                @play-cache="play($event, {cache: true})"
+          />
+        </Modal>
+      </div>
     </div>
   </keep-alive>
 </template>
@@ -129,6 +147,7 @@ import Utils from "@/Utils";
 
 import Browser from "@/components/panels/Media/Browser";
 import Header from "@/components/panels/Media/Header";
+import Info from "@/components/panels/Media/Info";
 import MediaDownloads from "@/components/panels/Media/Downloads";
 import MediaUtils from "@/components/Media/Utils";
 import MediaView from "@/components/Media/View";
@@ -145,6 +164,7 @@ export default {
   components: {
     Browser,
     Header,
+    Info,
     MediaDownloads,
     MediaView,
     Modal,
@@ -176,33 +196,32 @@ export default {
 
   data() {
     return {
-      loading: false,
-      results: [],
-      selectedResult: null,
-      selectedPlayer: null,
-      selectedView: 'search',
-      selectedSubtitles: null,
-      prevSelectedView: null,
-      showSubtitlesModal: false,
-      forceShowNav: false,
-      awaitingPlayTorrent: null,
-      urlPlay: null,
-      browserFilter: null,
-      downloadsFilter: null,
       addToPlaylistItem: null,
-      torrentPlugin: null,
-      torrentPlugins: [
-        'torrent',
-        'rtorrent',
-      ],
-
+      awaitingPlayTorrent: null,
+      browserFilter: null,
+      downloads: {},
+      downloadsFilter: null,
+      forceShowNav: false,
+      infoTrack: null,
+      loading: false,
+      prevSelectedView: null,
+      results: [],
+      selectedPlayer: null,
+      selectedResult: null,
+      selectedSubtitles: null,
+      selectedView: 'search',
+      showSubtitlesModal: false,
       sources: {
         'file': true,
         'youtube': true,
         'torrent': true,
       },
-
-      downloads: {},
+      urlPlay: null,
+      torrentPlugin: null,
+      torrentPlugins: [
+        'torrent',
+        'rtorrent',
+      ],
     }
   },
 
@@ -281,6 +300,7 @@ export default {
   methods: {
     async search(event) {
       this.loading = true
+      this.setUrlArgs({q: event.query})
 
       try {
         this.results = await this.request(`${this.pluginName}.search`, event)
@@ -289,7 +309,7 @@ export default {
       }
     },
 
-    async play(item) {
+    async play(item, opts) {
       if (item?.type === 'torrent') {
         this.awaitingPlayTorrent = item.url
         this.notify({
@@ -309,7 +329,10 @@ export default {
         if (!this.selectedPlayer.component.supports(item))
           item = await this.startStreaming(item, this.pluginName)
 
-        await this.selectedPlayer.component.play(item, this.selectedSubtitles, this.selectedPlayer)
+        await this.selectedPlayer.component.play(
+          item, this.selectedSubtitles, this.selectedPlayer, opts
+        )
+
         await this.refresh()
       } finally {
         this.loading = false

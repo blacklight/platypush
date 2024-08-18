@@ -15,6 +15,8 @@
           <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" ref="dropdown">
             <DropdownItem icon-class="fa fa-play" text="Play" @input="$emit('play')"
                           v-if="item.type !== 'torrent'" />
+            <DropdownItem icon-class="fa fa-play" text="Play (With Cache)" @input="$emit('play-cache')"
+                          v-if="item.type === 'youtube'" />
             <DropdownItem icon-class="fa fa-download" text="Download" @input="$emit('download')"
                           v-if="(item.type === 'torrent' || item.type === 'youtube') && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
             <DropdownItem icon-class="fa fa-volume-high" text="Download Audio" @input="$emit('download-audio')"
@@ -60,6 +62,7 @@ export default {
     'download-audio',
     'open-channel',
     'play',
+    'play-cache',
     'remove-from-playlist',
     'select',
     'view',

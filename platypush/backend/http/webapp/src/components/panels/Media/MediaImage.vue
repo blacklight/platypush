@@ -13,7 +13,7 @@
       </a>
     </span>
 
-    <img class="image" :src="item.image" :alt="item.title" v-if="item?.image" />
+    <img class="image" :src="imgUrl" :alt="item.title" v-if="imgUrl" />
     <div class="image" v-else>
       <div class="inner">
         <i :class="iconClass" />
@@ -82,6 +82,15 @@ export default {
         default:
           return 'fas fa-play'
       }
+    },
+
+    imgUrl() {
+      let img = this.item?.image
+      if (!img) {
+        img = this.item?.images?.[0]?.url
+      }
+
+      return img
     },
 
     overlayIconClass() {

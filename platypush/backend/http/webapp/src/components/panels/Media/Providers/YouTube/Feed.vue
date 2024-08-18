@@ -1,6 +1,6 @@
 <template>
   <div class="media-youtube-feed">
-    <Loading v-if="loading" />
+    <Loading v-if="isLoading" />
     <NoItems :with-shadow="false" v-else-if="!feed?.length">
       No videos found.
     </NoItems>
@@ -15,6 +15,7 @@
              @open-channel="$emit('open-channel', $event)"
              @select="selectedResult = $event"
              @play="$emit('play', $event)"
+             @play-cache="$emit('play-cache', $event)"
              v-else />
   </div>
 </template>
@@ -33,6 +34,7 @@ export default {
     'download-audio',
     'open-channel',
     'play',
+    'play-cache',
   ],
 
   components: {
@@ -46,26 +48,37 @@ export default {
       type: String,
       default: null,
     },
+
+    loading: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
     return {
       feed: [],
-      loading: false,
+      loading_: false,
       selectedResult: null,
     }
   },
 
+  computed: {
+    isLoading() {
+      return this.loading_ || this.loading
+    },
+  },
+
   methods: {
     async loadFeed() {
-      this.loading = true
+      this.loading_ = true
       try {
         this.feed = (await this.request('youtube.get_feed')).map(item => ({
           ...item,
           type: 'youtube',
         }))
       } finally {
-        this.loading = false
+        this.loading_ = false
       }
     },
   },

@@ -57,7 +57,7 @@
     </div>
 
     <div class="track-container col-s-9 col-m-9 col-l-3">
-      <div class="track-info" v-if="track && status?.state !== 'stop'">
+      <div class="track-info" @click="$emit('info', track)" v-if="track && status?.state !== 'stop'">
         <div class="img-container" v-if="trackImage">
           <img class="image from desktop" :src="trackImage" :alt="track.title">
         </div>
@@ -127,6 +127,7 @@ export default {
   mixins: [Utils, MediaUtils],
   emits: [
     'consume',
+    'info',
     'mute',
     'next',
     'pause',
@@ -202,6 +203,9 @@ export default {
     },
 
     trackImage() {
+      if (this.track?.images?.length)
+        return this.track.images[0].url
+
       return this.track?.image || this.image
     },
   },
@@ -405,6 +409,10 @@ button {
   overflow: hidden;
   align-items: center;
 
+  button {
+    background: none !important;
+  }
+
   .row {
     width: 100%;
     display: flex;
@@ -466,8 +474,14 @@ button {
       flex-direction: row;
       align-items: center;
 
+      .img-container {
+        max-width: 100%;
+        max-height: calc(100% + 3em);
+      }
+
       .image {
-        margin-right: 0.75em;
+        padding: 0.5em;
+        max-height: 100%;
       }
     }
   }

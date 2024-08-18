@@ -8,6 +8,7 @@ import Mixin from "@/components/panels/Media/Players/Mixin";
 export default {
   name: "Chromecast",
   mixins: [Mixin],
+  emits: ['status'],
   data() {
     return {
       name: 'Chromecast',
@@ -48,12 +49,20 @@ export default {
       )?.status
     },
 
-    async play(resource, player) {
+    async play(resource, subs, player) {
       if (!resource) {
         return await this.pause(player)
       }
 
-      return await this.request(`${this.pluginName}.play`, {resource: resource.url, chromecast: this.getPlayerName(player)})
+      return await this.request(
+        `${this.pluginName}.play`,
+        {
+          resource: resource.url,
+          chromecast: this.getPlayerName(player),
+          subtitles: subs,
+          metadata: resource,
+        }
+      )
     },
 
     async pause(player) {

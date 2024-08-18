@@ -1,7 +1,7 @@
 <template>
   <div class="media-youtube-playlists">
     <div class="playlists-index" v-if="!selectedPlaylist?.id">
-      <Loading v-if="loading" />
+      <Loading v-if="isLoading" />
       <NoItems :with-shadow="false" v-else-if="!playlists?.length">
         No playlists found.
       </NoItems>
@@ -36,6 +36,7 @@
         @open-channel="$emit('open-channel', $event)"
         @remove-from-playlist="$emit('remove-from-playlist', {item: $event, playlist_id: selectedPlaylist.id})"
         @play="$emit('play', $event)"
+        @play-cache="$emit('play-cache', $event)"
       />
     </div>
 
@@ -117,6 +118,7 @@ export default {
     'download-audio',
     'open-channel',
     'play',
+    'play-cache',
     'remove-from-playlist',
     'remove-playlist',
     'rename-playlist',
@@ -144,6 +146,11 @@ export default {
       type: String,
       default: null,
     },
+
+    loading: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
@@ -153,7 +160,7 @@ export default {
       editedPlaylistName: '',
       editedPlaylistDescription: '',
       playlists: [],
-      loading: false,
+      loading_: false,
       showCreatePlaylist: false,
     }
   },
@@ -167,26 +174,30 @@ export default {
           return acc
         }, {})
     },
+
+    isLoading() {
+      return this.loading_ || this.loading
+    },
   },
 
   methods: {
     async loadPlaylists() {
-      this.loading = true
+      this.loading_ = true
       try {
         this.playlists = (await this.request('youtube.get_playlists'))
       } finally {
-        this.loading = false
+        this.loading_ = false
       }
     },
 
     async createPlaylist(name) {
-      this.loading = true
+      this.loading_ = true
       try {
         await this.request('youtube.create_playlist', {name: name})
         this.showCreatePlaylist = false
         this.loadPlaylists()
       } finally {
-        this.loading = false
+        this.loading_ = false
       }
     },
 
@@ -194,13 +205,13 @@ export default {
       if (!this.deletedPlaylist)
         return
 
-      this.loading = true
+      this.loading_ = true
       try {
         await this.request('youtube.delete_playlist', {id: this.deletedPlaylist})
         this.deletedPlaylist = null
         this.loadPlaylists()
       } finally {
-        this.loading = false
+        this.loading_ = false
       }
     },
 
@@ -208,7 +219,7 @@ export default {
       if (!this.editedPlaylist)
         return
 
-      this.loading = true
+      this.loading_ = true
       try {
         await this.request('youtube.rename_playlist', {
           id: this.editedPlaylist,
@@ -219,7 +230,7 @@ export default {
         this.clearEditPlaylist()
         this.loadPlaylists()
       } finally {
-        this.loading = false
+        this.loading_ = false
       }
     },
 

@@ -1,9 +1,7 @@
 <template>
   <keep-alive>
     <div class="media-browser">
-      <Loading v-if="loading" />
-
-      <div class="media-index grid" v-else-if="!mediaProvider">
+      <div class="media-index grid" v-if="!mediaProvider">
         <div class="item"
              v-for="(provider, name) in mediaProviders"
              :key="name"
@@ -19,10 +17,11 @@
         </div>
       </div>
 
-      <div class="media-browser-body" v-else-if="mediaProvider">
+      <div class="media-browser-body" v-if="mediaProvider">
         <component
             :is="mediaProvider"
             :filter="filter"
+            :loading="loading"
             :selected-playlist="selectedPlaylist"
             :selected-channel="selectedChannel"
             @add-to-playlist="$emit('add-to-playlist', $event)"
@@ -31,6 +30,7 @@
             @download-audio="$emit('download-audio', $event)"
             @path-change="$emit('path-change', $event)"
             @play="$emit('play', $event)"
+            @play-cache="$emit('play-cache', $event)"
         />
       </div>
     </div>
@@ -40,7 +40,6 @@
 <script>
 import { defineAsyncComponent, ref } from "vue";
 import Browser from "@/components/File/Browser";
-import Loading from "@/components/Loading";
 import Utils from "@/Utils";
 import providersMetadata from "./Providers/meta.json";
 
@@ -54,6 +53,7 @@ export default {
     'download-audio',
     'path-change',
     'play',
+    'play-cache',
     'remove-from-playlist',
     'remove-playlist',
     'rename-playlist',
@@ -61,7 +61,6 @@ export default {
 
   components: {
     Browser,
-    Loading,
   },
 
   props: {
@@ -77,11 +76,15 @@ export default {
     selectedChannel: {
       type: Object,
     },
+
+    loading: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
     return {
-      loading: false,
       mediaProvider: null,
       mediaProviders: {},
       providersMetadata: providersMetadata,

@@ -6,13 +6,12 @@
 import Mixin from "@/components/panels/Media/Players/Mixin";
 
 export default {
-  name: "Omxplayer",
   mixins: [Mixin],
   data() {
     return {
       iconClass: 'fa fa-tv',
-      name: 'OMXPlayer',
-      pluginName: 'media.omxplayer',
+      name: 'GStreamer',
+      pluginName: 'media.gstreamer',
     }
   },
 }
