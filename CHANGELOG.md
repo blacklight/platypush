@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.2.3]
 
 - [[#422](https://git.platypush.tech/platypush/platypush/issues/422)]: adapted
   media plugins to support streaming from the yt-dlp process. This allows
