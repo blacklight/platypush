@@ -21,7 +21,6 @@ class MediaKodiPlugin(MediaPlugin):
     Plugin to interact with a Kodi media player instance
     """
 
-    # noinspection HttpUrlsUsage
     def __init__(
         self,
         rpc_url: str = 'http://localhost:8080/jsonrpc',
@@ -110,7 +109,7 @@ class MediaKodiPlugin(MediaPlugin):
     def _on_ws_msg(self):
         def hndl(*args):
             msg = args[1] if len(args) > 1 else args[0]
-            self.logger.info("Received Kodi message: {}".format(msg))
+            self.logger.info("Received Kodi message: %s", msg)
             msg = json.loads(msg)
             method = msg.get('method')
 
@@ -151,7 +150,7 @@ class MediaKodiPlugin(MediaPlugin):
     def _on_ws_error(self):
         def hndl(*args):
             error = args[1] if len(args) > 1 else args[0]
-            self.logger.warning("Kodi websocket connection error: {}".format(error))
+            self.logger.warning("Kodi websocket connection error: %s", error)
 
         return hndl
 
