@@ -9,6 +9,7 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
@@ -77,6 +78,7 @@ class MediaPlugin(RunnablePlugin, ABC):
         merge_output_format: str = 'mp4',
         cache_dir: Optional[str] = None,
         cache_streams: bool = False,
+        ytdl_args: Optional[Sequence[str]] = None,
         **kwargs,
     ):
         """
@@ -131,6 +133,9 @@ class MediaPlugin(RunnablePlugin, ABC):
             may be delayed. If set to False, the media will start playing as
             soon as the stream is ready, but the quality may be lower,
             especially at the beginning, and seeking may not be supported.
+
+        :param ytdl_args: Additional arguments to pass to the youtube-dl
+            executable. Default: None.
         """
 
         super().__init__(**kwargs)
@@ -202,6 +207,7 @@ class MediaPlugin(RunnablePlugin, ABC):
         self.youtube_format = youtube_format
         self.youtube_audio_format = youtube_audio_format
         self.merge_output_format = merge_output_format
+        self.ytdl_args = ytdl_args or []
         self._latest_resource: Optional[MediaResource] = None
 
         self._parsers: Dict[Type[MediaResourceParser], MediaResourceParser] = {

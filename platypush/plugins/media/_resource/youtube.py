@@ -1,7 +1,7 @@
 import os
 import subprocess
 from dataclasses import dataclass
-from typing import IO, Optional
+from typing import IO, Optional, Sequence
 
 from ._base import PopenMediaResource
 
@@ -46,6 +46,7 @@ class YoutubeMediaResource(PopenMediaResource):
         youtube_format: Optional[str] = None,
         merge_output_format: Optional[str] = None,
         cache_streams: bool = False,
+        ytdl_args: Optional[Sequence[str]] = None,
         **kwargs,
     ) -> IO:
         if self.proc is None:
@@ -59,6 +60,7 @@ class YoutubeMediaResource(PopenMediaResource):
 
             output = ['-o', self.resource] if use_file else ['-o', '-']
             youtube_format = youtube_format or self._media.youtube_format
+            ytdl_args = ytdl_args or self._media.ytdl_args
             cmd = [
                 self._media._ytdl,  # pylint: disable=protected-access
                 '--no-part',
@@ -76,6 +78,7 @@ class YoutubeMediaResource(PopenMediaResource):
                     else []
                 ),
                 *output,
+                *ytdl_args,
                 self.url,
             ]
 
