@@ -25,10 +25,15 @@ def load_media_map() -> MediaMap:
             logger().warning('Could not load media map: %s', e)
             return {}
 
-    return {
-        media_id: MediaHandler.build(**media_info)
-        for media_id, media_info in media_map.items()
-    }
+    parsed_map = {}
+    for media_id, media_info in media_map.items():
+        try:
+            parsed_map[media_id] = MediaHandler.build(**media_info)
+        except Exception as e:
+            logger().debug('Could not load media %s: %s', media_id, e)
+            continue
+
+    return parsed_map
 
 
 def save_media_map(new_map: MediaMap):

@@ -3,11 +3,11 @@ import json
 import logging
 import multiprocessing
 import os
+import shutil
 import subprocess
 from concurrent.futures import ProcessPoolExecutor
 
 from dateutil.parser import isoparse
-import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +58,8 @@ def get_file_metadata(path: str):
         'duration': ret.get('format', {}).get('duration'),
         'width': video_stream.get('width'),
         'height': video_stream.get('height'),
+        'resolution': f"{video_stream.get('width')}x{video_stream.get('height')}",
+        'size': os.path.getsize(path),
         'created_at': creation_time,
     }
 
