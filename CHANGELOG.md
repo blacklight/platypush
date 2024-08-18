@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+- [[#422](https://git.platypush.tech/platypush/platypush/issues/422)]: adapted
+  media plugins to support streaming from the yt-dlp process. This allows
+  videos to have merged audio+video even if they had separate tracks upstream.
+
+- [`media.*`] Many improvements on the media UI.
+
+- [`zigbee.mqtt`] Removed synchronous logic from `zigbee.mqtt.device_set`. It
+  was prone to timeouts as well as pointless - the updated device state will
+  anyway be received as an event.
+
 ## [1.2.2]
 
 - Fixed regression on older version of Python that don't fully support
