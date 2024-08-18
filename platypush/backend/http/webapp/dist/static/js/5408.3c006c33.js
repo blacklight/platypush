@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[5408],{5408:function(e,n,t){t.r(n),t.d(n,{default:function(){return i}});var u=t(6252);function a(e,n,t,a,r,s){const p=(0,u.up)("Media");return(0,u.wg)(),(0,u.j4)(p,{"plugin-name":"media.gstreamer"})}var r=t(4092),s={components:{Media:r["default"]}},p=t(3744);const c=(0,p.Z)(s,[["render",a]]);var i=c}}]);
+//# sourceMappingURL=5408.3c006c33.js.map
