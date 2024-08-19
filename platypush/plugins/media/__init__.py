@@ -13,6 +13,7 @@ from typing import (
     Type,
     Union,
 )
+from urllib.parse import urlparse
 
 import requests
 
@@ -27,11 +28,13 @@ from platypush.utils import (
 )
 
 from ._constants import audio_extensions, video_extensions
-from ._model import DownloadState, PlayerState
+from ._model import DownloadState, MediaDirectory, PlayerState
 from ._resource import MediaResource
 from ._resource.downloaders import DownloadThread, MediaResourceDownloader, downloaders
 from ._resource.parsers import MediaResourceParser, parsers
 from ._search import MediaSearcher, searchers
+
+_MediaDirs = Union[str, Iterable[Union[str, dict]], Dict[str, Union[str, dict]]]
 
 
 class MediaPlugin(RunnablePlugin, ABC):
@@ -65,7 +68,7 @@ class MediaPlugin(RunnablePlugin, ABC):
 
     def __init__(
         self,
-        media_dirs: Optional[Union[str, Iterable[str], Dict[str, str]]] = None,
+        media_dirs: Optional[_MediaDirs] = None,
         download_dir: Optional[str] = None,
         env: Optional[Dict[str, str]] = None,
         volume: Optional[Union[float, int]] = None,
@@ -82,8 +85,51 @@ class MediaPlugin(RunnablePlugin, ABC):
         """
         :param media_dirs: Directories that will be scanned for media files when
             a search is performed (default: only ``download_dir``). You can
-            specify it either as a list of string or a map in the format
-            ``{<name>: <path>}``.
+            specify it either:
+
+                - As a list of strings:
+
+                  .. code-block:: yaml
+
+                    media_dirs:
+                        - /mnt/hd/media/movies
+                        - /mnt/hd/media/music
+                        - /mnt/hd/media/series
+
+                - As a dictionary where the key is the name of the media display
+                  name and the value is the path:
+
+                    .. code-block:: yaml
+
+                      media_dirs:
+                          Movies: /mnt/hd/media/movies
+                          Music: /mnt/hd/media/music
+                          Series: /mnt/hd/media/series
+
+                - As a dictionary where the key is the name of the media display
+                  name and the value is a dictionary with the path and additional
+                  display information:
+
+                      media_dirs:
+                          Movies:
+                              path: /mnt/hd/media/movies
+                              icon:
+                                  url: https://example.com/icon.png
+                                  # FontAwesome icon classes are supported
+                                  class: fa fa-film
+
+                          Music:
+                              path: /mnt/hd/media/music
+                              icon:
+                                  url: https://example.com/icon.png
+                                  class: fa fa-music
+
+                          Series:
+                              path: /mnt/hd/media/series
+                              icon:
+                                  url: https://example.com/icon.png
+                                  class: fa fa-tv
+
         :param download_dir: Directory where external resources/torrents will be
             downloaded (default: ~/Downloads)
         :param env: Environment variables key-values to pass to the
@@ -150,10 +196,6 @@ class MediaPlugin(RunnablePlugin, ABC):
         if not player:
             raise AttributeError('No media plugin configured')
 
-        self.media_dirs = self._parse_media_dirs(
-            media_dirs or player_config.get('media_dirs', [])
-        )
-
         if self.__class__.__name__ == 'MediaPlugin':
             # Populate this plugin with the actions of the configured player
             for act in player.registered_actions:
@@ -193,6 +235,10 @@ class MediaPlugin(RunnablePlugin, ABC):
         self.ytdl_args = ytdl_args or []
         self._latest_resource: Optional[MediaResource] = None
 
+        self.media_dirs = self._parse_media_dirs(
+            media_dirs or player_config.get('media_dirs', [])
+        )
+
         self._parsers: Dict[Type[MediaResourceParser], MediaResourceParser] = {
             parser: parser(self) for parser in parsers
         }
@@ -202,14 +248,16 @@ class MediaPlugin(RunnablePlugin, ABC):
         ] = {downloader: downloader(self) for downloader in downloaders}
 
         self._searchers: Dict[Type[MediaSearcher], MediaSearcher] = {
-            searcher: searcher(dirs=self.media_dirs.values(), media_plugin=self)
+            searcher: searcher(
+                dirs=[d.path for d in self.media_dirs.values()], media_plugin=self
+            )
             for searcher in searchers
         }
 
     @staticmethod
     def _parse_media_dirs(
-        media_dirs: Optional[Union[str, Iterable[str], Dict[str, str]]]
-    ) -> Dict[str, str]:
+        media_dirs: Optional[_MediaDirs],
+    ) -> Dict[str, MediaDirectory]:
         dirs = {}
 
         if media_dirs:
@@ -224,11 +272,38 @@ class MediaPlugin(RunnablePlugin, ABC):
 
         ret = {}
         for k, v in dirs.items():
-            v = os.path.abspath(os.path.expanduser(v))
-            if os.path.isdir(v):
-                ret[k] = v
+            assert isinstance(k, str), f'Invalid media_dirs key format: {k}'
+            if isinstance(v, str):
+                v = {'path': v}
 
-        return ret
+            assert isinstance(v, dict), f'Invalid media_dirs format: {v}'
+            path = v.get('path')
+            assert path, f'Missing path in media_dirs entry {k}'
+            path = os.path.abspath(os.path.expanduser(path))
+            assert os.path.isdir(path), f'Invalid path in media_dirs entry {k}'
+
+            icon = v.get('icon', {})
+            if isinstance(icon, str):
+                # Fill up the URL field if it's a URL, otherwise assume that
+                # it's a FontAwesome icon class
+                icon = {'url': icon} if urlparse(icon).scheme else {'class': icon}
+
+            ret[k] = MediaDirectory.build(
+                name=k,
+                path=path,
+                icon_class=icon.get('class'),
+                icon_url=icon.get('url'),
+            )
+
+        # Add the downloads directory if it's missing
+        if not any(d.path == get_default_downloads_dir() for d in ret.values()):
+            ret['Downloads'] = MediaDirectory.build(
+                name='Downloads',
+                path=get_default_downloads_dir(),
+                icon_class='fas fa-download',
+            )
+
+        return {k: ret[k] for k in sorted(ret.keys())}
 
     def _get_resource(
         self,
@@ -713,14 +788,11 @@ class MediaPlugin(RunnablePlugin, ABC):
         )
 
     @action
-    def get_media_dirs(self) -> Dict[str, str]:
+    def get_media_dirs(self) -> Dict[str, dict]:
         """
         :return: List of configured media directories.
         """
-        return {
-            'Downloads': self.download_dir,
-            **self.media_dirs,
-        }
+        return {dir.name: dir.to_dict() for dir in self.media_dirs.values()}
 
     def _get_downloads(self, url: Optional[str] = None, path: Optional[str] = None):
         assert url or path, 'URL or path must be specified'
