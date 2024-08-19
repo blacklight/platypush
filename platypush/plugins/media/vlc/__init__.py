@@ -126,7 +126,6 @@ class MediaVlcPlugin(MediaPlugin):
 
     def _reset_state(self):
         self._latest_seek = None
-        self._on_stop_event.clear()
 
         if self._latest_resource:
             self.logger.debug('Closing latest resource')
@@ -175,8 +174,10 @@ class MediaVlcPlugin(MediaPlugin):
 
             self.logger.debug('Received VLC event: %s', event.type)
             if event.type == EventType.MediaPlayerPlaying:  # type: ignore
+                self._on_stop_event.clear()
                 self._post_event(MediaPlayEvent, resource=self._get_current_resource())
             elif event.type == EventType.MediaPlayerPaused:  # type: ignore
+                self._on_stop_event.clear()
                 self._post_event(MediaPauseEvent)
             elif event.type in (
                 EventType.MediaPlayerStopped,  # type: ignore
