@@ -2,7 +2,9 @@ import json
 import os
 import pathlib
 import stat
-from typing import Iterable, List, Dict, Optional
+from functools import lru_cache
+from multiprocessing import RLock
+from typing import Iterable, List, Dict, Optional, Set
 
 from platypush.plugins import Plugin, action
 from platypush.utils import get_mime_type
@@ -12,6 +14,10 @@ class FilePlugin(Plugin):
     """
     A plugin for general-purpose file methods
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._mime_types_lock = RLock()
 
     @classmethod
     def _get_path(cls, filename):
@@ -267,7 +273,6 @@ class FilePlugin(Plugin):
             MIME types.
         :return: Dict containing the filtered resources and their MIME types.
         """
-        ret = {}
         filter_types = set()
         for t in types or []:
             filter_types.add(t)
@@ -275,25 +280,32 @@ class FilePlugin(Plugin):
             for token in tokens:
                 filter_types.add(token)
 
-        for file in files:
-            if file.startswith('file://'):
-                file = file[len('file://') :]
+        with self._mime_types_lock:
+            return self._get_mime_types(files, filter_types)
 
+    def _get_mime_types(
+        self, files: Iterable[str], filter_types: Set[str]
+    ) -> Dict[str, str]:
+        ret = {}
+        for file in files:
             try:
-                mime_type = get_mime_type(file)
+                mime_type = self._get_mime_type(file)
             except Exception as e:
                 self.logger.warning('Error while getting MIME type for %s: %s', file, e)
                 continue
-
-            if not mime_type:
-                self.logger.debug('No MIME type found for %s', file)
-                mime_type = 'application/octet-stream'
 
             mime_tokens = {mime_type, *mime_type.split('/')}
             if not filter_types or any(token in filter_types for token in mime_tokens):
                 ret[file] = mime_type
 
         return ret
+
+    @lru_cache(maxsize=1024)  # noqa
+    def _get_mime_type(self, file: str) -> str:
+        if file.startswith('file://'):
+            file = file[len('file://') :]
+
+        return get_mime_type(file) or 'application/octet-stream'
 
 
 # vim:sw=4:ts=4:et:
