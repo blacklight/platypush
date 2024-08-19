@@ -52,14 +52,13 @@ class MediaPlugin(RunnablePlugin, ABC):
 
     audio_extensions = audio_extensions
     video_extensions = video_extensions
-
     supported_media_plugins = [
         'media.vlc',
         'media.mpv',
-        'media.mplayer',
-        'media.omxplayer',
-        'media.chromecast',
         'media.gstreamer',
+        'media.mplayer',
+        'media.chromecast',
+        'media.kodi',
     ]
 
     _supported_media_types = ['file', 'jellyfin', 'plex', 'torrent', 'youtube']
