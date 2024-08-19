@@ -7,7 +7,6 @@ from abc import ABC, abstractmethod
 from typing import (
     Dict,
     Iterable,
-    List,
     Optional,
     Sequence,
     Tuple,
@@ -66,7 +65,7 @@ class MediaPlugin(RunnablePlugin, ABC):
 
     def __init__(
         self,
-        media_dirs: Optional[List[str]] = None,
+        media_dirs: Optional[Union[str, Iterable[str], Dict[str, str]]] = None,
         download_dir: Optional[str] = None,
         env: Optional[Dict[str, str]] = None,
         volume: Optional[Union[float, int]] = None,
@@ -82,21 +81,21 @@ class MediaPlugin(RunnablePlugin, ABC):
     ):
         """
         :param media_dirs: Directories that will be scanned for media files when
-            a search is performed (default: none)
-
+            a search is performed (default: only ``download_dir``). You can
+            specify it either as a list of string or a map in the format
+            ``{<name>: <path>}``.
         :param download_dir: Directory where external resources/torrents will be
             downloaded (default: ~/Downloads)
-
         :param env: Environment variables key-values to pass to the
             player executable (e.g. DISPLAY, XDG_VTNR, PULSE_SINK etc.)
-
         :param volume: Default volume for the player (default: None, maximum volume).
+        :param torrent_plugin: Optional plugin to be used for torrent download.
+            Possible values:
 
-        :param torrent_plugin: Optional plugin to be used for torrent download. Possible values:
-
-            - ``torrent`` - native ``libtorrent``-based plugin (default, recommended)
-            - ``rtorrent`` - torrent support over rtorrent RPC/XML interface
-            - ``webtorrent`` - torrent support over webtorrent (unstable)
+                - ``torrent`` - native ``libtorrent``-based plugin (default,
+                  recommended)
+                - ``rtorrent`` - torrent support over rtorrent RPC/XML interface
+                - ``webtorrent`` - torrent support over webtorrent (unstable)
 
         :param youtube_format: Select the preferred video/audio format for
             YouTube videos - and any media supported by youtube-dl or the
@@ -105,25 +104,20 @@ class MediaPlugin(RunnablePlugin, ABC):
             info on supported formats. Example:
             ``bestvideo[height<=?1080][ext=mp4]+bestaudio`` - select the best
             mp4 video with a resolution <= 1080p, and the best audio format.
-
         :param youtube_audio_format: Select the preferred audio format for
             YouTube videos downloaded only for audio. Default: ``bestaudio``.
-
         :param youtube_dl: Path to the ``youtube-dl`` executable, used to
             extract information from YouTube videos and other media platforms.
             Default: ``yt-dlp``. The default has changed from ``youtube-dl`` to
             the ``yt-dlp`` fork because the former is badly maintained and its
             latest release was pushed in 2021.
-
         :param merge_output_format: If media download requires ``youtube_dl``,
             and the upstream media contains both audio and video to be merged,
             this can be used to specify the format of the output container -
             e.g. ``mp4``, ``mkv``, ``avi``, ``flv``. Default: ``mp4``.
-
         :param cache_dir: Directory where the media cache will be stored. If not
             specified, the cache will be stored in the default cache directory
             (usually ``~/.cache/platypush/media/<media_plugin>``).
-
         :param cache_streams: If set to True, streams transcoded via yt-dlp or
             ffmpeg will be cached in ``cache_dir`` directory. If not set
             (default), then streams will be played directly via memory pipe.
@@ -132,15 +126,11 @@ class MediaPlugin(RunnablePlugin, ABC):
             may be delayed. If set to False, the media will start playing as
             soon as the stream is ready, but the quality may be lower,
             especially at the beginning, and seeking may not be supported.
-
         :param ytdl_args: Additional arguments to pass to the youtube-dl
             executable. Default: None.
         """
 
         super().__init__(**kwargs)
-
-        if media_dirs is None:
-            media_dirs = []
 
         player = None
         player_config = {}
@@ -160,7 +150,9 @@ class MediaPlugin(RunnablePlugin, ABC):
         if not player:
             raise AttributeError('No media plugin configured')
 
-        media_dirs = media_dirs or player_config.get('media_dirs', [])
+        self.media_dirs = self._parse_media_dirs(
+            media_dirs or player_config.get('media_dirs', [])
+        )
 
         if self.__class__.__name__ == 'MediaPlugin':
             # Populate this plugin with the actions of the configured player
@@ -170,13 +162,6 @@ class MediaPlugin(RunnablePlugin, ABC):
 
         self._env = env or {}
         self.cache_streams = cache_streams
-        self.media_dirs = set(
-            filter(
-                os.path.isdir,
-                [os.path.abspath(os.path.expanduser(d)) for d in media_dirs],
-            )
-        )
-
         self.download_dir = os.path.abspath(
             os.path.expanduser(
                 download_dir
@@ -198,7 +183,6 @@ class MediaPlugin(RunnablePlugin, ABC):
         pathlib.Path(self.cache_dir).mkdir(parents=True, exist_ok=True)
         pathlib.Path(self.download_dir).mkdir(parents=True, exist_ok=True)
         self._ytdl = youtube_dl
-        self.media_dirs.add(self.download_dir)
         self.volume = volume
         self._videos_queue = []
         self._youtube_proc = None
@@ -218,9 +202,33 @@ class MediaPlugin(RunnablePlugin, ABC):
         ] = {downloader: downloader(self) for downloader in downloaders}
 
         self._searchers: Dict[Type[MediaSearcher], MediaSearcher] = {
-            searcher: searcher(dirs=self.media_dirs, media_plugin=self)
+            searcher: searcher(dirs=self.media_dirs.values(), media_plugin=self)
             for searcher in searchers
         }
+
+    @staticmethod
+    def _parse_media_dirs(
+        media_dirs: Optional[Union[str, Iterable[str], Dict[str, str]]]
+    ) -> Dict[str, str]:
+        dirs = {}
+
+        if media_dirs:
+            if isinstance(media_dirs, str):
+                dirs = [media_dirs]
+            if isinstance(media_dirs, (list, tuple, set)):
+                dirs = {d: d for d in media_dirs}
+            if isinstance(media_dirs, dict):
+                dirs = media_dirs
+
+        assert isinstance(dirs, dict), f'Invalid media_dirs format: {media_dirs}'
+
+        ret = {}
+        for k, v in dirs.items():
+            v = os.path.abspath(os.path.expanduser(v))
+            if os.path.isdir(v):
+                ret[k] = v
+
+        return ret
 
     def _get_resource(
         self,
@@ -703,6 +711,16 @@ class MediaPlugin(RunnablePlugin, ABC):
             ),
             many=True,
         )
+
+    @action
+    def get_media_dirs(self) -> Dict[str, str]:
+        """
+        :return: List of configured media directories.
+        """
+        return {
+            'Downloads': self.download_dir,
+            **self.media_dirs,
+        }
 
     def _get_downloads(self, url: Optional[str] = None, path: Optional[str] = None):
         assert url or path, 'URL or path must be specified'
