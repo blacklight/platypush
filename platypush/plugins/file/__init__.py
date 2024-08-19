@@ -1,9 +1,11 @@
 import json
 import os
 import pathlib
-from typing import List, Dict, Optional
+import stat
+from typing import Iterable, List, Dict, Optional
 
 from platypush.plugins import Plugin, action
+from platypush.utils import get_mime_type
 
 
 class FilePlugin(Plugin):
@@ -200,6 +202,98 @@ class FilePlugin(Plugin):
             ],
             key=lambda f: (f.get('type'), f.get('name')),
         )
+
+    @action
+    def info(self, files: Iterable[str]) -> Dict[str, Dict[str, str]]:
+        """
+        Retrieve information about a list of files.
+
+        :param files: List of files.
+        :return: Dict containing the information about each file. Example:
+
+          .. code-block:: json
+
+            {
+                "/path/to/file": {
+                    "path": "/path/to/file",
+                    "name": "file",
+                    "size": 1234,
+                    "type": "file",
+                    "mime_type": "application/octet-stream",
+                    "last_modified": "2021-01-01T00:00:00",
+                    "permissions": "rw-r--r--",
+                    "owner": "user",
+                    "group": "group",
+                }
+            }
+
+        """
+        ret = {}
+        for file in files:
+            file = self._get_path(file)
+            if not os.path.exists(file):
+                self.logger.warning('File not found: %s', file)
+                continue
+
+            stat_info = os.stat(file)
+            ret[file] = {
+                'path': file,
+                'name': os.path.basename(file),
+                'size': stat_info.st_size,
+                'type': 'directory' if os.path.isdir(file) else 'file',
+                'mime_type': get_mime_type(file),
+                'last_modified': stat_info.st_mtime,
+                'permissions': stat.filemode(stat_info.st_mode),
+                'owner': stat_info.st_uid,
+                'group': stat_info.st_gid,
+            }
+
+        return ret
+
+    @action
+    def get_mime_types(
+        self,
+        files: Iterable[str],
+        types: Optional[Iterable[str]] = None,
+    ) -> Dict[str, str]:
+        """
+        Given a list of files or URLs, get their MIME types, or filter them by
+        MIME type.
+
+        :param files: List of files or URLs.
+        :param types: Filter of MIME types to apply. Partial matches are
+            allowed - e.g. 'video' will match all video types. No filter means
+            that all the input resources will be returned with their respective
+            MIME types.
+        :return: Dict containing the filtered resources and their MIME types.
+        """
+        ret = {}
+        filter_types = set()
+        for t in types or []:
+            filter_types.add(t)
+            tokens = t.split('/')
+            for token in tokens:
+                filter_types.add(token)
+
+        for file in files:
+            if file.startswith('file://'):
+                file = file[len('file://') :]
+
+            try:
+                mime_type = get_mime_type(file)
+            except Exception as e:
+                self.logger.warning('Error while getting MIME type for %s: %s', file, e)
+                continue
+
+            if not mime_type:
+                self.logger.debug('No MIME type found for %s', file)
+                mime_type = 'application/octet-stream'
+
+            mime_tokens = {mime_type, *mime_type.split('/')}
+            if not filter_types or any(token in filter_types for token in mime_tokens):
+                ret[file] = mime_type
+
+        return ret
 
 
 # vim:sw=4:ts=4:et:
