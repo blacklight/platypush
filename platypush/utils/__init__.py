@@ -413,7 +413,11 @@ def get_mime_type(resource: str) -> Optional[str]:
             )
 
         if mime:
-            return mime.mime_type if hasattr(mime, 'mime_type') else mime  # type: ignore
+            mime_type = mime.mime_type if hasattr(mime, 'mime_type') else mime  # type: ignore
+            if mime_type == 'inode/symlink':
+                mime_type = get_mime_type(os.path.realpath(resource))
+
+            return mime_type
 
     return None
 
