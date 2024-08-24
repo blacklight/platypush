@@ -199,7 +199,11 @@ export default {
 
   computed: {
     duration() {
-      return this.status?.duration != null ? this.status.duration : this.track?.duration
+      const duration = this.status?.duration != null ? this.status.duration : this.track?.duration
+      if (duration != null)
+        return parseFloat(duration)
+
+      return null
     },
 
     trackImage() {
