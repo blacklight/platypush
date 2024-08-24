@@ -27,6 +27,10 @@ export default {
       default: false,
     },
 
+    mediaPlugin: {
+      type: String,
+    },
+
     selectedPlaylist: {
       default: null,
     },
