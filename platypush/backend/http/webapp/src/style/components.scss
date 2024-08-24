@@ -18,6 +18,13 @@ button, .btn, .btn-default {
   .icon {
     margin-right: .5em;
   }
+
+  &:disabled,
+  &[disabled] {
+    background: none !important;
+    color: $disabled-fg !important;
+    cursor: not-allowed;
+  }
 }
 
 input[type=text], input[type=password] {
