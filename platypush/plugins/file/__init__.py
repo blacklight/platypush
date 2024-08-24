@@ -155,6 +155,26 @@ class FilePlugin(Plugin):
         pathlib.Path(self._get_path(file)).rename(self._get_path(name))
 
     @action
+    def copy(self, source: str, target: str):
+        """
+        Copy a file.
+
+        :param source: Source file.
+        :param target: Destination file.
+        """
+        shutil.copy(self._get_path(source), self._get_path(target))
+
+    @action
+    def move(self, source: str, target: str):
+        """
+        Move a file.
+
+        :param source: Source file.
+        :param target: Destination file.
+        """
+        shutil.move(self._get_path(source), self._get_path(target))
+
+    @action
     def link(self, file: str, target: str, symbolic=True):
         """
         Create a link to a file.
