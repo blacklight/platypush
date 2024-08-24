@@ -13,7 +13,7 @@
             @remove-from-playlist="$emit('remove-from-playlist', item)"
             @select="$emit('select', i)"
             @play="$emit('play', item)"
-            @play-cache="$emit('play-cache', item)"
+            @play-with-opts="$emit('play-with-opts', $event)"
             @view="$emit('view', item)"
             @download="$emit('download', item)"
             @download-audio="$emit('download-audio', item)"
@@ -28,7 +28,7 @@
             @download-audio="$emit('download-audio', results[selectedResult])"
             @open-channel="$emit('open-channel', results[selectedResult])"
             @play="$emit('play', results[selectedResult])"
-            @play-cache="$emit('play-cache', results[selectedResult])"
+            @play-with-opts="$emit('play-with-opts', {...$event, item: results[selectedResult]})"
             v-if="selectedResult != null" />
     </Modal>
   </div>
@@ -48,7 +48,7 @@ export default {
     'download-audio',
     'open-channel',
     'play',
-    'play-cache',
+    'play-with-opts',
     'remove-from-playlist',
     'scroll-end',
     'select',

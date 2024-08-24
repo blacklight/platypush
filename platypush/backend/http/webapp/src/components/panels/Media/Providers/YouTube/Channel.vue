@@ -51,7 +51,7 @@
                @download-audio="$emit('download-audio', $event)"
                @open-channel="$emit('open-channel', $event)"
                @play="$emit('play', $event)"
-               @play-cache="$emit('play-cache', $event)"
+               @play-with-opts="$emit('play-with-opts', $event)"
                @scroll-end="loadNextPage"
                @select="selectedResult = $event"
       />
@@ -72,7 +72,7 @@ export default {
     'download-audio',
     'open-channel',
     'play',
-    'play-cache',
+    'play-with-opts',
   ],
 
   components: {

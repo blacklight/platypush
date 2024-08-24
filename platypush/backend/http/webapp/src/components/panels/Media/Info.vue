@@ -6,7 +6,7 @@
               @add-to-playlist="$emit('add-to-playlist', item)"
               @open-channel="$emit('open-channel', item)"
               @play="$emit('play', item)"
-              @play-cache="$emit('play-cache', item)"
+              @play-with-opts="$emit('play-with-opts', $event)"
               @download="$emit('download', item)"
               @download-audio="$emit('download-audio', item)"
         />
@@ -191,7 +191,7 @@ export default {
     'download-audio',
     'open-channel',
     'play',
-    'play-cache',
+    'play-with-opts',
   ],
   props: {
     item: {

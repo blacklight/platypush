@@ -15,7 +15,7 @@
              @open-channel="$emit('open-channel', $event)"
              @select="selectedResult = $event"
              @play="$emit('play', $event)"
-             @play-cache="$emit('play-cache', $event)"
+             @play-with-opts="$emit('play-with-opts', $event)"
              v-else />
   </div>
 </template>
@@ -34,7 +34,7 @@ export default {
     'download-audio',
     'open-channel',
     'play',
-    'play-cache',
+    'play-with-opts',
   ],
 
   components: {

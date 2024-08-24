@@ -59,7 +59,7 @@
                        @open-channel="selectChannelFromItem"
                        @select="onResultSelect($event)"
                        @play="play"
-                       @play-cache="play($event, {cache: true})"
+                       @play-with-opts="play($event.item, $event.opts)"
                        @view="view"
                        @download="download"
                        @download-audio="downloadAudio"
@@ -81,6 +81,7 @@
 
               <Browser :filter="browserFilter"
                        :loading="loading"
+                       :media-plugin="pluginName"
                        :selected-playlist="selectedPlaylist"
                        :selected-channel="selectedChannel"
                        @add-to-playlist="addToPlaylistItem = $event"
@@ -89,7 +90,7 @@
                        @download-audio="downloadAudio"
                        @path-change="browserFilter = ''"
                        @play="play($event)"
-                       @play-cache="play($event, {cache: true})"
+                       @play-with-opts="play($event.item, $event.opts)"
                        v-else-if="selectedView === 'browser'"
               />
             </div>
@@ -133,7 +134,7 @@
                 @download-audio="downloadAudio"
                 @open-channel="selectChannelFromItem"
                 @play="play"
-                @play-cache="play($event, {cache: true})"
+                @play-with-opts="play($event.item, $event.opts)"
           />
         </Modal>
       </div>

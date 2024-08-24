@@ -22,6 +22,7 @@
             :is="mediaProvider"
             :filter="filter"
             :loading="loading"
+            :media-plugin="mediaPlugin"
             :selected-playlist="selectedPlaylist"
             :selected-channel="selectedChannel"
             @add-to-playlist="$emit('add-to-playlist', $event)"
@@ -30,7 +31,7 @@
             @download-audio="$emit('download-audio', $event)"
             @path-change="$emit('path-change', $event)"
             @play="$emit('play', $event)"
-            @play-cache="$emit('play-cache', $event)"
+            @play-with-opts="$emit('play-with-opts', $event)"
         />
       </div>
     </div>
@@ -53,7 +54,7 @@ export default {
     'download-audio',
     'path-change',
     'play',
-    'play-cache',
+    'play-with-opts',
     'remove-from-playlist',
     'remove-playlist',
     'rename-playlist',
@@ -67,6 +68,10 @@ export default {
     filter: {
       type: String,
       default: '',
+    },
+
+    mediaPlugin: {
+      type: String,
     },
 
     selectedPlaylist: {

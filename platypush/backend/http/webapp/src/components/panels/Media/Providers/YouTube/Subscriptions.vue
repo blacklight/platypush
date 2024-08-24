@@ -27,7 +27,7 @@
         @download="$emit('download', $event)"
         @download-audio="$emit('download-audio', $event)"
         @play="$emit('play', $event)"
-        @play-cache="$emit('play-cache', $event)"
+        @play-with-opts="$emit('play-with-opts', $event)"
       />
     </div>
   </div>
@@ -46,7 +46,7 @@ export default {
     'download',
     'download-audio',
     'play',
-    'play-cache',
+    'play-with-opts',
     'select',
   ],
 

@@ -36,7 +36,7 @@
         @open-channel="$emit('open-channel', $event)"
         @remove-from-playlist="$emit('remove-from-playlist', {item: $event, playlist_id: selectedPlaylist.id})"
         @play="$emit('play', $event)"
-        @play-cache="$emit('play-cache', $event)"
+        @play-with-opts="$emit('play-with-opts', $event)"
       />
     </div>
 
@@ -118,7 +118,7 @@ export default {
     'download-audio',
     'open-channel',
     'play',
-    'play-cache',
+    'play-with-opts',
     'remove-from-playlist',
     'remove-playlist',
     'rename-playlist',
