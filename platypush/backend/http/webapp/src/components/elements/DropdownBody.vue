@@ -1,5 +1,5 @@
 <template>
-  <div class="dropdown" :id="id" @click="$emit('click', $event)">
+  <div class="dropdown" :id="id" :style="style" @click="$emit('click', $event)">
     <slot />
   </div>
 </template>
@@ -15,6 +15,11 @@ export default {
     keepOpenOnItemClick: {
       type: Boolean,
       default: false,
+    },
+
+    style: {
+      type: Object,
+      default: () => ({}),
     },
   },
 }
