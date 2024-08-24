@@ -1,6 +1,7 @@
 import json
 import os
 import pathlib
+import shutil
 import stat
 from functools import lru_cache
 from multiprocessing import RLock
@@ -102,13 +103,19 @@ class FilePlugin(Plugin):
         )
 
     @action
-    def rmdir(self, directory: str):
+    def rmdir(self, directory: str, recursive: bool = False):
         """
         Remove a directory. The directory must be empty.
 
         :param directory: Directory name/path.
+        :param recursive: If set, the directory and all its contents will be
+            removed recursively (default: False).
         """
-        pathlib.Path(self._get_path(directory)).rmdir()
+        directory = self._get_path(directory)
+        if not recursive:
+            pathlib.Path(directory).rmdir()
+        else:
+            shutil.rmtree(directory)
 
     @action
     def touch(self, file: str, mode=0o644):
