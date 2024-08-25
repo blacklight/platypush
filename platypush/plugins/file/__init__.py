@@ -5,10 +5,12 @@ import shutil
 import stat
 from functools import lru_cache
 from multiprocessing import RLock
-from typing import Any, Iterable, List, Dict, Optional, Set
+from typing import Any, Iterable, List, Dict, Optional, Set, Union
 
 from platypush.plugins import Plugin, action
 from platypush.utils import get_mime_type, is_binary
+
+Bookmarks = Union[Iterable[str], Iterable[Union[str, Dict[str, Any]]], Dict[str, Any]]
 
 
 class FilePlugin(Plugin):
@@ -16,9 +18,66 @@ class FilePlugin(Plugin):
     A plugin for general-purpose file methods
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, bookmarks: Bookmarks, **kwargs):
+        """
+        :param bookmarks: A list/dictionary of bookmarks. Bookmarks will be
+            shown in the file browser UI home page for easier access.
+
+            Possible formats:
+
+              .. code-block:: yaml
+
+                bookmarks:
+                    - /path/to/directory1
+                    - /path/to/directory2
+
+              .. code-block:: yaml
+
+                bookmarks:
+                    Movies: /path/to/movies
+                    Music: /path/to/music
+
+              .. code-block:: yaml
+
+                bookmarks:
+                    - name: Movies
+                      path: /path/to/movies
+                      icon:
+                          class: fa fa-film
+
+              .. code-block:: yaml
+
+                bookmarks:
+                    Movies:
+                        name: Movies
+                        path: /path/to/movies
+                        icon:
+                            url: /path/to/icon.png
+
+        """
         super().__init__(*args, **kwargs)
         self._mime_types_lock = RLock()
+        self._bookmarks = self._parse_bookmarks(bookmarks)
+
+    def _parse_bookmarks(self, bookmarks: Bookmarks) -> Dict[str, Dict[str, Any]]:
+        ret = {}
+        if isinstance(bookmarks, (list, tuple, set)):
+            for bookmark in bookmarks:
+                if isinstance(bookmark, str):
+                    ret[bookmark] = {'name': bookmark, 'path': bookmark}
+                else:
+                    ret[bookmark['name']] = bookmark
+        elif isinstance(bookmarks, dict):
+            ret.update(bookmarks)
+
+        for name, bookmark in ret.items():
+            ret[name] = (
+                {'name': name, 'path': os.path.abspath(os.path.expanduser(bookmark))}
+                if isinstance(bookmark, str)
+                else bookmark
+            )
+
+        return ret
 
     @classmethod
     def _get_path(cls, filename):
@@ -365,6 +424,34 @@ class FilePlugin(Plugin):
         :return: The current user's home directory.
         """
         return str(pathlib.Path.home())
+
+    @action
+    def get_bookmarks(self) -> Dict[str, Dict[str, Any]]:
+        """
+        :return: List of bookmarks. Example:
+
+            .. code-block:: json
+
+                {
+                    "directory1": {
+                        "name": "directory1",
+                        "path": "/path/to/directory1"
+                        "icon": {
+                            "class": "fa fa-folder"
+                        }
+                    },
+
+                    "directory2": {
+                        "name": "directory2",
+                        "path": "/path/to/directory2"
+                        "icon": {
+                            "url": "/path/to/icon.png"
+                        }
+                    }
+                }
+
+        """
+        return self._bookmarks
 
     def _get_mime_types(
         self, files: Iterable[str], filter_types: Set[str]
