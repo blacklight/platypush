@@ -272,6 +272,7 @@ class Config:
     @property
     def _core_plugins(self) -> Dict[str, dict]:
         return {
+            'procedures': {},
             'variable': {},
         }
 
