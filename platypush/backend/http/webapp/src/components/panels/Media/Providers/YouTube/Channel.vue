@@ -1,6 +1,6 @@
 <template>
   <div class="media-youtube-channel">
-    <Loading v-if="loading" />
+    <Loading v-if="isLoading" />
 
     <div class="channel" v-else-if="channel">
       <div class="header">
@@ -29,7 +29,7 @@
                 </button>
 
                 <div class="subscribers" v-if="channel.subscribers != null && (channel.subscribers || 0) >= 0">
-                  {{ channel.subscribers }} subscribers
+                  {{ formatNumber(channel.subscribers) }} subscribers
                 </div>
               </div>
             </div>
@@ -51,6 +51,7 @@
                @download-audio="$emit('download-audio', $event)"
                @open-channel="$emit('open-channel', $event)"
                @play="$emit('play', $event)"
+               @play-with-opts="$emit('play-with-opts', $event)"
                @scroll-end="loadNextPage"
                @select="selectedResult = $event"
       />
@@ -71,6 +72,7 @@ export default {
     'download-audio',
     'open-channel',
     'play',
+    'play-with-opts',
   ],
 
   components: {
@@ -88,12 +90,17 @@ export default {
       type: String,
       default: null,
     },
+
+    loading: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
     return {
       channel: null,
-      loading: false,
+      loading_: false,
       loadingNextPage: false,
       selectedResult: null,
       subscribed: false,
@@ -101,6 +108,10 @@ export default {
   },
 
   computed: {
+    isLoading() {
+      return this.loading || this.loading_
+    },
+
     itemsByUrl() {
       return this.channel?.items.reduce((acc, item) => {
         acc[item.url] = item
@@ -111,12 +122,12 @@ export default {
 
   methods: {
     async loadChannel() {
-      this.loading = true
+      this.loading_ = true
       try {
         await this.updateChannel(true)
         this.subscribed = await this.request('youtube.is_subscribed', {channel_id: this.id})
       } finally {
-        this.loading = false
+        this.loading_ = false
       }
     },
 

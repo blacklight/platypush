@@ -1,4 +1,5 @@
-from typing import Optional
+from typing import Dict, Optional, Sequence
+from uuid import UUID
 
 from pychromecast import (
     CastBrowser,
@@ -10,9 +11,14 @@ from pychromecast import (
 
 from platypush.backend.http.app.utils import get_remote_base_url
 from platypush.plugins import RunnablePlugin, action
-from platypush.plugins.media import MediaPlugin
+from platypush.plugins.media import MediaPlugin, MediaResource
+from platypush.plugins.media._resource.youtube import YoutubeMediaResource
 from platypush.utils import get_mime_type
-from platypush.message.event.media import MediaPlayRequestEvent
+from platypush.message.event.media import (
+    MediaEvent,
+    MediaPlayRequestEvent,
+    MediaStopEvent,
+)
 
 from ._listener import MediaListener
 from ._subtitles import SubtitlesAsyncHandler
@@ -29,22 +35,49 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
     STREAM_TYPE_LIVE = "LIVE"
 
     def __init__(
-        self, chromecast: Optional[str] = None, poll_interval: float = 30, **kwargs
+        self,
+        chromecast: Optional[str] = None,
+        poll_interval: float = 30,
+        youtube_format: Optional[str] = 'bv[width<=?1080][ext=mp4]+ba[ext=m4a]/bv+ba',
+        merge_output_format: str = 'mp4',
+        # Transcode to H.264/AAC to maximimze compatibility with Chromecast codecs
+        ytdl_args: Optional[Sequence[str]] = (
+            '--use-postprocessor',
+            'FFmpegCopyStream',
+            '--ppa',
+            'CopyStream:"-c:v libx264 -preset veryfast -crf 28 +faststart -c:a aac"',
+        ),
+        use_ytdl: bool = True,
+        **kwargs,
     ):
         """
         :param chromecast: Default Chromecast to cast to if no name is specified.
         :param poll_interval: How often the plugin should poll for new/removed
             Chromecast devices (default: 30 seconds).
+        :param use_ytdl: Use youtube-dl to download the media if we are dealing
+            with formats compatible with youtube-dl/yt-dlp. Disable this option
+            if you experience issues with the media playback on the Chromecast,
+            such as media with no video, no audio or both. This option will
+            disable muxing+transcoding over the HTTP server and will stream the
+            URL directly to the Chromecast.
         """
-        super().__init__(poll_interval=poll_interval, **kwargs)
+        super().__init__(
+            poll_interval=poll_interval,
+            youtube_format=youtube_format,
+            merge_output_format=merge_output_format,
+            ytdl_args=ytdl_args,
+            **kwargs,
+        )
 
         self._is_local = False
         self.chromecast = chromecast
         self._chromecasts_by_uuid = {}
         self._chromecasts_by_name = {}
         self._media_listeners = {}
+        self._latest_resources_by_device: Dict[UUID, MediaResource] = {}
         self._zc = None
         self._browser = None
+        self._use_ytdl = use_ytdl
 
     @property
     def zc(self):
@@ -90,6 +123,9 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
         else:
             raise RuntimeError('Invalid Chromecast object')
 
+        resource = self._latest_resources_by_device.get(cc.uuid)
+        resource_dump = resource.to_dict() if resource else {}
+
         return {
             'type': cc.cast_type,
             'name': cc.name,
@@ -111,19 +147,25 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
                     'volume': round(100 * cc.status.volume_level, 2),
                     'muted': cc.status.volume_muted,
                     **convert_status(cc.media_controller.status),
+                    **resource_dump,
                 }
                 if cc.status
                 else {}
             ),
         }
 
-    def _event_callback(self, _, cast: Chromecast):
+    def _event_callback(self, evt: MediaEvent, cast: Chromecast):
+        if isinstance(evt, MediaStopEvent):
+            resource = self._latest_resources_by_device.pop(cast.uuid, None)
+            if resource:
+                resource.close()
+
         self._chromecasts_by_uuid[cast.uuid] = cast
         self._chromecasts_by_name[
             self._get_device_property(cast, 'friendly_name')
         ] = cast
 
-    def get_chromecast(self, chromecast=None):
+    def get_chromecast(self, chromecast=None) -> Chromecast:
         if isinstance(chromecast, Chromecast):
             return chromecast
 
@@ -151,7 +193,9 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
         subtitles_lang: str = 'en-US',
         subtitles_mime: str = 'text/vtt',
         subtitle_id: int = 1,
-        **__,
+        youtube_format: Optional[str] = None,
+        use_ytdl: Optional[bool] = None,
+        **kwargs,
     ):
         """
         Cast media to an available Chromecast device.
@@ -171,6 +215,8 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
         :param subtitles_lang: Subtitles language (default: en-US)
         :param subtitles_mime: Subtitles MIME type (default: text/vtt)
         :param subtitle_id: ID of the subtitles to be loaded (default: 1)
+        :param youtube_format: Override the default YouTube format.
+        :param use_ytdl: Override the default use_ytdl setting for this call.
         """
 
         if not chromecast:
@@ -179,10 +225,26 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
         post_event(MediaPlayRequestEvent, resource=resource, device=chromecast)
         cast = self.get_chromecast(chromecast)
         mc = cast.media_controller
-        resource = self._get_resource(resource)
+        media = self._latest_resource = self._latest_resources_by_device[
+            cast.uuid
+        ] = self._get_resource(resource, **kwargs)
+
+        youtube_format = youtube_format or self.youtube_format
+        use_ytdl = use_ytdl if use_ytdl is not None else self._use_ytdl
+        ytdl_args = kwargs.pop('ytdl_args', self.ytdl_args)
+
+        if isinstance(media, YoutubeMediaResource) and not use_ytdl:
+            # Use the original URL if it's a YouTube video and we're not using youtube-dl
+            media.resource = media.url
+        else:
+            media.open(youtube_format=youtube_format, ytdl_args=ytdl_args, **kwargs)
+
+        assert media.resource, 'No playable resource found'
+        resource = media.resource
+        self.logger.debug('Opened media resource: %s', media.to_dict())
 
         if not content_type:
-            content_type = get_mime_type(resource)
+            content_type = get_mime_type(media.resource)
 
         if not content_type:
             raise RuntimeError(f'content_type required to process media {resource}')
@@ -192,19 +254,13 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
             resource = get_remote_base_url() + resource
             self.logger.info('HTTP media stream started on %s', resource)
 
-        if self._latest_resource:
-            if not title:
-                title = self._latest_resource.title
-            if not image_url:
-                image_url = self._latest_resource.image
-
         self.logger.info('Playing %s on %s', resource, chromecast)
 
         mc.play_media(
             resource,
             content_type,
-            title=self._latest_resource.title if self._latest_resource else title,
-            thumb=image_url,
+            title=title or media.title,
+            thumb=image_url or media.image,
             current_time=current_time,
             autoplay=autoplay,
             stream_type=stream_type,
@@ -628,6 +684,15 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
 
             self._chromecasts_by_uuid[cc.uuid] = cc
             self._chromecasts_by_name[name] = cc
+
+    @property
+    def supports_local_media(self) -> bool:
+        # Chromecasts can't play local media: they always need an HTTP URL
+        return False
+
+    @property
+    def supports_local_pipe(self) -> bool:
+        return False
 
     def main(self):
         while not self.should_stop():

@@ -1,6 +1,10 @@
 <template>
   <div class="floating-btn" :class="className">
-    <button type="button" class="btn btn-primary" :title="title" @click="$emit('click', $event)">
+    <button type="button"
+            class="btn btn-primary"
+            :disabled="disabled"
+            :title="title"
+            @click="$emit('click', $event)">
       <Icon :class="iconClass" :url="iconUrl" />
     </button>
   </div>
@@ -15,6 +19,10 @@ export default {
   emits: ["click"],
 
   props: {
+    disabled: {
+      type: Boolean,
+      default: false,
+    },
     iconClass: {
       type: String,
     },
@@ -56,6 +64,13 @@ export default {
 
     &:hover {
       background: $tile-hover-bg !important;
+    }
+
+    &:disabled,
+    &[disabled] {
+      background: $default-bg-7 !important;
+      color: $disabled-fg !important;
+      cursor: not-allowed;
     }
   }
 

@@ -6,7 +6,11 @@
     </button>
 
     <div class="body-container hidden" ref="dropdownContainer">
-      <DropdownBody :id="id" :keepOpenOnItemClick="keepOpenOnItemClick" ref="dropdown" @click="onClick">
+      <DropdownBody :id="id"
+                    :keepOpenOnItemClick="keepOpenOnItemClick"
+                    :style="style"
+                    ref="dropdown"
+                    @click="onClick">
         <slot />
       </DropdownBody>
     </div>
@@ -40,6 +44,11 @@ export default {
     keepOpenOnItemClick: {
       type: Boolean,
       default: false,
+    },
+
+    style: {
+      type: Object,
+      default: () => ({}),
     },
   },
 
@@ -127,36 +136,42 @@ export default {
 
       this.visible = true
       this.$refs.dropdownContainer.classList.remove('hidden')
-      this.$nextTick(() => {
-        const buttonRect = this.$refs.button.getBoundingClientRect()
-        const buttonPos = {
-          left: buttonRect.left + window.scrollX,
-          top: buttonRect.top + window.scrollY,
-        }
+      this.$nextTick(this.adjustDropdownPos)
+    },
 
-        const pos = {
-          left: buttonPos.left,
-          top: buttonPos.top + this.buttonHeight,
-        }
+    adjustDropdownPos() {
+      const buttonRect = this.$refs.button.getBoundingClientRect()
+      const buttonPos = {
+        left: buttonRect.left + window.scrollX,
+        top: buttonRect.top + window.scrollY,
+      }
 
-        const dropdownWidth = this.getDropdownWidth()
-        const dropdownHeight = this.getDropdownHeight()
+      const pos = {
+        left: buttonPos.left,
+        top: buttonPos.top + this.buttonHeight,
+      }
 
-        if ((pos.left + dropdownWidth) > (window.innerWidth + window.scrollX) / 2) {
-          pos.left -= (dropdownWidth - this.buttonWidth)
-        }
+      const dropdownWidth = this.getDropdownWidth()
+      const dropdownHeight = this.getDropdownHeight()
 
-        if ((pos.top + dropdownHeight) > (window.innerHeight + window.scrollY) / 2) {
-          pos.top -= (dropdownHeight + this.buttonHeight - 10)
-        }
+      if ((pos.left + dropdownWidth) > (window.innerWidth + window.scrollX) / 2) {
+        pos.left -= (dropdownWidth - this.buttonWidth)
+      }
 
-        const element = this.$refs.dropdown.$el
-        element.classList.add('fade-in')
-        element.style.top = `${pos.top}px`
-        element.style.left = `${pos.left}px`
-        bus.emit('dropdown-open', this.$refs.dropdown)
-        this.$refs.dropdownContainer.classList.add('hidden')
-      })
+      if ((pos.top + dropdownHeight) > (window.innerHeight + window.scrollY) / 2) {
+        let newPosTop = pos.top - (dropdownHeight + this.buttonHeight - 10)
+        if (newPosTop < 0)
+          newPosTop = 0
+
+        pos.top = newPosTop
+      }
+
+      const element = this.$refs.dropdown.$el
+      element.classList.add('fade-in')
+      element.style.top = `${pos.top}px`
+      element.style.left = `${pos.left}px`
+      bus.emit('dropdown-open', this.$refs.dropdown)
+      this.$refs.dropdownContainer.classList.add('hidden')
     },
 
     toggle(event) {

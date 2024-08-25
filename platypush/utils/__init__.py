@@ -413,7 +413,11 @@ def get_mime_type(resource: str) -> Optional[str]:
             )
 
         if mime:
-            return mime.mime_type if hasattr(mime, 'mime_type') else mime  # type: ignore
+            mime_type = mime.mime_type if hasattr(mime, 'mime_type') else mime  # type: ignore
+            if mime_type == 'inode/symlink':
+                mime_type = get_mime_type(os.path.realpath(resource))
+
+            return mime_type
 
     return None
 
@@ -863,6 +867,22 @@ def utcnow():
     timezone.
     """
     return datetime.datetime.now(datetime.timezone.utc)
+
+
+def is_binary(data: Union[str, bytes]) -> bool:
+    """
+    Check if the given data is binary.
+
+    :param data: The data to be checked.
+    :return: True if the data is binary.
+    """
+    if isinstance(data, str):
+        return False
+
+    # From https://stackoverflow.com/questions/898669/how-can-i-detect-if-a-file-is-binary-non-text-in-python
+    assert isinstance(data, bytes), f"Invalid data type: {type(data)}"
+    textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F})
+    return bool(data.translate(None, textchars))
 
 
 # vim:sw=4:ts=4:et:

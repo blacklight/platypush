@@ -29,10 +29,10 @@ class Pipeline:
 
         self.bus = self.pipeline.get_bus()
         self.bus.add_signal_watch()
-        self.bus.connect('message::eos', self.on_eos)
-        self.bus.connect('message::error', self.on_error)
+        self.bus.connect('message', self.on_message)
         self.data_ready = threading.Event()
         self.data = None
+        self._gst_state = Gst.State.NULL
 
     def add(self, element_name: str, *args, **props):
         el = Gst.ElementFactory.make(element_name, *args)
@@ -94,6 +94,28 @@ class Pipeline:
         assert self.source, 'No source initialized'
         self.source.set_property('volume', volume)
 
+    def _msg_handler(self, message) -> bool:
+        from gi.repository import Gst  # type: ignore[attr-defined]
+
+        if message.type == Gst.MessageType.EOS:
+            self.on_eos()
+            return True
+
+        if message.type == Gst.MessageType.ERROR:
+            err, debug = message.parse_error()
+            self.on_error(err, debug)
+            return True
+
+        if message.type == Gst.MessageType.STATE_CHANGED:
+            old_state, new_state, _ = message.parse_state_changed()[:3]
+            self.on_state_changed(old_state, new_state)
+            return True
+
+        return False  # The message was not handled
+
+    def on_message(self, _, message, *__):
+        self._msg_handler(message)
+
     def on_buffer(self, sink):
         sample = GstApp.AppSink.pull_sample(sink)
         buffer = sample.get_buffer()
@@ -105,6 +127,29 @@ class Pipeline:
     def on_eos(self, *_, **__):
         self.logger.info('End of stream event received')
         self.stop()
+
+    def on_state_changed(self, old_state, new_state):
+        from gi.repository import Gst  # type: ignore[attr-defined]
+
+        if (
+            old_state == new_state
+            or new_state == self._gst_state
+            or old_state != self._gst_state
+        ):
+            return
+
+        self._gst_state = new_state
+
+        if new_state == Gst.State.PLAYING:
+            self.on_play()
+        elif new_state == Gst.State.PAUSED:
+            self.on_pause()
+
+    def on_play(self):
+        self.logger.debug('GStreamer playback started')
+
+    def on_pause(self):
+        self.logger.debug('GStreamer playback paused')
 
     def on_error(self, _, msg):
         self.logger.warning('GStreamer pipeline error: %s', msg.parse_error())

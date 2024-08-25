@@ -15,8 +15,22 @@ export default {
         .split(/[&;]/)
         .reduce((acc, obj) => {
           const tokens = obj.split('=')
-          if (tokens[0]?.length)
-            acc[tokens[0]] = decodeURIComponent(tokens[1])
+          let key = tokens[0]
+          let value = tokens.slice(1).join('=')
+
+          if (value === 'true')
+            value = true
+          else if (value === 'false')
+            value = false
+          else if (value.match(/^-?\d+$/))
+            value = parseInt(value)
+          else if (value.match(/^-?\d+\.\d+$/))
+            value = parseFloat(value)
+          else
+            value = decodeURIComponent(value)
+
+          if (key?.length)
+            acc[key] = value
           return acc
         }, {})
     },
@@ -29,10 +43,24 @@ export default {
             acc[key] = value
           else if (curArgs[key] != null)
             delete curArgs[key]
+
           return acc
         }, {})
 
-      args = {...curArgs, ...args}
+      args = Object.entries({...curArgs, ...args})
+        .reduce((acc, [key, value]) => {
+          // Serialize boolean values
+          if (typeof value === 'boolean')
+            value = value.toString()
+
+          // Serialize numbers
+          if (typeof value === 'number')
+            value = value.toString()
+
+          acc[key] = value
+          return acc
+        }, {})
+
       let location = `${window.location.pathname}#${this.parseUrlFragment()}`
       if (Object.keys(args).length)
         location += `?${this.fragmentFromArgs(args)}`

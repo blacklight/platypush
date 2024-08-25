@@ -1,28 +1,25 @@
 <template>
   <div class="media-info">
     <div class="row header">
-      <div class="image-container">
-        <MediaImage :item="item" @play="$emit('play')" @select="$emit('select')" />
-      </div>
-
-      <div class="title">
-        <i :class="typeIcons[item.type]"
-           :title="item.type" 
-           v-if="typeIcons[item?.type]">
-          &nbsp;
-        </i>
-        <a :href="item.url" target="_blank" v-if="item.url" v-text="item.title" />
-        <span v-else v-text="item.title" />
+      <div class="item-container">
+        <Item :item="item"
+              @add-to-playlist="$emit('add-to-playlist', item)"
+              @open-channel="$emit('open-channel', item)"
+              @play="$emit('play', item)"
+              @play-with-opts="$emit('play-with-opts', $event)"
+              @download="$emit('download', item)"
+              @download-audio="$emit('download-audio', item)"
+        />
       </div>
     </div>
 
-    <div class="row direct-url" v-if="directUrl">
+    <div class="row direct-url" v-if="mainUrl">
       <div class="left side">Direct URL</div>
       <div class="right side">
-        <a :href="directUrl" title="Direct URL" target="_blank">
+        <a :href="mainUrl" title="Direct URL" target="_blank">
           <i class="fas fa-external-link-alt" />
         </a>
-        <button @click="copyToClipboard(directUrl)" title="Copy URL to clipboard">
+        <button @click="copyToClipboard(mainUrl)" title="Copy URL to clipboard">
           <i class="fas fa-clipboard" />
         </button>
       </div>
@@ -83,6 +80,11 @@
       <div class="right side">
         {{ item.width }}x{{ item.height }}
       </div>
+    </div>
+
+    <div class="row" v-if="item?.view_count != null">
+      <div class="left side">Views</div>
+      <div class="right side">{{ formatNumber(item.view_count) }}</div>
     </div>
 
     <div class="row" v-if="item?.rating">
@@ -163,20 +165,34 @@
       <div class="left side">Language</div>
       <div class="right side" v-text="item.language" />
     </div>
+
+    <div class="row" v-if="item?.audio_channels">
+      <div class="left side">Audio Channels</div>
+      <div class="right side" v-text="item.audio_channels" />
+    </div>
   </div>
 </template>
 
 <script>
-import Utils from "@/Utils";
-import MediaUtils from "@/components/Media/Utils";
-import MediaImage from "./MediaImage";
 import Icons from "./icons.json";
+import Item from "./Item";
+import MediaUtils from "@/components/Media/Utils";
+import Utils from "@/Utils";
 
 export default {
   name: "Info",
-  components: {MediaImage},
+  components: {
+    Item,
+  },
   mixins: [Utils, MediaUtils],
-  emits: ['play'],
+  emits: [
+    'add-to-playlist',
+    'download',
+    'download-audio',
+    'open-channel',
+    'play',
+    'play-with-opts',
+  ],
   props: {
     item: {
       type: Object,
@@ -224,6 +240,8 @@ export default {
         return this.formatDate(this.item.publishedAt, true)
       if (this.item?.created_at)
         return this.formatDate(this.item.created_at, true)
+      if (this.item?.timestamp)
+        return this.formatDate(this.item.timestamp, true)
 
       return null
     },
@@ -235,6 +253,14 @@ export default {
       }
 
       return null
+    },
+
+    mainUrl() {
+      const directUrl = this.directUrl
+      if (directUrl)
+        return directUrl
+
+      return this.item?.url
     },
   },
 }
@@ -331,11 +357,9 @@ export default {
   flex-direction: column;
   position: relative;
 
-  .image-container {
+  .item-container {
     @include from($desktop) {
-      .image-container {
-        width: 420px;
-      }
+      width: 420px;
     }
   }
 

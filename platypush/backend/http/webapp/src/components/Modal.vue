@@ -2,12 +2,21 @@
   <div class="modal-container fade-in" :id="id" :class="{hidden: !isVisible}"
     :style="{'--z-index': zIndex}" @click="close">
     <div class="modal" :class="$attrs.class">
-      <div class="content" :style="{'--width': width, '--height': height}" @click="$event.stopPropagation()">
-        <div class="header" v-if="title">
+      <div class="content" :style="{'--width': width, '--height': height}" @click.stop>
+        <div class="header" :class="{uppercase: uppercase}" v-if="title">
           <div class="title" v-text="title" v-if="title" />
-          <button title="Close" alt="Close" @click="close">
-            <i class="fas fa-xmark" />
-          </button>
+          <div class="buttons">
+            <button v-for="(button, index) in buttons"
+                    :key="index"
+                    :title="button.title"
+                    @click="button.action">
+              <i :class="button.icon" />
+            </button>
+
+            <button title="Close" alt="Close" @click="close">
+              <i class="fas fa-xmark" />
+            </button>
+          </div>
         </div>
         <div class="body">
           <slot @modal-close="close" />
@@ -58,6 +67,25 @@ export default {
       type: Number,
       default: 1,
     },
+
+    // Whether the header title should be uppercase
+    uppercase: {
+      type: Boolean,
+      default: true,
+    },
+
+    // Extra buttons to be added to the modal header
+    buttons: {
+      type: Array,
+      default: () => [],
+    },
+
+    // A function to be called before the modal is closed.
+    // If the function returns false, the modal will not be closed.
+    beforeClose: {
+      type: Function,
+      default: () => true,
+    },
   },
 
   data() {
@@ -76,6 +104,9 @@ export default {
 
   methods: {
     close() {
+      if (this.beforeClose && !this.beforeClose())
+        return
+
       this.prevVisible = this.isVisible
       this.isVisible = false
     },
@@ -206,13 +237,20 @@ $icon-margin: 0.5em;
       justify-content: center;
       align-items: center;
       background: $modal-header-bg;
-      text-transform: uppercase;
+
+      &.uppercase {
+        text-transform: uppercase;
+      }
+
+      .buttons {
+        width: auto;
+        position: absolute;
+        right: 0;
+      }
 
       button {
         width: $icon-size;
         height: $icon-size;
-        position: absolute;
-        right: 0;
         margin: auto $icon-margin;
         padding: 0;
         border: 0;

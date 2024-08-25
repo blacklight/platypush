@@ -1,11 +1,9 @@
-from dataclasses import asdict
 import os
 import threading
-import urllib.parse
 from typing import Collection, Optional
 
 from platypush.context import get_bus
-from platypush.plugins.media import PlayerState, MediaPlugin
+from platypush.plugins.media import PlayerState, MediaPlugin, MediaResource
 from platypush.message.event.media import (
     MediaPlayEvent,
     MediaPlayRequestEvent,
@@ -30,7 +28,7 @@ class MediaVlcPlugin(MediaPlugin):
         args: Optional[Collection[str]] = None,
         fullscreen: bool = False,
         volume: int = 100,
-        **kwargs
+        **kwargs,
     ):
         """
         :param args: List of extra arguments to pass to the VLC executable (e.g.
@@ -52,8 +50,6 @@ class MediaVlcPlugin(MediaPlugin):
         self._default_fullscreen = fullscreen
         self._default_volume = volume
         self._on_stop_callbacks = []
-        self._title = None
-        self._filename = None
         self._monitor_thread: Optional[threading.Thread] = None
         self._on_stop_event = threading.Event()
         self._stop_lock = threading.RLock()
@@ -86,73 +82,110 @@ class MediaVlcPlugin(MediaPlugin):
             if hasattr(vlc.EventType, evt)
         ]
 
-    def _init_vlc(self, resource):
-        import vlc
-
+    def _init_vlc(self, resource: MediaResource, cache_streams: bool):
         if self._instance:
             self.logger.info('Another instance is running, waiting for it to terminate')
             self._on_stop_event.wait()
-
-        self._reset_state()
 
         for k, v in self._env.items():
             os.environ[k] = v
 
         self._monitor_thread = threading.Thread(target=self._player_monitor)
         self._monitor_thread.start()
-        self._instance = vlc.Instance(*self._args)
-        assert self._instance, 'Could not create a VLC instance'
-        self._player = self._instance.media_player_new(resource)
+        self._set_media(resource, cache_streams=cache_streams)
+        assert self._player, 'Could not create a VLC player instance'
 
         for evt in self._watched_event_types():
             self._player.event_manager().event_attach(
                 eventtype=evt, callback=self._event_callback()
             )
 
+    def _set_media(
+        self, resource: MediaResource, *_, cache_streams: bool = False, **__
+    ):
+        import vlc
+
+        if not self._instance:
+            self._instance = vlc.Instance(*self._args)
+
+        assert self._instance, 'Could not create a VLC instance'
+        if not self._player:
+            self._player = self._instance.media_player_new()
+
+        fd = resource.fd or resource.open(cache_streams=cache_streams)
+
+        if not cache_streams and fd is not None:
+            self._player.set_media(self._instance.media_new_fd(fd.fileno()))
+        else:
+            self._player.set_media(self._instance.media_new(resource.resource))
+
     def _player_monitor(self):
         self._on_stop_event.wait()
         self.logger.info('VLC stream terminated')
-        self._reset_state()
+        self.quit()
 
     def _reset_state(self):
-        with self._stop_lock:
-            self._latest_seek = None
-            self._title = None
-            self._filename = None
-            self._on_stop_event.clear()
+        self._latest_seek = None
 
-            if self._player:
-                self.logger.info('Releasing VLC player resource')
-                self._player.release()
-                self._player = None
+        if self._latest_resource:
+            self.logger.debug('Closing latest resource')
+            self._latest_resource.close()
+            self._latest_resource = None
 
-            if self._instance:
-                self.logger.info('Releasing VLC instance resource')
-                self._instance.release()
-                self._instance = None
+    def _close_player(self):
+        if self._player:
+            self.logger.info('Releasing VLC player resource')
+            self._player.stop()
+
+            if self._player.get_media():
+                self.logger.debug('Releasing VLC media resource')
+                self._player.get_media().release()
+
+            self.logger.debug('Releasing VLC player instance')
+            self._player.release()
+            self._player = None
+
+        if self._instance:
+            self.logger.info('Releasing VLC instance resource')
+            self._instance.release()
+            self._instance = None
 
     @staticmethod
     def _post_event(evt_type, **evt):
         bus = get_bus()
         bus.post(evt_type(player='local', plugin='media.vlc', **evt))
 
+    @property
+    def _title(self) -> Optional[str]:
+        if not (self._player and self._player.get_media() and self._latest_resource):
+            return None
+
+        return (
+            self._player.get_title()
+            or self._latest_resource.title
+            or self._latest_resource.filename
+            or self._player.get_media().get_mrl()
+            or None
+        )
+
     def _event_callback(self):
         def callback(event):
             from vlc import EventType
 
-            self.logger.debug('Received vlc event: %s', event)
+            self.logger.debug('Received VLC event: %s', event.type)
             if event.type == EventType.MediaPlayerPlaying:  # type: ignore
+                self._on_stop_event.clear()
                 self._post_event(MediaPlayEvent, resource=self._get_current_resource())
             elif event.type == EventType.MediaPlayerPaused:  # type: ignore
+                self._on_stop_event.clear()
                 self._post_event(MediaPauseEvent)
-            elif (
-                event.type == EventType.MediaPlayerStopped  # type: ignore
-                or event.type == EventType.MediaPlayerEndReached  # type: ignore
+            elif event.type in (
+                EventType.MediaPlayerStopped,  # type: ignore
+                EventType.MediaPlayerEndReached,  # type: ignore
             ):
                 self._on_stop_event.set()
                 self._post_event(MediaStopEvent)
-                for cbk in self._on_stop_callbacks:
-                    cbk()
+                self._reset_state()
             elif self._player and (
                 event.type
                 in (
@@ -160,7 +193,6 @@ class MediaVlcPlugin(MediaPlugin):
                     EventType.MediaPlayerMediaChanged,  # type: ignore
                 )
             ):
-                self._title = self._player.get_title() or self._filename
                 if event.type == EventType.MediaPlayerMediaChanged:  # type: ignore
                     self._post_event(NewPlayingMediaEvent, resource=self._title)
             elif event.type == EventType.MediaPlayerLengthChanged:  # type: ignore
@@ -180,6 +212,9 @@ class MediaVlcPlugin(MediaPlugin):
                 self._post_event(MediaMuteChangedEvent, mute=True)
             elif event.type == EventType.MediaPlayerUnmuted:  # type: ignore
                 self._post_event(MediaMuteChangedEvent, mute=False)
+            elif event.type == EventType.MediaPlayerEncounteredError:  # type: ignore
+                self.logger.error('VLC media player encountered an error')
+                self._reset_state()
 
         return callback
 
@@ -190,6 +225,9 @@ class MediaVlcPlugin(MediaPlugin):
         subtitles: Optional[str] = None,
         fullscreen: Optional[bool] = None,
         volume: Optional[int] = None,
+        cache_streams: Optional[bool] = None,
+        metadata: Optional[dict] = None,
+        **_,
     ):
         """
         Play a resource.
@@ -201,15 +239,22 @@ class MediaVlcPlugin(MediaPlugin):
             `fullscreen` configured value or False)
         :param volume: Set to explicitly set the playback volume (default:
             `volume` configured value or 100)
+        :param cache_streams: Overrides the ``cache_streams`` configuration
+            value.
+        :param metadata: Optional metadata to pass to the resource.
         """
 
         if not resource:
             return self.pause()
 
         self._post_event(MediaPlayRequestEvent, resource=resource)
-        resource = self._get_resource(resource)
-        self._filename = resource
-        self._init_vlc(resource)
+        cache_streams = (
+            cache_streams if cache_streams is not None else self.cache_streams
+        )
+        media = self._get_resource(resource, metadata=metadata)
+        self._latest_resource = media
+        self.quit()
+        self._init_vlc(media, cache_streams=cache_streams)
         if subtitles and self._player:
             if subtitles.startswith('file://'):
                 subtitles = subtitles[len('file://') :]
@@ -242,13 +287,17 @@ class MediaVlcPlugin(MediaPlugin):
         """Quit the player (same as `stop`)"""
         with self._stop_lock:
             if not self._player:
-                self.logger.warning('No vlc instance is running')
+                self.logger.debug('No vlc instance is running')
                 return self.status()
 
-            self._player.stop()
-            self._on_stop_event.wait(timeout=5)
             self._reset_state()
-            return self.status()
+            self._close_player()
+            self._on_stop_event.wait(timeout=5)
+
+        for cbk in self._on_stop_callbacks:
+            cbk()
+
+        return self.status()
 
     @action
     def stop(self, *_, **__):
@@ -385,7 +434,10 @@ class MediaVlcPlugin(MediaPlugin):
         """
         if not self._player:
             return self.play(resource, **args)
-        self._player.set_media(resource)
+
+        media = self._get_resource(resource)
+        self._reset_state()
+        self._set_media(media)
         return self.status()
 
     @action
@@ -419,10 +471,10 @@ class MediaVlcPlugin(MediaPlugin):
         import vlc
 
         with self._stop_lock:
-            if not self._player:
+            if not (self._player and self._latest_resource):
                 return {'state': PlayerState.STOP.value}
 
-            status = {}
+            status = self._latest_resource.to_dict()
             vlc_state = self._player.get_state()
 
             if vlc_state == vlc.State.Playing:  # type: ignore
@@ -432,12 +484,6 @@ class MediaVlcPlugin(MediaPlugin):
             else:
                 status['state'] = PlayerState.STOP.value
 
-            status['url'] = (
-                urllib.parse.unquote(self._player.get_media().get_mrl())
-                if self._player.get_media()
-                else None
-            )
-
             status['position'] = (
                 float(self._player.get_time() / 1000)
                 if self._player.get_time() is not None
@@ -445,10 +491,13 @@ class MediaVlcPlugin(MediaPlugin):
             )
 
             media = self._player.get_media()
-            status['duration'] = (
-                media.get_duration() / 1000
-                if media and media.get_duration() is not None
-                else None
+            status['duration'] = status.get(
+                'duration',
+                (
+                    media.get_duration() / 1000
+                    if media and media.get_duration() is not None
+                    else None
+                ),
             )
 
             status['seekable'] = status['duration'] is not None
@@ -457,23 +506,10 @@ class MediaVlcPlugin(MediaPlugin):
             status['path'] = status['url']
             status['pause'] = status['state'] == PlayerState.PAUSE.value
             status['percent_pos'] = self._player.get_position() * 100
-            status['filename'] = self._filename
+            status['filename'] = self._latest_resource.filename
             status['title'] = self._title
             status['volume'] = self._player.audio_get_volume()
             status['volume_max'] = 100
-
-            if (
-                status['state'] in (PlayerState.PLAY.value, PlayerState.PAUSE.value)
-                and self._latest_resource
-            ):
-                status.update(
-                    {
-                        k: v
-                        for k, v in asdict(self._latest_resource).items()
-                        if v is not None
-                    }
-                )
-
             return status
 
     def on_stop(self, callback):
@@ -482,6 +518,10 @@ class MediaVlcPlugin(MediaPlugin):
     def _get_current_resource(self):
         if not self._player or not self._player.get_media():
             return None
+
+        if self._latest_resource:
+            return self._latest_resource.url
+
         return self._player.get_media().get_mrl()
 
 
