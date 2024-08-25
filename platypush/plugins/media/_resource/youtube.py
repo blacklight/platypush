@@ -121,8 +121,8 @@ class YoutubeMediaResource(PopenMediaResource):
                 )
                 break
 
-            # The file must exist and be at least 1MB in size
-            if os.path.exists(file) and os.path.getsize(file) > 1024 * 1024:
+            # The file must exist and be at least 5MB in size
+            if os.path.exists(file) and os.path.getsize(file) > 5 * 1024 * 1024:
                 self._logger.info('Download started, process PID: %s', self.proc.pid)
                 break
 
