@@ -18,7 +18,7 @@ class FilePlugin(Plugin):
     A plugin for general-purpose file methods
     """
 
-    def __init__(self, *args, bookmarks: Bookmarks, **kwargs):
+    def __init__(self, *args, bookmarks: Optional[Bookmarks] = None, **kwargs):
         """
         :param bookmarks: A list/dictionary of bookmarks. Bookmarks will be
             shown in the file browser UI home page for easier access.
