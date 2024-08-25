@@ -173,7 +173,7 @@
     <TextPrompt :visible="fileToRename != null"
                 :value="displayedFileToRename"
                 @input="renameFile"
-                @close="fileToRename = null" >
+                @close="fileToRename = null">
       Enter a new name for this file:<br/><br/>
       <b>{{ fileToRename }}</b>
     </TextPrompt>
@@ -310,7 +310,7 @@ export default {
 
   computed: {
     displayedFileToRename() {
-      return this.fileToRename?.slice(this.path.length + 1)
+      return this.fileToRename?.slice(this.path.length + 1) || ''
     },
 
     editedFileName() {
@@ -358,7 +358,7 @@ export default {
         const mime = this.mimeTypes[file.path] || ''
         obj[file.path] = {}
 
-        if (mime.startsWith('audio/') || mime.startsWith('video/'))
+        if (this.isMedia && (mime.startsWith('audio/') || mime.startsWith('video/')))
           obj[file.path] = {
             play: {
               iconClass: 'fa fa-play',
@@ -730,7 +730,7 @@ export default {
     },
 
     path(val, oldVal) {
-      if (oldVal === val || !oldVal)
+      if (oldVal === val)
         return
 
       this.refresh()

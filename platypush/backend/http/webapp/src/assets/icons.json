@@ -44,6 +44,9 @@
   "execute": {
     "class": "fa fa-play"
   },
+  "file": {
+    "class": "fas fa-folder"
+  },
   "extensions": {
     "class": "fas fa-puzzle-piece"
   },
