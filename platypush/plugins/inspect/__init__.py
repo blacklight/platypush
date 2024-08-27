@@ -12,7 +12,7 @@ from platypush.common.db import override_definitions
 from platypush.common.reflection import Integration, Message as MessageMetadata
 from platypush.config import Config
 from platypush.plugins import Plugin, action
-from platypush.plugins.procedure import ProcedureEncoder
+from platypush.plugins.procedures import ProcedureEncoder
 from platypush.message import Message
 from platypush.message.event import Event
 from platypush.message.response import Response
