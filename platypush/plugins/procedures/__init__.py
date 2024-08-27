@@ -38,6 +38,7 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
             source=metadata.get('source'),
             line=metadata.get('line'),
             args=metadata.get('args', []),
+            actions=metadata.get('actions', []),
         )
 
     @action

@@ -35,6 +35,7 @@ if not is_defined('procedure'):
         module = Column(String)
         source = Column(String)
         line = Column(Integer)
+        actions = Column(JSON)
 
         __table_args__ = {'keep_existing': True}
         __mapper_args__ = {
