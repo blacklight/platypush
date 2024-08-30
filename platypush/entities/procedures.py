@@ -1,8 +1,9 @@
 import logging
+from enum import Enum
 
 from sqlalchemy import (
     Column,
-    Enum,
+    Enum as DbEnum,
     ForeignKey,
     Integer,
     JSON,
@@ -14,6 +15,12 @@ from platypush.common.db import is_defined
 from . import Entity
 
 logger = logging.getLogger(__name__)
+
+
+class ProcedureType(Enum):
+    PYTHON = 'python'
+    CONFIG = 'config'
+    DB = 'db'
 
 
 if not is_defined('procedure'):
@@ -30,7 +37,13 @@ if not is_defined('procedure'):
         )
         args = Column(JSON, nullable=False, default=[])
         procedure_type = Column(
-            Enum('python', 'config', name='procedure_type'), nullable=False
+            DbEnum(
+                *[m.value for m in ProcedureType.__members__.values()],
+                name='procedure_type',
+                create_constraint=True,
+                validate_strings=True,
+            ),
+            nullable=False,
         )
         module = Column(String)
         source = Column(String)
