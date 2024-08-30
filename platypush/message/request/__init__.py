@@ -100,7 +100,7 @@ class Request(Message):
         proc = Procedure.build(
             name=proc_name,
             requests=proc_config['actions'],
-            _async=proc_config['_async'],
+            _async=proc_config.get('_async', False),
             args=self.args,
             backend=self.backend,
             id=self.id,

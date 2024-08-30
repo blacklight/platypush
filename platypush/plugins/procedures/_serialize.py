@@ -8,6 +8,8 @@ class ProcedureEncoder(json.JSONEncoder):
     """
 
     def default(self, o):
+        from platypush.entities.procedures import ProcedureType
+
         if callable(o):
             return {
                 'type': 'python',
@@ -20,5 +22,8 @@ class ProcedureEncoder(json.JSONEncoder):
                     if arg.kind != arg.VAR_KEYWORD
                 ],
             }
+
+        if isinstance(o, ProcedureType):
+            return o.value
 
         return super().default(o)
