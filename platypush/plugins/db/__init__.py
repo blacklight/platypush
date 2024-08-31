@@ -533,13 +533,19 @@ class DbPlugin(Plugin):
         with lock, engine.connect() as conn:
             session_maker = scoped_session(
                 sessionmaker(
-                    expire_on_commit=False,
+                    expire_on_commit=kwargs.get('expire_on_commit', False),
                     autoflush=autoflush,
                 )
             )
 
             session_maker.configure(bind=conn)
             session = session_maker()
+
+            if str(session.connection().engine.url).startswith('sqlite://'):
+                # SQLite requires foreign_keys to be explicitly enabled
+                # in order to proper manage cascade deletions
+                session.execute(text('PRAGMA foreign_keys = ON'))
+
             yield session
 
             session.flush()
