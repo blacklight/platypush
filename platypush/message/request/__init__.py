@@ -165,6 +165,11 @@ class Request(Message):
                         context_value = [*context_value]
                     if isinstance(context_value, datetime.date):
                         context_value = context_value.isoformat()
+                except NameError as e:
+                    logger.warning(
+                        'Could not expand expression "%s": %s', inner_expr, e
+                    )
+                    context_value = expr
                 except Exception as e:
                     logger.exception(e)
                     context_value = expr
@@ -188,7 +193,13 @@ class Request(Message):
         response.id = self.id
         response.target = self.origin
         response.origin = Config.get('device_id')
-        response.log()
+        self._logger.info(
+            'Sending response to request[id=%s, action=%s], response_time=%.02fs',
+            self.id,
+            self.action,
+            response.timestamp - self.timestamp,
+        )
+        response.log(level=logging.DEBUG)
 
         if self.backend and self.origin:
             self.backend.send_response(response=response, request=self)
@@ -221,7 +232,10 @@ class Request(Message):
             from platypush.plugins import RunnablePlugin
 
             response = None
-            self.log()
+            self._logger.info(
+                'Executing request[id=%s, action=%s]', self.id, self.action
+            )
+            self.log(level=logging.DEBUG)
 
             try:
                 if self.action.startswith('procedure.'):

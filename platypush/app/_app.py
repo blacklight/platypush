@@ -365,7 +365,13 @@ class Application:
             elif isinstance(msg, Response):
                 msg.log()
             elif isinstance(msg, Event):
-                msg.log()
+                log.info(
+                    'Received event: %s.%s[id=%s]',
+                    msg.__class__.__module__,
+                    msg.__class__.__name__,
+                    msg.id,
+                )
+                msg.log(level=logging.DEBUG)
                 self.event_processor.process_event(msg)
 
         return _f
