@@ -94,6 +94,7 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
             line=metadata.get('line'),
             args=metadata.get('args', []),
             actions=metadata.get('actions', []),
+            meta=metadata.get('meta', {}),
         )
 
     @action
@@ -122,6 +123,7 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
 
         """
         with self._status_lock:
+            self._sync_db_procedures()
             if publish:
                 self.publish_entities(self._get_wrapped_procedures())
 
@@ -134,6 +136,7 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
         actions: Iterable[dict],
         args: Optional[Iterable[str]] = None,
         old_name: Optional[str] = None,
+        meta: Optional[dict] = None,
         **_,
     ):
         """
@@ -157,6 +160,17 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
             as a list of strings with the argument names.
         :param old_name: Optional old name of the procedure if it's being
             renamed.
+        :param meta: Optional metadata to be stored with the procedure. Example:
+
+            .. code-block:: json
+
+                {
+                    "icon": {
+                        "class": "fas fa-cogs",
+                        "color": "#00ff00"
+                    }
+                }
+
         """
         assert name, 'Procedure name cannot be empty'
         assert actions, 'Procedure actions cannot be empty'
@@ -165,11 +179,15 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
         ), 'Procedure actions should be dictionaries with an "action" key'
 
         args = args or []
+        proc_def = self._all_procedures.get(name, {})
         proc_args = {
             'name': name,
             'type': ProcedureType.DB.value,
             'actions': actions,
             'args': args,
+            'meta': (
+                meta or (proc_def.get('meta', {}) if isinstance(proc_def, dict) else {})
+            ),
         }
 
         with self._status_lock:
@@ -285,6 +303,7 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
                         'name': proc.name,
                         'args': proc.args,
                         'actions': proc.actions,
+                        'meta': proc.meta,
                     }
 
     @staticmethod
