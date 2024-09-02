@@ -190,6 +190,9 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
             ),
         }
 
+        def _on_entity_saved(*_, **__):
+            self._all_procedures[name] = proc_args
+
         with self._status_lock:
             with self._db_session() as session:
                 if old_name and old_name != name:
@@ -202,11 +205,12 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
                             e,
                         )
 
-                self._all_procedures[name] = proc_args
+            self.publish_entities(
+                [_ProcedureWrapper(name=name, obj=proc_args)],
+                callback=_on_entity_saved,
+            )
 
-            self.publish_entities([_ProcedureWrapper(name=name, obj=proc_args)])
-
-        return self.status()
+        return self.status(publish=False)
 
     @action
     def delete(self, name: str):
