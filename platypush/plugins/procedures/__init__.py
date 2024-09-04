@@ -1,10 +1,12 @@
 import json
+import re
 from contextlib import contextmanager
 from dataclasses import dataclass
 from multiprocessing import RLock
 from random import randint
 from typing import Callable, Collection, Generator, Iterable, Optional, Union
 
+import yaml
 from sqlalchemy.orm import Session
 
 from platypush.context import get_plugin
@@ -227,6 +229,57 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
             self._delete(name, session=session)
 
         self.status()
+
+    @action
+    def to_yaml(self, procedure: Union[str, dict]) -> str:
+        """
+        Serialize a procedure to YAML.
+
+        This method is useful to export a procedure to a file.
+        Note that it only works with either YAML-based procedures or
+        database-stored procedures: Python procedures can't be converted to
+        YAML.
+
+        :param procedure: Procedure name or definition. If a string is passed,
+            then the procedure will be looked up by name in the configured
+            procedures. If a dictionary is passed, then it should be a valid
+            procedure definition with at least the ``actions`` and ``name``
+            keys.
+        :return: The serialized procedure in YAML format.
+        """
+        if isinstance(procedure, str):
+            proc = self._all_procedures.get(procedure)
+            assert proc, f'Procedure {proc} not found'
+        elif isinstance(procedure, dict):
+            name = self._normalize_name(procedure.get('name'))
+            assert name, 'Procedure name cannot be empty'
+
+            actions = procedure.get('actions', [])
+            assert actions and isinstance(
+                actions, (list, tuple, set)
+            ), 'Procedure definition should have at least the "actions" key as a list of actions'
+
+            args = [self._normalize_name(arg) for arg in procedure.get('args', [])]
+            proc = {
+                f'procedure.{name}'
+                + (f'({", ".join(args)})' if args else ''): [
+                    {
+                        'action': action['action'],
+                        **({'args': action['args']} if action.get('args') else {}),
+                    }
+                    for action in actions
+                ]
+            }
+        else:
+            raise AssertionError(
+                f'Invalid procedure definition with type {type(procedure)}'
+            )
+
+        return yaml.safe_dump(proc, default_flow_style=False, indent=2)
+
+    @staticmethod
+    def _normalize_name(name: Optional[str]) -> str:
+        return re.sub(r'[^\w.]+', '_', (name or '').strip(' .'))
 
     @contextmanager
     def _db_session(self) -> Generator[Session, None, None]:
