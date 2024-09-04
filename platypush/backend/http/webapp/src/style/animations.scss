@@ -14,6 +14,30 @@
    -webkit-animation-name: fadeOut;
 }
 
+.expand {
+   animation-duration: 0.5s;
+   -webkit-animation-duration: 0.5s;
+   animation-fill-mode: both;
+   animation-name: expand;
+   -webkit-animation-name: expand;
+}
+
+.shrink {
+   animation-duration: 0.5s;
+   -webkit-animation-duration: 0.5s;
+   animation-fill-mode: both;
+   animation-name: shrink;
+   -webkit-animation-name: shrink;
+}
+
+.unfold {
+   animation-duration: 0.5s;
+   -webkit-animation-duration: 0.5s;
+   animation-fill-mode: both;
+   animation-name: unfold;
+   -webkit-animation-name: unfold;
+}
+
 @keyframes fadeIn {
    0% {opacity: 0;}
    100% {opacity: 1;}
@@ -25,6 +49,21 @@
       opacity: 0;
       display: none;
    }
+}
+
+@keyframes expand {
+   0% {transform: scale(0);}
+   100% {transform: scale(1);}
+}
+
+@keyframes shrink {
+   0% {transform: scale(1);}
+   100% {transform: scale(0);}
+}
+
+@keyframes unfold {
+   0% {transform: scale(0, 1);}
+   100% {transform: scale(1, 1);}
 }
 
 .glow {
