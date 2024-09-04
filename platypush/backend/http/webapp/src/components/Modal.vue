@@ -1,7 +1,11 @@
 <template>
-  <div class="modal-container fade-in" :id="id" :class="{hidden: !isVisible}"
-    :style="{'--z-index': zIndex}" @click="close">
-    <div class="modal" :class="$attrs.class">
+  <div class="modal-container fade-in"
+       :class="{hidden: !isVisible}"
+       :id="id"
+       :style="{'--z-index': zIndex}" 
+       ref="container"
+       @click.stop="close">
+    <div class="modal" :class="$attrs.class" ref="modal">
       <div class="content" :style="{'--width': width, '--height': height}" @click.stop>
         <div class="header" :class="{uppercase: uppercase}" v-if="title">
           <div class="title" v-text="title" v-if="title" />
@@ -9,11 +13,11 @@
             <button v-for="(button, index) in buttons"
                     :key="index"
                     :title="button.title"
-                    @click="button.action">
+                    @click.stop="button.action">
               <i :class="button.icon" />
             </button>
 
-            <button title="Close" alt="Close" @click="close">
+            <button title="Close" alt="Close" @click.stop="close">
               <i class="fas fa-xmark" />
             </button>
           </div>
@@ -27,6 +31,8 @@
 </template>
 
 <script>
+import { bus } from "@/bus";
+
 export default {
   name: "Modal",
   emits: ['close', 'open'],
@@ -90,9 +96,10 @@ export default {
 
   data() {
     return {
-      timeoutId: undefined,
-      prevVisible: this.visible,
+      ignoreEscape: false,
       isVisible: this.visible,
+      prevVisible: this.visible,
+      timeoutId: undefined,
     }
   },
 
@@ -103,12 +110,16 @@ export default {
   },
 
   methods: {
-    close() {
+    close(event) {
       if (this.beforeClose && !this.beforeClose())
         return
 
+      if (event)
+        event.preventDefault()
+
       this.prevVisible = this.isVisible
       this.isVisible = false
+      bus.emit('modal-close')
     },
 
     hide() {
@@ -131,28 +142,61 @@ export default {
         this.show()
     },
 
+    onEscape() {
+      if (!this.isVisible || this.ignoreEscape)
+        return
+
+      const myZIndex = parseInt(getComputedStyle(this.$refs.container).zIndex)
+      const maxZIndex = Math.max(
+        ...Array.from(
+          document.querySelectorAll('.modal-container:not(.hidden)')
+        ).map((modal) =>
+          parseInt(getComputedStyle(modal).zIndex)
+        )
+      )
+
+      // Close only if it's the outermost modal
+      if (myZIndex === maxZIndex)
+        this.close()
+    },
+
     onKeyUp(event) {
       event.stopPropagation()
       if (event.key === 'Escape') {
-        this.close()
+        this.onEscape()
       }
+    },
+
+    onModalCloseMessage() {
+      if (!this.isVisible)
+        return
+
+      this.ignoreEscape = true
+      setTimeout(() => this.ignoreEscape = false, 100)
+    },
+
+    visibleHndl(visible) {
+      if (!visible)
+        this.$emit('close')
+      else
+        this.$emit('open')
+    },
+  },
+
+  watch: {
+    visible(value) {
+      this.visibleHndl(value)
+      this.isVisible = value
+    },
+
+    isVisible(value) {
+      this.visibleHndl(value)
     },
   },
 
   mounted() {
-    const self = this
-    const visibleHndl = (visible) => {
-      if (!visible)
-        self.$emit('close')
-      else
-        self.$emit('open')
-
-      self.isVisible = visible
-    }
-
     document.body.addEventListener('keyup', this.onKeyUp)
-    this.$watch(() => this.visible, visibleHndl)
-    this.$watch(() => this.isVisible, visibleHndl)
+    bus.on('modal-close', this.onModalCloseMessage)
   },
 
   unmounted() {
