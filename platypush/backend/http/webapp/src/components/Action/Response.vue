@@ -31,8 +31,13 @@ export default {
   name: 'Response',
   mixins: [Utils],
   props: {
-    response: String,
-    error: String,
+    response: {
+      type: [String, Object],
+    },
+
+    error: {
+      type: [String, Object],
+    },
   },
 
   computed: {
@@ -57,4 +62,14 @@ export default {
 
 <style lang="scss" scoped>
 @import "common";
+
+.response {
+  .buttons {
+    button:hover {
+      color: $default-hover-fg;
+      background: none;
+      border: none;
+    }
+  }
+}
 </style>
