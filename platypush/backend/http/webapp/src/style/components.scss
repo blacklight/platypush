@@ -1,3 +1,6 @@
+$floating-btn-size: 4em;
+$monospace-font: 'Hack', 'Fira Code', 'Noto Sans Mono', 'Ubuntu Mono', 'Recursive', 'Inconsolata', 'Consolas', 'Courier New', monospace;
+
 button, .btn, .btn-default {
   border: $default-border-3;
   cursor: pointer;
@@ -11,8 +14,9 @@ button, .btn, .btn-default {
   }
 
   &:hover {
-    background: $hover-bg;
-    border: 1px solid $default-hover-fg;
+    color: $default-hover-fg;
+    // background: $hover-bg;
+    // border: 1px solid $default-hover-fg;
   }
 
   .icon {
@@ -25,6 +29,14 @@ button, .btn, .btn-default {
     color: $disabled-fg !important;
     cursor: not-allowed;
   }
+}
+
+[draggable] {
+  cursor: grab !important;
+}
+
+.dragged {
+  opacity: 0.5 !important;
 }
 
 input[type=text], input[type=password] {
@@ -123,6 +135,10 @@ $nav-height: 2.5em;
       }
     }
   }
+}
+
+code {
+  font-family: $monospace-font;
 }
 
 // Tabs
