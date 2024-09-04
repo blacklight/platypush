@@ -49,6 +49,8 @@ export default {
   data() {
     return {
       config: {},
+      configDir: null,
+      configFile: null,
       userAuthenticated: false,
       connected: false,
       pwaInstallEvent: null,
@@ -85,7 +87,11 @@ export default {
     },
 
     async initConfig() {
-      this.config = await this.request('config.get', {}, 60000, false)
+      this.config = await this.request('config.get', {}, 60000, false);
+      [this.configDir, this.configFile] = await Promise.all([
+        this.request('config.get_config_dir'),
+        this.request('config.get_config_file'),
+      ])
       this.userAuthenticated = true
     },
 
