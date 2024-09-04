@@ -20,12 +20,14 @@
       <div
         class="item"
         :class="{ active: i === curIndex }"
-        :key="item"
-        :data-item="item"
+        :key="getItemText(item)"
+        :data-item="getItemText(item)"
         v-for="(item, i) in visibleItems"
         @click="onItemSelect(item)">
-        <span class="matching" v-if="value?.length">{{ item.substr(0, value.length) }}</span>
-        <span class="normal">{{ item.substr(value?.length || 0) }}</span>
+        <span v-html="item.prefix" v-if="item.prefix"></span>
+        <span class="matching" v-if="value?.length">{{ getItemText(item).substr(0, value.length) }}</span>
+        <span class="normal">{{ getItemText(item).substr(value?.length || 0) }}</span>
+        <span v-html="item.suffix" v-if="item.suffix"></span>
       </div>
     </div>
   </div>
@@ -33,7 +35,6 @@
 
 <script>
 export default {
-  name: "Autocomplete",
   emits: ["input"],
   props: {
     items: {
@@ -78,6 +79,10 @@ export default {
   },
 
   computed: {
+    itemsText() {
+      return this.items.map((item) => this.getItemText(item))
+    },
+
     visibleItems() {
       if (!this.value?.length)
         return this.items
@@ -87,7 +92,7 @@ export default {
         return this.showResultsWhenBlank ? this.items : []
 
       return this.items.filter(
-        (item) => item.substr(0, val.length).toUpperCase() === val
+        (item) => this.getItemText(item).substr(0, val.length).toUpperCase() === val
       )
     },
 
@@ -97,6 +102,10 @@ export default {
   },
 
   methods: {
+    getItemText(item) {
+      return item.text || item
+    },
+
     selectNextItem() {
       this.curIndex++
       this.normalizeIndex()
@@ -117,7 +126,8 @@ export default {
         this.curIndex = this.visibleItems.length - 1
 
       // Scroll to the element
-      const el = this.$el.querySelector("[data-item='" + this.visibleItems[this.curIndex] + "']")
+      const curText = this.getItemText(this.visibleItems[this.curIndex])
+      const el = this.$el.querySelector(`[data-item='${curText}']`)
       if (el)
         el.scrollIntoView({
           block: "start",
@@ -130,7 +140,7 @@ export default {
       if (!this.value)
         return false
 
-      return this.items.indexOf(this.value) >= 0
+      return this.itemsText.indexOf(this.value) >= 0
     },
 
     onFocus() {
@@ -144,7 +154,7 @@ export default {
         this.visible = false
 
       e.stopPropagation()
-      this.$emit("input", val)
+      this.$emit("input", val.text || val)
       this.curIndex = -1
       this.visible = true
     },
@@ -158,7 +168,7 @@ export default {
     },
 
     onItemSelect(item) {
-      this.$emit("input", item)
+      this.$emit("input", item.text || item)
       this.$nextTick(() => {
         if (this.valueIsInItems()) {
           this.visible = false
