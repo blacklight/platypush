@@ -82,6 +82,7 @@
                         :selected-arg="selectedArg"
                         :selected-argdoc="selectedArgdoc"
                         @add="addArg"
+                        @input="emitInput({name: action.name, args: $event})"
                         @select="selectArgdoc"
                         @remove="removeArg"
                         @arg-edit="action.args[$event.name].value = $event.value"
@@ -193,11 +194,26 @@ export default {
     },
 
     autocompleteItems() {
-      if (this.getPluginName(this.action.name) in this.plugins) {
-        return Object.keys(this.actions).sort()
+      let plugin = this.getPluginName(this.action.name)
+      let items = []
+
+      if (plugin in this.plugins) {
+        items = Object.keys(this.actions).sort()
+      } else {
+        plugin = undefined
+        items = Object.keys(this.plugins).sort().map((pluginName) => `${pluginName}.`)
       }
 
-      return Object.keys(this.plugins).sort().map((pluginName) => `${pluginName}.`)
+      return items.map((item) => {
+        const iconName = plugin || item.replace(/\.+$/, '')
+        return {
+          prefix: `
+            <img src="https://static.platypush.tech/icons/${iconName}-64.png"
+                 style="width: 1em; height: 1em; margin-right: 0.75em"
+                 class="plugin-icon" />`,
+          text: item,
+        }
+      })
     },
 
     actionInput() {
@@ -547,7 +563,12 @@ export default {
 
   async mounted() {
     await this.refresh()
-    await this.onValueChanged()
+    this.onValueChanged()
+  },
+
+  unmounted() {
+    this.actionDocsCache = {}
+    this.setUrlArgs({action: undefined})
   },
 }
 </script>
