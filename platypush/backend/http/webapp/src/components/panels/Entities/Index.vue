@@ -535,6 +535,7 @@ export default {
         max-height: calc(100vh - #{$header-height} - #{$main-margin});
       }
 
+      width: 100%;
       display: flex;
       flex-direction: column;
       flex-grow: 1;

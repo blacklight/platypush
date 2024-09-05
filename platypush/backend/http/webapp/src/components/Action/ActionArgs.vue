@@ -1,5 +1,5 @@
 <template>
-  <div class="args-body">
+  <div class="args-body" @keydown="onKeyDown">
     <div class="args-list"
          v-if="Object.keys(action.args).length || action.supportsExtraArgs">
       <!-- Supported action arguments -->
@@ -77,15 +77,29 @@ export default {
     'arg-edit',
     'extra-arg-name-edit',
     'extra-arg-value-edit',
+    'input',
     'remove',
     'select',
   ],
+
   props: {
     action: Object,
     loading: Boolean,
     running: Boolean,
     selectedArg: String,
     selectedArgdoc: String,
+  },
+
+  computed: {
+    allArgs() {
+      return {
+        ...this.action.args,
+        ...this.action.extraArgs.reduce((acc, arg) => {
+          acc[arg.name] = arg
+          return acc
+        }, {}),
+      }
+    },
   },
 
   methods: {
@@ -123,6 +137,19 @@ export default {
 
     onSelect(arg) {
       this.$emit('select', arg)
+    },
+
+    onKeyDown(event) {
+      if (event.key === 'Enter' && !(event.shiftKey || event.ctrlKey || event.altKey || event.metaKey))
+        this.onEnter(event)
+    },
+
+    onEnter(event) {
+      if (!event.target.tagName.match(/input|textarea/i))
+        return
+
+      event.preventDefault()
+      this.$emit('input', this.allArgs)
     },
   },
 }
