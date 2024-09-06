@@ -185,9 +185,6 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
         """
         assert name, 'Procedure name cannot be empty'
         assert actions, 'Procedure actions cannot be empty'
-        assert all(
-            isinstance(action, dict) and action.get('action') for action in actions
-        ), 'Procedure actions should be dictionaries with an "action" key'
 
         args = args or []
         proc_def = self._all_procedures.get(name, {})
