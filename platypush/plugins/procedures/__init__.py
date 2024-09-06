@@ -4,7 +4,16 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from multiprocessing import RLock
 from random import randint
-from typing import Callable, Collection, Generator, Iterable, Optional, Union
+from typing import (
+    Callable,
+    Collection,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Union,
+)
 
 import yaml
 from sqlalchemy.orm import Session
@@ -176,9 +185,6 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
         """
         assert name, 'Procedure name cannot be empty'
         assert actions, 'Procedure actions cannot be empty'
-        assert all(
-            isinstance(action, dict) and action.get('action') for action in actions
-        ), 'Procedure actions should be dictionaries with an "action" key'
 
         args = args or []
         proc_def = self._all_procedures.get(name, {})
@@ -263,11 +269,7 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
             proc = {
                 f'procedure.{name}'
                 + (f'({", ".join(args)})' if args else ''): [
-                    {
-                        'action': action['action'],
-                        **({'args': action['args']} if action.get('args') else {}),
-                    }
-                    for action in actions
+                    self._serialize_action(action) for action in actions
                 ]
             }
         else:
@@ -280,6 +282,26 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
     @staticmethod
     def _normalize_name(name: Optional[str]) -> str:
         return re.sub(r'[^\w.]+', '_', (name or '').strip(' .'))
+
+    @classmethod
+    def _serialize_action(cls, data: Union[Iterable, Dict]) -> Union[Dict, List]:
+        if isinstance(data, dict):
+            if data.get('action'):
+                return {
+                    'action': data['action'],
+                    **({'args': data['args']} if data.get('args') else {}),
+                }
+
+            return {
+                k: (
+                    cls._serialize_action(v)
+                    if isinstance(v, (dict, list, tuple))
+                    else v
+                )
+                for k, v in data.items()
+            }
+        else:
+            return [cls._serialize_action(item) for item in data if item is not None]
 
     @contextmanager
     def _db_session(self) -> Generator[Session, None, None]:
