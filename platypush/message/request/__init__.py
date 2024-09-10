@@ -64,12 +64,13 @@ class Request(Message):
         msg = super().parse(msg)
         args = {
             'target': msg.get('target', Config.get('device_id')),
-            'action': msg['action'],
+            'action': msg.get('action', msg.get('name')),
             'args': msg.get('args', {}),
             'id': msg['id'] if 'id' in msg else cls._generate_id(),
             'timestamp': msg['_timestamp'] if '_timestamp' in msg else time.time(),
         }
 
+        assert args.get('action'), 'No action specified in the request'
         if 'origin' in msg:
             args['origin'] = msg['origin']
         if 'token' in msg:
