@@ -64,7 +64,7 @@
 
             <ActionsList :value="newValue.actions"
                          :read-only="readOnly"
-                         @input="newValue.actions = $event" />
+                         @input="onActionsEdit" />
           </div>
 
           <!-- Structured response container -->
@@ -176,7 +176,7 @@
               <FloatingButton icon-class="fa fa-save"
                               right glow
                               title="Save Procedure"
-                              :disabled="!hasChanges"
+                              :disabled="!canSave"
                               @click="save"
                               v-if="showSave" />
               <FloatingButton icon-class="fa fa-play"
@@ -292,14 +292,24 @@ export default {
       return this.$el.querySelector('.floating-btns')
     },
 
-    hasChanges() {
-      if (!this.newValue?.name?.length)
+    canSave() {
+      if (
+        !this.withSave ||
+        this.readOnly ||
+        !this.newValue?.name?.length ||
+        !this.newValue?.actions?.length
+      )
         return false
 
-      if (!this.newValue?.actions?.length)
-        return false
+      return this.valueString !== this.newValueString
+    },
 
-      return JSON.stringify(this.value) !== JSON.stringify(this.newValue)
+    valueString() {
+      return JSON.stringify(this.value)
+    },
+
+    newValueString() {
+      return JSON.stringify(this.newValue)
     },
 
     modal_() {
@@ -310,7 +320,7 @@ export default {
     },
 
     shouldConfirmClose() {
-      return this.hasChanges && !this.readOnly && this.withSave && !this.shouldForceClose
+      return this.canSave && !this.shouldForceClose
     },
 
     showArgs() {
@@ -324,7 +334,7 @@ export default {
 
   methods: {
     async save() {
-      if (!this.hasChanges)
+      if (!this.canSave)
         return
 
       this.loading = true
@@ -468,12 +478,13 @@ export default {
 
     duplicate() {
       const name = `${this.newValue.name || ''}__copy`
+      const duplicate = JSON.parse(JSON.stringify(this.newValue))
       this.duplicateValue = {
-        ...this.newValue,
+        ...duplicate,
         ...{
           meta: {
-            ...(this.newValue.meta || {}),
-            icon: {...(this.newValue.meta?.icon || {})},
+            ...(duplicate.meta || {}),
+            icon: {...(duplicate.meta?.icon || {})},
           }
         },
         id: null,
@@ -482,16 +493,8 @@ export default {
       }
     },
 
-    editAction(action, index) {
-      this.newValue.actions[index] = action
-    },
-
-    addAction(action) {
-      this.newValue.actions.push(action)
-    },
-
-    deleteAction(index) {
-      this.newValue.actions.splice(index, 1)
+    onActionsEdit(actions) {
+      this.newValue.actions = actions
     },
 
     onArgInput(arg, index) {
@@ -630,11 +633,12 @@ export default {
       if (!this.value)
         return
 
+      const value = JSON.parse(JSON.stringify(this.value))
       this.newValue = {
-        ...this.value,
-        actions: this.value.actions?.map(a => ({...a})),
-        args: [...(this.value?.args || [])],
-        meta: {...(this.value?.meta || {})},
+        ...value,
+        actions: value.actions?.map(a => ({...a})),
+        args: [...(value?.args || [])],
+        meta: {...(value?.meta || {})},
       }
     },
   },

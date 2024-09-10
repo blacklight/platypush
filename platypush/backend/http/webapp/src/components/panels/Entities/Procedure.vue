@@ -133,6 +133,10 @@
             </div>
           </div>
 
+          <div class="item">
+            <IconEditor :entity="value" />
+          </div>
+
           <div class="item actions" v-if="value?.actions?.length">
             <div class="label">Actions</div>
             <div class="value">
@@ -212,6 +216,7 @@ import ConfirmDialog from "@/components/elements/ConfirmDialog";
 import EntityMixin from "./EntityMixin"
 import EntityIcon from "./EntityIcon"
 import FileEditor from "@/components/File/EditorModal";
+import IconEditor from "@/components/panels/Entities/IconEditor";
 import ProcedureEditor from "@/components/Procedure/ProcedureEditorModal"
 import Response from "@/components/Action/Response"
 
@@ -220,6 +225,7 @@ export default {
     ConfirmDialog,
     EntityIcon,
     FileEditor,
+    IconEditor,
     ProcedureEditor,
     Response,
   },
@@ -658,6 +664,8 @@ $icon-width: 2em;
     }
 
     .value {
+      text-align: right;
+
       @include until($tablet) {
         width: 100%;
       }

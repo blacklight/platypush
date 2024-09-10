@@ -1,6 +1,7 @@
 <template>
   <div class="action-tile-container">
     <div class="action-tile"
+         :class="{ new: isNew }"
          ref="tile"
          @click="$refs.actionEditor.show">
       <div class="action-delete"
@@ -122,6 +123,10 @@ export default {
   },
 
   computed: {
+    isNew() {
+      return !this.readOnly && !this.name?.length
+    },
+
     name() {
       return this.value.name || this.value.action
     },
@@ -177,6 +182,14 @@ export default {
 
     &.selected {
       background: $tile-hover-bg;
+    }
+
+    &.new {
+      background: $tile-bg-3;
+
+      &:hover {
+        background: $tile-hover-bg-3;
+      }
     }
 
     .action-delete {

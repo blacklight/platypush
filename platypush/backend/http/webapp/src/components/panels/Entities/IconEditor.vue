@@ -160,7 +160,12 @@ export default {
 
   watch: {
     editIcon() {
-      this.newIcon = (this.entity.meta?.icon?.['class'] || this.entity.meta?.icon?.url)?.trim()
+      this.newIcon = (
+        this.entity.meta?.icon?.url ||
+        this.entity.meta?.icon?.['class'] ||
+        this.currentIcon.url ||
+        this.currentIcon.class
+      )?.trim()
     },
 
     newIcon() {
