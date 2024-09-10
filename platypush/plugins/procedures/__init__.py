@@ -286,9 +286,10 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
     @classmethod
     def _serialize_action(cls, data: Union[Iterable, Dict]) -> Union[Dict, List]:
         if isinstance(data, dict):
-            if data.get('action'):
+            name = data.get('action', data.get('name'))
+            if name:
                 return {
-                    'action': data['action'],
+                    'action': name,
                     **({'args': data['args']} if data.get('args') else {}),
                 }
 
