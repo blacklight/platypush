@@ -143,7 +143,7 @@ export default {
     },
 
     onEscape() {
-      if (!this.isVisible || this.ignoreEscape)
+      if (!this.isVisible || this.ignoreEscape || !this.$refs.container)
         return
 
       const myZIndex = parseInt(getComputedStyle(this.$refs.container).zIndex)
