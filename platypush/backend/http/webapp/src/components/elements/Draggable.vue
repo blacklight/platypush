@@ -13,6 +13,7 @@ export default {
   emits: [
     'contextmenu',
     'drag',
+    'dragend',
     'drop',
   ],
 
@@ -37,7 +38,7 @@ export default {
     },
 
     value: {
-      type: Object,
+      type: [Object, String, Number, Boolean, Array],
       default: () => ({}),
     },
   },
@@ -51,8 +52,8 @@ export default {
         drag: this.onDrag,
         dragend: this.onDragEnd,
         dragstart: this.onDragStart,
-        drop: this.onDrop,
-        touchcancel: this.onDrop,
+        drop: this.onDragEnd,
+        touchcancel: this.onDragEnd,
         touchend: this.onTouchEnd,
         touchmove: this.onTouchMove,
         touchstart: this.onTouchStart,
@@ -121,7 +122,7 @@ export default {
       }
 
       this.reset()
-      this.$emit('drop', event)
+      this.$emit('dragend', event)
     },
 
     onTouchStart(event) {
@@ -240,15 +241,6 @@ export default {
       }
 
       this.onDragEnd(event)
-    },
-
-    onDrop(event) {
-      if (this.disabled) {
-        return
-      }
-
-      this.reset()
-      this.$emit('drop', event)
     },
 
     handleTouchScroll(value, parent) {
