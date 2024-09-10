@@ -30,6 +30,14 @@
    -webkit-animation-name: shrink;
 }
 
+.fold {
+   animation-duration: 0.5s;
+   -webkit-animation-duration: 0.5s;
+   animation-fill-mode: both;
+   animation-name: fold;
+   -webkit-animation-name: fold;
+}
+
 .unfold {
    animation-duration: 0.5s;
    -webkit-animation-duration: 0.5s;
@@ -61,8 +69,13 @@
    100% {transform: scale(0);}
 }
 
+@keyframes fold {
+   0% {transform: scale(1, 1);}
+   100% {transform: scale(1, 0);}
+}
+
 @keyframes unfold {
-   0% {transform: scale(0, 1);}
+   0% {transform: scale(1, 0);}
    100% {transform: scale(1, 1);}
 }
 
