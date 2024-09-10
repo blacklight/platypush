@@ -55,7 +55,6 @@ class Procedure:
         requests,
         args=None,
         backend=None,
-        id=None,  # pylint: disable=redefined-builtin
         procedure_class=None,
         **kwargs,
     ):
@@ -66,6 +65,7 @@ class Procedure:
         if_config = LifoQueue()
         procedure_class = procedure_class or cls
         key = None
+        kwargs.pop('id', None)
 
         for request_config in requests:
             # Check if it's a break/continue/return statement
@@ -91,7 +91,6 @@ class Procedure:
                             'condition': condition,
                             'else_branch': [],
                             'backend': backend,
-                            'id': id,
                         }
                     )
 
@@ -132,7 +131,6 @@ class Procedure:
                         _async=_async,
                         requests=request_config[key],
                         backend=backend,
-                        id=id,
                         iterator_name=iterator_name,
                         iterable=iterable,
                     )
@@ -156,14 +154,12 @@ class Procedure:
                         requests=request_config[key],
                         condition=condition,
                         backend=backend,
-                        id=id,
                     )
 
                     reqs.append(loop)
                     continue
 
             request_config['origin'] = Config.get('device_id')
-            request_config['id'] = id
             if 'target' not in request_config:
                 request_config['target'] = request_config['origin']
 
