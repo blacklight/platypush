@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from functools import wraps
 
 from queue import LifoQueue
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from ..common import exec_wrapper
 from ..config import Config
@@ -110,6 +110,7 @@ class Procedure:
         for request_config in requests:
             # Check if it's a break/continue/return statement
             if isinstance(request_config, str):
+                cls._flush_if_statements(reqs, if_config)
                 reqs.append(Statement.build(request_config))
                 continue
 
@@ -118,6 +119,7 @@ class Procedure:
                 len(request_config.keys()) == 1
                 and list(request_config.keys())[0] == 'return'
             ):
+                cls._flush_if_statements(reqs, if_config)
                 reqs.append(ReturnStatement(argument=request_config['return']))
                 continue
 
@@ -214,9 +216,7 @@ class Procedure:
             request = Request.build(request_config)
             reqs.append(request)
 
-        while not if_config.empty():
-            pending_if = if_config.get()
-            reqs.append(IfProcedure.build(**pending_if))
+        cls._flush_if_statements(reqs, if_config)
 
         return procedure_class(
             name=name,
@@ -226,6 +226,12 @@ class Procedure:
             backend=backend,
             **kwargs,
         )
+
+    @staticmethod
+    def _flush_if_statements(requests: List, if_config: LifoQueue):
+        while not if_config.empty():
+            pending_if = if_config.get()
+            requests.append(IfProcedure.build(**pending_if))
 
     @staticmethod
     def _find_nearest_loop(stack):
