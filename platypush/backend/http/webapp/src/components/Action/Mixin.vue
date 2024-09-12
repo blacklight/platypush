@@ -31,6 +31,16 @@ export default {
     isElse(value) {
       return (this.getKey(value) || value)?.toLowerCase?.()?.trim?.() === 'else'
     },
+
+    isReturn(value) {
+      if (!value)
+        return false
+
+      if (Array.isArray(value))
+        return value.length === 1 && value[0]?.length && value[0].match(/^return\s*$/i)
+
+      return this.getKey(value) === 'return'
+    },
   },
 }
 </script>

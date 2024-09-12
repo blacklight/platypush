@@ -1,11 +1,13 @@
 <template>
-  <form class="condition-editor" @submit.prevent.stop="onSubmit">
-    <label for="condition">
-      Condition
+  <form class="expression-editor" @submit.prevent.stop="onSubmit">
+    <label for="expression">
+      <slot />
+
       <input type="text"
-             name="condition"
+             name="expression"
              autocomplete="off"
              :autofocus="true"
+             :placeholder="placeholder"
              :value="value"
              ref="text"
              @input.stop="onInput" />
@@ -28,7 +30,17 @@ export default {
   props: {
     value: {
       type: String,
-      required: true,
+      default: '',
+    },
+
+    allowEmpty: {
+      type: Boolean,
+      default: false,
+    },
+
+    placeholder: {
+      type: String,
+      default: '',
     },
   },
 
@@ -41,7 +53,7 @@ export default {
   methods: {
     onSubmit(event) {
       const value = this.$refs.text.value.trim()
-      if (!value.length) {
+      if (!value.length && !this.allowEmpty) {
         return
       }
 
@@ -52,7 +64,7 @@ export default {
     onInput(event) {
       const value = '' + event.target.value
       if (!value?.trim()?.length) {
-        this.hasChanges = false
+        this.hasChanges = this.allowEmpty
       } else {
         this.hasChanges = value !== this.value
       }
@@ -70,6 +82,11 @@ export default {
   },
 
   mounted() {
+    this.hasChanges = false
+    if (!this.value?.trim()?.length) {
+      this.hasChanges = this.allowEmpty
+    }
+
     this.$nextTick(() => {
       this.$refs.text.focus()
     })
@@ -80,7 +97,7 @@ export default {
 <style lang="scss" scoped>
 @import "common";
 
-.condition-editor {
+.expression-editor {
   min-width: 40em;
   max-width: 100%;
   display: flex;

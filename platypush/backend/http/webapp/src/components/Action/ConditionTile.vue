@@ -46,17 +46,19 @@
       <Modal title="Edit Condition"
              :visible="true"
              @close="showConditionEditor = false">
-        <ConditionEditor :value="value"
-                         ref="conditionEditor"
-                         @input.prevent.stop="onConditionChange"
-                         v-if="showConditionEditor" />
+        <ExpressionEditor :value="value"
+                          ref="conditionEditor"
+                          @input.prevent.stop="onConditionChange"
+                          v-if="showConditionEditor">
+          Condition
+        </ExpressionEditor>
       </Modal>
     </div>
   </ListItem>
 </template>
 
 <script>
-import ConditionEditor from "./ConditionEditor"
+import ExpressionEditor from "./ExpressionEditor"
 import ListItem from "./ListItem"
 import Modal from "@/components/Modal"
 import Tile from "@/components/elements/Tile"
@@ -76,7 +78,7 @@ export default {
   ],
 
   components: {
-    ConditionEditor,
+    ExpressionEditor,
     ListItem,
     Modal,
     Tile,

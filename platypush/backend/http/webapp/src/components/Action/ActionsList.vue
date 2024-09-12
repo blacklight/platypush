@@ -9,13 +9,12 @@
 
     <div class="actions" :class="{dragging: isDragging}">
       <div class="row item action"
-           v-for="(action, index) in newValue"
+           v-for="(action, index) in visibleActions"
            :key="index">
         <ConditionBlock v-bind="componentsData[index].props"
                         v-on="componentsData[index].on"
                         :collapsed="collapsedBlocks[index]"
                         :dragging="isDragging"
-                        :has-else="!!elses[index + 1]"
                         @add-else="addElse"
                         v-if="conditions[index]" />
 
@@ -26,12 +25,18 @@
                         :is-else="true"
                         v-else-if="elses[index]" />
 
+        <ReturnTile v-bind="componentsData[index].props"
+                    :value="returnValue"
+                    @change="editReturn($event)"
+                    @delete="deleteAction(index)"
+                    v-else-if="isReturn(action)" />
+
         <ActionsListItem v-bind="componentsData[index].props"
                          v-on="componentsData[index].on"
                          v-else-if="isAction(action) && !collapsed" />
       </div>
 
-      <div class="row item action add-action-container" v-if="!readOnly && !collapsed">
+      <div class="row item action add-action-container" v-if="visibleAddButtons.action">
         <ListItem :active="isDragging"
                   :readOnly="false"
                   :spacerBottom="false"
@@ -44,13 +49,24 @@
         </ListItem>
       </div>
 
-      <div class="row item action add-if-container" v-if="!readOnly && !collapsed">
-        <AddTile icon="fas fa-question" title="Add Condition" @click="addCondition" />
+      <div class="add-buttons-expander" v-if="showAddButtonsExpander">
+        <button @click.stop.prevent="collapseAddButtons = !collapseAddButtons">
+          <i class="fas" :class="collapseAddButtons ? 'fa-angle-down' : 'fa-angle-up'" />
+        </button>
       </div>
 
-      <div class="row item action add-else-container"
-           v-if="!readOnly && !collapsed && parent && getCondition(parent) && !hasElse">
-        <AddTile icon="fas fa-question" title="Add Else" @click="$emit('add-else')" />
+      <div class="extra-add-buttons fade-in" v-if="showAddButtons">
+        <div class="row item action add-return-container" v-if="visibleAddButtons.return">
+          <AddTile icon="fas fa-angle-right" title="Add Return" @click="addReturn" />
+        </div>
+
+        <div class="row item action add-if-container" v-if="visibleAddButtons.condition">
+          <AddTile icon="fas fa-question" title="Add Condition" @click="addCondition" />
+        </div>
+
+        <div class="row item action add-else-container" v-if="visibleAddButtons.else">
+          <AddTile icon="fas fa-question" title="Add Else" @click="$emit('add-else')" />
+        </div>
       </div>
     </div>
   </div>
@@ -63,6 +79,7 @@ import AddTile from "./AddTile"
 import ConditionBlock from "./ConditionBlock"
 import ListItem from "./ListItem"
 import Mixin from "./Mixin"
+import ReturnTile from "./ReturnTile"
 import Utils from "@/Utils"
 
 export default {
@@ -88,6 +105,7 @@ export default {
     AddTile,
     ConditionBlock,
     ListItem,
+    ReturnTile,
   },
 
   props: {
@@ -132,6 +150,7 @@ export default {
 
   data() {
     return {
+      collapseAddButtons: true,
       newValue: [],
       dragIndices: undefined,
       initialValue: undefined,
@@ -190,6 +209,14 @@ export default {
             },
             input: (value) => this.editAction(value, index),
           }
+        }
+
+        if (
+          this.getCondition(action) &&
+          this.newValue[index + 1] &&
+          this.isElse(this.newValue[index + 1])
+        ) {
+          data.props.hasElse = true
         }
 
         if (this.isActionsBlock(action)) {
@@ -272,6 +299,91 @@ export default {
       }
 
       return this.dragIndices?.[0]
+    },
+
+    returnIndex() {
+      const ret = this.newValue?.reduce?.((acc, action, index) => {
+        if (acc >= 0)
+          return acc
+
+        if (this.isReturn(action))
+          return index
+
+        return acc
+      }, -1)
+
+      return ret >= 0 ? ret : null
+    },
+
+    returnValue() {
+      if (this.returnIndex == null)
+        return ''
+
+      const ret = this.newValue[this.returnIndex]
+      if (ret == null)
+        return ''
+
+      let retValue = null
+      if (Array.isArray(ret))
+        retValue = ret.length === 1 ? ret[0].match(/^return\s*(.*)$/)?.[1] : ret
+      else
+        retValue = ret.return
+
+      return retValue || ''
+    },
+
+    showAddButtons() {
+      return (
+        this.newValue.length === 0 || !this.collapseAddButtons
+      )
+    },
+
+    showAddButtonsExpander() {
+      return (
+        !this.readOnly &&
+        this.newValue?.length > 0 &&
+        Object.entries(this.visibleAddButtons).filter(
+          ([key, value]) => value && key != 'action'
+        ).length > 1
+      )
+    },
+
+    stopIndex() {
+      return this.returnIndex
+    },
+
+    visibleActions() {
+      return this.newValue.reduce((acc, action, index) => {
+        if (this.stopIndex != null && index > this.stopIndex)
+          return acc
+
+        if (
+          this.conditions[index] ||
+          this.elses[index] ||
+          this.isAction(action) ||
+          this.isReturn(action)
+        ) {
+          acc[index] = action
+        }
+
+        return acc
+      }, {})
+    },
+
+    visibleAddButtons() {
+      return {
+        action: !this.readOnly && !this.collapsed && this.stopIndex == null,
+        return: !this.readOnly && !this.collapsed && this.stopIndex == null,
+        condition: !this.readOnly && !this.collapsed && this.stopIndex == null,
+        else: (
+          !this.readOnly &&
+          !this.collapsed &&
+          this.parent &&
+          this.getCondition(this.parent) &&
+          !this.hasElse &&
+          this.stopIndex == null
+        ),
+      }
     },
 
     visibleTopSpacers() {
@@ -361,24 +473,21 @@ export default {
       }
 
       event.stopPropagation()
+      let dropIndices = []
 
       if (!event.detail?.length) {
-        event = new CustomEvent(
-          'drop', {
-            bubbles: false,
-            cancelable: true,
-            detail: [dropIndex],
-          }
-        )
+        dropIndices = [dropIndex]
       } else {
-        event = new CustomEvent(
-          'drop', {
-            bubbles: false,
-            cancelable: true,
-            detail: [dropIndex, ...event.detail],
-          }
-        )
+        dropIndices = [dropIndex, ...event.detail]
       }
+
+      event = new CustomEvent(
+        'drop', {
+          bubbles: false,
+          cancelable: true,
+          detail: dropIndices,
+        }
+      )
 
       if (this.indent > 0) {
         // If the current drop location is within a nested block, then we need to
@@ -389,7 +498,6 @@ export default {
 
       // If we are at the root level, then we have the full picture of the underlying
       // data structure, and we can perform the drop operation directly.
-      const dropIndices = event.detail
       const dragIndex = this.dragIndices.slice(-1)[0]
       dropIndex = event.detail.slice(-1)[0]
 
@@ -435,12 +543,12 @@ export default {
       let parent = this.newValue
       while (parent && indices.length > 1) {
         parent = parent[indices.shift()]
-      }
 
-      if (parent) {
-        const blockKey = this.getKey(parent)
-        if (blockKey) {
-          parent = parent[blockKey]
+        if (parent) {
+          const blockKey = this.getKey(parent)
+          if (blockKey) {
+            parent = parent[blockKey]
+          }
         }
       }
 
@@ -462,11 +570,29 @@ export default {
     },
 
     addAction(action) {
-      this.newValue.push(action)
+      this.newValue.push(
+        {
+          ...action,
+          action: action.name || action.action,
+        }
+      )
     },
 
     addCondition() {
       this.newValue.push({ 'if ${True}': [] })
+      this.selectLastExprEditor()
+    },
+
+    addReturn() {
+      this.newValue.push({ 'return': null })
+      this.selectLastExprEditor()
+    },
+
+    editReturn(value) {
+      this.newValue[this.returnIndex] = { 'return': value?.length ? value : null }
+    },
+
+    selectLastExprEditor() {
       this.$nextTick(() => {
         const newTile = this.$refs[`action-tile-${this.newValue.length - 1}`]?.[0]
         if (!newTile) {
@@ -480,12 +606,12 @@ export default {
 
         newTileElement.click()
         this.$nextTick(() => {
-          const conditionEditor = newTile.$el?.querySelector('.condition-editor-container')
-          if (!conditionEditor) {
+          const exprEditor = newTile.$el?.querySelector('.expr-editor-container')
+          if (!exprEditor) {
             return
           }
 
-          const input = conditionEditor.querySelector('input[type="text"]')
+          const input = exprEditor.querySelector('input[type="text"]')
           if (!input) {
             return
           }
@@ -610,6 +736,29 @@ export default {
         }
       }
     }
+  }
+
+  .add-buttons-expander {
+    width: 100%;
+    height: 1em;
+    margin: -0.5em 0 0.5em 0;
+
+    button {
+      width: 100%;
+      height: 100%;
+      background: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      margin: 0;
+      padding: 0.5em 0 0 0;
+
+      &:hover {
+        color: $default-hover-fg;
+      }
+    }
+    display: flex;
   }
 }
 </style>
