@@ -281,7 +281,7 @@ class Procedure:
 
                 if request.type in [StatementType.BREAK, StatementType.CONTINUE]:
                     loop = self._find_nearest_loop(__stack__)
-                    if request == StatementType.BREAK:
+                    if request.type == StatementType.BREAK:
                         loop._should_break = True  # pylint: disable=protected-access
                     else:
                         loop._should_continue = True  # pylint: disable=protected-access
@@ -291,9 +291,9 @@ class Procedure:
             should_break = getattr(self, '_should_break', False)
             if isinstance(self, LoopProcedure) and (should_continue or should_break):
                 if should_continue:
-                    self._should_continue = (  # pylint: disable=attribute-defined-outside-init
-                        False
-                    )
+                    setattr(self, '_should_continue', False)  # noqa[B010]
+                else:
+                    setattr(self, '_should_break', False)  # noqa[B010]
 
                 break
 

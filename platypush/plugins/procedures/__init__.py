@@ -284,7 +284,7 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
         return re.sub(r'[^\w.]+', '_', (name or '').strip(' .'))
 
     @classmethod
-    def _serialize_action(cls, data: Union[Iterable, Dict]) -> Union[Dict, List]:
+    def _serialize_action(cls, data: Union[Iterable, Dict]) -> Union[Dict, List, str]:
         if isinstance(data, dict):
             name = data.get('action', data.get('name'))
             if name:
@@ -301,6 +301,8 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
                 )
                 for k, v in data.items()
             }
+        elif isinstance(data, str):
+            return data
         else:
             return [cls._serialize_action(item) for item in data if item is not None]
 
