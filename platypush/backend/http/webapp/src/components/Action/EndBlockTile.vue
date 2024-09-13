@@ -12,7 +12,7 @@
     <Tile class="keyword" :draggable="false" :read-only="true">
       <div class="tile-name">
         <span class="icon">
-          <i class="fas fa-question" />
+          <i :class="icon" />
         </span>
         <span class="name">
           <span class="keyword" v-text="value" />

@@ -14,6 +14,7 @@
                      :dragging="dragging"
                      :has-else="hasElse"
                      :indent="indent"
+                     :is-inside-loop="isInsideLoop"
                      :parent="value"
                      :read-only="readOnly"
                      @add-else="$emit('add-else')"
@@ -82,6 +83,11 @@ export default {
     indent: {
       type: Number,
       default: 0,
+    },
+
+    isInsideLoop: {
+      type: Boolean,
+      default: false,
     },
 
     readOnly: {

@@ -1,5 +1,5 @@
 <template>
-  <ListItem class="condition-tile"
+  <ListItem class="loop-tile"
             :value="value"
             :active="active"
             :read-only="readOnly"
@@ -12,53 +12,40 @@
     <Tile v-bind="tileConf.props"
           v-on="tileConf.on"
           :draggable="!readOnly"
-          @click.stop="showConditionEditor = true"
-          v-if="!isElse">
+          @click.stop="showLoopEditor = true">
       <div class="tile-name">
         <span class="icon">
-          <i class="fas fa-question" />
+          <i class="fas fa-arrow-rotate-left" />
         </span>
         <span class="name">
-          <span class="keyword">if</span> [
-          <span class="code" v-text="value" /> ]
+          <span class="keyword">for<span v-if="async">k</span></span>&nbsp;
+          <span class="code" v-text="iterator" />
+          <span class="keyword"> in </span> [
+          <span class="code" v-text="iterable" /> ]
         </span>
       </div>
     </Tile>
 
-    <Tile v-bind="tileConf.props"
-          v-on="tileConf.on"
-          :draggable="false"
-          :read-only="true"
-          @click="$emit('click')"
-          v-else>
-      <div class="tile-name">
-        <span class="icon">
-          <i class="fas fa-question" />
-        </span>
-        <span class="name">
-          <span class="keyword">else</span>
-        </span>
-      </div>
-    </Tile>
-
-    <div class="condition-editor-container" v-if="showConditionEditor && !readOnly">
-      <Modal title="Edit Condition"
+    <div class="editor-container" v-if="showLoopEditor && !readOnly">
+      <Modal title="Edit Loop"
              :visible="true"
-             @close="showConditionEditor = false">
-        <ExpressionEditor :value="value"
-                          ref="conditionEditor"
-                          @input.prevent.stop="onConditionChange"
-                          v-if="showConditionEditor">
-          Condition
-        </ExpressionEditor>
+             @close="showLoopEditor = false">
+        <LoopEditor :iterator="iterator"
+                    :iterable="iterable"
+                    :async="async"
+                    ref="loopEditor"
+                    @change="onLoopChange"
+                    v-if="showLoopEditor">
+          Loop
+        </LoopEditor>
       </Modal>
     </div>
   </ListItem>
 </template>
 
 <script>
-import ExpressionEditor from "./ExpressionEditor"
 import ListItem from "./ListItem"
+import LoopEditor from "./LoopEditor"
 import Modal from "@/components/Modal"
 import Tile from "@/components/elements/Tile"
 
@@ -77,19 +64,29 @@ export default {
   ],
 
   components: {
-    ExpressionEditor,
+    LoopEditor,
     ListItem,
     Modal,
     Tile,
   },
 
   props: {
-    value: {
+    iterator: {
+      type: String,
+      required: true,
+    },
+
+    iterable: {
       type: String,
       required: true,
     },
 
     active: {
+      type: Boolean,
+      default: false,
+    },
+
+    async: {
       type: Boolean,
       default: false,
     },
@@ -143,29 +140,27 @@ export default {
         },
       }
     },
+
+    value() {
+      return `for ${this.iterator} in ${this.iterable}`
+    },
   },
 
   data() {
     return {
       dragging: false,
-      showConditionEditor: false,
+      showLoopEditor: false,
     }
   },
 
   methods: {
-    onConditionChange(event) {
-      this.showConditionEditor = false
+    onLoopChange(event) {
+      this.showLoopEditor = false
       if (this.readOnly) {
         return
       }
 
-      const condition = event.target.value?.trim()
-      if (!condition?.length) {
-        return
-      }
-
-      event.target.value = condition
-      this.$emit('change', condition)
+      this.$emit('change', event)
     },
 
     onInput(value) {

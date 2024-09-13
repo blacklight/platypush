@@ -29,7 +29,7 @@ export default {
 
   props: {
     value: {
-      type: String,
+      type: [String, Number, Boolean, Object, Array],
       default: '',
     },
 
@@ -83,7 +83,7 @@ export default {
 
   mounted() {
     this.hasChanges = false
-    if (!this.value?.trim()?.length) {
+    if (!this.value?.trim?.()?.length) {
       this.hasChanges = this.allowEmpty
     }
 

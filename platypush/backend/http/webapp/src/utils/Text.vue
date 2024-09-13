@@ -37,6 +37,16 @@ export default {
     formatNumber(number) {
       return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
     },
+
+    escapeHTML(value) {
+      return value
+         ?.toString?.()
+         ?.replace?.(/&/g, "&amp;")
+         ?.replace?.(/</g, "&lt;")
+         ?.replace?.(/>/g, "&gt;")
+         ?.replace?.(/"/g, "&quot;")
+         ?.replace?.(/'/g, "&#039;") || ''
+     },
   },
 }
 </script>

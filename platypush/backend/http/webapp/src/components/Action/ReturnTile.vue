@@ -19,7 +19,7 @@
       </div>
     </Tile>
 
-    <div class="expr-editor-container" v-if="showExprEditor && !readOnly">
+    <div class="editor-container" v-if="showExprEditor && !readOnly">
       <Modal title="Edit Return"
              :visible="true"
              @close="showExprEditor = false">
@@ -59,16 +59,11 @@ export default {
 
   props: {
     value: {
-      type: String,
+      type: [String, Number, Boolean, Object, Array],
       default: '',
     },
 
     active: {
-      type: Boolean,
-      default: false,
-    },
-
-    isElse: {
       type: Boolean,
       default: false,
     },

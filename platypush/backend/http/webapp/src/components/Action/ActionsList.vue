@@ -25,6 +25,24 @@
                         :is-else="true"
                         v-else-if="elses[index]" />
 
+        <LoopBlock v-bind="componentsData[index].props"
+                   v-on="componentsData[index].on"
+                   :collapsed="collapsedBlocks[index]"
+                   :dragging="isDragging"
+                   v-else-if="fors[index]" />
+
+        <BreakTile :active="isDragging"
+                   :readOnly="readOnly"
+                   :spacerTop="componentsData[index].props.spacerTop"
+                   @delete="deleteAction(index)"
+                   v-else-if="isBreak(action)" />
+
+        <ContinueTile :active="isDragging"
+                      :readOnly="readOnly"
+                      :spacerTop="componentsData[index].props.spacerTop"
+                      @delete="deleteAction(index)"
+                      v-else-if="isContinue(action)" />
+
         <ReturnTile v-bind="componentsData[index].props"
                     :value="returnValue"
                     @change="editReturn($event)"
@@ -67,6 +85,18 @@
         <div class="row item action add-else-container" v-if="visibleAddButtons.else">
           <AddTile icon="fas fa-question" title="Add Else" @click="$emit('add-else')" />
         </div>
+
+        <div class="row item action add-for-container" v-if="visibleAddButtons.loop">
+          <AddTile icon="fas fa-arrow-rotate-left" title="Add Loop" @click="addLoop" />
+        </div>
+
+        <div class="row item action add-break-container" v-if="visibleAddButtons.break">
+          <AddTile icon="fas fa-hand" title="Add Break" @click="addBreak" />
+        </div>
+
+        <div class="row item action add-continue-container" v-if="visibleAddButtons.continue">
+          <AddTile icon="fas fa-rotate" title="Add Continue" @click="addContinue" />
+        </div>
       </div>
     </div>
   </div>
@@ -76,8 +106,11 @@
 import ActionsListItem from "./ActionsListItem"
 import ActionTile from "./ActionTile"
 import AddTile from "./AddTile"
+import BreakTile from "./BreakTile"
 import ConditionBlock from "./ConditionBlock"
+import ContinueTile from "./ContinueTile"
 import ListItem from "./ListItem"
+import LoopBlock from "./LoopBlock"
 import Mixin from "./Mixin"
 import ReturnTile from "./ReturnTile"
 import Utils from "@/Utils"
@@ -103,8 +136,11 @@ export default {
     ActionsListItem,
     ActionTile,
     AddTile,
+    BreakTile,
     ConditionBlock,
+    ContinueTile,
     ListItem,
+    LoopBlock,
     ReturnTile,
   },
 
@@ -119,12 +155,17 @@ export default {
       default: false,
     },
 
+    hasElse: {
+      type: Boolean,
+      default: false,
+    },
+
     indent: {
       type: Number,
       default: 0,
     },
 
-    hasElse: {
+    isInsideLoop: {
       type: Boolean,
       default: false,
     },
@@ -187,6 +228,7 @@ export default {
           props: {
             value: action,
             active: this.isDragging,
+            isInsideLoop: !!(this.isInsideLoop || this.getFor(action) || this.getWhile(action)),
             readOnly: this.readOnly,
             ref: `action-tile-${index}`,
             spacerBottom: this.visibleBottomSpacers[index],
@@ -221,6 +263,11 @@ export default {
 
         if (this.isActionsBlock(action)) {
           data.props.indent = this.indent + 1
+        }
+
+        const loop = this.getFor(action)
+        if (loop) {
+          data.props.async = loop.async
         }
 
         return data
@@ -281,6 +328,16 @@ export default {
       }, {}) || {}
     },
 
+    fors() {
+      return this.newValue?.reduce?.((acc, action, index) => {
+        if (this.getFor(action)) {
+          acc[index] = action
+        }
+
+        return acc
+      }, {}) || {}
+    },
+
     hasChanges() {
       return this.newStringValue !== this.stringValue
     },
@@ -301,18 +358,16 @@ export default {
       return this.dragIndices?.[0]
     },
 
+    breakIndex() {
+      return this.getTileIndex((action) => this.isBreak(action))
+    },
+
+    continueIndex() {
+      return this.getTileIndex((action) => this.isContinue(action))
+    },
+
     returnIndex() {
-      const ret = this.newValue?.reduce?.((acc, action, index) => {
-        if (acc >= 0)
-          return acc
-
-        if (this.isReturn(action))
-          return index
-
-        return acc
-      }, -1)
-
-      return ret >= 0 ? ret : null
+      return this.getTileIndex((action) => this.isReturn(action))
     },
 
     returnValue() {
@@ -349,7 +404,22 @@ export default {
     },
 
     stopIndex() {
-      return this.returnIndex
+      if (this.breakIndex != null)
+        return this.breakIndex
+      if (this.continueIndex != null)
+        return this.continueIndex
+      if (this.returnIndex != null)
+        return this.returnIndex
+
+      return null
+    },
+
+    allowAddButtons() {
+      return (
+        !this.readOnly &&
+        !this.collapsed &&
+        this.stopIndex == null
+      )
     },
 
     visibleActions() {
@@ -360,8 +430,11 @@ export default {
         if (
           this.conditions[index] ||
           this.elses[index] ||
+          this.fors[index] ||
           this.isAction(action) ||
-          this.isReturn(action)
+          this.isReturn(action) ||
+          this.isBreak(action) ||
+          this.isContinue(action)
         ) {
           acc[index] = action
         }
@@ -372,16 +445,23 @@ export default {
 
     visibleAddButtons() {
       return {
-        action: !this.readOnly && !this.collapsed && this.stopIndex == null,
-        return: !this.readOnly && !this.collapsed && this.stopIndex == null,
-        condition: !this.readOnly && !this.collapsed && this.stopIndex == null,
+        action: this.allowAddButtons,
+        return: this.allowAddButtons,
+        condition: this.allowAddButtons,
+        loop: this.allowAddButtons,
         else: (
-          !this.readOnly &&
-          !this.collapsed &&
+          this.allowAddButtons &&
           this.parent &&
           this.getCondition(this.parent) &&
-          !this.hasElse &&
-          this.stopIndex == null
+          !this.hasElse
+        ),
+        break: (
+          this.allowAddButtons &&
+          this.isInsideLoop
+        ),
+        continue: (
+          this.allowAddButtons &&
+          this.isInsideLoop
         ),
       }
     },
@@ -583,6 +663,19 @@ export default {
       this.selectLastExprEditor()
     },
 
+    addLoop() {
+      this.newValue.push({ 'for _ in ${range(10)}': [] })
+      this.selectLastExprEditor()
+    },
+
+    addBreak() {
+      this.newValue.push('break')
+    },
+
+    addContinue() {
+      this.newValue.push('continue')
+    },
+
     addReturn() {
       this.newValue.push({ 'return': null })
       this.selectLastExprEditor()
@@ -606,7 +699,7 @@ export default {
 
         newTileElement.click()
         this.$nextTick(() => {
-          const exprEditor = newTile.$el?.querySelector('.expr-editor-container')
+          const exprEditor = newTile.$el?.querySelector('.editor-container')
           if (!exprEditor) {
             return
           }
@@ -642,6 +735,20 @@ export default {
       } else {
         this.newValue.splice(index, items)
       }
+    },
+
+    getTileIndex(callback) {
+      const ret = this.newValue?.reduce?.((acc, action, index) => {
+        if (acc >= 0)
+          return acc
+
+        if (callback(action))
+          return index
+
+        return acc
+      }, -1)
+
+      return ret >= 0 ? ret : null
     },
 
     syncSpacers() {

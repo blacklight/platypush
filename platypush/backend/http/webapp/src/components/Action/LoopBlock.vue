@@ -1,14 +1,12 @@
 <template>
-  <div class="condition-block">
+  <div class="loop-block">
     <ActionsBlock :value="value"
                   :collapsed="collapsed"
                   :dragging="isDragging"
-                  :has-else="hasElse"
-                  :is-inside-loop="isInsideLoop"
                   :indent="indent"
+                  :is-inside-loop="true"
                   :read-only="readOnly"
                   @input="onActionsChange"
-                  @add-else="$emit('add-else')"
                   @drag="$emit('drag', $event)"
                   @dragend="$emit('dragend', $event)"
                   @dragenter="$emit('dragenter', $event)"
@@ -16,30 +14,19 @@
                   @dragover="$emit('dragover', $event)"
                   @drop="$emit('drop', $event)">
       <template #before>
-        <ConditionTile :value="condition"
-                       v-bind="conditionTileConf.props"
-                       v-on="conditionTileConf.on"
-                       @input.prevent.stop
-                       :spacer-top="spacerTop"
-                       :spacer-bottom="false"
-                       v-if="condition && !isElse" />
-
-        <ConditionTile value="else"
-                       v-bind="conditionTileConf.props"
-                       v-on="conditionTileConf.on"
-                       :is-else="true"
-                       :spacer-top="spacerTop"
-                       :spacer-bottom="false"
-                       v-else-if="isElse" />
+        <LoopTile v-bind="loopTileConf.props"
+                  v-on="loopTileConf.on"
+                  @input.prevent.stop
+                  :spacer-top="spacerTop"
+                  :spacer-bottom="false" />
       </template>
 
       <template #after>
-        <EndBlockTile value="end if"
-                      icon="fas fa-question"
+        <EndBlockTile value="end for"
+                      icon="fas fa-arrow-rotate-right"
                       :active="active"
                       :spacer-bottom="spacerBottom"
-                      @drop="onDrop"
-                      v-if="isElse || !hasElse" />
+                      @drop="onDrop" />
       </template>
     </ActionsBlock>
   </div>
@@ -47,15 +34,14 @@
 
 <script>
 import ActionsBlock from "./ActionsBlock"
-import ConditionTile from "./ConditionTile"
 import EndBlockTile from "./EndBlockTile"
+import LoopTile from "./LoopTile"
 import Mixin from "./Mixin"
 
 export default {
-  name: 'ConditionBlock',
+  name: 'LoopBlock',
   mixins: [Mixin],
   emits: [
-    'add-else',
     'delete',
     'drag',
     'dragend',
@@ -68,7 +54,7 @@ export default {
 
   components: {
     ActionsBlock,
-    ConditionTile,
+    LoopTile,
     EndBlockTile,
   },
 
@@ -83,6 +69,11 @@ export default {
       default: false,
     },
 
+    async: {
+      type: Boolean,
+      default: false,
+    },
+
     collapsed: {
       type: Boolean,
       default: false,
@@ -93,24 +84,14 @@ export default {
       default: false,
     },
 
-    hasElse: {
-      type: Boolean,
-      default: false,
-    },
-
     indent: {
       type: Number,
       default: 0,
     },
 
-    isElse: {
-      type: Boolean,
-      default: false,
-    },
-
     isInsideLoop: {
       type: Boolean,
-      default: false,
+      default: true,
     },
 
     readOnly: {
@@ -136,13 +117,14 @@ export default {
   },
 
   computed: {
-    condition() {
-      return this.getCondition(this.key)
+    loop() {
+      return this.getFor(this.key)
     },
 
-    conditionTileConf() {
+    loopTileConf() {
       return {
         props: {
+          ...this.loop,
           active: this.active,
           readOnly: this.readOnly,
           spacerBottom: this.spacerBottom,
@@ -150,7 +132,7 @@ export default {
         },
 
         on: {
-          change: this.onConditionChange,
+          change: this.onLoopChange,
           delete: (event) => this.$emit('delete', event),
           drag: this.onDragStart,
           dragend: this.onDragEnd,
@@ -181,13 +163,18 @@ export default {
       this.$emit('input', { [this.key]: value })
     },
 
-    onConditionChange(condition) {
-      if (!this.key || this.readOnly || !condition?.length) {
+    onLoopChange(loop) {
+      const iterable = loop?.iterable?.trim()
+      const iterator = loop?.iterator?.trim()
+      const async_ = loop?.async || false
+
+      if (!this.key || this.readOnly || !iterable?.length || !iterator?.length) {
         return
       }
 
-      condition = `if \${${condition.trim()}}`
-      this.$emit('input', { [condition]: this.value[this.key] })
+      const keyword = 'for' + (async_ ? 'k' : '')
+      loop = `${keyword} ${iterator} in \${${iterable}}`
+      this.$emit('input', { [loop]: this.value[this.key] })
     },
 
     onDragStart(event) {
@@ -215,11 +202,3 @@ export default {
   },
 }
 </script>
-
-<style lang="scss" scoped>
-:deep(.condition-block) {
-  .end-if-container {
-    margin-bottom: 1em;
-  }
-}
-</style>

@@ -32,7 +32,7 @@ export default {
   mixins: [Utils],
   props: {
     response: {
-      type: [String, Object],
+      type: [String, Object, Array, Number, Boolean],
     },
 
     error: {
@@ -51,7 +51,7 @@ export default {
 
     jsonResponse() {
       if (this.isJSON) {
-        return hljs.highlight(this.response, {language: 'json'}).value
+        return hljs.highlight(this.response.toString(), {language: 'json'}).value
       }
 
       return null

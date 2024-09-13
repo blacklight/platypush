@@ -126,7 +126,7 @@
 
         <div class="info-body" v-if="!infoCollapsed">
           <div class="item">
-            <div class="label">Type</div>
+            <div class="label">Source</div>
             <div class="value">
               <i :class="procedureTypeIconClass" />&nbsp;
               {{ value.procedure_type }}
@@ -323,7 +323,10 @@ export default {
         return 'fab fa-python'
 
       if (this.value.procedure_type === 'config')
-        return 'fas fa-rectangle-list'
+        return 'fas fa-file'
+
+      if (this.value.procedure_type === 'db')
+        return 'fas fa-database'
 
       return this.defaultIconClass
     },
