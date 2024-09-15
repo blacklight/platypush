@@ -17,11 +17,16 @@
         <span class="icon">
           <i class="fas fa-arrow-rotate-left" />
         </span>
-        <span class="name">
+        <span class="name" v-if="type === 'for'">
           <span class="keyword">for<span v-if="async">k</span></span>&nbsp;
           <span class="code" v-text="iterator" />
           <span class="keyword"> in </span> [
           <span class="code" v-text="iterable" /> ]
+        </span>
+
+        <span class="name" v-else-if="type === 'while'">
+          <span class="keyword">while</span> [
+          <span class="code" v-text="condition" /> ]
         </span>
       </div>
     </Tile>
@@ -33,17 +38,23 @@
         <LoopEditor :iterator="iterator"
                     :iterable="iterable"
                     :async="async"
-                    ref="loopEditor"
                     @change="onLoopChange"
-                    v-if="showLoopEditor">
+                    v-if="showLoopEditor && type === 'for'">
           Loop
         </LoopEditor>
+
+        <ExpressionEditor :value="condition"
+                          @input.prevent.stop="onConditionChange"
+                          v-else-if="showLoopEditor && type === 'while'">
+          Loop Condition
+        </ExpressionEditor>
       </Modal>
     </div>
   </ListItem>
 </template>
 
 <script>
+import ExpressionEditor from "./ExpressionEditor"
 import ListItem from "./ListItem"
 import LoopEditor from "./LoopEditor"
 import Modal from "@/components/Modal"
@@ -64,6 +75,7 @@ export default {
   ],
 
   components: {
+    ExpressionEditor,
     LoopEditor,
     ListItem,
     Modal,
@@ -71,16 +83,6 @@ export default {
   },
 
   props: {
-    iterator: {
-      type: String,
-      required: true,
-    },
-
-    iterable: {
-      type: String,
-      required: true,
-    },
-
     active: {
       type: Boolean,
       default: false,
@@ -91,9 +93,16 @@ export default {
       default: false,
     },
 
-    isElse: {
-      type: Boolean,
-      default: false,
+    condition: {
+      type: String,
+    },
+
+    iterator: {
+      type: String,
+    },
+
+    iterable: {
+      type: String,
     },
 
     readOnly: {
@@ -109,6 +118,11 @@ export default {
     spacerTop: {
       type: Boolean,
       default: true,
+    },
+
+    type: {
+      type: String,
+      required: true,
     },
   },
 
@@ -154,6 +168,21 @@ export default {
   },
 
   methods: {
+    onConditionChange(event) {
+      this.showLoopEditor = false
+      if (this.readOnly) {
+        return
+      }
+
+      const condition = event.target.value?.trim()
+      if (!condition?.length) {
+        return
+      }
+
+      event.target.value = condition
+      this.$emit('change', condition)
+    },
+
     onLoopChange(event) {
       this.showLoopEditor = false
       if (this.readOnly) {

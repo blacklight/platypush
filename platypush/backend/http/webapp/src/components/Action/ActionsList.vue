@@ -29,7 +29,7 @@
                    v-on="componentsData[index].on"
                    :collapsed="collapsedBlocks[index]"
                    :dragging="isDragging"
-                   v-else-if="fors[index]" />
+                   v-else-if="loops[index]" />
 
         <BreakTile :active="isDragging"
                    :readOnly="readOnly"
@@ -86,8 +86,12 @@
           <AddTile icon="fas fa-question" title="Add Else" @click="$emit('add-else')" />
         </div>
 
-        <div class="row item action add-for-container" v-if="visibleAddButtons.loop">
-          <AddTile icon="fas fa-arrow-rotate-left" title="Add Loop" @click="addLoop" />
+        <div class="row item action add-for-container" v-if="visibleAddButtons.for">
+          <AddTile icon="fas fa-arrow-rotate-left" title="Add For Loop" @click="addForLoop" />
+        </div>
+
+        <div class="row item action add-while-container" v-if="visibleAddButtons.while">
+          <AddTile icon="fas fa-arrow-rotate-left" title="Add While Loop" @click="addWhileLoop" />
         </div>
 
         <div class="row item action add-break-container" v-if="visibleAddButtons.break">
@@ -265,9 +269,15 @@ export default {
           data.props.indent = this.indent + 1
         }
 
-        const loop = this.getFor(action)
-        if (loop) {
-          data.props.async = loop.async
+        const forLoop = this.getFor(action)
+        if (forLoop) {
+          data.props.async = forLoop.async
+          data.props.type = 'for'
+        }
+
+        const whileLoop = this.getWhile(action)
+        if (whileLoop) {
+          data.props.type = 'while'
         }
 
         return data
@@ -338,6 +348,23 @@ export default {
       }, {}) || {}
     },
 
+    whiles() {
+      return this.newValue?.reduce?.((acc, action, index) => {
+        if (this.getWhile(action)) {
+          acc[index] = action
+        }
+
+        return acc
+      }, {}) || {}
+    },
+
+    loops() {
+      return [...Object.keys(this.fors), ...Object.keys(this.whiles)].reduce((acc, index) => {
+        acc[index] = this.newValue[index]
+        return acc
+      }, {})
+    },
+
     hasChanges() {
       return this.newStringValue !== this.stringValue
     },
@@ -389,14 +416,17 @@ export default {
 
     showAddButtons() {
       return (
-        this.newValue.length === 0 || !this.collapseAddButtons
+        (this.indent === 0 && this.newValue.length === 0) || !this.collapseAddButtons
       )
     },
 
     showAddButtonsExpander() {
       return (
         !this.readOnly &&
-        this.newValue?.length > 0 &&
+        (
+          this.newValue?.length > 0 ||
+          this.indent > 0
+        ) &&
         Object.entries(this.visibleAddButtons).filter(
           ([key, value]) => value && key != 'action'
         ).length > 1
@@ -431,6 +461,7 @@ export default {
           this.conditions[index] ||
           this.elses[index] ||
           this.fors[index] ||
+          this.whiles[index] ||
           this.isAction(action) ||
           this.isReturn(action) ||
           this.isBreak(action) ||
@@ -448,7 +479,8 @@ export default {
         action: this.allowAddButtons,
         return: this.allowAddButtons,
         condition: this.allowAddButtons,
-        loop: this.allowAddButtons,
+        for: this.allowAddButtons,
+        while: this.allowAddButtons,
         else: (
           this.allowAddButtons &&
           this.parent &&
@@ -663,8 +695,13 @@ export default {
       this.selectLastExprEditor()
     },
 
-    addLoop() {
+    addForLoop() {
       this.newValue.push({ 'for _ in ${range(10)}': [] })
+      this.selectLastExprEditor()
+    },
+
+    addWhileLoop() {
+      this.newValue.push({ 'while ${True}': [] })
       this.selectLastExprEditor()
     },
 

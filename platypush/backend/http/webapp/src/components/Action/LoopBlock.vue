@@ -22,7 +22,7 @@
       </template>
 
       <template #after>
-        <EndBlockTile value="end for"
+        <EndBlockTile :value="`end ${type}`"
                       icon="fas fa-arrow-rotate-right"
                       :active="active"
                       :spacer-bottom="spacerBottom"
@@ -61,6 +61,11 @@ export default {
   props: {
     value: {
       type: Object,
+      required: true,
+    },
+
+    type: {
+      type: String,
       required: true,
     },
 
@@ -117,8 +122,36 @@ export default {
   },
 
   computed: {
+    changeHandler() {
+      if (this.type === 'for') {
+        return this.onForChange
+      }
+
+      if (this.type === 'while') {
+        return this.onWhileChange
+      }
+
+      return () => {}
+    },
+
+    isDragging() {
+      return this.dragging_ || this.dragging
+    },
+
+    key() {
+      return this.getKey(this.value)
+    },
+
     loop() {
-      return this.getFor(this.key)
+      if (this.type === 'for') {
+        return this.getFor(this.key)
+      }
+
+      if (this.type === 'while') {
+        return {condition: this.getWhile(this.key)}
+      }
+
+      return {}
     },
 
     loopTileConf() {
@@ -129,10 +162,11 @@ export default {
           readOnly: this.readOnly,
           spacerBottom: this.spacerBottom,
           spacerTop: this.spacerTop,
+          type: this.type,
         },
 
         on: {
-          change: this.onLoopChange,
+          change: this.changeHandler,
           delete: (event) => this.$emit('delete', event),
           drag: this.onDragStart,
           dragend: this.onDragEnd,
@@ -143,14 +177,6 @@ export default {
           drop: this.onDrop,
         },
       }
-    },
-
-    isDragging() {
-      return this.dragging_ || this.dragging
-    },
-
-    key() {
-      return this.getKey(this.value)
     },
   },
 
@@ -163,7 +189,7 @@ export default {
       this.$emit('input', { [this.key]: value })
     },
 
-    onLoopChange(loop) {
+    onForChange(loop) {
       const iterable = loop?.iterable?.trim()
       const iterator = loop?.iterator?.trim()
       const async_ = loop?.async || false
@@ -174,6 +200,16 @@ export default {
 
       const keyword = 'for' + (async_ ? 'k' : '')
       loop = `${keyword} ${iterator} in \${${iterable}}`
+      this.$emit('input', { [loop]: this.value[this.key] })
+    },
+
+    onWhileChange(condition) {
+      condition = condition?.trim()
+      if (!this.key || this.readOnly || !condition?.length) {
+        return
+      }
+
+      const loop = `while \${${condition}}`
       this.$emit('input', { [loop]: this.value[this.key] })
     },
 

@@ -33,7 +33,7 @@ export default {
     },
 
     isActionsBlock(value) {
-      return this.getCondition(value) || this.isElse(value) || this.getFor(value)
+      return this.getCondition(value) || this.isElse(value) || this.getFor(value) || this.getWhile(value)
     },
 
     isBreak(value) {
