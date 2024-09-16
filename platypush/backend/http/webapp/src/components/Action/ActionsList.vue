@@ -31,6 +31,12 @@
                    :dragging="isDragging"
                    v-else-if="loops[index]" />
 
+        <SetVariablesTile v-bind="componentsData[index].props"
+                          v-on="componentsData[index].on"
+                          :collapsed="collapsedBlocks[index]"
+                          :dragging="isDragging"
+                          v-else-if="sets[index]" />
+
         <BreakTile :active="isDragging"
                    :readOnly="readOnly"
                    :spacerTop="componentsData[index].props.spacerTop"
@@ -101,6 +107,10 @@
         <div class="row item action add-continue-container" v-if="visibleAddButtons.continue">
           <AddTile icon="fas fa-rotate" title="Add Continue" @click="addContinue" />
         </div>
+
+        <div class="row item action add-set-container" v-if="visibleAddButtons.set">
+          <AddTile icon="fas fa-square-root-variable" title="Set Variables" @click="addSet" />
+        </div>
       </div>
     </div>
   </div>
@@ -117,6 +127,7 @@ import ListItem from "./ListItem"
 import LoopBlock from "./LoopBlock"
 import Mixin from "./Mixin"
 import ReturnTile from "./ReturnTile"
+import SetVariablesTile from "./SetVariablesTile"
 import Utils from "@/Utils"
 
 export default {
@@ -146,6 +157,7 @@ export default {
     ListItem,
     LoopBlock,
     ReturnTile,
+    SetVariablesTile,
   },
 
   props: {
@@ -280,6 +292,10 @@ export default {
           data.props.type = 'while'
         }
 
+        if (this.isSet(action)) {
+          data.props.value = action.set
+        }
+
         return data
       })
     },
@@ -363,6 +379,16 @@ export default {
         acc[index] = this.newValue[index]
         return acc
       }, {})
+    },
+
+    sets() {
+      return this.newValue?.reduce?.((acc, action, index) => {
+        if (this.isSet(action)) {
+          acc[index] = action
+        }
+
+        return acc
+      }, {}) || {}
     },
 
     hasChanges() {
@@ -463,9 +489,10 @@ export default {
           this.fors[index] ||
           this.whiles[index] ||
           this.isAction(action) ||
-          this.isReturn(action) ||
           this.isBreak(action) ||
-          this.isContinue(action)
+          this.isContinue(action) ||
+          this.isReturn(action) ||
+          this.isSet(action)
         ) {
           acc[index] = action
         }
@@ -481,6 +508,7 @@ export default {
         condition: this.allowAddButtons,
         for: this.allowAddButtons,
         while: this.allowAddButtons,
+        set: this.allowAddButtons,
         else: (
           this.allowAddButtons &&
           this.parent &&
@@ -562,7 +590,7 @@ export default {
         return
       }
 
-      event.stopPropagation()
+      event.stopPropagation?.()
       this.$emit('dragenter', index)
     },
 
@@ -571,7 +599,7 @@ export default {
         return
       }
 
-      event.stopPropagation()
+      event.stopPropagation?.()
       this.$emit('dragleave', index)
     },
 
@@ -584,7 +612,7 @@ export default {
         return
       }
 
-      event.stopPropagation()
+      event.stopPropagation?.()
       let dropIndices = []
 
       if (!event.detail?.length) {
@@ -673,7 +701,7 @@ export default {
         // otherwise the event will be caught by the parent element. If the parent
         // is a modal, then the modal will be closed, making it impossible to edit
         // text fields in the action tiles.
-        event.stopPropagation()
+        event.stopPropagation?.()
         return
       }
 
@@ -711,6 +739,11 @@ export default {
 
     addContinue() {
       this.newValue.push('continue')
+    },
+
+    addSet() {
+      this.newValue.push({ 'set': {} })
+      this.selectLastExprEditor()
     },
 
     addReturn() {

@@ -67,6 +67,10 @@ export default {
 
       return this.getKey(value) === 'return'
     },
+
+    isSet(value) {
+      return this.getKey(value) === 'set'
+    },
   },
 }
 </script>

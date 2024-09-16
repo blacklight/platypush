@@ -18,8 +18,7 @@
           <i class="fas fa-arrow-rotate-left" />
         </span>
         <span class="name" v-if="type === 'for'">
-          <span class="keyword">for<span v-if="async">k</span></span>&nbsp;
-          <span class="code" v-text="iterator" />
+          <span class="keyword">for<span v-if="async">k</span></span> <span class="code" v-text="iterator" />
           <span class="keyword"> in </span> [
           <span class="code" v-text="iterable" /> ]
         </span>

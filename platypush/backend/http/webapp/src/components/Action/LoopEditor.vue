@@ -29,6 +29,7 @@
       <input class="checkbox"
              type="checkbox"
              name="async"
+             ref="async"
              :checked="async"
              @input.stop="onInput('async', $event)" />&nbsp;
         Run in parallel
@@ -76,11 +77,12 @@ export default {
     onSubmit() {
       const iterator = this.$refs.iterator.value.trim()
       const iterable = this.$refs.iterable.value.trim()
+      const async_ = this.$refs.async.checked
       if (!iterator.length || !iterable.length) {
         return
       }
 
-      this.$emit('change', { iterator, iterable })
+      this.$emit('change', { iterator, iterable, async: async_ })
     },
 
     onInput(target, event) {
