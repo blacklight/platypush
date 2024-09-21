@@ -56,6 +56,7 @@ export default {
       pwaInstallEvent: null,
       initialized: false,
       initError: null,
+      stackedModals: 0,
     }
   },
 
@@ -83,7 +84,7 @@ export default {
 
   methods: {
     onNotification(notification) {
-      this.$refs.notifications.create(notification)
+      this.$refs.notifications?.create(notification)
     },
 
     async initConfig() {
@@ -100,7 +101,15 @@ export default {
         this.pwaInstallEvent.prompt()
 
       this.$refs.pwaDialog.close()
-    }
+    },
+
+    onModalClose() {
+      this.stackedModals = Math.max(0, this.stackedModals - 1)
+    },
+
+    onModalOpen() {
+      this.stackedModals++
+    },
   },
 
   async created() {
@@ -136,6 +145,8 @@ export default {
     bus.onNotification(this.onNotification)
     bus.on('connect', () => this.connected = true)
     bus.on('disconnect', () => this.connected = false)
+    bus.on('modal-open', this.onModalOpen)
+    bus.on('modal-close', this.onModalClose)
   },
 }
 </script>
