@@ -98,7 +98,6 @@ export default {
     return {
       ignoreEscape: false,
       isVisible: this.visible,
-      prevVisible: this.visible,
       timeoutId: undefined,
     }
   },
@@ -117,9 +116,11 @@ export default {
       if (event)
         event.preventDefault()
 
-      this.prevVisible = this.isVisible
+      if (!this.isVisible)
+        return
+
       this.isVisible = false
-      bus.emit('modal-close')
+      this.visibleHndl(false, true)
     },
 
     hide() {
@@ -127,8 +128,11 @@ export default {
     },
 
     show() {
-      this.prevVisible = this.isVisible
+      if (this.isVisible)
+        return
+
       this.isVisible = true
+      this.visibleHndl(true, false)
     },
 
     open() {
@@ -175,28 +179,40 @@ export default {
       setTimeout(() => this.ignoreEscape = false, 100)
     },
 
-    visibleHndl(visible) {
-      if (!visible)
+    visibleHndl(visible, oldVisible) {
+      if (!this.$el?.classList?.contains('modal-container'))
+        return
+
+      if (!visible && oldVisible) {
         this.$emit('close')
-      else
+        bus.emit('modal-close', this)
+      } else if (visible && !oldVisible) {
         this.$emit('open')
+        bus.emit('modal-open', this)
+      }
     },
   },
 
   watch: {
-    visible(value) {
-      this.visibleHndl(value)
-      this.isVisible = value
+    visible(value, oldValue) {
+      this.visibleHndl(value, oldValue)
+      this.$nextTick(() => this.isVisible = value)
     },
 
-    isVisible(value) {
-      this.visibleHndl(value)
+    isVisible(value, oldValue) {
+      oldValue = oldValue == null ? this.visible : oldValue
+      this.visibleHndl(value, oldValue)
     },
   },
 
   mounted() {
     document.body.addEventListener('keyup', this.onKeyUp)
-    bus.on('modal-close', this.onModalCloseMessage)
+    this.visibleHndl(this.isVisible, this.isVisible ? false : undefined)
+  },
+
+  unmouted() {
+    document.body.removeEventListener('keyup', this.onKeyUp)
+    this.visibleHndl(false, this.isVisible)
   },
 
   unmounted() {
@@ -204,7 +220,6 @@ export default {
   },
 
   updated() {
-    this.prevVisible = this.isVisible
     if (this.isVisible) {
       // Make sure that a newly opened or visible+updated modal always comes to the front
       let maxZIndex = parseInt(getComputedStyle(this.$el).zIndex)
