@@ -68,6 +68,7 @@
                   :value="newAction"
                   @drop="onDrop(0, $event)">
           <ActionTile :value="newAction"
+                      :context="contexts[Object.keys(contexts).length - 1]"
                       :draggable="false"
                       @input="addAction" />
         </ListItem>
@@ -244,6 +245,7 @@ export default {
           props: {
             value: action,
             active: this.isDragging,
+            context: this.contexts[index],
             isInsideLoop: !!(this.isInsideLoop || this.getFor(action) || this.getWhile(action)),
             readOnly: this.readOnly,
             ref: `action-tile-${index}`,
@@ -312,6 +314,34 @@ export default {
 
         return acc
       }, {}) || {}
+    },
+
+    contexts() {
+      const commonCtx = {...this.context}
+      const contexts = this.newValue?.reduce?.((acc, action, index) => {
+        acc[index] = this.getContext(action, index, commonCtx)
+        return acc
+      }, {}) || {}
+
+      const nContexts = Object.keys(contexts).length
+      if (nContexts > 0) {
+        contexts[nContexts] = this.getContext(
+          null,
+          nContexts,
+          contexts[nContexts - 1]
+        )
+
+        contexts[nContexts] = {
+          ...this.context,
+          ...commonCtx,
+          ...contexts[nContexts - 1],
+          ...contexts[nContexts],
+        }
+      } else {
+        contexts[0] = {...this.context}
+      }
+
+      return contexts
     },
 
     dragBlockIndex() {
@@ -676,6 +706,33 @@ export default {
 
     onCollapse() {
       this.$emit('collapse')
+    },
+
+    getContext(action, index, context) {
+      const ctx = {...(context || this.context || {})}
+      if (index > 0) {
+        ctx.output = {
+          source: 'action',
+          action: this.newValue[index - 1],
+        }
+      }
+
+      if (this.isSet(action)) {
+        Object.keys(action.set).forEach((name) => {
+          if (!name?.length) {
+            return
+          }
+
+          context[name] = { source: 'local' }
+        })
+      }
+
+      const iterator = this.getFor(action)?.iterator
+      if (iterator?.length) {
+        context[iterator] = { source: 'for' }
+      }
+
+      return ctx
     },
 
     getParentBlock(indices) {

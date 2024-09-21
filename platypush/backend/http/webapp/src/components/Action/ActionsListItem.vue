@@ -7,6 +7,7 @@
             :value="value"
             v-on="componentsData.on">
     <ActionTile :value="value"
+                :context="context"
                 :draggable="!readOnly"
                 :read-only="readOnly"
                 :with-delete="!readOnly"
@@ -45,6 +46,11 @@ export default {
     active: {
       type: Boolean,
       default: false,
+    },
+
+    context: {
+      type: Object,
+      default: () => ({}),
     },
 
     readOnly: {

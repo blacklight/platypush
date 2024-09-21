@@ -7,7 +7,7 @@
              autocomplete="off"
              :autofocus="true"
              placeholder="Iterator"
-             :value="iterator"
+             :value="newValue.iterator"
              ref="iterator"
              @input.stop="onInput('iterator', $event)" />
     </label>
@@ -15,14 +15,12 @@
     in
 
     <label for="iterable">
-      <input type="text"
-             name="iterable"
-             autocomplete="off"
-             :autofocus="true"
-             placeholder="Iterable"
-             :value="iterable"
-             ref="iterable"
-             @input.stop="onInput('iterable', $event)" />
+      <ContextAutocomplete :value="newValue.iterable"
+                           :items="contextAutocompleteItems"
+                           placeholder="Iterable"
+                           @input.stop="onInput('iterable', $event)"
+                           ref="iterable" />
+
     </label>
 
     <label class="async">
@@ -44,12 +42,13 @@
 </template>
 
 <script>
-export default {
-  emits: [
-    'change',
-    'input',
-  ],
+import ContextAutocomplete from "./ContextAutocomplete"
+import Mixin from "./Mixin"
 
+export default {
+  emits: ['change', 'input'],
+  mixins: [Mixin],
+  components: { ContextAutocomplete },
   props: {
     async: {
       type: Boolean,
@@ -70,6 +69,11 @@ export default {
   data() {
     return {
       hasChanges: true,
+      newValue: {
+        iterator: null,
+        iterable: null,
+        async: null,
+      },
     }
   },
 
@@ -86,7 +90,7 @@ export default {
     },
 
     onInput(target, event) {
-      const value = '' + event.target.value
+      const value = '' + (event.target?.value || event.detail)
       if (!value?.trim()?.length) {
         this.hasChanges = false
       } else {
@@ -104,7 +108,7 @@ export default {
       }
 
       this.$nextTick(() => {
-        event.target.value = value
+        this.newValue[target] = value
       })
     },
   },
@@ -112,10 +116,21 @@ export default {
   watch: {
     value() {
       this.hasChanges = false
+      this.newValue = {
+        iterator: this.iterator,
+        iterable: this.iterable,
+        async: this.async,
+      }
     },
   },
 
   mounted() {
+    this.newValue = {
+      iterator: this.iterator,
+      iterable: this.iterable,
+      async: this.async,
+    }
+
     this.$nextTick(() => {
       this.$refs.iterator.focus()
     })
@@ -126,6 +141,24 @@ export default {
 <style lang="scss" scoped>
 @import "common";
 
+@mixin label {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+
+  input[type="text"] {
+    width: 100%;
+    margin-left: 1em;
+  }
+
+  &.async {
+    justify-content: flex-start;
+    padding-bottom: 0;
+  }
+}
+
 .loop-editor {
   min-width: 40em;
   max-width: 100%;
@@ -134,22 +167,17 @@ export default {
   justify-content: center;
 
   label {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
+    @include label;
     padding: 1em;
+  }
+}
 
-    input[type="text"] {
-      width: 100%;
-      margin-left: 1em;
-    }
+:deep(label) {
+  @include label;
 
-    &.async {
-      justify-content: flex-start;
-      padding-bottom: 0;
-    }
+  .autocomplete-with-context,
+  .autocomplete {
+    width: 100%;
   }
 }
 </style>

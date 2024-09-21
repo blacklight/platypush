@@ -37,12 +37,14 @@
         <LoopEditor :iterator="iterator"
                     :iterable="iterable"
                     :async="async"
+                    :context="context"
                     @change="onLoopChange"
                     v-if="showLoopEditor && type === 'for'">
           Loop
         </LoopEditor>
 
         <ExpressionEditor :value="condition"
+                          :context="context"
                           @input.prevent.stop="onConditionChange"
                           v-else-if="showLoopEditor && type === 'while'">
           Loop Condition
@@ -56,10 +58,12 @@
 import ExpressionEditor from "./ExpressionEditor"
 import ListItem from "./ListItem"
 import LoopEditor from "./LoopEditor"
+import Mixin from "./Mixin"
 import Modal from "@/components/Modal"
 import Tile from "@/components/elements/Tile"
 
 export default {
+  mixins: [Mixin],
   emits: [
     'change',
     'click',

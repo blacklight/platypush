@@ -55,6 +55,7 @@
     <div class="action-editor-container">
       <Modal ref="actionEditor" title="Edit Action">
         <ActionEditor :value="value"
+                      :context="context"
                       :with-save="!readOnly"
                       @input="onInput"
                       v-if="this.$refs.actionEditor?.$data?.isVisible" />
@@ -68,9 +69,11 @@ import ActionEditor from "@/components/Action/ActionEditor"
 import Draggable from "@/components/elements/Draggable"
 import Droppable from "@/components/elements/Droppable"
 import ExtensionIcon from "@/components/elements/ExtensionIcon"
+import Mixin from "./Mixin"
 import Modal from "@/components/Modal"
 
 export default {
+  mixins: [Mixin],
   emits: [
     'delete',
     'drag',
@@ -90,6 +93,11 @@ export default {
   },
 
   props: {
+    context: {
+      type: Object,
+      default: () => ({}),
+    },
+
     draggable: {
       type: Boolean,
       default: true,

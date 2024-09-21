@@ -63,6 +63,7 @@
             </h3>
 
             <ActionsList :value="newValue.actions"
+                         :context="context"
                          :read-only="readOnly"
                          @input="onActionsEdit" />
           </div>
@@ -310,6 +311,16 @@ export default {
 
     newValueString() {
       return JSON.stringify(this.newValue)
+    },
+
+    context() {
+      return this.newValue?.args?.reduce((acc, arg) => {
+        acc[arg] = {
+          source: 'args',
+        }
+
+        return acc
+      }, {})
     },
 
     modal_() {

@@ -148,42 +148,51 @@ form {
   }
 }
 
-.args-list {
-  padding-top: 0.5em;
-  overflow: auto;
+:deep(.args-body) {
+  .args-list {
+    padding-top: 0.5em;
+    overflow: auto;
 
-  @include until($tablet) {
-    width: 100%;
-  }
-
-  @include from($tablet) {
-    width: $params-tablet-width;
-    margin-right: 1.5em;
-  }
-
-  @include from($desktop) {
-    width: $params-desktop-width;
-  }
-
-  .arg {
-    margin-bottom: .25em;
     @include until($tablet) {
       width: 100%;
     }
 
-    .required-flag {
-      width: 1.25em;
-      font-weight: bold;
-      margin-left: 0.25em;
+    @include from($tablet) {
+      width: $params-tablet-width;
+      margin-right: 1.5em;
     }
 
-    input {
+    @include from($desktop) {
+      width: $params-desktop-width;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+    }
+
+    .arg {
+      margin-bottom: .25em;
+      @include until($tablet) {
+        width: 100%;
+      }
+
+      .required-flag {
+        width: 1.25em;
+        display: inline-block;
+        font-weight: bold;
+        margin-left: 0.25em;
+        text-align: center;
+      }
+    }
+
+    .autocomplete-with-context {
       width: calc(100% - 1.5em);
     }
-  }
 
-  .action-arg-value {
-    width: 100%;
+    .action-arg-value {
+      width: 100%;
+    }
   }
 }
 

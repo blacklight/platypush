@@ -3,14 +3,11 @@
     <label for="expression">
       <slot />
 
-      <input type="text"
-             name="expression"
-             autocomplete="off"
-             :autofocus="true"
-             :placeholder="placeholder"
-             :value="value"
-             ref="text"
-             @input.stop="onInput" />
+      <ContextAutocomplete :value="newValue"
+                           :items="contextAutocompleteItems"
+                           :quote="quote"
+                           @input.stop="onInput"
+                           ref="input" />
     </label>
 
     <label>
@@ -22,10 +19,13 @@
 </template>
 
 <script>
+import ContextAutocomplete from "./ContextAutocomplete"
+import Mixin from "./Mixin"
+
 export default {
-  emits: [
-    'input',
-  ],
+  emits: ['input'],
+  mixins: [Mixin],
+  components: { ContextAutocomplete },
 
   props: {
     value: {
@@ -42,17 +42,23 @@ export default {
       type: String,
       default: '',
     },
+
+    quote: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
     return {
       hasChanges: false,
+      newValue: null,
     }
   },
 
   methods: {
     onSubmit(event) {
-      const value = this.$refs.text.value.trim()
+      const value = this.newValue?.trim()
       if (!value.length && !this.allowEmpty) {
         return
       }
@@ -62,7 +68,10 @@ export default {
     },
 
     onInput(event) {
-      const value = '' + event.target.value
+      if (event?.detail == null)
+        return
+
+      const value = '' + event.detail
       if (!value?.trim()?.length) {
         this.hasChanges = this.allowEmpty
       } else {
@@ -70,7 +79,7 @@ export default {
       }
 
       this.$nextTick(() => {
-        this.$refs.text.value = value
+        this.newValue = value
       })
     },
   },
@@ -83,12 +92,14 @@ export default {
 
   mounted() {
     this.hasChanges = false
+    this.newValue = this.value
+
     if (!this.value?.trim?.()?.length) {
       this.hasChanges = this.allowEmpty
     }
 
     this.$nextTick(() => {
-      this.$refs.text.focus()
+      this.textInput?.focus()
     })
   },
 }
@@ -107,8 +118,7 @@ export default {
   label {
     width: 100%;
     display: flex;
-    flex-direction: row;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
     padding: 1em;
 

@@ -1,7 +1,7 @@
 <template>
   <div class="row item list-item" :class="itemClass">
     <div class="spacer-wrapper" :class="{ hidden: !spacerTop }">
-      <div class="spacer" :class="{ active }" ref="dropTargetTop">
+      <div class="spacer top" :class="{ active }" ref="dropTargetTop">
         <div class="droppable-wrapper">
           <div class="droppable-container">
             <div class="droppable-frame">
@@ -14,14 +14,14 @@
       <Droppable :element="$refs.dropTargetTop" :disabled="readOnly" v-on="droppableData.top.on" />
     </div>
 
-    <div class="spacer" v-if="dragging" />
+    <div class="spacer top" v-if="dragging" />
 
     <slot />
 
-    <div class="spacer" v-if="dragging" />
+    <div class="spacer bottom" v-if="dragging" />
 
     <div class="spacer-wrapper" :class="{ hidden: !spacerBottom }">
-      <div class="spacer" :class="{ active }" ref="dropTargetBottom">
+      <div class="spacer bottom" :class="{ active }" ref="dropTargetBottom">
         <div class="droppable-wrapper">
           <div class="droppable-container">
             <div class="droppable-frame">

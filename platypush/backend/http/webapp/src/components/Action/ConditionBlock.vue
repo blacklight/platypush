@@ -2,6 +2,7 @@
   <div class="condition-block">
     <ActionsBlock :value="value"
                   :collapsed="collapsed"
+                  :context="context"
                   :dragging="isDragging"
                   :has-else="hasElse"
                   :is-inside-loop="isInsideLoop"
@@ -37,7 +38,7 @@
         <EndBlockTile value="end if"
                       icon="fas fa-question"
                       :active="active"
-                      :spacer-bottom="spacerBottom"
+                      :spacer-bottom="spacerBottom || dragging_"
                       @drop="onDrop"
                       v-if="isElse || !hasElse" />
       </template>
@@ -144,6 +145,7 @@ export default {
       return {
         props: {
           active: this.active,
+          context: this.context,
           readOnly: this.readOnly,
           spacerBottom: this.spacerBottom,
           spacerTop: this.spacerTop,

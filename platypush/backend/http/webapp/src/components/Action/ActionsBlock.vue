@@ -11,6 +11,7 @@
 
       <div class="actions-list" :class="actionListClasses">
         <ActionsList :value="value[key]"
+                     :context="context"
                      :dragging="dragging"
                      :has-else="hasElse"
                      :indent="indent"

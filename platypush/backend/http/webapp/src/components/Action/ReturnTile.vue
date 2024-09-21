@@ -25,6 +25,8 @@
              @close="showExprEditor = false">
         <ExpressionEditor :value="value"
                           :allow-empty="true"
+                          :context="context"
+                          :quote="true"
                           placeholder="Optional return value"
                           ref="exprEditor"
                           @input.prevent.stop="onExprChange"
@@ -39,10 +41,12 @@
 <script>
 import ExpressionEditor from "./ExpressionEditor"
 import ListItem from "./ListItem"
+import Mixin from "./Mixin"
 import Modal from "@/components/Modal"
 import Tile from "@/components/elements/Tile"
 
 export default {
+  mixins: [Mixin],
   emits: [
     'change',
     'click',

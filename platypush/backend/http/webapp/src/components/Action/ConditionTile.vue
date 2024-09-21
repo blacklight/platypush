@@ -46,10 +46,13 @@
              :visible="true"
              @close="showConditionEditor = false">
         <ExpressionEditor :value="value"
+                          :context="context"
                           ref="conditionEditor"
                           @input.prevent.stop="onConditionChange"
                           v-if="showConditionEditor">
-          Condition
+          <div class="header">
+            Condition
+          </div>
         </ExpressionEditor>
       </Modal>
     </div>
@@ -59,6 +62,7 @@
 <script>
 import ExpressionEditor from "./ExpressionEditor"
 import ListItem from "./ListItem"
+import Mixin from "./Mixin"
 import Modal from "@/components/Modal"
 import Tile from "@/components/elements/Tile"
 
@@ -76,6 +80,7 @@ export default {
     'input',
   ],
 
+  mixins: [Mixin],
   components: {
     ExpressionEditor,
     ListItem,
@@ -212,6 +217,12 @@ export default {
 
   .drag-spacer {
     height: 0;
+  }
+
+  :deep(.expression-editor) {
+    .header {
+      display: block;
+    }
   }
 }
 </style>

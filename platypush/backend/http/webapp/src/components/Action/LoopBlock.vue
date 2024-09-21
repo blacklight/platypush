@@ -2,6 +2,7 @@
   <div class="loop-block">
     <ActionsBlock :value="value"
                   :collapsed="collapsed"
+                  :context="context_"
                   :dragging="isDragging"
                   :indent="indent"
                   :is-inside-loop="true"
@@ -25,7 +26,7 @@
         <EndBlockTile :value="`end ${type}`"
                       icon="fas fa-arrow-rotate-right"
                       :active="active"
-                      :spacer-bottom="spacerBottom"
+                      :spacer-bottom="spacerBottom || dragging"
                       @drop="onDrop" />
       </template>
     </ActionsBlock>
@@ -134,6 +135,18 @@ export default {
       return () => {}
     },
 
+    context_() {
+      const ctx = {...this.context}
+      const iterator = this.loop?.iterator?.trim()
+      if (iterator?.length) {
+        ctx[iterator] = {
+          source: 'for',
+        }
+      }
+
+      return ctx
+    },
+
     isDragging() {
       return this.dragging_ || this.dragging
     },
@@ -159,6 +172,7 @@ export default {
         props: {
           ...this.loop,
           active: this.active,
+          context: this.context_,
           readOnly: this.readOnly,
           spacerBottom: this.spacerBottom,
           spacerTop: this.spacerTop,

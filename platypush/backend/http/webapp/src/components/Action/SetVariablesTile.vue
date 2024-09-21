@@ -1,6 +1,7 @@
 <template>
   <ListItem class="set-variables-tile"
             :class="{active}"
+            :dragging="dragging_"
             :value="value"
             :active="active"
             :read-only="readOnly"
@@ -43,10 +44,12 @@
                      v-model="newValue[i][0]">&nbsp;=
             </span>
             <span class="value">
-              <input type="text"
-                     placeholder="Value"
-                     @input.prevent.stop
-                     v-model="newValue[i][1]">
+              <ContextAutocomplete :value="newValue[i][1]"
+                                   :items="contextAutocompleteItems"
+                                   :quote="true"
+                                   :select-on-tab="false"
+                                   placeholder="Value"
+                                   @input.prevent.stop="newValue[i][1] = $event.detail" />
             </span>
           </div>
 
@@ -59,12 +62,13 @@
                      v-model="newVariable.name">&nbsp;=
             </span>
             <span class="value">
-              <input type="text"
-                     placeholder="Value"
-                     ref="newVarValue"
-                     @blur="onBlur(null)"
-                     @input.prevent.stop
-                     v-model="newVariable.value">
+              <ContextAutocomplete :value="newVariable.value"
+                                   :items="contextAutocompleteItems"
+                                   :quote="true"
+                                   :select-on-tab="false"
+                                   placeholder="Value"
+                                   @input.prevent.stop="newVariable.value = $event.detail"
+                                   @blur="onBlur(null)" />
             </span>
           </div>
 
@@ -80,11 +84,14 @@
 </template>
 
 <script>
+import ContextAutocomplete from "./ContextAutocomplete"
 import ListItem from "./ListItem"
+import Mixin from "./Mixin"
 import Modal from "@/components/Modal"
 import Tile from "@/components/elements/Tile"
 
 export default {
+  mixins: [Mixin],
   emits: [
     'click',
     'delete',
@@ -98,6 +105,7 @@ export default {
   ],
 
   components: {
+    ContextAutocomplete,
     ListItem,
     Modal,
     Tile,
@@ -105,6 +113,11 @@ export default {
 
   props: {
     active: {
+      type: Boolean,
+      default: false,
+    },
+
+    dragging: {
       type: Boolean,
       default: false,
     },
@@ -162,7 +175,7 @@ export default {
 
   data() {
     return {
-      dragging: false,
+      dragging_: false,
       newValue: [],
       newVariable: {
         name: '',
@@ -253,17 +266,17 @@ export default {
         return
       }
 
-      this.dragging = true
+      this.dragging_ = true
       this.$emit('drag', event)
     },
 
     onDragEnd(event) {
-      this.dragging = false
+      this.dragging_ = false
       this.$emit('dragend', event)
     },
 
     onDrop(event) {
-      this.dragging = false
+      this.dragging_ = false
       if (this.readOnly) {
         return
       }
@@ -315,12 +328,6 @@ export default {
 @import "common";
 
 .set-variables-tile {
-  &.active {
-    .spacer {
-      display: none;
-    }
-  }
-
   .variables {
     margin-left: 2.5em;
   }
@@ -342,6 +349,7 @@ export default {
 
     .variable {
       display: flex;
+      margin-bottom: 1em;
 
       .value {
         flex: 1;

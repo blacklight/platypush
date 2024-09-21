@@ -1,5 +1,41 @@
 <script>
 export default {
+  props: {
+    context: {
+      type: Object,
+      default: () => ({}),
+    },
+  },
+
+  computed: {
+    contextAutocompleteItems() {
+      return Object.entries(this.context).reduce((acc, [key, value]) => {
+        let suffix = '<span class="source">from <b>' + (
+          value?.source === 'local'
+          ? 'local context'
+          : value?.source
+        ) + '</b>'
+
+        if (value?.source === 'action' && value?.action?.action)
+          suffix += ` (<i>${value?.action?.action}</i>)`
+
+        suffix += '</span>'
+        acc.push(
+          {
+            text: key,
+            suffix: suffix,
+          }
+        )
+
+        return acc
+      }, [])
+    },
+
+    textInput() {
+      return this.$refs.input?.$refs?.input?.$refs?.input
+    },
+  },
+
   methods: {
     getCondition(value) {
       value = this.getKey(value) || value

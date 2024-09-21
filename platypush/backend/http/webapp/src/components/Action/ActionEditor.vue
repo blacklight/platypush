@@ -77,6 +77,7 @@
             </h2>
 
             <ActionArgs :action="action"
+                        :context="context"
                         :loading="loading"
                         :running="running"
                         :selected-arg="selectedArg"
@@ -143,6 +144,11 @@ export default {
   },
 
   props: {
+    context: {
+      type: Object,
+      default: () => ({}),
+    },
+
     value: {
       type: Object,
     },
@@ -391,14 +397,14 @@ export default {
       this.actionDocsCache[this.action.name].html = this.selectedDoc
       this.setUrlArgs({action: this.action.name})
 
-      const firstArg = this.$el.querySelector('.action-arg-value')
-      if (firstArg) {
-        firstArg.focus()
-      } else {
-        this.$nextTick(() => {
+      this.$nextTick(() => {
+        const firstArg = this.$el.querySelector('.args-body input[type=text]')
+        if (firstArg) {
+            firstArg.focus()
+        } else {
           this.actionInput.focus()
-        })
-      }
+        }
+      })
 
       this.response = undefined
       this.error = undefined
