@@ -28,7 +28,10 @@
       <NoItems v-if="!Object.keys(displayGroups || {})?.length">No entities found</NoItems>
 
       <div class="groups-container" v-else>
-        <div class="group fade-in" v-for="group in displayGroups" :key="group.name">
+        <div class="group fade-in"
+             v-for="group in displayGroups"
+             :key="group.name"
+             :ref="`group-${group.name}`">
           <div class="frame">
             <div class="header">
               <span class="section left">
@@ -386,6 +389,29 @@ export default {
       }
     },
 
+    onModalOpen(modal) {
+      const group = this.getParentGroup(modal.$el)
+      if (!group)
+        return
+
+      group.style.zIndex = '' + (parseInt(group.style.zIndex || 0) + 1)
+    },
+
+    onModalClose(modal) {
+      const group = this.getParentGroup(modal.$el)
+      if (!group)
+        return
+
+      group.style.zIndex = '' + Math.max(0, parseInt(group.style.zIndex || 0) - 1)
+    },
+
+    getParentGroup(element) {
+      let parent = element
+      while (parent && !parent.classList?.contains('group'))
+        parent = parent.parentElement
+      return parent
+    },
+
     loadCachedEntities() {
       const cachedEntities = window.localStorage.getItem('entities')
       if (cachedEntities) {
@@ -426,6 +452,9 @@ export default {
       'on-entity-delete',
       'platypush.message.event.entities.EntityDeleteEvent'
     )
+
+    bus.on('modal-open', this.onModalOpen)
+    bus.on('modal-close', this.onModalClose)
 
     const hasCachedEntities = this.loadCachedEntities()
     await this.sync(!hasCachedEntities)
