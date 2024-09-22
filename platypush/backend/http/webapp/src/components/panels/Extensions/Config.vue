@@ -13,7 +13,7 @@
 
 <script>
 import 'highlight.js/lib/common'
-import 'highlight.js/styles/stackoverflow-dark.min.css'
+import 'highlight.js/styles/monokai-sublime.min.css'
 import hljs from "highlight.js"
 import CopyButton from "@/components/elements/CopyButton"
 import Utils from "@/Utils";
