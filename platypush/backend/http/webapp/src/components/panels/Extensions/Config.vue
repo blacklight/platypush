@@ -61,9 +61,9 @@ export default {
       }
 
       return hljs.highlight(
-        'yaml',
         '# Currently loaded configuration\n' +
-        this.curYamlConfig
+        this.curYamlConfig,
+        {language: 'yaml'}
       ).value.trim()
     },
   },
