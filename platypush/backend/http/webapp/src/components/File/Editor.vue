@@ -33,7 +33,7 @@
 <script>
 import axios from 'axios';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/github.css';
+import 'highlight.js/styles/intellij-light.css';
 
 import FloatingButton from "@/components/elements/FloatingButton";
 import Highlighter from "./Highlighter";
