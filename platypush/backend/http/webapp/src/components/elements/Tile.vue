@@ -15,6 +15,7 @@
                :disabled="readOnly"
                :value="value"
                @drag="$emit('drag', $event)"
+               @dragend="$emit('dragend', $event)"
                @drop="$emit('drop', $event)"
                v-if="draggable" />
 
