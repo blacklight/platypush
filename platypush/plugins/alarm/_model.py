@@ -274,6 +274,9 @@ class Alarm:
             if self.audio_volume is not None:
                 self._get_media_plugin().set_volume(self.audio_volume)
 
+        if not self.media:
+            return
+
         audio_thread = threading.Thread(target=thread)
         audio_thread.start()
 
