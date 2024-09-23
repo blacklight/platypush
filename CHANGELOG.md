@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.0]
 
 - [[#333](https://git.platypush.tech/platypush/platypush/issues/333)]: new file
   browser UI/component. It includes custom MIME type support, a file editor
