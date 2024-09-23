@@ -634,13 +634,15 @@ class SystemPlugin(SensorPlugin, EntityManager):
                 if fan.get('id') and fan.get('label')
             ],
             *[
-                SystemBattery(
-                    id='system:battery',
-                    name='Battery',
-                    **battery,
+                (
+                    SystemBattery(
+                        id='system:battery',
+                        name='Battery',
+                        **battery,
+                    )
+                    if battery
+                    else ()
                 )
-                if battery
-                else ()
             ],
         ]
 
