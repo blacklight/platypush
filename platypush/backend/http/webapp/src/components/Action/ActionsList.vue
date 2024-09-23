@@ -146,6 +146,7 @@ export default {
     'drop',
     'input',
     'reset',
+    'update',
   ],
 
   components: {
@@ -920,6 +921,14 @@ export default {
   mounted() {
     this.syncValue()
     this.syncSpacers()
+  },
+
+  updated() {
+    if (!this.hasChanges) {
+      return
+    }
+
+    this.$emit('update', this.newValue)
   },
 }
 </script>
