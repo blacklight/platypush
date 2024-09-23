@@ -8,6 +8,7 @@
           <FileEditor ref="fileEditor"
                       :file="file"
                       :is-new="isNew"
+                      :line="line"
                       @save="$emit('save', $event)"
                       v-if="file" />
         </div>
@@ -26,10 +27,11 @@
 import ConfirmDialog from "@/components/elements/ConfirmDialog";
 import FileEditor from "./Editor";
 import Modal from "@/components/Modal";
+import Utils from '@/Utils'
 
 export default {
   emits: ['close', 'open', 'save'],
-  mixins: [Modal],
+  mixins: [Modal, Utils],
   components: {
     ConfirmDialog,
     FileEditor,
@@ -45,6 +47,11 @@ export default {
     isNew: {
       type: Boolean,
       default: false,
+    },
+
+    line: {
+      type: [String, Number],
+      default: null,
     },
 
     withSave: {
@@ -113,14 +120,27 @@ export default {
 
     onClose() {
       this.$refs.fileEditor.reset()
+      this.setUrlArgs({ maximized: null })
       this.$emit('close')
     },
+  },
+
+  watch: {
+    maximized() {
+      this.setUrlArgs({ maximized: this.maximized })
+    },
+  },
+
+  mounted() {
+    this.maximized = !!this.getUrlArgs().maximized
   },
 }
 </script>
 
 <style lang="scss" scoped>
 @import "src/style/items";
+
+$maximized-modal-header-height: 2.75em;
 
 .file-editor-root {
   .file-editor-modal {
@@ -133,45 +153,73 @@ export default {
 
       .modal-body {
         width: 100%;
-        height: 50em;
         min-width: 30em;
         max-height: calc(100vh - 2em);
+      }
+
+      .content {
+        @extend .expand;
       }
     }
 
     &:not(.maximized) {
-      :deep(.body) {
-        @include until($tablet) {
-          width: calc(100vw - 2em);
-        }
+      :deep(.modal) {
+        .body {
+          @include until($tablet) {
+            width: calc(100vw - 2em);
+          }
 
-        @include from($tablet) {
-          width: 40em;
-          max-width: 100%;
-        }
+          @include from($tablet) {
+            width: 40em;
+            max-width: 100%;
+          }
 
-        @include from($desktop) {
-          width: 100%;
-          min-width: 50em;
+          @include from($desktop) {
+            width: 100%;
+            min-width: 50em;
+          }
+
+          .modal-body {
+            height: 50em;
+          }
         }
       }
     }
 
     &.maximized {
-      :deep(.body) {
-        width: 100vw;
-        height: 100vh;
+      :deep(.modal) {
+        width: calc(100vw - 2em);
+        height: calc(100vh - 2em);
+
+        .content, .modal-body {
+          width: 100%;
+          height: 100%;
+          max-height: 100%;
+        }
+
+        .header {
+          height: $maximized-modal-header-height;
+        }
+
+        .body {
+          height: calc(100% - #{$maximized-modal-header-height});
+          max-height: 100%;
+        }
       }
     }
   }
 
   .confirm-dialog-container {
     :deep(.modal) {
-      .content {
-        .body {
-          min-width: 30em;
-          max-width: 100%;
-        }
+      width: 35em !important;
+      height: 9em !important;
+      max-width: 100%;
+      max-height: 100%;
+
+      .body {
+        width: 100% !important;
+        height: 100% !important;
+        justify-content: center;
       }
     }
   }

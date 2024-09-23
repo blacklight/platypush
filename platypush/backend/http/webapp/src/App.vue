@@ -49,11 +49,14 @@ export default {
   data() {
     return {
       config: {},
+      configDir: null,
+      configFile: null,
       userAuthenticated: false,
       connected: false,
       pwaInstallEvent: null,
       initialized: false,
       initError: null,
+      stackedModals: 0,
     }
   },
 
@@ -81,11 +84,15 @@ export default {
 
   methods: {
     onNotification(notification) {
-      this.$refs.notifications.create(notification)
+      this.$refs.notifications?.create(notification)
     },
 
     async initConfig() {
-      this.config = await this.request('config.get', {}, 60000, false)
+      this.config = await this.request('config.get', {}, 60000, false);
+      [this.configDir, this.configFile] = await Promise.all([
+        this.request('config.get_config_dir'),
+        this.request('config.get_config_file'),
+      ])
       this.userAuthenticated = true
     },
 
@@ -94,7 +101,15 @@ export default {
         this.pwaInstallEvent.prompt()
 
       this.$refs.pwaDialog.close()
-    }
+    },
+
+    onModalClose() {
+      this.stackedModals = Math.max(0, this.stackedModals - 1)
+    },
+
+    onModalOpen() {
+      this.stackedModals++
+    },
   },
 
   async created() {
@@ -130,6 +145,8 @@ export default {
     bus.onNotification(this.onNotification)
     bus.on('connect', () => this.connected = true)
     bus.on('disconnect', () => this.connected = false)
+    bus.on('modal-open', this.onModalOpen)
+    bus.on('modal-close', this.onModalClose)
   },
 }
 </script>

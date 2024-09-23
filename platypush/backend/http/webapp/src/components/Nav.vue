@@ -117,7 +117,7 @@ export default {
 
   computed: {
     specialPlugins() {
-      return ['execute', 'entities', 'file']
+      return ['execute', 'entities', 'file', 'procedures']
     },
 
     panelNames() {
@@ -131,6 +131,7 @@ export default {
 
       let panelNames = Object.keys(this.panels).sort()
       panelNames = prepend(panelNames, 'file')
+      panelNames = prepend(panelNames, 'procedures')
       panelNames = prepend(panelNames, 'execute')
       panelNames = prepend(panelNames, 'entities')
       return panelNames
@@ -156,6 +157,8 @@ export default {
         return 'Execute'
       if (name === 'file')
         return 'Files'
+      if (name === 'procedures')
+        return 'Procedures'
 
       return name
     },

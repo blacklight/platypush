@@ -176,7 +176,7 @@ export default {
 
     toggle(event) {
       event.stopPropagation()
-      this.$emit('click')
+      this.$emit('click', event)
       this.visible ? this.close() : this.open()
     },
 

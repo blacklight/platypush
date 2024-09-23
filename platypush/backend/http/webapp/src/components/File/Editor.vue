@@ -9,10 +9,15 @@
 
       <div class="editor-body">
         <div class="line-numbers" ref="lineNumbers">
-          <span class="line-number" v-for="n in lines" :key="n" v-text="n" />
+          <span class="line-number"
+                :class="{selected: selectedLine === n}"
+                v-for="n in lines"
+                :key="n"
+                @click="selectedLine = selectedLine === n ? null : n"
+                v-text="n" />
         </div>
 
-        <pre ref="pre"><code ref="content" v-html="displayedContent" /></pre>
+        <pre ref="pre"><code ref="content" v-html="displayedContent" /><div class="selected-line" ref="selectedLine" v-if="selectedLine != null" /></pre>
         <textarea ref="textarea" v-model="content" @scroll="syncScroll" @input.stop />
       </div>
 
@@ -28,7 +33,7 @@
 <script>
 import axios from 'axios';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/github.css';
+import 'highlight.js/styles/intellij-light.css';
 
 import FloatingButton from "@/components/elements/FloatingButton";
 import Highlighter from "./Highlighter";
@@ -54,6 +59,11 @@ export default {
       default: false,
     },
 
+    line: {
+      type: [String, Number],
+      default: null,
+    },
+
     withSave: {
       type: Boolean,
       default: true,
@@ -71,6 +81,7 @@ export default {
       initialContentHash: 0,
       loading: false,
       saving: false,
+      selectedLine: null,
       type: null,
     }
   },
@@ -139,6 +150,12 @@ export default {
       } finally {
         this.loading = false
       }
+
+      if (this.selectedLine) {
+        setTimeout(() => {
+          this.scrollToLine(this.selectedLine)
+        }, 1000)
+      }
     },
 
     async saveFile() {
@@ -188,6 +205,17 @@ export default {
         top: scrollOpts.top,
         behavior: 'auto',
       })
+    },
+
+    scrollToLine(line) {
+      const offset = (line - 1) * parseFloat(getComputedStyle(this.$refs.pre).lineHeight)
+      this.$refs.textarea.scrollTo({
+        top: offset,
+        left: 0,
+        behavior: 'smooth',
+      })
+
+      return offset
     },
 
     highlightContent() {
@@ -243,7 +271,7 @@ export default {
     },
 
     reset() {
-      this.setUrlArgs({file: null})
+      this.setUrlArgs({file: null, line: null})
       this.removeBeforeUnload()
       this.removeKeyListener()
     },
@@ -276,9 +304,36 @@ export default {
         this.highlightedContent = this.content
       }
     },
+
+    selectedLine(line) {
+      line = parseInt(line)
+      if (isNaN(line)) {
+        return
+      }
+
+      const textarea = this.$refs.textarea
+      const lines = this.content.split('\n')
+      const cursor = lines.slice(0, line - 1).join('\n').length + 1
+
+      textarea.setSelectionRange(cursor, cursor)
+      textarea.focus()
+      this.setUrlArgs({line})
+      this.$nextTick(() => {
+        const offset = this.scrollToLine(line)
+        this.$refs.selectedLine.style.top = `${offset}px`
+      })
+    },
   },
 
   mounted() {
+    const args = this.getUrlArgs()
+    const line = parseInt(this.line || args.line || 0)
+    if (line) {
+      if (!isNaN(line)) {
+        this.selectedLine = line
+      }
+    }
+
     this.loadFile()
     this.addBeforeUnload()
     this.addKeyListener()
@@ -332,13 +387,19 @@ $line-numbers-width: 2.5em;
   }
 
   .editor-body {
+    font-family: $monospace-font;
+
     pre, textarea, code, .line-numbers {
-      font-family: 'Fira Code', 'Noto Sans Mono', 'Inconsolata', 'Courier New', monospace;
+      font-family: $monospace-font;
       position: absolute;
       top: 0;
       height: 100%;
       margin: 0;
       white-space: pre;
+    }
+
+    pre, textarea, code {
+      background: transparent;
     }
 
     .line-numbers {
@@ -356,6 +417,15 @@ $line-numbers-width: 2.5em;
         width: 100%;
         text-align: right;
         padding-right: 0.25em;
+        cursor: pointer;
+
+        &:hover {
+          background: $hover-bg;
+        }
+
+        &.selected {
+          background: $selected-bg;
+        }
       }
     }
 
@@ -372,16 +442,32 @@ $line-numbers-width: 2.5em;
       background: transparent;
       overflow-wrap: normal;
       overflow-x: scroll;
-      z-index: 1;
+      z-index: 2;
       color: rgba(0, 0, 0, 0);
       caret-color: black;
       border: none;
       outline: none;
     }
+
+    .selected-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 1.5em;
+      background: rgba(110, 255, 160, 0.25);
+    }
   }
 
   :deep(.floating-btn) {
     z-index: 5;
+  }
+
+  // Fix for some hljs styles that render white text on white background
+  :deep(code) {
+    .hljs-subst {
+      color: $selected-fg !important;
+    }
   }
 }
 </style>

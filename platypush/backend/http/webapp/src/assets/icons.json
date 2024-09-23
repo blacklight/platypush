@@ -89,6 +89,9 @@
   "ping": {
     "class": "fas fa-server"
   },
+  "procedures": {
+    "class": "fas fa-gears"
+  },
   "torrent": {
     "class": "fa fa-magnet"
   },

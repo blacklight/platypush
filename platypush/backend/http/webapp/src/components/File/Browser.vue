@@ -5,7 +5,7 @@
     <div class="nav" ref="nav">
       <div class="path-container">
         <span class="path" v-if="hasHomepage">
-          <span class="token" @click="path = null">
+          <span class="token" @click.stop="path = null">
             <i class="fa fa-home" />
           </span>
 
@@ -17,7 +17,7 @@
         <span class="path"
               v-for="(token, i) in pathTokens"
               :key="i"
-              @click="path = pathTokens.slice(0, i + 1).join('/').slice(1)">
+              @click.stop="path = pathTokens.slice(0, i + 1).join('/').slice(1)">
           <span class="token">
             {{ token }}
           </span>
@@ -30,7 +30,7 @@
       </div>
 
       <div class="btn-container">
-        <Dropdown :style="{'min-width': '11em'}">
+        <Dropdown :style="{'min-width': '11em'}" @click.prevent>
           <DropdownItem icon-class="fa fa-plus" text="New Folder" @input="showCreateDirectory = true" />
           <DropdownItem icon-class="fa fa-file" text="Create File" @input="showCreateFile = true" />
           <DropdownItem icon-class="fa fa-upload" text="Upload" @input="showUpload = true" />
@@ -49,7 +49,7 @@
 
     <div class="items" ref="items" v-else>
       <div class="row item"
-           @click="onBack"
+           @click.stop="onBack"
            v-if="(path?.length && path !== '/') || hasBack">
         <div class="col-10 left side">
           <i class="icon fa fa-folder" />
@@ -59,7 +59,7 @@
 
       <div class="row item"
            ref="selectCurrent"
-           @click="onSelectCurrentDirectory"
+           @click.stop="onSelectCurrentDirectory"
            v-if="hasSelectCurrentDirectory">
         <div class="col-10 left side">
           <i class="icon fa fa-hand-point-right" />
@@ -67,7 +67,7 @@
         </div>
       </div>
 
-      <div class="row item" v-for="(file, i) in filteredFiles" :key="i" @click="onItemSelect(file)">
+      <div class="row item" v-for="(file, i) in filteredFiles" :key="i" @click.stop="onItemSelect(file)">
         <div class="col-10">
           <i class="icon fa" :class="fileIcons[file.path]" />
           <span class="name">
@@ -76,7 +76,7 @@
         </div>
 
         <div class="col-2 actions" v-if="Object.keys(fileActions[file.path] || {})?.length">
-          <Dropdown :style="{'min-width': '11em'}">
+          <Dropdown :style="{'min-width': '11em'}" @click.prevent>
             <DropdownItem
                 v-for="(action, key) in fileActions[file.path]"
                 :key="key"
