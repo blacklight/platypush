@@ -179,13 +179,13 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             else:
                 # If the alarm record on the db is static, but the alarm is no
                 # longer present in the configuration, then we want to delete it
-                if alarm.static:
+                if bool(alarm.static):
                     self._clear_alarm(alarm, session)
                 else:
                     self.alarms[name] = Alarm.from_db(
                         alarm,
                         stop_event=self._should_stop,
-                        media_plugin=alarm.media_plugin or self.media_plugin,
+                        media_plugin=str(alarm.media_plugin) or self.media_plugin,
                         on_change=self._on_alarm_update,
                     )
 
@@ -215,7 +215,12 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
     def _clear_alarm(self, alarm: DbAlarm, session: Session):
         alarm_obj = self.alarms.pop(str(alarm.name), None)
         if alarm_obj:
-            alarm_obj.stop()
+            try:
+                alarm_obj.stop()
+            except Exception as e:
+                self.logger.warning(
+                    f'Error while stopping alarm {alarm.name}: {e}', exc_info=True
+                )
 
         session.delete(alarm)
         self._bus.post(EntityDeleteEvent(entity=alarm))
@@ -439,15 +444,15 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
                 when=when or alarm.when,
                 media=media or alarm.media,
                 media_plugin=media_plugin or alarm.media_plugin or self.media_plugin,
-                media_repeat=media_repeat
-                if media_repeat is not None
-                else alarm.media_repeat,
+                media_repeat=(
+                    media_repeat if media_repeat is not None else alarm.media_repeat
+                ),
                 actions=actions if actions is not None else (alarm.actions or []),
                 name=new_name or name,
                 enabled=enabled if enabled is not None else alarm.is_enabled(),
-                audio_volume=audio_volume
-                if audio_volume is not None
-                else alarm.audio_volume,
+                audio_volume=(
+                    audio_volume if audio_volume is not None else alarm.audio_volume
+                ),
                 snooze_interval=snooze_interval or alarm.snooze_interval,
                 dismiss_interval=dismiss_interval or alarm.dismiss_interval,
             ).to_dict()
