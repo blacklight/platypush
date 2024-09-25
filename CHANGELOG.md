@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+- [[#344](https://git.platypush.tech/platypush/platypush/issues/344)]: removed
+  `marshmallow_dataclass` dependency. That package isn't included in the
+  package managers of any supported distros and requires to be installed via
+  pip. Making the Platypush' system packages depend on a pip-only package is
+  not a good idea. Plus, the library seems to be still in heavy development and
+  it has already broken compatibility with at least the `system` package.
+
 ## [1.3.0]
 
 - [[#333](https://git.platypush.tech/platypush/platypush/issues/333)]: new file
