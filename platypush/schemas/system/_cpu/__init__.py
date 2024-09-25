@@ -1,5 +1,11 @@
 from ._model import Cpu, CpuFrequency, CpuInfo, CpuStats, CpuTimes
-from ._schemas import CpuFrequencySchema, CpuInfoSchema, CpuStatsSchema, CpuTimesSchema
+from ._schemas import (
+    CpuFrequencySchema,
+    CpuInfoSchema,
+    CpuSchema,
+    CpuStatsSchema,
+    CpuTimesSchema,
+)
 
 
 __all__ = [
@@ -8,6 +14,7 @@ __all__ = [
     "CpuFrequencySchema",
     "CpuInfo",
     "CpuInfoSchema",
+    "CpuSchema",
     "CpuStats",
     "CpuStatsSchema",
     "CpuTimes",

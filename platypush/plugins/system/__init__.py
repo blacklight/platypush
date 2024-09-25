@@ -154,6 +154,8 @@ class SystemPlugin(SensorPlugin, EntityManager):
 
     @staticmethod
     def _cpu_frequency_avg() -> CpuFrequency:
+        # Dummy call to ensure the CPU frequency is updated
+        psutil.cpu_freq(percpu=False)
         return CpuFrequencySchema().load(psutil.cpu_freq(percpu=False))  # type: ignore
 
     @staticmethod
