@@ -78,17 +78,18 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
             if not key.startswith('_')
         }
 
+    @staticmethod
+    def _getattr(instance, key: str):
+        return getattr(instance, key, instance.get(key))
+
     def main(self):
         instances = []
 
         while not self.should_stop():
-            status = {
-                getattr(instance, 'id', instance.get('id')): instance
-                for instance in instances
-            }
+            status = {self._getattr(instance, 'id'): instance for instance in instances}
 
             new_status = {
-                instance['id']: instance
+                self._getattr(instance, 'id'): instance
                 for instance in self.status(publish_entities=False).output
             }
 
@@ -97,8 +98,11 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
                     instance
                     for instance in new_status.values()
                     if not (
-                        status.get(instance['id'])
-                        and status[instance['id']].status == instance.status
+                        status.get(self._getattr(instance, 'id'))
+                        and self._getattr(
+                            status[self._getattr(instance, 'id')], 'status'
+                        )
+                        == self._getattr(instance, 'status')
                     )
                 ]
                 if new_status
@@ -109,12 +113,14 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
                 for instance in changed_instances:
                     get_bus().post(
                         LinodeInstanceStatusChanged(
-                            instance_id=instance['id'],
-                            instance_name=instance['name'],
-                            status=instance['status'],
+                            instance_id=self._getattr(instance, 'id'),
+                            instance_name=self._getattr(instance, 'label'),
+                            status=self._getattr(instance, 'status'),
                             old_status=(
-                                status[instance['id']]['status']
-                                if status.get(instance['id'])
+                                self._getattr(
+                                    status[self._getattr(instance, 'id')], 'status'
+                                )
+                                if status.get(self._getattr(instance, 'id'))
                                 else None
                             ),
                         )
@@ -178,8 +184,10 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
             ]
         )
 
-        mapped_instances = LinodeInstanceSchema(many=True).load(
-            map(self._linode_instance_to_dict, instances)
+        mapped_instances = list(
+            LinodeInstanceSchema(many=True).load(  # type: ignore
+                map(self._linode_instance_to_dict, instances)
+            )
         )
 
         if publish_entities:
