@@ -99,6 +99,7 @@ Plugins
     platypush/plugins/otp.rst
     platypush/plugins/pihole.rst
     platypush/plugins/ping.rst
+    platypush/plugins/procedures.rst
     platypush/plugins/pushbullet.rst
     platypush/plugins/pwm.pca9685.rst
     platypush/plugins/qrcode.rst

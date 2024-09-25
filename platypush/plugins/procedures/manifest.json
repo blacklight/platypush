@@ -1,6 +1,6 @@
 {
   "manifest": {
-    "package": "platypush.plugins.procedure",
+    "package": "platypush.plugins.procedures",
     "type": "plugin",
     "events": []
   }
