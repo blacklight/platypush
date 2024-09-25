@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.1]
 
 - [[#344](https://git.platypush.tech/platypush/platypush/issues/344)]: removed
   `marshmallow_dataclass` dependency. That package isn't included in the
