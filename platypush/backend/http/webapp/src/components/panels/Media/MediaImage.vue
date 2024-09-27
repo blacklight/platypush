@@ -5,6 +5,9 @@
       <i :class="overlayIconClass" />
     </div>
 
+    <div class="backdrop" v-if="item?.image"
+         :style="{ backgroundImage: `url(${item.image})` }" />
+
     <span class="icon type-icon" v-if="typeIcons[item?.type]">
       <a :href="item.url" target="_blank" v-if="item.url">
         <i :class="typeIcons[item.type]" :title="item.type">
@@ -119,6 +122,7 @@ export default {
   background: rgba(0, 0, 0, 0.5);
   border-radius: 0.25em;
   color: $default-media-img-fg;
+  z-index: 2;
 
   a {
     width: 100%;
@@ -159,6 +163,7 @@ export default {
   color: white;
   padding: 0.25em 0.5em;
   border-radius: 0.25em;
+  z-index: 2;
 }
 
 .type-icon {
@@ -194,6 +199,7 @@ export default {
 
 .image {
   max-width: 100%;
+  z-index: 1;
 }
 
 div.image {
@@ -229,6 +235,7 @@ div.image {
   border-radius: 2em;
   opacity: 0;
   transition: opacity 0.2s ease-in-out;
+  z-index: 3;
 
   &:hover {
     opacity: 1;
@@ -238,5 +245,15 @@ div.image {
     font-size: 5em;
     color: $default-media-img-fg;
   }
+}
+
+.backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  filter: blur(5px) brightness(0.5);
 }
 </style>

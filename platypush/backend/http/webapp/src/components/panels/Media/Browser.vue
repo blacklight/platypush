@@ -3,13 +3,16 @@
     <div class="media-browser">
       <div class="media-index grid" v-if="!mediaProvider">
         <div class="item"
-             v-for="(provider, name) in mediaProviders"
+             v-for="(provider, name) in visibleMediaProviders"
              :key="name"
              @click="mediaProvider = provider">
           <div class="icon">
             <i v-bind="providersMetadata[name].icon"
                :style="{ color: providersMetadata[name].icon?.color || 'inherit' }"
-               v-if="providersMetadata[name].icon" />
+               v-if="providersMetadata[name].icon?.class" />
+
+            <img :src="providersMetadata[name].icon.url"
+                 v-else-if="providersMetadata[name].icon?.url" />
           </div>
           <div class="name">
             {{ providersMetadata[name].name }}
@@ -104,6 +107,15 @@ export default {
           return acc
         }, {})
     },
+
+    visibleMediaProviders() {
+      return Object.entries(this.mediaProviders)
+        .filter(([provider, component]) => component && (!this.filter || provider.toLowerCase().includes(this.filter.toLowerCase())))
+        .reduce((acc, [provider, component]) => {
+          acc[provider] = component
+          return acc
+        }, {})
+    },
   },
 
   methods: {
@@ -124,13 +136,16 @@ export default {
     },
 
     async refreshMediaProviders() {
-      const config = await this.request('config.get')
+      const config = this.$root.config
       this.mediaProviders = {}
       // The local File provider is always enabled
       this.registerMediaProvider('File')
 
       if (config.youtube)
         this.registerMediaProvider('YouTube')
+
+      if (config['media.jellyfin'])
+        this.registerMediaProvider('Jellyfin')
     },
 
     onPlaylistChange() {

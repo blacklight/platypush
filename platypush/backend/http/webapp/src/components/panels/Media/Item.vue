@@ -43,6 +43,20 @@
       <div class="row creation-date" v-if="item.created_at">
         {{ formatDateTime(item.created_at, true) }}
       </div>
+
+      <div class="row creation-date" v-text="item.year" v-else-if="item.year" />
+
+      <div class="row ratings" v-if="item.critic_rating != null || item.community_rating != null">
+        <span class="rating" title="Critic rating" v-if="item.critic_rating != null">
+          <i class="fa fa-star" />&nbsp;
+          <span v-text="Math.round(item.critic_rating)" />%
+        </span>
+
+        <span class="rating" title="Community rating" v-if="item.community_rating != null">
+          <i class="fa fa-users" />&nbsp;
+          <span v-text="Math.round(item.community_rating)" />%
+        </span>
+      </div>
     </div>
   </div>
 </template>
@@ -228,6 +242,24 @@ export default {
     font-size: .85em;
     color: $default-fg-2;
     flex: 1;
+  }
+
+  .ratings {
+    width: 100%;
+    font-size: .75em;
+    opacity: .75;
+    display: flex;
+    justify-content: space-between;
+
+    .rating {
+      display: flex;
+      align-items: center;
+      margin-right: 1em;
+
+      i {
+        margin-right: .25em;
+      }
+    }
   }
 }
 </style>

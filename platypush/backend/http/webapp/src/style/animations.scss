@@ -46,6 +46,22 @@
    -webkit-animation-name: unfold;
 }
 
+.dim {
+   animation-duration: 0.5s;
+   -webkit-animation-duration: 0.5s;
+   animation-fill-mode: both;
+   animation-name: dim;
+   -webkit-animation-name: dim;
+}
+
+.brighten {
+   animation-duration: 0.5s;
+   -webkit-animation-duration: 0.5s;
+   animation-fill-mode: both;
+   animation-name: brighten;
+   -webkit-animation-name: brighten;
+}
+
 @keyframes fadeIn {
    0% {opacity: 0;}
    100% {opacity: 1;}
@@ -77,6 +93,16 @@
 @keyframes unfold {
    0% {transform: scale(1, 0);}
    100% {transform: scale(1, 1);}
+}
+
+@keyframes dim {
+   0% {filter: brightness(1);}
+   100% {filter: brightness(0.5);}
+}
+
+@keyframes brighten {
+   0% {filter: brightness(0.5);}
+   100% {filter: brightness(1);}
 }
 
 .glow {
