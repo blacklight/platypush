@@ -18,6 +18,8 @@
              @remove-from-playlist="$emit('remove-from-playlist', $event)"
              @select="selectedResult = $event"
              v-else />
+
+    <SortButton :value="sort" @input="sort = $event" v-if="sortedMovies.length > 0" />
   </div>
 </template>
 
@@ -26,6 +28,7 @@ import Loading from "@/components/Loading";
 import MediaProvider from "@/components/panels/Media/Providers/Mixin";
 import NoItems from "@/components/elements/NoItems";
 import Results from "@/components/panels/Media/Results";
+import SortButton from "@/components/panels/Media/Providers/Jellyfin/components/SortButton";
 
 export default {
   mixins: [MediaProvider],
@@ -33,6 +36,7 @@ export default {
     Loading,
     NoItems,
     Results,
+    SortButton,
   },
 
   emits: [
@@ -52,9 +56,13 @@ export default {
 
   data() {
     return {
-      movies: {},
+      movies: [],
       loading_: false,
       selectedResult: null,
+      sort: {
+        attr: 'title',
+        desc: false,
+      },
     };
   },
 
@@ -64,8 +72,25 @@ export default {
     },
 
     sortedMovies() {
+      if (!this.movies) {
+        return []
+      }
+
       return [...this.movies].sort((a, b) => {
-        return a.title.localeCompare(b.title)
+        const attr = this.sort.attr
+        const desc = this.sort.desc
+        let aVal = a[attr]
+        let bVal = b[attr]
+
+        if (typeof aVal === 'number' || typeof bVal === 'number') {
+          aVal = aVal || 0
+          bVal = bVal || 0
+          return desc ? bVal - aVal : aVal - bVal
+        }
+
+        aVal = (aVal || '').toString().toLowerCase()
+        bVal = (bVal || '').toString().toLowerCase()
+        return desc ? bVal.localeCompare(aVal) : aVal.localeCompare(bVal)
       }).map((movie) => {
         return {
           item_type: movie.type,
@@ -113,4 +138,8 @@ export default {
 
 <style lang="scss" scoped>
 @import "@/components/panels/Media/Providers/Jellyfin/common.scss";
+
+.index {
+  position: relative;
+}
 </style>

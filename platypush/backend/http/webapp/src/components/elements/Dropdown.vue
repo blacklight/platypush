@@ -59,11 +59,19 @@ export default {
   },
 
   computed: {
+    button() {
+      const el = this.$refs.button?.$el
+      if (!el)
+        return this.$refs.button
+
+      return el.querySelector('button')
+    },
+
     buttonStyle() {
-      if (!this.$refs.button)
+      if (!this.button)
         return {}
 
-      return getComputedStyle(this.$refs.button)
+      return getComputedStyle(this.button)
     },
 
     buttonWidth() {
@@ -140,7 +148,7 @@ export default {
     },
 
     adjustDropdownPos() {
-      const buttonRect = this.$refs.button.getBoundingClientRect()
+      const buttonRect = this.button.getBoundingClientRect()
       const buttonPos = {
         left: buttonRect.left + window.scrollX,
         top: buttonRect.top + window.scrollY,

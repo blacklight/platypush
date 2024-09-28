@@ -24,7 +24,7 @@ import Index from "./Jellyfin/Index";
 import Loading from "@/components/Loading";
 import MediaNav from "./Nav";
 import MediaProvider from "./Mixin";
-import Movies from "./Jellyfin/Collections/Movies/Index";
+import Movies from "./Jellyfin/collections/Movies/Index";
 
 export default {
   mixins: [MediaProvider],
