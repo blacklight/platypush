@@ -2,7 +2,7 @@
   <div class="sort-buttons">
     <Dropdown :icon-class="btnIconClass"
               glow right
-              title="Sort Direction">
+              :title="title">
       <div class="sort-buttons-dropdown-body">
         <div class="title">Sort Direction</div>
         <DropdownItem text="Ascending"
@@ -22,15 +22,18 @@
         <DropdownItem text="Release Date"
                       icon-class="fa fa-calendar"
                       :item-class="{ active: value?.attr === 'year' }"
-                      @input="onAttrChange('year')" />
+                      @input="onAttrChange('year')"
+                      v-if="withReleaseDate" />
         <DropdownItem text="Critics Rating"
                       icon-class="fa fa-star"
                       :item-class="{ active: value?.attr === 'critic_rating' }"
-                      @input="onAttrChange('critic_rating')" />
+                      @input="onAttrChange('critic_rating')"
+                      v-if="withCriticRating" />
         <DropdownItem text="Community Rating"
                       icon-class="fa fa-users"
                       :item-class="{ active: value?.attr === 'community_rating' }"
-                      @input="onAttrChange('community_rating')" />
+                      @input="onAttrChange('community_rating')"
+                      v-if="withCommunityRating" />
       </div>
     </Dropdown>
   </div>
@@ -54,11 +57,30 @@ export default {
       type: Object,
       required: true,
     },
+
+    withReleaseDate: {
+      type: Boolean,
+      default: false,
+    },
+
+    withCriticRating: {
+      type: Boolean,
+      default: false,
+    },
+
+    withCommunityRating: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   computed: {
     btnIconClass() {
       return this.value?.desc ? 'fa fa-arrow-down-wide-short' : 'fa fa-arrow-up-short-wide'
+    },
+
+    title() {
+      return 'Sort By: ' + (this.value?.attr ?? '[none]') + ' ' + (this.value?.desc ? 'descending' : 'ascending')
     },
   },
 

@@ -26,8 +26,7 @@
 
 <script>
 export default {
-  emit: ['back'],
-
+  emits: ['back', 'select'],
   props: {
     path: {
       type: Array,
@@ -37,8 +36,10 @@ export default {
 
   methods: {
     onClick(token) {
-      if (token.click)
+      if (token.click) {
         token.click()
+        this.$emit('select', token)
+      }
     },
   },
 }

@@ -122,7 +122,7 @@ export default {
   background: rgba(0, 0, 0, 0.5);
   border-radius: 0.25em;
   color: $default-media-img-fg;
-  z-index: 2;
+  z-index: 3;
 
   a {
     width: 100%;

@@ -54,7 +54,7 @@ import Utils from "@/Utils"
 export default {
   name: "Install",
   mixins: [Utils],
-  emit: ['install-start', 'install-end'],
+  emits: ['install-start', 'install-end'],
   components: {
     CopyButton,
     Loading,

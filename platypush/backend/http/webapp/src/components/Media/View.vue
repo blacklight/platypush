@@ -97,6 +97,7 @@ export default {
     border-top: $default-border-2;
     background: $default-bg-2;
     box-shadow: $border-shadow-top;
+    z-index: 100;
   }
 }
 </style>

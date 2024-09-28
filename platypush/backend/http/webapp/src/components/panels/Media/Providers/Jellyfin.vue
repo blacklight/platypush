@@ -5,33 +5,35 @@
     <div class="media-jellyfin-browser">
       <Loading v-if="isLoading" />
 
-      <Index v-bind="componentData.props"
-             v-on="componentData.on"
-             @select="selectCollection"
-             v-else-if="currentView === 'index'" />
-
       <Movies v-bind="componentData.props"
               v-on="componentData.on"
               :collection="collection"
               @select="select"
               v-else-if="currentView === 'movies'" />
+
+      <Media v-bind="componentData.props"
+             v-on="componentData.on"
+             :collection="collection"
+             @select="select"
+             @select-collection="selectCollection"
+             v-else />
     </div>
   </div>
 </template>
 
 <script>
-import Index from "./Jellyfin/Index";
 import Loading from "@/components/Loading";
 import MediaNav from "./Nav";
 import MediaProvider from "./Mixin";
-import Movies from "./Jellyfin/collections/Movies/Index";
+import Media from "./Jellyfin/views/Media/Index";
+import Movies from "./Jellyfin/views/Movies/Index";
 
 export default {
   mixins: [MediaProvider],
   components: {
-    Index,
     Loading,
     MediaNav,
+    Media,
     Movies,
   },
 
@@ -59,6 +61,7 @@ export default {
           collection: this.collection,
           filter: this.filter,
           loading: this.isLoading,
+          path: this.path,
         },
 
         on: {
@@ -76,9 +79,11 @@ export default {
         return 'index'
       }
 
-      switch (this.collection.type) {
+      switch (this.collection.collection_type) {
         case 'movies':
           return 'movies'
+        case 'homevideos':
+          return 'videos'
         default:
           return 'index'
       }
@@ -117,10 +122,16 @@ export default {
         if (item.type === 'index') {
           this.path = [this.rootItem]
         } else {
-          this.path.push({
-            title: item.name,
-            ...item,
-          })
+          const itemIndex = this.path.findIndex((i) => i.id === item.id)
+          if (itemIndex >= 0) {
+            this.path = this.path.slice(0, itemIndex + 1)
+          } else {
+            this.path.push({
+              title: item.name,
+              click: () => this.selectCollection(item),
+              ...item,
+            })
+          }
         }
       } else {
         this.path = []
