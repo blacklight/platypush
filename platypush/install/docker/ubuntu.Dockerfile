@@ -23,13 +23,16 @@ RUN /install/platypush/install/scripts/debian/install.sh && \
     cd /install && \
     pip install -U --no-input --no-cache-dir . --break-system-packages && \
     rm -rf /install && \
-    rm -rf /root/.cache/pip && \
+    rm -rf /root/.cache && \
     find / | grep -E "(/__pycache__$|\.pyc$|\.pyo$)" | xargs rm -rf && \
     apt remove -y git build-essential && \
     rm -rf /var/lib/apt/lists/* && \
     apt autoclean -y && \
     apt autoremove -y && \
-    apt clean
+    apt clean && \
+    rm -rf /var/cache/apt/* && \
+    rm -rf /tmp/* && \
+    find / | grep -E "(/__pycache__$|\.pyc$|\.pyo$)" | xargs rm -rf
 
 EXPOSE 8008
 

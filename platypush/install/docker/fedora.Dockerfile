@@ -22,11 +22,12 @@ RUN dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-re
   cd /install && \
   pip install -U --no-input --no-cache-dir . --break-system-packages && \
   rm -rf /install && \
-  rm -rf /root/.cache/pip && \
-  find / | grep -E "(/__pycache__$|\.pyc$|\.pyo$)" | xargs rm -rf && \
+  rm -rf /root/.cache && \
   dnf remove -y build-essential git && \
   dnf clean all -y && \
-  rm -rf /var/cache/dnf/*
+  rm -rf /var/cache/dnf/* && \
+  rm -rf /tmp/* && \
+  find / | grep -E "(/__pycache__$|\.pyc$|\.pyo$)" | xargs rm -rf
 
 EXPOSE 8008
 
