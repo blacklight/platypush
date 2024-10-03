@@ -1,24 +1,9 @@
 services:
   platypush:
-    restart: "always"
-    command:
-      - platypush
-      # Comment --start-redis if you want to run an external Redis service
-      # In such case you'll also have to ensure that the appropriate Redis
-      # variables are set in the .env file, or the Redis configuration is
-      # passed in the config.yaml, or use the --redis-host and --redis-port
-      # command-line options
-      - --start-redis
-
-    # Custom list of host devices that should be accessible to the container -
-    # e.g. an Arduino, an ESP-compatible microcontroller, a joystick etc.
-    # devices:
-    #   - /dev/ttyUSB0
-
-    # Uncomment if you need plugins that require access to low-level hardware
-    # (e.g. Bluetooth BLE or GPIO/SPI/I2C) if access to individual devices is
-    # not enough or isn't practical
-    # privileged: true
+    # Replace the build section with the next line if instead of building the
+    # image from a local checkout you want to pull the latest base
+    # (Alpine-based) image from the remote registry
+    # image: "registry.platypush.tech/platypush:latest"
 
     build:
       context: .
@@ -31,6 +16,25 @@ services:
       # Fedora base image
       # dockerfile: ./platypush/install/docker/fedora.Dockerfile
 
+    restart: "always"
+    command:
+      - platypush
+      - --redis-host
+      - redis
+      # Or, if you want to run Redis from the same container as Platypush,
+      # replace --redis-host redis with the line below
+      # - --start-redis
+
+    # Custom list of host devices that should be accessible to the container -
+    # e.g. an Arduino, an ESP-compatible microcontroller, a joystick etc.
+    # devices:
+    #   - /dev/ttyUSB0
+
+    # Uncomment if you need plugins that require access to low-level hardware
+    # (e.g. Bluetooth BLE or GPIO/SPI/I2C) if access to individual devices is
+    # not enough or isn't practical
+    # privileged: true
+    
     # Copy .env.example to .env and modify as needed
     # env_file:
     #   - .env
@@ -40,7 +44,13 @@ services:
       # expose it
       - "8008:8008"
 
-    volumes:
-      - /path/to/your/config.yaml:/etc/platypush
-      - /path/to/a/workdir:/var/lib/platypush
+    # volumes:
+      # Replace with a path that contains/will contain your config.yaml file
+      # - /path/to/your/config:/etc/platypush
+      # Replace with a path that contains/will contain your working directory
+      # - /path/to/a/workdir:/var/lib/platypush
+      # Optionally, use an external volume for the cache
       # - /path/to/a/cachedir:/var/cache/platypush
+
+  redis:
+    image: redis

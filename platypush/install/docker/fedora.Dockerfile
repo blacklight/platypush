@@ -7,20 +7,19 @@ ENV DOCKER_CTX=1
 
 RUN --mount=type=bind,source=.,target=/curdir \
     # If the current directory is the Platypush repository, then we can copy the existing files \
-    if grep 'name="platypush"' /curdir/pyproject.toml >/dev/null 2>&1; \
+    if grep -E 'name\s*=\s*"platypush"' /curdir/pyproject.toml >/dev/null 2>&1; \
     then \
       cp -r /curdir /install; \
     # Otherwise, we need to clone the repository \
     else \
       dnf install -y git && \
       git clone https://github.com/blacklight/platypush.git /install; \
-    fi
+    fi; \
+    dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
 
-# Enable the RPM Fusion repository
-RUN dnf install -y https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm && \
-  /install/platypush/install/scripts/fedora/install.sh && \
+RUN /install/platypush/install/scripts/fedora/install.sh && \
   cd /install && \
-  pip install -U --no-input --no-cache-dir . --break-system-packages && \
+  pip install -U --no-input --no-cache-dir --no-deps . --break-system-packages && \
   rm -rf /install && \
   rm -rf /root/.cache && \
   dnf remove -y build-essential git && \

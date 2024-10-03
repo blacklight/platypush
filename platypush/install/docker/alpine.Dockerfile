@@ -7,7 +7,7 @@ WORKDIR /var/lib/platypush
 RUN --mount=type=bind,source=.,target=/curdir \
     apk update && \
     # If the current directory is the Platypush repository, then we can copy the existing files \
-    if grep 'name="platypush"' /curdir/pyproject.toml >/dev/null 2>&1; \
+    if grep -E 'name\s*=\s*"platypush"' /curdir/pyproject.toml >/dev/null 2>&1; \
     then \
       cp -r /curdir /install; \
     # Otherwise, we need to clone the repository \
@@ -18,10 +18,9 @@ RUN --mount=type=bind,source=.,target=/curdir \
 
 RUN /install/platypush/install/scripts/alpine/install.sh && \
     cd /install && \
-    pip install -U --no-input --no-cache-dir . --break-system-packages && \
+    pip install -U --no-input --no-cache-dir --no-deps . croniter --break-system-packages && \
     rm -rf /install && \
     rm -rf /root/.cache && \
-    find / | grep -E "(/__pycache__$|\.pyc$|\.pyo$)" | xargs rm -rf && \
     apk del gcc git && \
     apk cache clean && \
     rm -rf /var/cache/apk/* && \
