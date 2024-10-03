@@ -26,17 +26,17 @@
                        @delete="() => delete procedures[procedure.name]" />
           </div>
         </div>
-
-        <ProcedureEditor :value="newProcedure"
-                         title="Add Procedure"
-                         :with-name="true"
-                         :with-save="true"
-                         :read-only="false"
-                         :visible="showNewProcedureEditor"
-                         @input="updateProcedure(newProcedure)"
-                         @close="resetNewProcedure"
-                         v-if="showNewProcedureEditor" />
       </div>
+
+      <ProcedureEditor :value="newProcedure"
+                       title="Add Procedure"
+                       :with-name="true"
+                       :with-save="true"
+                       :read-only="false"
+                       :visible="showNewProcedureEditor"
+                       @input="updateProcedure(newProcedure)"
+                       @close="resetNewProcedure"
+                       v-if="showNewProcedureEditor" />
 
       <FloatingButton icon-class="fa fa-plus"
                       text="Add Procedure"
