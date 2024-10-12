@@ -39,6 +39,11 @@ class EventProcessor:
         self._hooks_by_name[name] = hook
         self._hooks_by_value_id[hook_id] = hook
 
+    def remove_hook(self, name: str):
+        hook = self._hooks_by_name.pop(name, None)
+        if hook:
+            del self._hooks_by_value_id[id(hook)]
+
     @staticmethod
     def notify_web_clients(event):
         backends = Config.get_backends()
