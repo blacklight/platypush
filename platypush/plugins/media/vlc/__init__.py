@@ -54,6 +54,8 @@ class MediaVlcPlugin(MediaPlugin):
         self._on_stop_event = threading.Event()
         self._stop_lock = threading.RLock()
         self._latest_resource: Optional[MediaResource] = None
+        self._playing_url: Optional[str] = None
+        self._latest_player_state: PlayerState = PlayerState.STOP
 
     @classmethod
     def _watched_event_types(cls):
@@ -84,8 +86,9 @@ class MediaVlcPlugin(MediaPlugin):
         ]
 
     def _init_vlc(self, resource: MediaResource, cache_streams: bool):
-        if self._instance:
-            self.logger.info('Another instance is running, waiting for it to terminate')
+        if self._player:
+            self.logger.info('Releasing previous VLC player instance')
+            self._close_player()
             self._on_stop_event.wait()
 
         for k, v in self._env.items():
@@ -131,7 +134,7 @@ class MediaVlcPlugin(MediaPlugin):
         if self._latest_resource:
             self.logger.debug('Closing latest resource')
             self._latest_resource.close()
-            self._latest_resource = None
+            self._playing_url = None
 
     def _close_player(self):
         if self._player:
@@ -192,16 +195,33 @@ class MediaVlcPlugin(MediaPlugin):
             from vlc import EventType
 
             self.logger.debug('Received VLC event: %s', event.type)
-            if event.type == EventType.MediaPlayerPlaying:  # type: ignore
+            playing_url = None
+
+            if self._player:
+                media = self._player.get_media()
+                playing_url = media.get_mrl() if media else None
+
+            new_state = self._player_state
+            old_state = self._latest_player_state
+
+            if event.type == EventType.MediaPlayerOpening or playing_url != self._playing_url:  # type: ignore
+                self._post_event(
+                    NewPlayingMediaEvent, resource=self._get_current_resource()
+                )
+            elif event.type == EventType.MediaPlayerPlaying or (  # type: ignore
+                new_state == PlayerState.PLAY and new_state != old_state
+            ):
                 self._on_stop_event.clear()
                 self._post_event(MediaPlayEvent, resource=self._get_current_resource())
-            elif event.type == EventType.MediaPlayerPaused:  # type: ignore
+            elif event.type == EventType.MediaPlayerPaused or (  # type: ignore
+                new_state == PlayerState.PAUSE and new_state != old_state
+            ):
                 self._on_stop_event.clear()
                 self._post_event(MediaPauseEvent)
             elif event.type in (
                 EventType.MediaPlayerStopped,  # type: ignore
                 EventType.MediaPlayerEndReached,  # type: ignore
-            ):
+            ) or (new_state == PlayerState.STOP and new_state != old_state):
                 self._on_stop_event.set()
                 self._post_event(MediaStopEvent)
                 self._reset_state()
@@ -212,13 +232,13 @@ class MediaVlcPlugin(MediaPlugin):
                     EventType.MediaPlayerMediaChanged,  # type: ignore
                 )
             ):
-                if event.type == EventType.MediaPlayerMediaChanged:  # type: ignore
-                    self._post_event(NewPlayingMediaEvent, resource=self._title)
-            elif event.type == EventType.MediaPlayerLengthChanged:  # type: ignore
                 self._post_event(
                     NewPlayingMediaEvent, resource=self._get_current_resource()
                 )
-            elif self._player and event.type == EventType.MediaPlayerTimeChanged:  # type: ignore
+            elif self._player and event.type in {
+                EventType.MediaPlayerLengthChanged,  # type: ignore
+                EventType.MediaPlayerTimeChanged,  # type: ignore
+            }:
                 pos = float(self._player.get_time() / 1000)
                 if self._latest_seek is None or abs(pos - self._latest_seek) > 5:
                     self._post_event(MediaSeekEvent, position=pos)
@@ -234,6 +254,9 @@ class MediaVlcPlugin(MediaPlugin):
             elif event.type == EventType.MediaPlayerEncounteredError:  # type: ignore
                 self.logger.error('VLC media player encountered an error')
                 self._reset_state()
+
+            self._playing_url = playing_url
+            self._latest_player_state = new_state
 
         return callback
 
@@ -270,10 +293,9 @@ class MediaVlcPlugin(MediaPlugin):
         cache_streams = (
             cache_streams if cache_streams is not None else self.cache_streams
         )
-        media = self._get_resource(resource, metadata=metadata)
-        self._latest_resource = media
-        self.quit()
-        self._init_vlc(media, cache_streams=cache_streams)
+        self._latest_resource = self._get_resource(resource, metadata=metadata)
+        self._init_vlc(self._latest_resource, cache_streams=cache_streams)
+
         if subtitles and self._player:
             if subtitles.startswith('file://'):
                 subtitles = subtitles[len('file://') :]
@@ -282,14 +304,13 @@ class MediaVlcPlugin(MediaPlugin):
         if self._player:
             self._player.play()
 
-        if self.volume:
-            self.set_volume(volume=self.volume)
-
         if fullscreen or self._default_fullscreen:
             self.set_fullscreen(True)
 
         if volume is not None or self._default_volume is not None:
             self.set_volume(volume if volume is not None else self._default_volume)
+        elif self.volume is not None:
+            self.set_volume(volume=self.volume)
 
         return self.status()
 
@@ -487,22 +508,16 @@ class MediaVlcPlugin(MediaPlugin):
             }
 
         """
-        import vlc
-
         with self._stop_lock:
-            if not (self._player and self._latest_resource):
+            if not (self._player and self._playing_url):
                 return {'state': PlayerState.STOP.value}
 
-            status = self._latest_resource.to_dict()
-            vlc_state = self._player.get_state()
-
-            if vlc_state == vlc.State.Playing:  # type: ignore
-                status['state'] = PlayerState.PLAY.value
-            elif vlc_state == vlc.State.Paused:  # type: ignore
-                status['state'] = PlayerState.PAUSE.value
-            else:
-                status['state'] = PlayerState.STOP.value
-
+            status: dict = (
+                self._latest_resource.to_dict()
+                if self._latest_resource
+                else {'url': self._playing_url}
+            )
+            status['state'] = self._player_state.value
             status['position'] = (
                 float(self._player.get_time() / 1000)
                 if self._player.get_time() is not None
@@ -525,11 +540,30 @@ class MediaVlcPlugin(MediaPlugin):
             status['path'] = status['url']
             status['pause'] = status['state'] == PlayerState.PAUSE.value
             status['percent_pos'] = self._player.get_position() * 100
-            status['filename'] = self._latest_resource.filename
+            status['filename'] = (
+                self._latest_resource.filename
+                if self._latest_resource
+                else self._playing_url
+            )
             status['title'] = self._title
             status['volume'] = self._player.audio_get_volume()
             status['volume_max'] = 100
             return status
+
+    @property
+    def _player_state(self) -> PlayerState:
+        import vlc
+
+        if not self._player:
+            return PlayerState.STOP
+
+        vlc_state = self._player.get_state()
+        if vlc_state == vlc.State.Playing:  # type: ignore
+            return PlayerState.PLAY
+        elif vlc_state == vlc.State.Paused:  # type: ignore
+            return PlayerState.PAUSE
+
+        return PlayerState.STOP
 
     def on_stop(self, callback):
         self._on_stop_callbacks.append(callback)
