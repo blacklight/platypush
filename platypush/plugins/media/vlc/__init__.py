@@ -53,6 +53,7 @@ class MediaVlcPlugin(MediaPlugin):
         self._monitor_thread: Optional[threading.Thread] = None
         self._on_stop_event = threading.Event()
         self._stop_lock = threading.RLock()
+        self._latest_resource: Optional[MediaResource] = None
 
     @classmethod
     def _watched_event_types(cls):
@@ -135,19 +136,37 @@ class MediaVlcPlugin(MediaPlugin):
     def _close_player(self):
         if self._player:
             self.logger.info('Releasing VLC player resource')
-            self._player.stop()
 
-            if self._player.get_media():
-                self.logger.debug('Releasing VLC media resource')
-                self._player.get_media().release()
+            try:
+                self._player.stop()
+            except Exception as e:
+                self.logger.warning('Could not stop the VLC player: %s', str(e))
+
+            if self._player:
+                try:
+                    media = self._player.get_media()
+                    if media:
+                        self.logger.debug('Releasing VLC media resource')
+                        media.release()
+                except Exception as e:
+                    self.logger.warning('Could not release the VLC media: %s', str(e))
 
             self.logger.debug('Releasing VLC player instance')
-            self._player.release()
+
+            try:
+                self._player.release()
+            except Exception as e:
+                self.logger.warning('Could not release the VLC player: %s', str(e))
+
             self._player = None
 
         if self._instance:
             self.logger.info('Releasing VLC instance resource')
-            self._instance.release()
+            try:
+                self._instance.release()
+            except Exception as e:
+                self.logger.warning('Could not release the VLC instance: %s', str(e))
+
             self._instance = None
 
     @staticmethod
