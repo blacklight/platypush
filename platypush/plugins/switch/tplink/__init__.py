@@ -189,7 +189,7 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
         try:
             return device.current_consumption()
         except SmartDeviceException as e:
-            self.logger.warning(
+            self.logger.debug(
                 'Could not retrieve current consumption for device %s: %s',
                 device.host,
                 e,
