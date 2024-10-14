@@ -185,10 +185,20 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
         device = self._get_device(device)
         return self._set(device, not device.is_on)
 
-    @staticmethod
-    def _serialize(device: SmartDevice) -> dict:
+    def _current_consumption(self, device: SmartDevice) -> Optional[float]:
+        try:
+            return device.current_consumption()
+        except SmartDeviceException as e:
+            self.logger.warning(
+                'Could not retrieve current consumption for device %s: %s',
+                device.host,
+                e,
+            )
+            return None
+
+    def _serialize(self, device: SmartDevice) -> dict:
         return {
-            'current_consumption': device.current_consumption(),
+            'current_consumption': self._current_consumption(device),
             'id': device.host,
             'ip': device.host,
             'host': device.host,
