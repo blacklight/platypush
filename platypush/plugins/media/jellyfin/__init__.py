@@ -10,6 +10,7 @@ from platypush.schemas.media.jellyfin import (
     JellyfinCollectionSchema,
     JellyfinEpisodeSchema,
     JellyfinMovieSchema,
+    JellyfinPhotoSchema,
     JellyfinTrackSchema,
     JellyfinVideoSchema,
 )
@@ -153,29 +154,24 @@ class MediaJellyfinPlugin(Plugin):
         for result in search_results:
             if result['Type'] == 'Movie':
                 result = JellyfinMovieSchema().dump(result)
-                result['type'] = 'movie'  # type: ignore
             elif result['Type'] == 'Video':
                 result = JellyfinVideoSchema().dump(result)
-                result['type'] = 'video'  # type: ignore
+            elif result['Type'] == 'Photo':
+                result = JellyfinPhotoSchema().dump(result)
             elif result['Type'] == 'Episode':
                 result = JellyfinEpisodeSchema().dump(result)
-                result['type'] = 'episode'  # type: ignore
             elif result['Type'] == 'Audio':
                 result = JellyfinTrackSchema().dump(result)
-                result['type'] = 'audio'  # type: ignore
             elif result['Type'] == 'MusicArtist':
                 result = JellyfinArtistSchema().dump(result)
-                result['type'] = 'artist'  # type: ignore
             elif result['Type'] == 'MusicAlbum':
                 result = JellyfinAlbumSchema().dump(result)
-                result['type'] = 'album'  # type: ignore
             elif result['Type'] == 'Series':
                 serialized_results += self._flatten_series_result(result)
                 for r in serialized_results:
                     r['type'] = 'episode'
             elif result.get('IsFolder'):
                 result = JellyfinCollectionSchema().dump(result)
-                result['type'] = 'collection'  # type: ignore
 
             if isinstance(result, dict) and result.get('type'):
                 serialized_results.append(result)

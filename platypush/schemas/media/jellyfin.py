@@ -17,27 +17,28 @@ class JellyfinSchema(Schema):
             self.fields['id'].attribute = 'Id'
         if 'path' in self.fields:
             self.fields['path'].attribute = 'Path'
-        if 'created_at' in self.fields:
-            self.fields['created_at'].attribute = 'DateCreated'
         if 'name' in self.fields:
             self.fields['name'].attribute = 'Name'
-        elif 'title' in self.fields:
+        if 'title' in self.fields:
             self.fields['title'].attribute = 'Name'
 
-    @post_dump
-    def gen_img_url(self, data: dict, **_) -> dict:
-        if 'image' in self.fields and data.get('id') and not data.get('image'):
-            plugin = get_plugin('media.jellyfin')
-            assert plugin, 'The media.jellyfin plugin is not configured'
-            data['image'] = (
-                plugin.server + f'/Items/{data["id"]}'  # type: ignore
-                '/Images/Primary?fillHeight=333&fillWidth=222&quality=96'
-            )
+    @property
+    def _plugin(self):
+        p = get_plugin('media.jellyfin')
+        assert p, 'The media.jellyfin plugin is not configured'
+        return p
 
-        return data
+    @property
+    def _server(self):
+        return self._plugin.server
+
+    @property
+    def _api_key(self):
+        return self._plugin._api_key  # pylint: disable=protected-access
 
     @pre_dump
     def _gen_video_url(self, data, **_):
+        data = data or {}
         if data.get('MediaType') != 'Video':
             return data
 
@@ -59,27 +60,35 @@ class JellyfinSchema(Schema):
 
             video_format = list(available_containers)[0]
 
-        plugin = get_plugin('media.jellyfin')
-        assert plugin, 'The media.jellyfin plugin is not configured'
         data['url'] = (
-            f'{plugin.server}/Videos/{data["Id"]}'
+            f'{self._server}/Videos/{data["Id"]}'
             f'/stream.{video_format}'
-            f'?Static=true&api_key={plugin._api_key}'
+            f'?Static=true&api_key={self._api_key}'
         )
 
         return data
 
     @pre_dump
     def _gen_audio_url(self, data, **_):
+        data = data or {}
         if data.get('MediaType') != 'Audio':
             return data
 
-        plugin = get_plugin('media.jellyfin')
-        assert plugin, 'The media.jellyfin plugin is not configured'
         data['url'] = (
-            f'{plugin.server}/Audio/{data["Id"]}'
-            f'/stream?Static=true&api_key={plugin._api_key}'
+            f'{self._server}/Audio/{data["Id"]}'
+            f'/stream?Static=true&api_key={self._api_key}'
         )
+
+        return data
+
+    @post_dump
+    def gen_img_url(self, data: dict, **_) -> dict:
+        data = data or {}
+        if 'image' in self.fields and data.get('id') and not data.get('image'):
+            data['image'] = (
+                self._server + f'/Items/{data["id"]}'  # type: ignore
+                '/Images/Primary?fillHeight=333&fillWidth=222&quality=96'
+            )
 
         return data
 
@@ -91,11 +100,13 @@ class JellyfinSchema(Schema):
 
 
 class JellyfinArtistSchema(JellyfinSchema, MediaArtistSchema, MediaCollectionSchema):
+    type = fields.Constant('artist')
     item_type = fields.Constant('artist')
     collection_type = fields.Constant('music')
 
 
 class JellyfinTrackSchema(JellyfinSchema):
+    type = fields.Constant('audio')
     item_type = fields.Constant('track')
     id = fields.String(attribute='Id')
     url = fields.URL()
@@ -138,6 +149,7 @@ class JellyfinTrackSchema(JellyfinSchema):
 
 class JellyfinAlbumSchema(JellyfinSchema, MediaCollectionSchema):
     id = fields.String(attribute='Id')
+    type = fields.Constant('album')
     item_type = fields.Constant('album')
     collection_type = fields.Constant('music')
     name = fields.String(attribute='Name')
@@ -163,12 +175,16 @@ class JellyfinCollectionSchema(JellyfinSchema, MediaCollectionSchema):
         super().__init__(*args, **kwargs)
         self.fields['type'].attribute = 'CollectionType'
 
+    type = fields.Constant('collection')
+    item_type = fields.Constant('collection')
     collection_type = fields.String(attribute='CollectionType')
     image = fields.String()
     created_at = DateTime(attribute='DateCreated')
 
 
 class JellyfinVideoSchema(JellyfinSchema, MediaVideoSchema):
+    type = fields.Constant('video')
+    item_type = fields.Constant('video')
     path = fields.String(attribute='Path')
     duration = fields.Number(attribute='RunTimeTicks')
     community_rating = fields.Number(attribute='CommunityRating')
@@ -233,10 +249,14 @@ class JellyfinVideoSchema(JellyfinSchema, MediaVideoSchema):
 
 
 class JellyfinMovieSchema(JellyfinVideoSchema):
-    pass
+    type = fields.Constant('movie')
+    item_type = fields.Constant('movie')
 
 
 class JellyfinEpisodeSchema(JellyfinVideoSchema):
+    type = fields.Constant('episode')
+    item_type = fields.Constant('episode')
+
     @pre_dump
     def _normalize_episode_name(self, data: dict, **_) -> dict:
         prefix = ''
@@ -253,4 +273,35 @@ class JellyfinEpisodeSchema(JellyfinVideoSchema):
             prefix += f'{" " if prefix else ""}[{episode_index}] '
 
         data['Name'] = prefix + data.get('Name', '')
+        return data
+
+
+class JellyfinPhotoSchema(JellyfinSchema):
+    id = fields.String(attribute='Id')
+    name = fields.String(attribute='Name')
+    url = fields.URL()
+    type = fields.Constant('photo')
+    item_type = fields.Constant('photo')
+    path = fields.String(attribute='Path')
+    created_at = DateTime(attribute='PremiereDate')
+    width = fields.Number(attribute='Width')
+    height = fields.Number(attribute='Height')
+    camera_make = fields.String(attribute='CameraMake')
+    camera_model = fields.String(attribute='CameraModel')
+    software = fields.String(attribute='Software')
+    exposure_time = fields.Float(attribute='ExposureTime')
+    focal_length = fields.Float(attribute='FocalLength')
+    image_orientation = fields.String(attribute='ImageOrientation')
+    aperture = fields.Float(attribute='Aperture')
+    iso = fields.Number(attribute='IsoSpeedRating')
+
+    @pre_dump
+    def _gen_photo_url(self, data, **_):
+        data = data or {}
+        base_url = f'{self._server}/Items/{data["Id"]}'
+        data['preview_url'] = (
+            f'{base_url}/Images/Primary?api_key={self._api_key}'
+            f'&fillHeight=489&fillWidth=367&quality=96'
+        )
+        data['url'] = f'{base_url}/Download?api_key={self._api_key}'
         return data
