@@ -44,6 +44,7 @@ export default {
     'download-audio',
     'play',
     'play-with-opts',
+    'select',
   ],
 
   data() {
@@ -84,6 +85,8 @@ export default {
           return 'movies'
         case 'homevideos':
           return 'videos'
+        case 'music':
+          return 'music'
         default:
           return 'index'
       }

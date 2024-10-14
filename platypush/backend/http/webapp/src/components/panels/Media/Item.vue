@@ -1,35 +1,51 @@
 <template>
   <div
     class="item media-item"
-    :class="{selected: selected}"
+    :class="{selected: selected, 'list': listView}"
     @click.right.prevent="$refs.dropdown.toggle()"
     v-if="!hidden">
-    <div class="thumbnail">
+
+    <div class="thumbnail" v-if="!listView">
       <MediaImage :item="item" @play="$emit('play')" @select="$emit('select')" />
     </div>
 
     <div class="body">
       <div class="row title">
-        <div class="col-11 left side" v-text="item.title || item.name" @click="$emit('select')" />
-        <div class="col-1 right side">
-          <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" ref="dropdown">
-            <DropdownItem icon-class="fa fa-play" text="Play" @input="$emit('play')"
-                          v-if="item.type !== 'torrent'" />
-            <DropdownItem icon-class="fa fa-play" text="Play (With Cache)"
-                          @input="$emit('play-with-opts', {item: item, opts: {cache: true}})"
-                          v-if="item.type === 'youtube'" />
-            <DropdownItem icon-class="fa fa-download" text="Download" @input="$emit('download')"
-                          v-if="(item.type === 'torrent' || item.type === 'youtube') && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
-            <DropdownItem icon-class="fa fa-volume-high" text="Download Audio" @input="$emit('download-audio')"
-                          v-if="item.type === 'youtube' && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
-            <DropdownItem icon-class="fa fa-list" text="Add to playlist" @input="$emit('add-to-playlist')"
-                          v-if="item.type === 'youtube'" />
-            <DropdownItem icon-class="fa fa-trash" text="Remove from playlist" @input="$emit('remove-from-playlist')"
-                          v-if="item.type === 'youtube' && playlist?.length" />
-            <DropdownItem icon-class="fa fa-window-maximize" text="View in browser" @input="$emit('view')"
-                          v-if="item.type === 'file'" />
-            <DropdownItem icon-class="fa fa-info-circle" text="Info" @input="$emit('select')" />
-          </Dropdown>
+        <div class="left side"
+             :class="{'col-11': !listView, 'col-10': listView }"
+             @click.stop="$emit('select')">
+          <span class="track-number" v-if="listView && item.track_number">
+            {{ item.track_number }}
+          </span>
+
+          {{item.title || item.name}}
+        </div>
+
+        <div class="right side" :class="{'col-1': !listView, 'col-2': listView }">
+          <span class="duration" v-if="item.duration && listView">
+            <span v-text="formatDuration(item.duration, true)" />
+          </span>
+
+          <span class="actions">
+            <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" ref="dropdown">
+              <DropdownItem icon-class="fa fa-play" text="Play" @input="$emit('play')"
+                            v-if="item.type !== 'torrent'" />
+              <DropdownItem icon-class="fa fa-play" text="Play (With Cache)"
+                            @input="$emit('play-with-opts', {item: item, opts: {cache: true}})"
+                            v-if="item.type === 'youtube'" />
+              <DropdownItem icon-class="fa fa-download" text="Download" @input="$emit('download')"
+                            v-if="(item.type === 'torrent' || item.type === 'youtube') && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
+              <DropdownItem icon-class="fa fa-volume-high" text="Download Audio" @input="$emit('download-audio')"
+                            v-if="item.type === 'youtube' && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
+              <DropdownItem icon-class="fa fa-list" text="Add to playlist" @input="$emit('add-to-playlist')"
+                            v-if="item.type === 'youtube'" />
+              <DropdownItem icon-class="fa fa-trash" text="Remove from playlist" @input="$emit('remove-from-playlist')"
+                            v-if="item.type === 'youtube' && playlist?.length" />
+              <DropdownItem icon-class="fa fa-window-maximize" text="View in browser" @input="$emit('view')"
+                            v-if="item.type === 'file'" />
+              <DropdownItem icon-class="fa fa-info-circle" text="Info" @input="$emit('select')" />
+            </Dropdown>
+          </span>
         </div>
       </div>
 
@@ -40,11 +56,11 @@
         </a>
       </div>
 
-      <div class="row creation-date" v-if="item.created_at">
+      <div class="row creation-date" v-if="item.created_at && showDate">
         {{ formatDateTime(item.created_at, true) }}
       </div>
 
-      <div class="row creation-date" v-text="item.year" v-else-if="item.year" />
+      <div class="row creation-date" v-text="item.year" v-else-if="item.year && showDate" />
 
       <div class="row ratings" v-if="item.critic_rating != null || item.community_rating != null">
         <span class="rating" title="Critic rating" v-if="item.critic_rating != null">
@@ -94,13 +110,23 @@ export default {
       default: false,
     },
 
-    selected: {
+    listView: {
       type: Boolean,
       default: false,
     },
 
     playlist: {
       type: String,
+    },
+
+    selected: {
+      type: Boolean,
+      default: false,
+    },
+
+    showDate: {
+      type: Boolean,
+      default: true,
     },
   },
 
@@ -258,6 +284,48 @@ export default {
 
       i {
         margin-right: .25em;
+      }
+    }
+  }
+
+  &.list {
+    max-height: none;
+    border-bottom: 1px solid $default-shadow-color !important;
+    margin: 0;
+    padding: 0.25em 0.5em;
+
+    &:hover {
+      text-decoration: none;
+    }
+
+    .side {
+      display: flex;
+      align-items: center;
+
+      &.left {
+        max-height: none;
+        flex-direction: row;
+        overflow: visible;
+      }
+
+      &.right {
+        display: flex;
+        justify-content: flex-end;
+        margin-right: 0;
+      }
+
+      .duration {
+        font-size: .9em;
+        opacity: .75;
+        margin-right: 1em;
+      }
+
+      .track-number {
+        display: inline-flex;
+        font-size: .9em;
+        margin-right: 1em;
+        color: $default-fg-2;
+        justify-content: flex-end;
       }
     }
   }

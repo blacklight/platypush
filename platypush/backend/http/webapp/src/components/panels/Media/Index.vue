@@ -95,6 +95,10 @@
               />
             </div>
           </div>
+
+          <div class="media-loading-indicator" v-if="opening">
+            <Loading />
+          </div>
         </main>
       </MediaView>
 
@@ -149,6 +153,7 @@ import Utils from "@/Utils";
 import Browser from "@/components/panels/Media/Browser";
 import Header from "@/components/panels/Media/Header";
 import Info from "@/components/panels/Media/Info";
+import Loading from "@/components/Loading";
 import MediaDownloads from "@/components/panels/Media/Downloads";
 import MediaUtils from "@/components/Media/Utils";
 import MediaView from "@/components/Media/View";
@@ -166,6 +171,7 @@ export default {
     Browser,
     Header,
     Info,
+    Loading,
     MediaDownloads,
     MediaView,
     Modal,
@@ -205,6 +211,7 @@ export default {
       forceShowNav: false,
       infoTrack: null,
       loading: false,
+      opening: false,
       prevSelectedView: null,
       results: [],
       selectedPlayer: null,
@@ -324,7 +331,7 @@ export default {
         return
       }
 
-      this.loading = true
+      this.opening = true
 
       try {
         if (!this.selectedPlayer.component.supports(item))
@@ -334,9 +341,9 @@ export default {
           item, this.selectedSubtitles, this.selectedPlayer, opts
         )
 
-        await this.refresh()
+        await this.refresh(item)
       } finally {
-        this.loading = false
+        this.opening = false
       }
     },
 
@@ -383,15 +390,36 @@ export default {
       await this.download(item, {onlyAudio: true})
     },
 
-    async refresh() {
-      this.selectedPlayer.status = await this.selectedPlayer.component.status(this.selectedPlayer)
+    async refresh(item) {
+      let newStatus = {
+        ...(await this.selectedPlayer.component.status(this.selectedPlayer)),
+        ...(item || {}),
+      }
+
+      this.setStatus(newStatus)
+    },
+
+    setStatus(status) {
+      const curStatus = this.selectedPlayer?.status || {}
+      let newStatus = {}
+
+      if (curStatus.resource === status.resource) {
+        newStatus = {
+          ...curStatus,
+          ...status,
+        }
+      } else {
+        newStatus = status
+      }
+
+      this.selectedPlayer.status = newStatus
     },
 
     onStatusUpdate(status) {
       if (!this.selectedPlayer)
         return
 
-      this.selectedPlayer.status = status
+      this.setStatus(status)
     },
 
     onPlayUrlModalOpen() {
@@ -558,17 +586,7 @@ export default {
 
     async playUrl(url) {
       this.urlPlay = url
-      this.loading = true
-
-      try {
-        await this.play({
-          url: url,
-        })
-
-        this.$refs.playUrlModal.close()
-      } finally {
-        this.loading = false
-      }
+      await this.play({ url: url })
     },
 
     async refreshDownloads() {
@@ -788,6 +806,7 @@ export default {
     height: 100%;
     display: flex;
     flex-direction: row-reverse;
+    position: relative;
 
     .view-container {
       display: flex;
@@ -804,6 +823,24 @@ export default {
 
       &.expanded-header {
         height: calc(100% - #{$media-header-height} - #{$filter-header-height} - #{$media-ctrl-panel-height});
+      }
+    }
+
+    :deep(.media-loading-indicator) {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5em;
+      height: 5em;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+
+      .loading {
+        border-radius: 50%;
       }
     }
   }

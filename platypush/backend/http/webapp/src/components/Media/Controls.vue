@@ -4,7 +4,7 @@
          @click.prevent="searchAlbum"
          v-if="status?.state !== 'stop'">
       <div class="remote-image-container" v-if="trackImage">
-        <img class="image" :src="trackImage" :alt="track.title">
+        <img class="image" :src="trackImage" :alt="trackTitle">
       </div>
 
       <div class="icon-container" v-else>
@@ -59,18 +59,18 @@
     <div class="track-container col-s-9 col-m-9 col-l-3">
       <div class="track-info" @click="$emit('info', track)" v-if="track && status?.state !== 'stop'">
         <div class="img-container" v-if="trackImage">
-          <img class="image from desktop" :src="trackImage" :alt="track.title">
+          <img class="image from desktop" :src="trackImage" :alt="trackTitle">
         </div>
 
         <div class="title-container">
           <div class="title" v-if="status.state === 'play' || status.state === 'pause'">
-            <a :href="$route.fullPath" v-text="track.title?.length ? track.title : '[No Title]'"
+            <a :href="$route.fullPath" v-text="trackTitle"
                @click.prevent="searchAlbum" v-if="track.album"></a>
-            <a v-text="track.title?.length ? track.title : '[No Title]'" v-else-if="track.url"></a>
-            <span v-text="track.title?.length ? track.title : '[No Title]' " v-else></span>
+            <a v-text="trackTitle" v-else-if="track.url"></a>
+            <span v-text="trackTitle" v-else></span>
           </div>
-          <div class="artist" v-if="track.artist?.length && (status.state === 'play' || status.state === 'pause')">
-            <a v-text="track.artist" @click.prevent="searchArtist"></a>
+          <div class="artist" v-if="trackArtistName?.length && (status.state === 'play' || status.state === 'pause')">
+            <a v-text="trackArtistName" @click.prevent="searchArtist"></a>
           </div>
         </div>
       </div>
@@ -206,11 +206,26 @@ export default {
       return null
     },
 
+    trackArtistId() {
+      return typeof this.track?.artist === 'object' ? this.track.artist.id : null
+    },
+
+    trackArtistName() {
+      if (typeof this.track?.artist === 'string')
+        return this.track.artist
+
+      return this.track?.artist?.name || this.track?.artist?.title
+    },
+
     trackImage() {
       if (this.track?.images?.length)
         return this.track.images[0].url
 
       return this.track?.image || this.image
+    },
+
+    trackTitle() {
+      return this.track?.title || this.track?.name || '[No Title]'
     },
   },
 
@@ -235,11 +250,11 @@ export default {
     },
 
     searchArtist() {
-      if (!this.track?.artist)
+      if (!this.trackArtistName?.length)
         return
 
       const args = {
-        artist: this.track.artist,
+        artist: this.trackArtistName,
       }
 
       if (this.track.artist_uri)

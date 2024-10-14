@@ -16,6 +16,10 @@
         <div class="name" v-if="fallbackImageCollections[collection.id] || parentId">
           <h2>{{ collection.name }}</h2>
         </div>
+
+        <div class="float bottom-right" v-if="collection.year">
+          <span>{{ collection.year }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -60,7 +64,17 @@ export default {
     filteredItems() {
       return Object.values(this.items).filter(
         (item) => !this.filter || item.name.toLowerCase().includes(this.filter.toLowerCase())
-      ).sort((a, b) => a.name.localeCompare(b.name))
+      ).sort((a, b) => {
+        if (a.item_type === 'album' && b.item_type === 'album') {
+          if (a.year && b.year) {
+            if (a.year !== b.year) {
+              return b.year - a.year
+            }
+          }
+        }
+
+        return a.name.localeCompare(b.name)
+      })
     },
   },
 
@@ -77,11 +91,28 @@ export default {
 
 .index {
   .item {
+    position: relative;
+
     h2 {
       font-size: 1.25em;
       font-weight: bold;
       overflow: auto;
       text-overflow: ellipsis;
+    }
+
+    .float {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.5);
+      color: white;
+      z-index: 1;
+      padding: 0.25em;
+      font-size: 0.9em;
+      border-radius: 0.5em;
+
+      &.bottom-right {
+        right: 0;
+        bottom: 0;
+      }
     }
   }
 

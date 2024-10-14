@@ -2,12 +2,23 @@
   <div class="videos index">
     <Loading v-if="isLoading" />
 
+    <div class="wrapper music-wrapper" v-else-if="collection?.collection_type === 'music'">
+      <Music :collection="collection"
+             :filter="filter"
+             :loading="isLoading"
+             :path="path"
+             @play="$emit('play', $event)"
+             @play-with-opts="$emit('play-with-opts', $event)"
+             @select="selectedResult = $event; $emit('select', $event)"
+             @select-collection="selectCollection" />
+    </div>
+
     <NoItems :with-shadow="false"
              v-else-if="!items?.length">
       No videos found.
     </NoItems>
 
-    <div class="items-wrapper" v-else>
+    <div class="wrapper items-wrapper" v-else>
       <Collections :collection="collection"
                    :filter="filter"
                    :items="collections"
@@ -28,10 +39,6 @@
                @select="selectedResult = $event"
                v-if="mediaItems.length > 0" />
     </div>
-
-    <SortButton :value="sort"
-                @input="sort = $event"
-                v-if="items.length > 0" />
   </div>
 </template>
 
@@ -39,9 +46,9 @@
 import Collections from "@/components/panels/Media/Providers/Jellyfin/Collections";
 import Loading from "@/components/Loading";
 import Mixin from "@/components/panels/Media/Providers/Jellyfin/Mixin";
+import Music from "../Music/Index";
 import NoItems from "@/components/elements/NoItems";
 import Results from "@/components/panels/Media/Results";
-import SortButton from "@/components/panels/Media/Providers/Jellyfin/components/SortButton";
 
 export default {
   mixins: [Mixin],
@@ -49,9 +56,9 @@ export default {
   components: {
     Collections,
     Loading,
+    Music,
     NoItems,
     Results,
-    SortButton,
   },
 
   computed: {
@@ -92,18 +99,34 @@ export default {
     },
 
     async refresh() {
+      // Don't fetch items if we're in the music view -
+      // we'll fetch them in the Music component
+      if (this.collection?.collection_type === 'music')
+        return
+
       this.loading_ = true
       try {
-        this.items = this.collection?.id ?
-          (
-            await this.request('media.jellyfin.get_items', {
+        if (this.collection?.collection_type === 'tvshows') {
+          this.items = (
+            await this.request('media.jellyfin.get_collections', {
               parent_id: this.collection.id,
-              limit: 5000,
             })
-          ) : (await this.request('media.jellyfin.get_collections')).map((collection) => ({
+          ).map((collection) => ({
             ...collection,
             item_type: 'collection',
           }))
+        } else {
+          this.items = this.collection?.id ?
+            (
+              await this.request('media.jellyfin.get_items', {
+                parent_id: this.collection.id,
+                limit: 5000,
+              })
+            ) : (await this.request('media.jellyfin.get_collections')).map((collection) => ({
+              ...collection,
+              item_type: 'collection',
+            }))
+        }
       } finally {
         this.loading_ = false
       }
@@ -135,6 +158,10 @@ export default {
     .items {
       overflow: hidden;
     }
+  }
+
+  .music-wrapper {
+    height: 100%;
   }
 }
 </style>
