@@ -5,7 +5,7 @@
       <span class="text" v-text="text" v-if="text" />
     </button>
 
-    <div class="body-container hidden" ref="dropdownContainer">
+    <div class="body-container" :class="{ hidden: !visible }" ref="dropdownContainer">
       <DropdownBody :id="id"
                     :keepOpenOnItemClick="keepOpenOnItemClick"
                     :style="style"
@@ -143,7 +143,6 @@ export default {
         this.$el.appendChild(element)
 
       this.visible = true
-      this.$refs.dropdownContainer.classList.remove('hidden')
       this.$nextTick(this.adjustDropdownPos)
     },
 
@@ -179,7 +178,6 @@ export default {
       element.style.top = `${pos.top}px`
       element.style.left = `${pos.left}px`
       bus.emit('dropdown-open', this.$refs.dropdown)
-      this.$refs.dropdownContainer.classList.add('hidden')
     },
 
     toggle(event) {
