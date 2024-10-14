@@ -3,6 +3,7 @@ import logging
 from marshmallow import Schema, fields, pre_dump, post_dump
 
 from platypush.context import get_plugin
+from platypush.schemas import DateTime
 
 from . import MediaArtistSchema, MediaCollectionSchema, MediaVideoSchema
 
@@ -14,6 +15,10 @@ class JellyfinSchema(Schema):
         super().__init__(*args, **kwargs)
         if 'id' in self.fields:
             self.fields['id'].attribute = 'Id'
+        if 'path' in self.fields:
+            self.fields['path'].attribute = 'Path'
+        if 'created_at' in self.fields:
+            self.fields['created_at'].attribute = 'DateCreated'
         if 'name' in self.fields:
             self.fields['name'].attribute = 'Name'
         elif 'title' in self.fields:
@@ -21,7 +26,7 @@ class JellyfinSchema(Schema):
 
     @post_dump
     def gen_img_url(self, data: dict, **_) -> dict:
-        if 'image' in self.fields:
+        if 'image' in self.fields and data.get('id') and not data.get('image'):
             plugin = get_plugin('media.jellyfin')
             assert plugin, 'The media.jellyfin plugin is not configured'
             data['image'] = (
@@ -38,7 +43,7 @@ class JellyfinSchema(Schema):
 
         video_format = None
         containers_priority = ['mp4', 'mkv', 'm4a', 'mov', 'avi']
-        available_containers = data.get('Container', '').split(',')
+        available_containers = set(data.get('Container', '').split(','))
         for container in containers_priority:
             if container in available_containers:
                 video_format = container
@@ -52,7 +57,7 @@ class JellyfinSchema(Schema):
 
                 return data
 
-            video_format = available_containers[0]
+            video_format = list(available_containers)[0]
 
         plugin = get_plugin('media.jellyfin')
         assert plugin, 'The media.jellyfin plugin is not configured'
@@ -64,9 +69,93 @@ class JellyfinSchema(Schema):
 
         return data
 
+    @pre_dump
+    def _gen_audio_url(self, data, **_):
+        if data.get('MediaType') != 'Audio':
+            return data
 
-class JellyfinArtistSchema(JellyfinSchema, MediaArtistSchema):
-    pass
+        plugin = get_plugin('media.jellyfin')
+        assert plugin, 'The media.jellyfin plugin is not configured'
+        data['url'] = (
+            f'{plugin.server}/Audio/{data["Id"]}'
+            f'/stream?Static=true&api_key={plugin._api_key}'
+        )
+
+        return data
+
+    @post_dump
+    def _normalize_duration(self, data: dict, **_) -> dict:
+        if data.get('duration'):
+            data['duration'] //= 1e7
+        return data
+
+
+class JellyfinArtistSchema(JellyfinSchema, MediaArtistSchema, MediaCollectionSchema):
+    item_type = fields.Constant('artist')
+    collection_type = fields.Constant('music')
+
+
+class JellyfinTrackSchema(JellyfinSchema):
+    item_type = fields.Constant('track')
+    id = fields.String(attribute='Id')
+    url = fields.URL()
+    duration = fields.Number(attribute='RunTimeTicks')
+    artist = fields.String()
+    album = fields.String(attribute='Album')
+    name = fields.String(attribute='Name')
+    track_number = fields.Number(attribute='IndexNumber')
+    disc_number = fields.Number(attribute='ParentIndexNumber')
+    year = fields.Number(attribute='ProductionYear')
+    image = fields.String()
+    created_at = DateTime(attribute='DateCreated')
+
+    @pre_dump
+    def _normalize_artist(self, data: dict, **_) -> dict:
+        artists = data.get('Artists', [])
+        if artists:
+            data['artist'] = ', '.join(artists)
+        return data
+
+    @post_dump
+    def _normalize_community_rating(self, data: dict, **_) -> dict:
+        if data.get('community_rating'):
+            data['community_rating'] *= 10
+        return data
+
+    @post_dump
+    def _normalize_duration(self, data: dict, **_) -> dict:
+        if data.get('duration'):
+            data['duration'] //= 1e7
+        return data
+
+    @post_dump
+    def _add_title(self, data: dict, **_) -> dict:
+        if not data.get('title'):
+            data['title'] = data.get('name')
+
+        return data
+
+
+class JellyfinAlbumSchema(JellyfinSchema, MediaCollectionSchema):
+    id = fields.String(attribute='Id')
+    item_type = fields.Constant('album')
+    collection_type = fields.Constant('music')
+    name = fields.String(attribute='Name')
+    artist = fields.Nested(JellyfinArtistSchema, attribute='AlbumArtist')
+    duration = fields.Number(attribute='RunTimeTicks')
+    year = fields.Number(attribute='ProductionYear')
+
+    @pre_dump
+    def _expand_artist(self, data: dict, **_) -> dict:
+        artists = data.get('AlbumArtists', [])
+        if not artists:
+            return data
+
+        data['AlbumArtist'] = {
+            'Id': artists[0].get('Id'),
+            'Name': artists[0].get('Name'),
+        }
+        return data
 
 
 class JellyfinCollectionSchema(JellyfinSchema, MediaCollectionSchema):
@@ -74,11 +163,36 @@ class JellyfinCollectionSchema(JellyfinSchema, MediaCollectionSchema):
         super().__init__(*args, **kwargs)
         self.fields['type'].attribute = 'CollectionType'
 
+    collection_type = fields.String(attribute='CollectionType')
+    image = fields.String()
+    created_at = DateTime(attribute='DateCreated')
+
 
 class JellyfinVideoSchema(JellyfinSchema, MediaVideoSchema):
+    path = fields.String(attribute='Path')
     duration = fields.Number(attribute='RunTimeTicks')
     community_rating = fields.Number(attribute='CommunityRating')
+    container = fields.String(
+        attribute='Container',
+        metadata={
+            'description': 'Available video containers',
+            'example': 'mp4',
+        },
+    )
     critic_rating = fields.Number(attribute='CriticRating')
+    created_at = DateTime(attribute='DateCreated')
+    imdb_url = fields.URL(
+        attribute='ExternalUrl',
+        metadata={
+            'description': 'IMDb URL',
+            'example': 'https://www.imdb.com/title/tt1234567/',
+        },
+    )
+
+    overview = fields.String(attribute='Overview')
+    genres = fields.List(fields.String, attribute='Genres')
+    tags = fields.List(fields.String, attribute='Tags')
+    trailer_url = fields.URL(attribute='TrailerUrl')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -95,6 +209,26 @@ class JellyfinVideoSchema(JellyfinSchema, MediaVideoSchema):
     def _normalize_duration(self, data: dict, **_) -> dict:
         if data.get('duration'):
             data['duration'] //= 1e7
+        return data
+
+    @pre_dump
+    def _extract_imdb_url(self, data: dict, **_) -> dict:
+        external_urls = data.get('ExternalUrls', [])
+        for url in external_urls:
+            if url.get('Name') == 'IMDb':
+                data['ExternalUrl'] = url.get('Url')
+                break
+
+        return data
+
+    @pre_dump
+    def _extract_trailer_url(self, data: dict, **_) -> dict:
+        trailers = data.get('RemoteTrailers', [])
+        for trailer in trailers:
+            if trailer.get('Type') == 'Trailer':
+                data['TrailerUrl'] = trailer.get('Url')
+                break
+
         return data
 
 
