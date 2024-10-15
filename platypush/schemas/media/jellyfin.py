@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class JellyfinSchema(Schema):
+    can_delete = fields.Boolean(attribute='CanDelete')
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if 'id' in self.fields:
@@ -134,12 +136,6 @@ class JellyfinTrackSchema(JellyfinSchema):
         return data
 
     @post_dump
-    def _normalize_duration(self, data: dict, **_) -> dict:
-        if data.get('duration'):
-            data['duration'] //= 1e7
-        return data
-
-    @post_dump
     def _add_title(self, data: dict, **_) -> dict:
         if not data.get('title'):
             data['title'] = data.get('name')
@@ -185,7 +181,6 @@ class JellyfinCollectionSchema(JellyfinSchema, MediaCollectionSchema):
 class JellyfinVideoSchema(JellyfinSchema, MediaVideoSchema):
     type = fields.Constant('video')
     item_type = fields.Constant('video')
-    path = fields.String(attribute='Path')
     duration = fields.Number(attribute='RunTimeTicks')
     community_rating = fields.Number(attribute='CommunityRating')
     container = fields.String(
@@ -196,7 +191,6 @@ class JellyfinVideoSchema(JellyfinSchema, MediaVideoSchema):
         },
     )
     critic_rating = fields.Number(attribute='CriticRating')
-    created_at = DateTime(attribute='DateCreated')
     imdb_url = fields.URL(
         attribute='ExternalUrl',
         metadata={
@@ -214,17 +208,12 @@ class JellyfinVideoSchema(JellyfinSchema, MediaVideoSchema):
         super().__init__(*args, **kwargs)
         self.fields['year'].attribute = 'ProductionYear'
         self.fields['has_subtitles'].attribute = 'HasSubtitles'
+        self.fields['created_at'].attribute = 'DateCreated'
 
     @post_dump
     def _normalize_community_rating(self, data: dict, **_) -> dict:
         if data.get('community_rating'):
             data['community_rating'] *= 10
-        return data
-
-    @post_dump
-    def _normalize_duration(self, data: dict, **_) -> dict:
-        if data.get('duration'):
-            data['duration'] //= 1e7
         return data
 
     @pre_dump
