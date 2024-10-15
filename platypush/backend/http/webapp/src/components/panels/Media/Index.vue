@@ -383,6 +383,8 @@ export default {
           return await this.downloadTorrent(item, args)
         case 'youtube':
           return await this.downloadYoutube(item, args)
+        case 'jellyfin':
+          return await this.downloadUrl(item.url)
       }
     },
 

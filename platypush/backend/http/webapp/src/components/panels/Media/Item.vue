@@ -28,24 +28,10 @@
 
           <span class="actions">
             <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" ref="dropdown">
-              <DropdownItem icon-class="fa fa-play" text="Play" @input="$emit('play')"
-                            v-if="item.type !== 'torrent' && item.item_type !== 'photo'" />
-              <DropdownItem icon-class="fa fa-play" text="Play (With Cache)"
-                            @input="$emit('play-with-opts', {item: item, opts: {cache: true}})"
-                            v-if="item.type === 'youtube'" />
-              <DropdownItem icon-class="fa fa-eye" text="View" @input="showPhoto = true"
-                            v-if="item.item_type === 'photo'" />
-              <DropdownItem icon-class="fa fa-download" text="Download" @input="$emit('download')"
-                            v-if="(item.type === 'torrent' || item.type === 'youtube') && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
-              <DropdownItem icon-class="fa fa-volume-high" text="Download Audio" @input="$emit('download-audio')"
-                            v-if="item.type === 'youtube' && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
-              <DropdownItem icon-class="fa fa-list" text="Add to playlist" @input="$emit('add-to-playlist')"
-                            v-if="item.type === 'youtube'" />
-              <DropdownItem icon-class="fa fa-trash" text="Remove from playlist" @input="$emit('remove-from-playlist')"
-                            v-if="item.type === 'youtube' && playlist?.length" />
-              <DropdownItem icon-class="fa fa-window-maximize" text="View in browser" @input="$emit('view')"
-                            v-if="item.type === 'file'" />
-              <DropdownItem icon-class="fa fa-info-circle" text="Info" @input="$emit('select')" />
+              <DropdownItem v-for="action in actions" :key="action.text"
+                            :icon-class="action.iconClass"
+                            :text="action.text"
+                            @input="action.action" />
             </Dropdown>
           </span>
         </div>
@@ -142,6 +128,88 @@ export default {
     showDate: {
       type: Boolean,
       default: true,
+    },
+  },
+
+  computed: {
+    actions() {
+      const actions = []
+
+      if (this.item.type !== 'torrent' && this.item.item_type !== 'photo') {
+        actions.push({
+          iconClass: 'fa fa-play',
+          text: 'Play',
+          action: () => this.$emit('play'),
+        })
+      }
+
+      if (this.item.type === 'youtube') {
+        actions.push({
+          iconClass: 'fa fa-play',
+          text: 'Play (With Cache)',
+          action: () => this.$emit('play-with-opts', {item: this.item, opts: {cache: true}}),
+        })
+      }
+
+      if (this.item.item_type === 'photo') {
+        actions.push({
+          iconClass: 'fa fa-eye',
+          text: 'View',
+          action: () => this.showPhoto = true,
+        })
+      }
+
+      if (this.item.type === 'file') {
+        actions.push({
+          iconClass: 'fa fa-window-maximize',
+          text: 'View in Browser',
+          action: () => this.$emit('view'),
+        })
+      }
+
+      if ((['torrent', 'youtube', 'jellyfin'].includes(this.item.type)) &&
+          this.item.item_type !== 'channel' &&
+          this.item.item_type !== 'playlist') {
+        actions.push({
+          iconClass: 'fa fa-download',
+          text: 'Download',
+          action: () => this.$emit('download'),
+        })
+      }
+
+      if (this.item.type === 'youtube' &&
+          this.item.item_type !== 'channel' &&
+          this.item.item_type !== 'playlist') {
+        actions.push({
+          iconClass: 'fa fa-volume-high',
+          text: 'Download Audio',
+          action: () => this.$emit('download-audio'),
+        })
+      }
+
+      if (this.item.type === 'youtube') {
+        actions.push({
+          iconClass: 'fa fa-list',
+          text: 'Add to Playlist',
+          action: () => this.$emit('add-to-playlist'),
+        })
+      }
+
+      if (this.item.type === 'youtube' && this.playlist?.length) {
+        actions.push({
+          iconClass: 'fa fa-trash',
+          text: 'Remove from Playlist',
+          action: () => this.$emit('remove-from-playlist'),
+        })
+      }
+
+      actions.push({
+        iconClass: 'fa fa-info-circle',
+        text: 'Info',
+        action: () => this.$emit('select'),
+      })
+
+      return actions
     },
   },
 

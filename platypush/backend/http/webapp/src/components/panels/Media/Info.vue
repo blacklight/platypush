@@ -131,7 +131,7 @@
       <div class="right side" v-text="computedItem.votes" />
     </div>
 
-    <div class="row" v-if="computedItem?.genres">
+    <div class="row" v-if="computedItem?.genres?.length">
       <div class="left side">Genres</div>
       <div class="right side" v-text="computedItem.genres.join(', ')" />
     </div>
@@ -190,7 +190,7 @@
       <div class="right side" v-text="computedItem.peers" />
     </div>
 
-    <div class="row" v-if="computedItem?.tags">
+    <div class="row" v-if="computedItem?.tags?.length">
       <div class="left side">Tags</div>
       <div class="right side" v-text="computedItem.tags.join(', ')" />
     </div>

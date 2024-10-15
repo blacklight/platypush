@@ -1,6 +1,6 @@
 <template>
   <div class="media-jellyfin-container browser">
-    <MediaNav :path="path" @back="$emit('back')" />
+    <MediaNav :path="path" @back="$emit('back')" @select="select" />
 
     <div class="media-jellyfin-browser">
       <Loading v-if="isLoading" />
@@ -41,10 +41,9 @@ export default {
     'add-to-playlist',
     'back',
     'download',
-    'download-audio',
+    'path-change',
     'play',
     'play-with-opts',
-    'select',
   ],
 
   data() {
@@ -68,7 +67,6 @@ export default {
         on: {
           'add-to-playlist': (item) => this.$emit('add-to-playlist', item),
           'download': (item) => this.$emit('download', item),
-          'download-audio': (item) => this.$emit('download-audio', item),
           'play': (item) => this.$emit('play', item),
           'play-with-opts': (item) => this.$emit('play-with-opts', item),
         },
@@ -139,6 +137,8 @@ export default {
       } else {
         this.path = []
       }
+
+      this.$emit('path-change', this.path)
     },
 
     selectCollection(collection) {
