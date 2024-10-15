@@ -212,7 +212,7 @@ export default {
                 'media.jellyfin.get_items',
                 {
                   parent_id: this.collection.id,
-                  limit: 5000,
+                  limit: 25000,
                 }
               )
             ).map((item) => {
@@ -234,7 +234,7 @@ export default {
               'media.jellyfin.get_items',
               {
                 parent_id: this.collection.id,
-                limit: 5000,
+                limit: 25000,
               }
             )
             break

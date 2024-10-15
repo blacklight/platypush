@@ -2,11 +2,11 @@
   <div
     class="item media-item"
     :class="{selected: selected, 'list': listView}"
-    @click.right.prevent="$refs.dropdown.toggle()"
+    @click.right="onContextClick"
     v-if="!hidden">
 
     <div class="thumbnail" v-if="!listView">
-      <MediaImage :item="item" @play="$emit('play')" @select="$emit('select')" />
+      <MediaImage :item="item" @play="$emit('play')" @select="onMediaSelect" />
     </div>
 
     <div class="body">
@@ -29,10 +29,12 @@
           <span class="actions">
             <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" ref="dropdown">
               <DropdownItem icon-class="fa fa-play" text="Play" @input="$emit('play')"
-                            v-if="item.type !== 'torrent'" />
+                            v-if="item.type !== 'torrent' && item.item_type !== 'photo'" />
               <DropdownItem icon-class="fa fa-play" text="Play (With Cache)"
                             @input="$emit('play-with-opts', {item: item, opts: {cache: true}})"
                             v-if="item.type === 'youtube'" />
+              <DropdownItem icon-class="fa fa-eye" text="View" @input="showPhoto = true"
+                            v-if="item.item_type === 'photo'" />
               <DropdownItem icon-class="fa fa-download" text="Download" @input="$emit('download')"
                             v-if="(item.type === 'torrent' || item.type === 'youtube') && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
               <DropdownItem icon-class="fa fa-volume-high" text="Download Audio" @input="$emit('download-audio')"
@@ -74,6 +76,12 @@
         </span>
       </div>
     </div>
+
+    <div class="photo-container" v-if="item.item_type === 'photo' && showPhoto">
+      <Modal :title="item.title || item.name" :visible="true" @close="showPhoto = false">
+        <img :src="item.url" ref="image" @load="onImgLoad" />
+      </Modal>
+    </div>
   </div>
 </template>
 
@@ -82,11 +90,18 @@ import Dropdown from "@/components/elements/Dropdown";
 import DropdownItem from "@/components/elements/DropdownItem";
 import Icons from "./icons.json";
 import MediaImage from "./MediaImage";
+import Modal from "@/components/Modal";
 import Utils from "@/Utils";
 
 export default {
-  components: {Dropdown, DropdownItem, MediaImage},
   mixins: [Utils],
+  components: {
+    Dropdown,
+    DropdownItem,
+    MediaImage,
+    Modal,
+  },
+
   emits: [
     'add-to-playlist',
     'download',
@@ -130,8 +145,39 @@ export default {
     },
   },
 
+  methods: {
+    onContextClick(e) {
+      if (this.item?.item_type === 'photo') {
+        return
+      }
+
+      e.preventDefault()
+      this.$refs.dropdown.toggle()
+    },
+
+    onImgLoad() {
+      const width = this.$refs.image.naturalWidth
+      const height = this.$refs.image.naturalHeight
+
+      if (width > height) {
+        this.$refs.image.classList.add('horizontal')
+      } else {
+        this.$refs.image.classList.add('vertical')
+      }
+    },
+
+    onMediaSelect() {
+      if (this.item?.item_type === 'photo') {
+        this.showPhoto = true
+      } else {
+        this.$emit('select')
+      }
+    },
+  },
+
   data() {
     return {
+      showPhoto: false,
       typeIcons: Icons,
     }
   },
@@ -326,6 +372,32 @@ export default {
         margin-right: 1em;
         color: $default-fg-2;
         justify-content: flex-end;
+      }
+    }
+  }
+
+  .photo-container {
+    :deep(.modal) {
+      .body {
+        max-width: 95vh;
+        max-height: 90vh;
+        padding: 0;
+      }
+
+      img {
+        &.horizontal {
+          width: 100%;
+          height: auto;
+          max-width: 95vh;
+          max-height: 100%;
+        }
+
+        &.vertical {
+          width: auto;
+          height: 100%;
+          max-width: 100%;
+          max-height: 90vh;
+        }
       }
     }
   }

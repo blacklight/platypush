@@ -67,7 +67,25 @@ export default {
     },
 
     mediaItems() {
-      return this.sortedItems?.filter((item) => item.item_type !== 'collection') ?? []
+      const items = this.sortedItems?.filter((item) => item.item_type !== 'collection') ?? []
+
+      if (this.collection && !this.collection.collection_type) {
+        return items.sort((a, b) => {
+          if (a.created_at && b.created_at)
+            return (new Date(a.created_at)) < (new Date(b.created_at))
+
+          if (a.created_at)
+            return -1
+
+          if (b.created_at)
+            return 1
+
+          let names = [a.name || a.title || '', b.name || b.title || '']
+          return names[0].localeCompare(names[1])
+        })
+      }
+
+      return items
     },
   },
 
@@ -120,7 +138,7 @@ export default {
             (
               await this.request('media.jellyfin.get_items', {
                 parent_id: this.collection.id,
-                limit: 5000,
+                limit: 25000,
               })
             ) : (await this.request('media.jellyfin.get_collections')).map((collection) => ({
               ...collection,

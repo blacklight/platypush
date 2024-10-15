@@ -1,12 +1,12 @@
 <template>
   <div class="image-container"
-       :class="{ 'with-image': !!item?.image }">
-    <div class="play-overlay" @click="$emit(clickEvent, item)" v-if="hasPlay">
+       :class="{ 'with-image': !!item?.image, 'photo': item?.item_type === 'photo' }">
+    <div class="play-overlay" @click.stop="onItemClick" v-if="hasPlay || item?.item_type === 'photo'">
       <i :class="overlayIconClass" />
     </div>
 
-    <div class="backdrop" v-if="item?.image"
-         :style="{ backgroundImage: `url(${item.image})` }" />
+    <div class="backdrop" v-if="item?.image || item?.preview_url"
+         :style="{ backgroundImage: `url(${item.image || item.preview_url})` }" />
 
     <span class="icon type-icon" v-if="typeIcons[item?.type]">
       <a :href="item.url" target="_blank" v-if="item.url">
@@ -17,6 +17,7 @@
     </span>
 
     <img class="image" :src="imgUrl" :alt="item.title" v-if="imgUrl" />
+
     <div class="image" v-else>
       <div class="inner">
         <i :class="iconClass" />
@@ -68,6 +69,7 @@ export default {
         case 'channel':
         case 'playlist':
         case 'folder':
+        case 'photo':
           return 'select'
         default:
           return 'play'
@@ -88,6 +90,10 @@ export default {
     },
 
     imgUrl() {
+      if (this.item?.item_type === 'photo') {
+        return this.item?.preview_url || this.item?.url
+      }
+
       let img = this.item?.image
       if (!img) {
         img = this.item?.images?.[0]?.url
@@ -103,9 +109,17 @@ export default {
         this.item?.item_type === 'folder'
       ) {
         return 'fas fa-folder-open'
+      } else if (this.item?.item_type === 'photo') {
+        return 'fas fa-eye'
       }
 
       return 'fas fa-play'
+    },
+  },
+
+  methods: {
+    onItemClick() {
+      this.$emit(this.clickEvent, this.item)
     },
   },
 }
