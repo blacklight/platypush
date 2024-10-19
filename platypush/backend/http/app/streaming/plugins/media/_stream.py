@@ -17,7 +17,7 @@ class MediaStreamRoute(StreamingRoute):
     Route for media streams.
     """
 
-    SUPPORTED_METHODS = ['GET', 'PUT', 'DELETE']
+    SUPPORTED_METHODS = ['GET', 'HEAD', 'PUT', 'DELETE']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -47,6 +47,23 @@ class MediaStreamRoute(StreamingRoute):
 
         try:
             self.stream_media(media_id)
+        except Exception as e:
+            self._on_error(e)
+
+    def head(self, media_id: Optional[str] = None):
+        """
+        Streams a media resource by ID.
+        """
+
+        if not media_id:
+            self.finish()
+            return
+
+        # Strip the extension
+        media_id = '.'.join(media_id.split('.')[:-1])
+
+        try:
+            self.stream_media(media_id, head=True)
         except Exception as e:
             self._on_error(e)
 
@@ -93,10 +110,10 @@ class MediaStreamRoute(StreamingRoute):
         """
         Returns the list of registered media resources.
         """
-        self.add_header('Content-Type', 'application/json')
+        self.set_header('Content-Type', 'application/json')
         self.finish(json.dumps([dict(media) for media in load_media_map().values()]))
 
-    def stream_media(self, media_id: str):
+    def stream_media(self, media_id: str, head: bool = False):
         """
         Route to stream a media file given its ID.
         """
@@ -107,11 +124,11 @@ class MediaStreamRoute(StreamingRoute):
         range_hdr = self.request.headers.get('Range')
         content_length = media_hndl.content_length
 
-        self.add_header('Accept-Ranges', 'bytes')
-        self.add_header('Content-Type', media_hndl.mime_type)
+        self.set_header('Accept-Ranges', 'bytes')
+        self.set_header('Content-Type', media_hndl.mime_type)
 
         if 'download' in self.request.arguments:
-            self.add_header(
+            self.set_header(
                 'Content-Disposition',
                 'attachment'
                 + ('; filename="{media_hndl.filename}"' if media_hndl.filename else ''),
@@ -129,7 +146,7 @@ class MediaStreamRoute(StreamingRoute):
                 content_length = to_bytes - from_bytes
 
             self.set_status(206)
-            self.add_header(
+            self.set_header(
                 'Content-Range',
                 f'bytes {from_bytes}-{to_bytes}/{media_hndl.content_length}',
             )
@@ -137,7 +154,13 @@ class MediaStreamRoute(StreamingRoute):
             from_bytes = 0
             to_bytes = STREAMING_BLOCK_SIZE
 
-        self.add_header('Content-Length', str(content_length))
+        self.set_header('Content-Length', str(content_length))
+
+        if head:
+            self.flush()
+            self.finish()
+            return
+
         for chunk in media_hndl.get_data(
             from_bytes=from_bytes,
             to_bytes=to_bytes,
