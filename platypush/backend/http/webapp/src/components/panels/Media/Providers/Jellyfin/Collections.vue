@@ -37,6 +37,11 @@ export default {
       default: () => [],
     },
 
+    batchItems: {
+      type: Number,
+      default: 100,
+    },
+
     parentId: {
       type: String,
     },
@@ -45,6 +50,7 @@ export default {
   data() {
     return {
       fallbackImageCollections: {},
+      maxResultIndex: this.batchItems,
     };
   },
 
@@ -74,7 +80,7 @@ export default {
         }
 
         return a.name.localeCompare(b.name)
-      })
+      }).slice(0, this.maxResultIndex)
     },
   },
 
@@ -82,6 +88,26 @@ export default {
     onImageError(collection) {
       this.fallbackImageCollections[collection.id] = true
     },
+
+    onScroll(e) {
+      const el = e.target
+      if (!el)
+        return
+
+      const bottom = (el.scrollHeight - el.scrollTop) <= el.clientHeight + 150
+      if (!bottom)
+        return
+
+      this.maxResultIndex += this.batchItems
+    },
+  },
+
+  mounted() {
+    this.$el.parentElement.addEventListener('scroll', this.onScroll)
+  },
+
+  unmounted() {
+    this.$el.parentElement.removeEventListener('scroll', this.onScroll)
   },
 }
 </script>
