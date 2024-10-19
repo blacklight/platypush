@@ -43,3 +43,12 @@ def save_media_map(new_map: MediaMap):
     with media_map_lock:
         redis = get_redis()
         redis.mset({MEDIA_MAP_VAR: json.dumps(new_map, cls=Message.Encoder)})
+
+
+def clear_media_map():
+    """
+    Clears the media map from the server.
+    """
+    with media_map_lock:
+        redis = get_redis()
+        redis.delete(MEDIA_MAP_VAR)
