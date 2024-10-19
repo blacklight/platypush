@@ -91,6 +91,7 @@
                        @path-change="browserFilter = ''"
                        @play="play($event)"
                        @play-with-opts="play($event.item, $event.opts)"
+                       @view="view"
                        v-else-if="selectedView === 'browser'"
               />
             </div>
@@ -142,6 +143,14 @@
           />
         </Modal>
       </div>
+
+      <div class="embed-player-container" v-if="viewItem != null">
+        <Modal :visible="true" @close="viewItem = null">
+          <EmbedPlayer :item="viewItem"
+                       :plugin-name="pluginName"
+                       @ended="viewItem = null" />
+        </Modal>
+      </div>
     </div>
   </keep-alive>
 </template>
@@ -151,6 +160,7 @@ import Modal from "@/components/Modal";
 import Utils from "@/Utils";
 
 import Browser from "@/components/panels/Media/Browser";
+import EmbedPlayer from "@/components/panels/Media/EmbedPlayer";
 import Header from "@/components/panels/Media/Header";
 import Info from "@/components/panels/Media/Info";
 import Loading from "@/components/Loading";
@@ -169,6 +179,7 @@ export default {
   mixins: [Utils, MediaUtils],
   components: {
     Browser,
+    EmbedPlayer,
     Header,
     Info,
     Loading,
@@ -225,6 +236,7 @@ export default {
         'torrent': true,
       },
       urlPlay: null,
+      viewItem: null,
       torrentPlugin: null,
       torrentPlugins: [
         'torrent',
@@ -373,8 +385,7 @@ export default {
     },
 
     async view(item) {
-      const ret = await this.startStreaming(item, this.pluginName, true)
-      window.open(ret.url, '_blank')
+      this.viewItem = item
     },
 
     async download(item, args) {
@@ -864,6 +875,20 @@ export default {
 
 :deep(.add-to-playlist-container) {
   .body {
+    padding: 0 !important;
+  }
+}
+
+:deep(.embed-player-container) {
+  .content {
+    max-width: 95%;
+    background: black;
+  }
+
+  .body {
+    height: 100%;
+    max-height: 85vh !important;
+    background: black;
     padding: 0 !important;
   }
 }

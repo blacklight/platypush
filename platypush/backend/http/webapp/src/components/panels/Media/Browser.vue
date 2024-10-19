@@ -35,6 +35,7 @@
             @path-change="$emit('path-change', $event)"
             @play="$emit('play', $event)"
             @play-with-opts="$emit('play-with-opts', $event)"
+            @view="$emit('view', $event)"
         />
       </div>
     </div>
@@ -61,6 +62,7 @@ export default {
     'remove-from-playlist',
     'remove-playlist',
     'rename-playlist',
+    'view',
   ],
 
   components: {

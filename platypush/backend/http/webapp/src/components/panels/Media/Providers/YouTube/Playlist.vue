@@ -57,6 +57,7 @@
                @play-with-opts="$emit('play-with-opts', $event)"
                @remove-from-playlist="$emit('remove-from-playlist', $event)"
                @select="selectedResult = $event"
+               @view="$emit('view', $event)"
                v-else />
     </div>
   </div>
@@ -78,6 +79,7 @@ export default {
     'play',
     'play-with-opts',
     'remove-from-playlist',
+    'view',
   ],
 
   components: {

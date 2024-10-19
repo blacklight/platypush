@@ -64,6 +64,7 @@
                @play-with-opts="$emit('play-with-opts', $event)"
                @remove-from-playlist="$emit('remove-from-playlist', $event)"
                @select="selectedResult = $event"
+               @view="$emit('view', $event)"
                v-if="mediaItems?.length > 0" />
     </main>
   </div>

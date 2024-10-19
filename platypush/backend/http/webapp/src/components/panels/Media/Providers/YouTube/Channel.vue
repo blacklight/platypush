@@ -54,6 +54,7 @@
                @play-with-opts="$emit('play-with-opts', $event)"
                @scroll-end="loadNextPage"
                @select="selectedResult = $event"
+               @view="$emit('view', $event)"
       />
     </div>
   </div>
@@ -73,6 +74,7 @@ export default {
     'open-channel',
     'play',
     'play-with-opts',
+    'view',
   ],
 
   components: {

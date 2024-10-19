@@ -11,6 +11,7 @@ export default {
     'play',
     'play-with-opts',
     'select',
+    'view',
   ],
 
   props: {

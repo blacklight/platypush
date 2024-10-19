@@ -9,6 +9,7 @@
               v-on="componentData.on"
               :collection="collection"
               @select="select"
+              @view="$emit('view', $event)"
               v-else-if="currentView === 'movies'" />
 
       <Media v-bind="componentData.props"
@@ -16,6 +17,7 @@
              :collection="collection"
              @select="select"
              @select-collection="selectCollection"
+             @view="$emit('view', $event)"
              v-else />
     </div>
   </div>
@@ -44,6 +46,7 @@ export default {
     'path-change',
     'play',
     'play-with-opts',
+    'view',
   ],
 
   data() {

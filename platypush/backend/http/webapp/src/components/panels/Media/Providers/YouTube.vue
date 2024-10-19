@@ -15,6 +15,7 @@
               @open-channel="selectChannelFromItem"
               @play="$emit('play', $event)"
               @play-with-opts="$emit('play-with-opts', $event)"
+              @view="$emit('view', $event)"
               v-if="selectedView === 'feed'"
         />
 
@@ -29,6 +30,7 @@
                    @play-with-opts="$emit('play-with-opts', $event)"
                    @remove-from-playlist="removeFromPlaylist"
                    @select="onPlaylistSelected"
+                   @view="$emit('view', $event)"
                    v-else-if="selectedView === 'playlists'"
         />
 
@@ -41,6 +43,7 @@
                        @play="$emit('play', $event)"
                        @play-with-opts="$emit('play-with-opts', $event)"
                        @select="onChannelSelected"
+                       @view="$emit('view', $event)"
                        v-else-if="selectedView === 'subscriptions'"
         />
 
@@ -80,6 +83,7 @@ export default {
     'download-audio',
     'play',
     'play-with-opts',
+    'view',
   ],
 
   data() {

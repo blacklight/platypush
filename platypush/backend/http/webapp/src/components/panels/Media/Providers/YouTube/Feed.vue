@@ -16,6 +16,7 @@
              @select="selectedResult = $event"
              @play="$emit('play', $event)"
              @play-with-opts="$emit('play-with-opts', $event)"
+             @view="$emit('view', $event)"
              v-else />
   </div>
 </template>
@@ -35,6 +36,7 @@ export default {
     'open-channel',
     'play',
     'play-with-opts',
+    'view',
   ],
 
   components: {

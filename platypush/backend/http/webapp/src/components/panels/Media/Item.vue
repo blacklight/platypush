@@ -159,7 +159,7 @@ export default {
         })
       }
 
-      if (this.item.type === 'file') {
+      if (['file', 'jellyfin', 'youtube'].includes(this.item.type)) {
         actions.push({
           iconClass: 'fa fa-window-maximize',
           text: 'View in Browser',
