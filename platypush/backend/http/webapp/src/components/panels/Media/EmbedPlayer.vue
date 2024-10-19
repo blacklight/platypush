@@ -9,6 +9,19 @@
               frameborder="0"
               v-else-if="youtubeUrl" />
 
+      <div class="audio-container" v-else-if="isAudio">
+        <div class="poster-container" v-if="poster">
+          <img :src="poster" />
+        </div>
+        <audio ref="audio"
+               class="player"
+               controls
+               @canplay="$refs.audio.play()"
+               @ended="$emit('ended')">
+          <source :src="mediaItem.url" :type="mediaItem.mime_type">
+        </audio>
+      </div>
+
       <video ref="video"
              class="player"
              controls
@@ -49,11 +62,22 @@ export default {
     return {
       loading: false,
       mediaItem: null,
-      mimeType: null,
     }
   },
 
   computed: {
+    isAudio() {
+      return (this.mediaItem?.mime_type || '').startsWith('audio')
+    },
+
+    poster() {
+      if (this.isAudio && this.item?.image) {
+        return this.item.image
+      }
+
+      return null
+    },
+
     youtubeUrl() {
       if (this.item.type !== 'youtube')
         return null
@@ -127,6 +151,8 @@ export default {
 <style lang="scss" scoped>
 @import "~@/components/Media/vars";
 
+$audio-height: 2.5em;
+
 .embed-player {
   position: relative;
   width: 100%;
@@ -145,7 +171,36 @@ export default {
     }
   }
 
-  video {
+  .audio-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    min-width: 50vw;
+    min-height: 50vh;
+    background-color: black;
+
+    audio {
+      height: $audio-height;
+    }
+
+    .poster-container {
+      width: 100%;
+      height: calc(100% - #{$audio-height});
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      img {
+        max-width: 100%;
+        max-height: 100%;
+      }
+    }
+  }
+
+  video, audio {
     width: 100%;
     height: 100%;
   }

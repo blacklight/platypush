@@ -10,7 +10,8 @@
              @play="$emit('play', $event)"
              @play-with-opts="$emit('play-with-opts', $event)"
              @select="selectedResult = $event; $emit('select', $event)"
-             @select-collection="selectCollection" />
+             @select-collection="selectCollection"
+             @view="$emit('view', $event)" />
     </div>
 
     <NoItems :with-shadow="false"

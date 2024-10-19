@@ -880,6 +880,10 @@ export default {
 }
 
 :deep(.embed-player-container) {
+  .modal {
+    width: 100%;
+  }
+
   .content {
     max-width: 95%;
     background: black;
