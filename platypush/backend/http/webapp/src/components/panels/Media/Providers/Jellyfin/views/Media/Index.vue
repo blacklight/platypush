@@ -37,7 +37,7 @@
                @play="$emit('play', $event)"
                @play-with-opts="$emit('play-with-opts', $event)"
                @remove-from-playlist="$emit('remove-from-playlist', $event)"
-               @select="selectedResult = $event"
+               @select="selectItem"
                @view="$emit('view', $event)"
                v-if="mediaItems.length > 0" />
     </div>
@@ -71,7 +71,7 @@ export default {
     mediaItems() {
       const items = this.sortedItems?.filter((item) => item.item_type !== 'collection') ?? []
 
-      if (this.collection && !this.collection.collection_type) {
+      if (this.collection && (!this.collection.collection_type || this.collection.collection_type === 'books')) {
         return items.sort((a, b) => {
           if (a.created_at && b.created_at)
             return (new Date(a.created_at)) < (new Date(b.created_at))
@@ -97,6 +97,16 @@ export default {
         type: 'homevideos',
         ...collection,
       })
+    },
+
+    selectItem(index) {
+      const item = this.items[index]
+      if (item.item_type === 'book' && item.embed_url) {
+        window.open(item.embed_url, '_blank')
+        return
+      }
+
+      this.selectedResult = index
     },
 
     async init() {

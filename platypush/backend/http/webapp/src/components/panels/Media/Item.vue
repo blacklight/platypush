@@ -135,7 +135,7 @@ export default {
     actions() {
       const actions = []
 
-      if (this.item.type !== 'torrent' && this.item.item_type !== 'photo') {
+      if (!['book', 'photo', 'torrent'].includes(this.item.item_type)) {
         actions.push({
           iconClass: 'fa fa-play',
           text: 'Play',

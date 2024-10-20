@@ -103,11 +103,11 @@ export default {
   },
 
   mounted() {
-    this.$el.parentElement.addEventListener('scroll', this.onScroll)
+    this.$el.parentElement?.addEventListener('scroll', this.onScroll)
   },
 
   unmounted() {
-    this.$el.parentElement.removeEventListener('scroll', this.onScroll)
+    this.$el.parentElement?.removeEventListener('scroll', this.onScroll)
   },
 }
 </script>

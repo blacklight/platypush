@@ -1,7 +1,8 @@
 <template>
-  <div class="image-container"
-       :class="{ 'with-image': !!item?.image, 'photo': item?.item_type === 'photo' }">
-    <div class="play-overlay" @click.stop="onItemClick" v-if="hasPlay || item?.item_type === 'photo'">
+  <div class="image-container" :class="containerClasses">
+    <div class="play-overlay"
+         @click.stop="onItemClick"
+         v-if="hasPlay || ['book', 'photo'].includes(item?.item_type)">
       <i :class="overlayIconClass" />
     </div>
 
@@ -66,6 +67,7 @@ export default {
   computed: {
     clickEvent() {
       switch (this.item?.item_type) {
+        case 'book':
         case 'channel':
         case 'playlist':
         case 'folder':
@@ -76,8 +78,18 @@ export default {
       }
     },
 
+    containerClasses() {
+      return {
+        'with-image': !!this.item?.image,
+        photo: this.item?.item_type === 'photo',
+        book: this.item?.item_type === 'book',
+      }
+    },
+
     iconClass() {
       switch (this.item?.item_type) {
+        case 'book':
+          return 'fas fa-book'
         case 'channel':
           return 'fas fa-user'
         case 'playlist':
@@ -111,6 +123,8 @@ export default {
         return 'fas fa-folder-open'
       } else if (this.item?.item_type === 'photo') {
         return 'fas fa-eye'
+      } else if (this.item?.item_type === 'book') {
+        return 'fas fa-book-open'
       }
 
       return 'fas fa-play'
