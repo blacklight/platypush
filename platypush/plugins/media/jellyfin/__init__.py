@@ -7,6 +7,7 @@ from platypush.plugins import Plugin, action
 from platypush.schemas.media.jellyfin import (
     JellyfinAlbumSchema,
     JellyfinArtistSchema,
+    JellyfinBookSchema,
     JellyfinCollectionSchema,
     JellyfinEpisodeSchema,
     JellyfinMovieSchema,
@@ -158,6 +159,8 @@ class MediaJellyfinPlugin(Plugin):
                 result = JellyfinVideoSchema().dump(result)
             elif result['Type'] == 'Photo':
                 result = JellyfinPhotoSchema().dump(result)
+            elif result['Type'] == 'Book':
+                result = JellyfinBookSchema().dump(result)
             elif result['Type'] == 'Episode':
                 result = JellyfinEpisodeSchema().dump(result)
             elif result['Type'] == 'Audio':

@@ -294,3 +294,22 @@ class JellyfinPhotoSchema(JellyfinSchema):
         )
         data['url'] = f'{base_url}/Download?api_key={self._api_key}'
         return data
+
+
+class JellyfinBookSchema(JellyfinSchema):
+    id = fields.String(attribute='Id')
+    name = fields.String(attribute='Name')
+    url = fields.URL()
+    embed_url = fields.URL()
+    type = fields.Constant('book')
+    item_type = fields.Constant('book')
+    path = fields.String(attribute='Path')
+
+    @pre_dump
+    def _gen_book_url(self, data, **_):
+        data = data or {}
+        data[
+            'url'
+        ] = f'{self._server}/Items/{data["Id"]}/Download?api_key={self._api_key}'
+        data['embed_url'] = f'{self._server}/web/#/details?id={data["Id"]}'
+        return data
