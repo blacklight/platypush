@@ -152,15 +152,10 @@ class MediaMpvPlugin(MediaPlugin):
                 self._post_event(NewPlayingMediaEvent)
             elif event_id == 21:  # PLAYBACK_RESTART
                 self._post_event(MediaPlayEvent)
-            elif event_id in {1, 7, 11}:  # SHUTDOWN, EOF, IDLE
+            elif event_id in {7, 11} and self._cur_player:  # EOF, IDLE
+                self._cur_player.quit(code=0)
+            elif event_id == 1:  # SHUTDOWN
                 self._post_event(MediaStopEvent)
-                if self._player:
-                    try:
-                        self._player.terminate()
-                    except Exception as e:
-                        self.logger.debug(
-                            'Error terminating mpv instance: %s', e, exc_info=True
-                        )
                 self._player = None
             elif event_id == 20 and self._cur_player:  # SEEK
                 self._post_event(
@@ -257,8 +252,11 @@ class MediaMpvPlugin(MediaPlugin):
 
         player.stop()
         player.quit(code=0)
+
         try:
-            player.wait_for_shutdown(timeout=10)
+            player.wait_for_shutdown(timeout=5)
+        except TimeoutError:
+            self.logger.warning('Timeout while waiting for mpv to shutdown')
         except TypeError:
             # Older versions of python-mpv don't support the timeout argument
             player.wait_for_shutdown()
