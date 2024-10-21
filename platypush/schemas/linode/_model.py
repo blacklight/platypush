@@ -108,7 +108,7 @@ class LinodeInstanceBackups:
 
     available: bool
     enabled: bool
-    schedule: LinodeInstanceBackupSchedule
+    schedule: Optional[LinodeInstanceBackupSchedule] = None
     last_successful: Optional[datetime] = None
 
 

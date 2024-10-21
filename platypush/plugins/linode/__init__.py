@@ -66,14 +66,29 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
         assert instances, f'No such Linode instance: {instance}'
         return instances[0]
 
-    def _linode_instance_to_dict(self, instance: Instance) -> dict:
+    @classmethod
+    def _expand_mapped_objects(cls, data: dict) -> dict:
+        """
+        Expand the mapped objects in a :class:`linode_api4.Instance` to
+        dictionaries.
+        """
+        for key, value in data.items():
+            if isinstance(value, objects.MappedObject):
+                value = data[key] = value.dict
+            if isinstance(value, dict):
+                data[key] = cls._expand_mapped_objects(value)
+
+        return data
+
+    @classmethod
+    def _linode_instance_to_dict(cls, instance: Instance) -> dict:
         """
         Convert an internal :class:`linode_api4.Instance` to a
         dictionary representation that can be used to create a
         :class:`platypush.entities.cloud.CloudInstance` object.
         """
         return {
-            key: (value.dict if isinstance(value, objects.MappedObject) else value)
+            key: cls._expand_mapped_objects(value)
             for key, value in instance.__dict__.items()
             if not key.startswith('_')
         }
