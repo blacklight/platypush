@@ -139,29 +139,39 @@ class MediaMpvPlugin(MediaPlugin):
 
             self.logger.info('Received mpv event: %s', event)
 
+            # For python-mpv >= 1.0.0
             if isinstance(event, MpvEvent):
-                event = event.as_dict()
-            if not isinstance(event, dict):
+                event_id = event.event_id.value
+            # For python-mpv < 1.0.0
+            elif isinstance(event, dict):
+                event_id = event.get('event_id')
+            else:
                 return
 
-            evt_type = event.get('event', b'').decode()
-            if not evt_type:
-                return
-
-            if evt_type == 'start-file':
+            if event_id == 6:  # START_FILE
                 self._post_event(NewPlayingMediaEvent)
-            elif evt_type == 'playback-restart':
+            elif event_id == 21:  # PLAYBACK_RESTART
                 self._post_event(MediaPlayEvent)
-            elif evt_type in ('shutdown', 'idle', 'end-file'):
-                if self._state != PlayerState.PLAY:
-                    self._post_event(MediaStopEvent)
-
-                if evt_type == 'shutdown' and self._player:
-                    self._player = None
-            elif evt_type == 'seek' and self._cur_player:
+            elif event_id in {1, 7, 11}:  # SHUTDOWN, EOF, IDLE
+                self._post_event(MediaStopEvent)
+                if self._player:
+                    try:
+                        self._player.terminate()
+                    except Exception as e:
+                        self.logger.debug(
+                            'Error terminating mpv instance: %s', e, exc_info=True
+                        )
+                self._player = None
+            elif event_id == 20 and self._cur_player:  # SEEK
                 self._post_event(
                     MediaSeekEvent, position=self._cur_player.playback_time
                 )
+            elif event_id == 12:  # PAUSE
+                self._latest_state = PlayerState.PAUSE
+                self._post_event(MediaPauseEvent)
+            elif event_id == 13:  # UNPAUSE
+                self._latest_state = PlayerState.PLAY
+                self._post_event(MediaResumeEvent)
 
             self._latest_state = self._state
 
