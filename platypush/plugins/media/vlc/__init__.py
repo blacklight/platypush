@@ -124,7 +124,15 @@ class MediaVlcPlugin(MediaPlugin):
             self._player.set_media(self._instance.media_new(resource.resource))
 
     def _player_monitor(self):
-        self._on_stop_event.wait()
+        import vlc
+
+        while True:
+            self._on_stop_event.wait(1)
+            if self._player:
+                state = self._player.get_state()
+                if state in {vlc.State.Stopped, vlc.State.Ended, vlc.State.Error}:  # type: ignore
+                    break
+
         self.logger.info('VLC stream terminated')
         self.quit()
 
