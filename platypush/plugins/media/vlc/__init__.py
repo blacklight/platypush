@@ -205,7 +205,14 @@ class MediaVlcPlugin(MediaPlugin):
             self.logger.debug('Received VLC event: %s', event.type)
             playing_url = None
 
-            if self._player:
+            if (
+                self._player
+                and
+                # Avoid a weird deadlock when trying to get the media URL and
+                # we are processing a MediaPlayerTitleChanged event (probably
+                # because the media metadata is being updated)
+                event.type != EventType.MediaPlayerTitleChanged  # type: ignore
+            ):
                 media = self._player.get_media()
                 playing_url = media.get_mrl() if media else None
 
