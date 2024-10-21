@@ -257,7 +257,12 @@ class MediaMpvPlugin(MediaPlugin):
 
         player.stop()
         player.quit(code=0)
-        player.wait_for_shutdown(timeout=10)
+        try:
+            player.wait_for_shutdown(timeout=10)
+        except TypeError:
+            # Older versions of python-mpv don't support the timeout argument
+            player.wait_for_shutdown()
+
         player.terminate()
         self._player = None
         return self.status()
