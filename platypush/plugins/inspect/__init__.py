@@ -105,6 +105,8 @@ class InspectPlugin(Plugin):
             self.logger.info('Saving new components cache to %s', self.cache_file)
             self._cache.dump(self.cache_file)
             self._cache.loaded_at = self._cache.saved_at
+        else:
+            self.logger.info('No changes detected in the components cache')
 
         return self._cache
 
