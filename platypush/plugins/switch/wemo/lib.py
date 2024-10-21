@@ -20,15 +20,18 @@ class WemoRunner:
         state_name = action.value[3:]
 
         response = requests.post(
-            'http://{}:{}/upnp/control/basicevent1'.format(device, port),
+            f'http://{device}:{port}/upnp/control/basicevent1',
             headers={
                 'User-Agent': '',
                 'Accept': '',
                 'Content-Type': 'text/xml; charset="utf-8"',
-                'SOAPACTION': '\"urn:Belkin:service:basicevent:1#{}\"'.format(action.value),
+                'SOAPACTION': f'\"urn:Belkin:service:basicevent:1#{action.value}\"',
             },
-            data=re.sub('\s+', ' ', textwrap.dedent(
-                '''
+            data=re.sub(
+                r'\s+',
+                ' ',
+                textwrap.dedent(
+                    '''
                 <?xml version="1.0" encoding="utf-8"?>
                 <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/"
                         s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
@@ -38,8 +41,14 @@ class WemoRunner:
                         </u:{action}
                     ></s:Body>
                 </s:Envelope>
-                '''.format(action=action.value, state=state_name,
-                           value=value if value is not None else ''))))
+                '''.format(
+                        action=action.value,
+                        state=state_name,
+                        value=value if value is not None else '',
+                    )
+                ),
+            ),
+        )
 
         dom = parseString(response.text)
         return dom.getElementsByTagName(state_name).item(0).firstChild.data
