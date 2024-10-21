@@ -67,11 +67,14 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
         return instances[0]
 
     @classmethod
-    def _expand_mapped_objects(cls, data: dict) -> dict:
+    def _expand_mapped_objects(cls, data) -> dict:
         """
         Expand the mapped objects in a :class:`linode_api4.Instance` to
         dictionaries.
         """
+        if not isinstance(data, dict):
+            return data
+
         for key, value in data.items():
             if isinstance(value, objects.MappedObject):
                 value = data[key] = value.dict
