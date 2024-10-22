@@ -185,7 +185,7 @@ class MediaMpvPlugin(MediaPlugin):
     @action
     def play(
         self,
-        resource: str,
+        resource: Optional[str] = None,
         *_,
         subtitles: Optional[str] = None,
         fullscreen: Optional[bool] = None,
@@ -210,6 +210,10 @@ class MediaMpvPlugin(MediaPlugin):
             youtube video.
         :param metadata: Optional metadata to attach to the resource.
         """
+
+        if not resource:
+            self.pause()
+            return self.status()
 
         self._post_event(MediaPlayRequestEvent, resource=resource)
         if fullscreen is not None:
