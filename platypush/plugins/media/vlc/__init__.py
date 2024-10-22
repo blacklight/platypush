@@ -133,6 +133,7 @@ class MediaVlcPlugin(MediaPlugin):
                 if state in {vlc.State.Stopped, vlc.State.Ended, vlc.State.Error}:  # type: ignore
                     break
 
+        self._on_stop_event.set()
         self.logger.info('VLC stream terminated')
         self.quit()
 
