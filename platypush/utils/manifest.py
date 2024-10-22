@@ -274,12 +274,15 @@ class Dependencies:
     def to_dict(self):
         return {
             'before': self.before,
-            'packages': list(self.packages),
-            'pip': self.pip,
+            'packages': sorted(self.packages),
+            'pip': sorted(self.pip),
             'after': self.after,
             'by_pkg_manager': {
-                pkg_manager.value.executable: list(pkgs)
-                for pkg_manager, pkgs in self.by_pkg_manager.items()
+                pkg_manager.value.executable: sorted(pkgs)
+                for pkg_manager, pkgs in sorted(
+                    self.by_pkg_manager.items(),
+                    key=lambda item: item[0].value.executable,
+                )
             },
         }
 
@@ -560,7 +563,9 @@ class Manifest(ABC):
     def _init_events(
         events: Union[Iterable[str], Mapping[str, Optional[str]]]
     ) -> Dict[Type, str]:
-        evt_dict = events if isinstance(events, Mapping) else {e: None for e in events}
+        evt_dict = (
+            events if isinstance(events, Mapping) else dict.fromkeys(events, None)
+        )
         ret = {}
 
         for evt_name, doc in evt_dict.items():

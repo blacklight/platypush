@@ -4,6 +4,7 @@ import json
 import os
 import pathlib
 import pkgutil
+from copy import deepcopy
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import List, Optional
 
@@ -70,6 +71,9 @@ class InspectPlugin(Plugin):
         """
         cache_version_differs = self._cache.version != Cache.cur_version
         force = force or cache_version_differs
+        old_cache = deepcopy(self._cache.to_dict())
+        old_cache.pop('loaded_at', None)
+        old_cache.pop('saved_at', None)
 
         with self._cache.lock(), auto_mocks(), override_definitions(), ThreadPoolExecutor(
             self._num_workers
@@ -101,7 +105,11 @@ class InspectPlugin(Plugin):
             while futures:
                 futures.pop().result()
 
-        if self._cache.has_changes:
+        new_cache = self._cache.to_dict()
+        new_cache.pop('loaded_at', None)
+        new_cache.pop('saved_at', None)
+
+        if old_cache != new_cache or cache_version_differs:
             self.logger.info('Saving new components cache to %s', self.cache_file)
             self._cache.dump(self.cache_file)
             self._cache.loaded_at = self._cache.saved_at
