@@ -196,16 +196,21 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
             )
             return None
 
-    def _serialize(self, device: SmartDevice) -> dict:
-        return {
-            'current_consumption': self._current_consumption(device),
-            'id': device.host,
-            'ip': device.host,
-            'host': device.host,
-            'hw_info': device.hw_info,
-            'name': device.alias,
-            'on': device.is_on,
-        }
+    def _serialize(self, device: SmartDevice) -> Optional[dict]:
+        try:
+            return {
+                'current_consumption': self._current_consumption(device),
+                'id': device.host,
+                'ip': device.host,
+                'host': device.host,
+                'hw_info': device.hw_info,
+                'name': device.alias,
+                'on': device.is_on,
+            }
+        except SmartDeviceException as e:
+            self.logger.warning(
+                'Could not communicate with device %s: %s', device.host, e
+            )
 
     @action
     def status(self, *_, **__) -> List[dict]:
@@ -227,15 +232,29 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
                 ]
 
         """
-        return [self._serialize(dev) for dev in self._scan().values()]
+        return [
+            ser_dev
+            for ser_dev in [self._serialize(dev) for dev in self._scan().values()]
+            if ser_dev
+        ]
 
     def main(self):
-        devices = {ip: self._serialize(dev) for ip, dev in self._ip_to_dev.items()}
+        devices = {
+            ip_: dev_
+            for ip_, dev_ in {
+                ip: self._serialize(dev) for ip, dev in self._ip_to_dev.items()
+            }.items()
+            if dev_
+        }
 
         while not self.should_stop():
             new_devices = self._scan(publish_entities=False)
             new_serialized_devices = {
-                ip: self._serialize(dev) for ip, dev in new_devices.items()
+                ip_: dev_
+                for ip_, dev_ in {
+                    ip: self._serialize(dev) for ip, dev in new_devices.items()
+                }.items()
+                if dev_
             }
 
             updated_devices = {
