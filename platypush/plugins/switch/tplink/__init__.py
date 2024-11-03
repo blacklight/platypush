@@ -86,15 +86,15 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
                 dev = info['type'](addr)
                 self._alias_to_dev[info.get('name', dev.alias)] = dev
                 self._ip_to_dev[addr] = dev
+
+                for ip, dev in (devices or {}).items():
+                    self._ip_to_dev[ip] = dev
+                    self._alias_to_dev[dev.alias] = dev
+
+                if devices and publish_entities:
+                    self.publish_entities(devices.values())
             except SmartDeviceException as e:
                 self.logger.warning('Could not communicate with device %s: %s', addr, e)
-
-        for ip, dev in (devices or {}).items():
-            self._ip_to_dev[ip] = dev
-            self._alias_to_dev[dev.alias] = dev
-
-        if devices and publish_entities:
-            self.publish_entities(devices.values())
 
     def transform_entities(self, entities: Collection[SmartDevice]):
         from platypush.entities.switches import Switch
