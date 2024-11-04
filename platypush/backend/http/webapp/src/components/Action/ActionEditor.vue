@@ -429,6 +429,10 @@ export default {
     },
 
     async selectArgdoc(name) {
+      if (!name?.length) {
+        return
+      }
+
       this.selectedArg = name
       this.selectedArgdoc =
         this.actionDocsCache[this.action.name]?.[name]?.html ||

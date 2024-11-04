@@ -12,7 +12,7 @@
                                :quote="true"
                                :select-on-tab="false"
                                @input="onArgEdit(name, $event)"
-                               @blur="onSelect(name)"
+                               @blur="onSelect(null)"
                                @focus="onSelect(name)" />
           <span class="required-flag" v-if="action.args[name].required">*</span>
         </label>
