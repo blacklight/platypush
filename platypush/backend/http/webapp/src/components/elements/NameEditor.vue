@@ -1,10 +1,15 @@
 <template>
   <form @submit.prevent="submit" class="name-editor">
-    <input type="text" v-model="text" :disabled="disabled" ref="input">
+    <input type="text"
+           :disabled="disabled"
+           v-model="text"
+           @keydown="proxy"
+           @keyup="proxy"
+           ref="input">
     <button type="submit">
       <i class="fas fa-circle-check" />
     </button>
-    <button class="cancel" @click="$emit('cancel')" @touch="$emit('cancel')">
+    <button class="cancel" @click="$emit('cancel')">
       <i class="fas fa-ban" />
     </button>
     <slot />
@@ -13,7 +18,7 @@
 
 <script>
 export default {
-  emits: ['input', 'cancel'],
+  emits: ['input', 'cancel', 'keyup', 'keydown'],
   props: {
     value: {
       type: String,

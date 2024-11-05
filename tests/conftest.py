@@ -40,11 +40,13 @@ def _wait_for_app(app: Application, timeout: int = app_start_timeout):
 
     while not success and time.time() - start_time < timeout:
         try:
-            response = requests.get(f'http://localhost:{http.port}/')
+            response = requests.get(
+                f'http://localhost:{http.port}/', timeout=1, allow_redirects=False
+            )
             response.raise_for_status()
             success = True
         except Exception as e:
-            logging.debug('App not ready yet: %s', e)
+            logging.info('App not ready yet: %s', e)
             time.sleep(1)
 
     assert success, f'App not ready after {timeout} seconds'

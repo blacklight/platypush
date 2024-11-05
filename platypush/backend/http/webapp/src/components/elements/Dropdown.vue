@@ -5,8 +5,12 @@
       <span class="text" v-text="text" v-if="text" />
     </button>
 
-    <div class="body-container hidden" ref="dropdownContainer">
-      <DropdownBody :id="id" :keepOpenOnItemClick="keepOpenOnItemClick" ref="dropdown" @click="onClick">
+    <div class="body-container" :class="{ hidden: !visible }" ref="dropdownContainer">
+      <DropdownBody :id="id"
+                    :keepOpenOnItemClick="keepOpenOnItemClick"
+                    :style="style"
+                    ref="dropdown"
+                    @click="onClick">
         <slot />
       </DropdownBody>
     </div>
@@ -41,6 +45,11 @@ export default {
       type: Boolean,
       default: false,
     },
+
+    style: {
+      type: Object,
+      default: () => ({}),
+    },
   },
 
   data() {
@@ -50,11 +59,19 @@ export default {
   },
 
   computed: {
+    button() {
+      const el = this.$refs.button?.$el
+      if (!el)
+        return this.$refs.button
+
+      return el.querySelector('button')
+    },
+
     buttonStyle() {
-      if (!this.$refs.button)
+      if (!this.button)
         return {}
 
-      return getComputedStyle(this.$refs.button)
+      return getComputedStyle(this.button)
     },
 
     buttonWidth() {
@@ -98,9 +115,19 @@ export default {
       return parseFloat(getComputedStyle(dropdown).height)
     },
 
-    onClick() {
+    onClick(event) {
       if (!this.keepOpenOnItemClick)
         this.close()
+
+      if (event.target.tagName === 'A') {
+        event.preventDefault()
+        return false
+      }
+
+      if (event.defaultPrevented) {
+        event.stopPropagation()
+        return false
+      }
     },
 
     close() {
@@ -116,42 +143,46 @@ export default {
         this.$el.appendChild(element)
 
       this.visible = true
-      this.$refs.dropdownContainer.classList.remove('hidden')
-      this.$nextTick(() => {
-        const buttonRect = this.$refs.button.getBoundingClientRect()
-        const buttonPos = {
-          left: buttonRect.left + window.scrollX,
-          top: buttonRect.top + window.scrollY,
-        }
+      this.$nextTick(this.adjustDropdownPos)
+    },
 
-        const pos = {
-          left: buttonPos.left,
-          top: buttonPos.top + this.buttonHeight,
-        }
+    adjustDropdownPos() {
+      const buttonRect = this.button.getBoundingClientRect()
+      const buttonPos = {
+        left: buttonRect.left + window.scrollX,
+        top: buttonRect.top + window.scrollY,
+      }
 
-        const dropdownWidth = this.getDropdownWidth()
-        const dropdownHeight = this.getDropdownHeight()
+      const pos = {
+        left: buttonPos.left,
+        top: buttonPos.top + this.buttonHeight,
+      }
 
-        if ((pos.left + dropdownWidth) > (window.innerWidth + window.scrollX) / 2) {
-          pos.left -= (dropdownWidth - this.buttonWidth)
-        }
+      const dropdownWidth = this.getDropdownWidth()
+      const dropdownHeight = this.getDropdownHeight()
 
-        if ((pos.top + dropdownHeight) > (window.innerHeight + window.scrollY) / 2) {
-          pos.top -= (dropdownHeight + this.buttonHeight - 10)
-        }
+      if ((pos.left + dropdownWidth) > (window.innerWidth + window.scrollX) / 2) {
+        pos.left -= (dropdownWidth - this.buttonWidth)
+      }
 
-        const element = this.$refs.dropdown.$el
-        element.classList.add('fade-in')
-        element.style.top = `${pos.top}px`
-        element.style.left = `${pos.left}px`
-        bus.emit('dropdown-open', this.$refs.dropdown)
-        this.$refs.dropdownContainer.classList.add('hidden')
-      })
+      if ((pos.top + dropdownHeight) > (window.innerHeight + window.scrollY) / 2) {
+        let newPosTop = pos.top - (dropdownHeight + this.buttonHeight - 10)
+        if (newPosTop < 0)
+          newPosTop = 0
+
+        pos.top = newPosTop
+      }
+
+      const element = this.$refs.dropdown.$el
+      element.classList.add('fade-in')
+      element.style.top = `${pos.top}px`
+      element.style.left = `${pos.left}px`
+      bus.emit('dropdown-open', this.$refs.dropdown)
     },
 
     toggle(event) {
-      event.stopPropagation()
-      this.$emit('click')
+      event?.stopPropagation()
+      this.$emit('click', event)
       this.visible ? this.close() : this.open()
     },
 

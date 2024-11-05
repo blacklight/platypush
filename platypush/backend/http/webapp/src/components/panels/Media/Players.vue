@@ -9,8 +9,8 @@
                 @status="$emit('status', $event)" />
       <Mpv :player="selectedPlayer?.pluginName === 'media.mpv' ? selectedPlayer : null" ref="mpvPlugin"
            @status="$emit('status', $event)" />
-      <Omxplayer :player="selectedPlayer?.pluginName === 'media.omxplayer' ? selectedPlayer : null" ref="omxplayerPlugin"
-                 @status="$emit('status', $event)" />
+      <GStreamer :player="selectedPlayer?.pluginName === 'media.gstreamer' ? selectedPlayer : null"
+                 ref="gstreamerPlugin" @status="$emit('status', $event)" />
       <Vlc :player="selectedPlayer?.pluginName === 'media.vlc' ? selectedPlayer : null" ref="vlcPlugin"
            @status="$emit('status', $event)" />
     </div>
@@ -21,7 +21,7 @@
         <Loading v-if="loading" />
 
         <div class="refresh">
-          <DropdownItem text="Refresh" icon-class="fa fa-sync-alt" @click="refresh" />
+          <DropdownItem text="Refresh" icon-class="fa fa-sync-alt" @input="refresh" />
         </div>
 
         <div class="no-results" v-if="!players?.length">No players found</div>
@@ -29,7 +29,7 @@
         <div class="player" v-for="(player, i) in players" :key="i"
              :class="{selected: selectedPlayer != null && selectedPlayer.pluginName === player.pluginName
              && selectedPlayer.name === player.name}">
-          <DropdownItem :text="player.name" :icon-class="player.iconClass" @click="select(player)" />
+          <DropdownItem :text="player.name" :icon-class="player.iconClass" @input="select(player)" />
         </div>
       </Dropdown>
     </div>
@@ -40,18 +40,20 @@
 import Dropdown from "@/components/elements/Dropdown";
 import DropdownItem from "@/components/elements/DropdownItem";
 import Loading from "@/components/Loading";
+import Utils from '@/Utils'
 
 import Chromecast from "@/components/panels/Media/Players/Chromecast"
 import Kodi from "@/components/panels/Media/Players/Kodi";
 import Mplayer from "@/components/panels/Media/Players/Mplayer";
 import Mpv from "@/components/panels/Media/Players/Mpv";
-import Omxplayer from "@/components/panels/Media/Players/Omxplayer";
+import GStreamer from "@/components/panels/Media/Players/GStreamer";
 import Vlc from "@/components/panels/Media/Players/Vlc";
 
 export default {
   name: "Players",
-  components: {Loading, DropdownItem, Dropdown, Chromecast, Kodi, Mplayer, Mpv, Omxplayer, Vlc},
+  components: {Loading, DropdownItem, Dropdown, Chromecast, Kodi, Mplayer, Mpv, GStreamer, Vlc},
   emits: ['select', 'status'],
+  mixins: [Utils],
 
   props: {
     pluginName: {
@@ -89,7 +91,16 @@ export default {
           this.players.push(...players)
 
           if (this.selectedPlayer == null && plugin.pluginName === this.pluginName && players.length > 0) {
-            this.select(players[0])
+            const urlSelectedPlayer = this.getUrlArgs().player
+            let player = players[0]
+
+            if (urlSelectedPlayer?.length) {
+              player = players.find((p) => p.name === urlSelectedPlayer)
+              if (!player)
+                player = players[0]
+            }
+
+            this.select(player)
           }
         }))
       } finally {

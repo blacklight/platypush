@@ -1,5 +1,120 @@
 # Changelog
 
+## [1.3.1]
+
+- [[#344](https://git.platypush.tech/platypush/platypush/issues/344)]: removed
+  `marshmallow_dataclass` dependency. That package isn't included in the
+  package managers of any supported distros and requires to be installed via
+  pip. Making the Platypush' system packages depend on a pip-only package is
+  not a good idea. Plus, the library seems to be still in heavy development and
+  it has already broken compatibility with at least the `system` package.
+
+## [1.3.0]
+
+- [[#333](https://git.platypush.tech/platypush/platypush/issues/333)]: new file
+  browser UI/component. It includes custom MIME type support, a file editor
+  with syntax highlight, file download and file upload.
+
+- [[#341](https://git.platypush.tech/platypush/platypush/issues/341)]:
+  procedures are now native entities that can be managed from the entities panel.
+  A new versatile procedure editor has also been added, with support for nested
+  blocks, conditions, loops, variables, context autocomplete, and more.
+
+- [`procedure`]: Added the following features to YAML/structured procedures:
+
+  - `set`: to set variables whose scope is limited to the procedure / code
+    block where they are created. `variable.set` is useful to permanently
+    store variables on the db, `variable.mset` is useful to set temporary
+    global variables in memory through Redis, but sometimes you may just want
+    to assign a value to a variable that only needs to live within a procedure,
+    event hook or cron.
+
+    ```yaml
+    - set:
+        foo: bar
+        temperature: ${output.get('temperature')}
+    ```
+
+  - `return` can now return values too when invoked within a procedure:
+
+      ```yaml
+      - return: something
+      # Or
+      - return: "Result: ${output.get('response')}"
+      ```
+
+- The default logging format is now much more compact. The full body of events
+  and requests is no longer included by default in `info` mode - instead, a
+  summary with the message type, ID and response time is logged. The full
+  payloads can still be logged by enabling `debug` logs through e.g. `-v`.
+
+## [1.2.3]
+
+- [[#422](https://git.platypush.tech/platypush/platypush/issues/422)]: adapted
+  media plugins to support streaming from the yt-dlp process. This allows
+  videos to have merged audio+video even if they had separate tracks upstream.
+
+- [`media.*`] Many improvements on the media UI.
+
+- [`zigbee.mqtt`] Removed synchronous logic from `zigbee.mqtt.device_set`. It
+  was prone to timeouts as well as pointless - the updated device state will
+  anyway be received as an event.
+
+## [1.2.2]
+
+- Fixed regression on older version of Python that don't fully support
+  `pyproject.toml` and can't install data files the new way.
+
+## [1.2.1]
+
+- Added static `/login` and `/register` Flask fallback routes to prevent 404 if
+  the client doesn't have JavaScript enabled.
+
+- Fixed `apt` packages for Debian oldstable after the `setup.py` to
+  `pyproject.toml` migration.
+
+- Fixed license string in the `pyproject.toml`.
+
+## [1.2.0]
+
+- [#419](https://git.platypush.tech/platypush/platypush/issues/419): added
+  support for randomly generated API tokens alongside JWT.
+
+- [#339](https://git.platypush.tech/platypush/platypush/issues/339): added
+  support for 2FA with OTP codes.
+
+- [#393](https://git.platypush.tech/platypush/platypush/issues/393): added
+  `bind_socket` parameter to `backend.http`, so Platypush can listen on (or
+  exclusively if `listen_port` is null) on a local UNIX socket as well.
+
+- [#401](https://git.platypush.tech/platypush/platypush/issues/401): added
+  `--redis-bin` option / `PLATYPUSH_REDIS_BIN` environment variable to support
+  custom Redis (or drop-in replacements) executables when `--start-redis` is
+  specified.
+
+- [#413](https://git.platypush.tech/platypush/platypush/issues/401): added
+  support for page-specific PWAs. If you navigate to `/plugin/<plugin-name>`,
+  and you install it as a PWA, you'll install a PWA only for that plugin - not
+  for the whole Platypush UI.
+
+- Migrated project setup from `setup.py` to `pyproject.toml`.
+
+- [`70db33b4e`](https://git.platypush.tech/platypush/platypush/commit/70db33b4e):
+  more application resilience in case Redis goes down.
+
+- [`ee27b2c4`](https://git.platypush.tech/platypush/platypush/commit/ee27b2c4):
+  Refactor of all the authentication endpoints into a single `/auth` endpoint:
+
+  - `POST /register` → `POST /auth?type=register`
+  - `POST /login` → `POST /auth?type=login`
+  - `POST /auth` → `POST /auth?type=token`
+  - `POST /auth` → `POST /auth?type=jwt`
+
+- [`2ccf0050`](https://git.platypush.tech/platypush/platypush/commit/2ccf0050):
+  Added support for binary content to `qrcode.generate`.
+
+- [`b69e9500`](https://git.platypush.tech/platypush/platypush/commit/b69e9500):
+  Support for fullscreen mode on the `camera` plugins UI.
 
 ## [1.1.3] - 2024-07-16
 

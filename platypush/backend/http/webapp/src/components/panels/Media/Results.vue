@@ -1,18 +1,21 @@
 <template>
-  <div class="media-results">
+  <div class="media-results" :class="{'list': listView}">
     <Loading v-if="loading" />
     <div class="grid" ref="grid" v-if="results?.length" @scroll="onScroll">
       <Item v-for="(item, i) in visibleResults"
             :key="i"
             :hidden="!!Object.keys(sources || {}).length && !sources[item.type]"
             :item="item"
+            :list-view="listView"
             :playlist="playlist"
             :selected="selectedResult === i"
+            :show-date="showDate"
             @add-to-playlist="$emit('add-to-playlist', item)"
             @open-channel="$emit('open-channel', item)"
             @remove-from-playlist="$emit('remove-from-playlist', item)"
             @select="$emit('select', i)"
             @play="$emit('play', item)"
+            @play-with-opts="$emit('play-with-opts', $event)"
             @view="$emit('view', item)"
             @download="$emit('download', item)"
             @download-audio="$emit('download-audio', item)"
@@ -22,7 +25,12 @@
     <Modal ref="infoModal" title="Media info" @close="$emit('select', null)">
       <Info :item="results[selectedResult]"
             :pluginName="pluginName"
+            @add-to-playlist="$emit('add-to-playlist', results[selectedResult])"
+            @download="$emit('download', results[selectedResult])"
+            @download-audio="$emit('download-audio', results[selectedResult])"
+            @open-channel="$emit('open-channel', results[selectedResult])"
             @play="$emit('play', results[selectedResult])"
+            @play-with-opts="$emit('play-with-opts', {...$event, item: results[selectedResult]})"
             v-if="selectedResult != null" />
     </Modal>
   </div>
@@ -42,6 +50,7 @@ export default {
     'download-audio',
     'open-channel',
     'play',
+    'play-with-opts',
     'remove-from-playlist',
     'scroll-end',
     'select',
@@ -49,9 +58,23 @@ export default {
   ],
 
   props: {
+    filter: {
+      type: String,
+      default: null,
+    },
+
+    listView: {
+      type: Boolean,
+      default: false,
+    },
+
     loading: {
       type: Boolean,
       default: false,
+    },
+
+    playlist: {
+      default: null,
     },
 
     pluginName: {
@@ -63,27 +86,23 @@ export default {
       default: () => [],
     },
 
-    selectedResult: {
-      type: Number,
-    },
-
-    sources: {
-      type: Object,
-      default: () => {},
-    },
-
-    filter: {
-      type: String,
-      default: null,
-    },
-
     resultIndexStep: {
       type: Number,
       default: 25,
     },
 
-    playlist: {
-      default: null,
+    selectedResult: {
+      type: Number,
+    },
+
+    showDate: {
+      type: Boolean,
+      default: true,
+    },
+
+    sources: {
+      type: Object,
+      default: () => {},
     },
   },
 
@@ -100,7 +119,7 @@ export default {
           if (!this.filter?.length)
             return true
 
-          return item.title.toLowerCase().includes(this.filter.toLowerCase())
+          return (item.title || item.name).toLowerCase().includes(this.filter.toLowerCase())
         })
 
       if (this.maxResultIndex != null)
@@ -127,18 +146,18 @@ export default {
     },
   },
 
-  mounted() {
-    this.$watch('selectedResult', (value) => {
+  watch: {
+    selectedResult(value) {
       if (value?.item_type === 'playlist' || value?.item_type === 'channel') {
         this.$emit('select', null)
         return
       }
 
-      if (value == null)
+      if (this.selectedResult == null)
         this.$refs.infoModal?.close()
       else
         this.$refs.infoModal?.show()
-    })
+    },
   },
 }
 </script>
@@ -161,6 +180,19 @@ export default {
   .info-container {
     width: 100%;
     cursor: initial;
+  }
+
+  &.list {
+    :deep(.grid) {
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      row-gap: 0;
+
+      .title {
+        font-weight: normal;
+      }
+    }
   }
 }
 </style>

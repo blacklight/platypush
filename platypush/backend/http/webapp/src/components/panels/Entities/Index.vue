@@ -28,7 +28,10 @@
       <NoItems v-if="!Object.keys(displayGroups || {})?.length">No entities found</NoItems>
 
       <div class="groups-container" v-else>
-        <div class="group fade-in" v-for="group in displayGroups" :key="group.name">
+        <div class="group fade-in"
+             v-for="group in displayGroups"
+             :key="group.name"
+             :ref="`group-${group.name}`">
           <div class="frame">
             <div class="header">
               <span class="section left">
@@ -44,12 +47,12 @@
 
               <span class="section right">
                 <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
-                  <DropdownItem text="Refresh" icon-class="fa fa-sync-alt" @click="refresh(group)" />
-                  <DropdownItem text="Hide" icon-class="fa fa-eye-slash" @click="hideGroup(group)" />
+                  <DropdownItem text="Refresh" icon-class="fa fa-sync-alt" @input="refresh(group)" />
+                  <DropdownItem text="Hide" icon-class="fa fa-eye-slash" @input="hideGroup(group)" />
                   <DropdownItem text="Collapse" icon-class="fa fa-caret-up"
-                    @click="collapsedGroups[group.name] = true" v-if="!collapsedGroups[group.name]" />
+                    @input="collapsedGroups[group.name] = true" v-if="!collapsedGroups[group.name]" />
                   <DropdownItem text="Expand" icon-class="fa fa-caret-down"
-                    @click="collapsedGroups[group.name] = false" v-else />
+                    @input="collapsedGroups[group.name] = false" v-else />
                 </Dropdown>
               </span>
             </div>
@@ -386,6 +389,29 @@ export default {
       }
     },
 
+    onModalOpen(modal) {
+      const group = this.getParentGroup(modal.$el)
+      if (!group)
+        return
+
+      group.style.zIndex = '' + (parseInt(group.style.zIndex || 0) + 1)
+    },
+
+    onModalClose(modal) {
+      const group = this.getParentGroup(modal.$el)
+      if (!group)
+        return
+
+      group.style.zIndex = '' + Math.max(0, parseInt(group.style.zIndex || 0) - 1)
+    },
+
+    getParentGroup(element) {
+      let parent = element
+      while (parent && !parent.classList?.contains('group'))
+        parent = parent.parentElement
+      return parent
+    },
+
     loadCachedEntities() {
       const cachedEntities = window.localStorage.getItem('entities')
       if (cachedEntities) {
@@ -426,6 +452,9 @@ export default {
       'on-entity-delete',
       'platypush.message.event.entities.EntityDeleteEvent'
     )
+
+    bus.on('modal-open', this.onModalOpen)
+    bus.on('modal-close', this.onModalClose)
 
     const hasCachedEntities = this.loadCachedEntities()
     await this.sync(!hasCachedEntities)
@@ -535,6 +564,7 @@ export default {
         max-height: calc(100vh - #{$header-height} - #{$main-margin});
       }
 
+      width: 100%;
       display: flex;
       flex-direction: column;
       flex-grow: 1;

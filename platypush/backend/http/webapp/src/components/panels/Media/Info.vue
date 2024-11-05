@@ -1,113 +1,139 @@
 <template>
   <div class="media-info">
-    <div class="row header">
-      <div class="image-container">
-        <MediaImage :item="item" @play="$emit('play')" @select="$emit('select')" />
-      </div>
+    <Loading v-if="loading" />
 
-      <div class="title">
-        <i :class="typeIcons[item.type]"
-           :title="item.type" 
-           v-if="typeIcons[item?.type]">
-          &nbsp;
-        </i>
-        <a :href="item.url" target="_blank" v-if="item.url" v-text="item.title" />
-        <span v-else v-text="item.title" />
+    <div class="row header">
+      <div class="item-container">
+        <Item :item="item"
+              @add-to-playlist="$emit('add-to-playlist', item)"
+              @open-channel="$emit('open-channel', item)"
+              @play="$emit('play', item)"
+              @play-with-opts="$emit('play-with-opts', $event)"
+              @download="$emit('download', item)"
+              @download-audio="$emit('download-audio', item)"
+        />
       </div>
     </div>
 
-    <div class="row direct-url" v-if="directUrl">
+    <div class="row direct-url" v-if="mainUrl">
       <div class="left side">Direct URL</div>
       <div class="right side">
-        <a :href="directUrl" title="Direct URL" target="_blank">
+        <a :href="mainUrl" title="Direct URL" target="_blank">
           <i class="fas fa-external-link-alt" />
         </a>
-        <button @click="copyToClipboard(directUrl)" title="Copy URL to clipboard">
+        <button @click="copyToClipboard(mainUrl)" title="Copy URL to clipboard">
           <i class="fas fa-clipboard" />
         </button>
       </div>
     </div>
 
-    <div class="row" v-if="item?.series">
-      <div class="left side">TV Series</div>
-      <div class="right side" v-text="item.series" />
-    </div>
-
-    <div class="row" v-if="item?.season">
-      <div class="left side">Season</div>
-      <div class="right side" v-text="item.season" />
-    </div>
-
-    <div class="row" v-if="item?.episode">
-      <div class="left side">Episode</div>
-      <div class="right side" v-text="item.episode" />
-    </div>
-
-    <div class="row" v-if="item?.num_seasons">
-      <div class="left side">Number of seasons</div>
-      <div class="right side" v-text="item.num_seasons" />
-    </div>
-
-    <div class="row" v-if="item?.description">
-      <div class="left side">Description</div>
-      <div class="right side" v-text="item.description" />
-    </div>
-
-    <div class="row" v-if="item?.summary">
-      <div class="left side">Summary</div>
-      <div class="right side" v-text="item.summary" />
-    </div>
-
-    <div class="row" v-if="item?.overview">
-      <div class="left side">Overview</div>
-      <div class="right side" v-text="item.overview" />
-    </div>
-
-    <div class="row" v-if="item?.country">
-      <div class="left side">Country</div>
-      <div class="right side" v-text="item.country" />
-    </div>
-
-    <div class="row" v-if="item?.network">
-      <div class="left side">Network</div>
-      <div class="right side" v-text="item.network" />
-    </div>
-
-    <div class="row" v-if="item?.status">
-      <div class="left side">Status</div>
-      <div class="right side" v-text="item.status" />
-    </div>
-
-    <div class="row" v-if="item?.width && item?.height">
-      <div class="left side">Resolution</div>
+    <div class="row direct-url" v-if="computedItem?.imdb_url">
+      <div class="left side">ImDB URL</div>
       <div class="right side">
-        {{ item.width }}x{{ item.height }}
+        <a :href="computedItem.imdb_url" title="ImDB URL" target="_blank">
+          <i class="fas fa-external-link-alt" />
+        </a>
+        <button @click="copyToClipboard(computedItem.imdb_url)" title="Copy URL to clipboard">
+          <i class="fas fa-clipboard" />
+        </button>
       </div>
     </div>
 
-    <div class="row" v-if="item?.rating">
+    <div class="row" v-if="computedItem?.artist?.name">
+      <div class="left side">Artist</div>
+      <div class="right side" v-text="computedItem.artist.name" />
+    </div>
+
+    <div class="row" v-if="computedItem?.album?.name">
+      <div class="left side">Album</div>
+      <div class="right side" v-text="computedItem.album.name" />
+    </div>
+
+    <div class="row" v-if="computedItem?.series">
+      <div class="left side">TV Series</div>
+      <div class="right side" v-text="computedItem.series" />
+    </div>
+
+    <div class="row" v-if="computedItem?.season">
+      <div class="left side">Season</div>
+      <div class="right side" v-text="computedItem.season" />
+    </div>
+
+    <div class="row" v-if="computedItem?.episode">
+      <div class="left side">Episode</div>
+      <div class="right side" v-text="computedItem.episode" />
+    </div>
+
+    <div class="row" v-if="computedItem?.num_seasons">
+      <div class="left side">Number of seasons</div>
+      <div class="right side" v-text="computedItem.num_seasons" />
+    </div>
+
+    <div class="row" v-if="computedItem?.description">
+      <div class="left side">Description</div>
+      <div class="right side" v-text="computedItem.description" />
+    </div>
+
+    <div class="row" v-if="computedItem?.summary">
+      <div class="left side">Summary</div>
+      <div class="right side" v-text="computedItem.summary" />
+    </div>
+
+    <div class="row" v-if="computedItem?.overview">
+      <div class="left side">Overview</div>
+      <div class="right side" v-text="computedItem.overview" />
+    </div>
+
+    <div class="row" v-if="computedItem?.country">
+      <div class="left side">Country</div>
+      <div class="right side" v-text="computedItem.country" />
+    </div>
+
+    <div class="row" v-if="computedItem?.network">
+      <div class="left side">Network</div>
+      <div class="right side" v-text="computedItem.network" />
+    </div>
+
+    <div class="row" v-if="computedItem?.status">
+      <div class="left side">Status</div>
+      <div class="right side" v-text="computedItem.status" />
+    </div>
+
+    <div class="row" v-if="computedItem?.width && computedItem?.height">
+      <div class="left side">Resolution</div>
+      <div class="right side">
+        {{ computedItem.width }}x{{ computedItem.height }}
+      </div>
+    </div>
+
+    <div class="row" v-if="computedItem?.view_count != null">
+      <div class="left side">Views</div>
+      <div class="right side">{{ formatNumber(computedItem.view_count) }}</div>
+    </div>
+
+    <div class="row" v-if="computedItem?.rating">
       <div class="left side">Rating</div>
-      <div class="right side">{{ item.rating }}%</div>
+      <div class="right side">{{ Math.round(computedItem.rating) }}%</div>
     </div>
 
-    <div class="row" v-if="item?.critic_rating">
+    <div class="row" v-if="computedItem?.critic_rating">
       <div class="left side">Critic Rating</div>
-      <div class="right side">{{ item.critic_rating }}%</div>
+      <div class="right side">{{ Math.round(computedItem.critic_rating) }}%</div>
     </div>
 
-    <div class="row" v-if="item?.community_rating">
+    <div class="row" v-if="computedItem?.community_rating">
       <div class="left side">Community Rating</div>
-      <div class="right side">{{ item.community_rating }}%</div>
+      <div class="right side">{{ Math.round(computedItem.community_rating) }}%</div>
     </div>
 
-    <div class="row" v-if="item?.votes">
+    <div class="row" v-if="computedItem?.votes">
       <div class="left side">Votes</div>
-      <div class="right side" v-text="item.votes" />
+      <div class="right side" v-text="computedItem.votes" />
     </div>
 
-    <div class="row" v-if="item?.genres">
+    <div class="row" v-if="computedItem?.genres?.length">
       <div class="left side">Genres</div>
-      <div class="right side" v-text="item.genres.join(', ')" />
+      <div class="right side" v-text="computedItem.genres.join(', ')" />
     </div>
 
     <div class="row" v-if="channel">
@@ -117,9 +143,9 @@
       </div>
     </div>
 
-    <div class="row" v-if="item?.year">
+    <div class="row" v-if="computedItem?.year">
       <div class="left side">Year</div>
-      <div class="right side" v-text="item.year" />
+      <div class="right side" v-text="computedItem.year" />
     </div>
 
     <div class="row" v-if="publishedDate">
@@ -127,56 +153,82 @@
       <div class="right side" v-text="publishedDate" />
     </div>
 
-    <div class="row" v-if="item?.file">
+    <div class="row" v-if="computedItem?.file">
       <div class="left side">File</div>
-      <div class="right side" v-text="item.file" />
+      <div class="right side" v-text="computedItem.file" />
     </div>
 
-    <div class="row" v-if="item?.trailer">
+    <div class="row" v-if="computedItem?.track_number != null">
+      <div class="left side">Track</div>
+      <div class="right side" v-text="computedItem.track_number" />
+    </div>
+
+    <div class="row" v-if="computedItem?.trailer">
       <div class="left side">Trailer</div>
       <div class="right side url">
-        <a :href="item.trailer" target="_blank" v-text="item.trailer" />
+        <a :href="computedItem.trailer" target="_blank" v-text="computedItem.trailer" />
       </div>
     </div>
 
-    <div class="row" v-if="item?.size">
+    <div class="row" v-if="computedItem?.size">
       <div class="left side">Size</div>
-      <div class="right side" v-text="convertSize(item.size)" />
+      <div class="right side" v-text="convertSize(computedItem.size)" />
     </div>
 
-    <div class="row" v-if="item?.quality">
+    <div class="row" v-if="computedItem?.quality">
       <div class="left side">Quality</div>
-      <div class="right side" v-text="item.quality" />
+      <div class="right side" v-text="computedItem.quality" />
     </div>
 
-    <div class="row" v-if="item?.seeds">
+    <div class="row" v-if="computedItem?.seeds">
       <div class="left side">Seeds</div>
-      <div class="right side" v-text="item.seeds" />
+      <div class="right side" v-text="computedItem.seeds" />
     </div>
 
-    <div class="row" v-if="item?.peers">
+    <div class="row" v-if="computedItem?.peers">
       <div class="left side">Peers</div>
-      <div class="right side" v-text="item.peers" />
+      <div class="right side" v-text="computedItem.peers" />
     </div>
 
-    <div class="row" v-if="item?.language">
+    <div class="row" v-if="computedItem?.tags?.length">
+      <div class="left side">Tags</div>
+      <div class="right side" v-text="computedItem.tags.join(', ')" />
+    </div>
+
+    <div class="row" v-if="computedItem?.language">
       <div class="left side">Language</div>
-      <div class="right side" v-text="item.language" />
+      <div class="right side" v-text="computedItem.language" />
+    </div>
+
+    <div class="row" v-if="computedItem?.audio_channels">
+      <div class="left side">Audio Channels</div>
+      <div class="right side" v-text="computedItem.audio_channels" />
     </div>
   </div>
 </template>
 
 <script>
-import Utils from "@/Utils";
-import MediaUtils from "@/components/Media/Utils";
-import MediaImage from "./MediaImage";
 import Icons from "./icons.json";
+import Item from "./Item";
+import Loading from "@/components/Loading";
+import MediaUtils from "@/components/Media/Utils";
+import Utils from "@/Utils";
 
 export default {
   name: "Info",
-  components: {MediaImage},
+  components: {
+    Item,
+    Loading,
+  },
   mixins: [Utils, MediaUtils],
-  emits: ['play'],
+  emits: [
+    'add-to-playlist',
+    'download',
+    'download-audio',
+    'open-channel',
+    'play',
+    'play-with-opts',
+  ],
   props: {
     item: {
       type: Object,
@@ -191,8 +243,10 @@ export default {
   data() {
     return {
       typeIcons: Icons,
+      loading: false,
       loadingUrl: false,
       youtubeUrl: null,
+      metadata: null,
     }
   },
 
@@ -219,11 +273,20 @@ export default {
       return ret
     },
 
+    computedItem() {
+      return {
+        ...(this.item || {}),
+        ...(this.metadata || {}),
+      }
+    },
+
     publishedDate() {
       if (this.item?.publishedAt)
         return this.formatDate(this.item.publishedAt, true)
       if (this.item?.created_at)
         return this.formatDate(this.item.created_at, true)
+      if (this.item?.timestamp)
+        return this.formatDate(this.item.timestamp, true)
 
       return null
     },
@@ -236,6 +299,43 @@ export default {
 
       return null
     },
+
+    mainUrl() {
+      const directUrl = this.directUrl
+      if (directUrl)
+        return directUrl
+
+      return this.item?.url
+    },
+  },
+
+  methods: {
+    async updateMetadata() {
+      this.loading = true
+
+      try {
+        if (this.item?.type === 'jellyfin' && this.item?.id) {
+          this.metadata = await this.request('media.jellyfin.info', {
+            item_id: this.item.id,
+          })
+        }
+      } finally {
+        this.loading = false
+      }
+    },
+  },
+
+  watch: {
+    item: {
+      handler() {
+        this.updateMetadata()
+      },
+      deep: true,
+    },
+  },
+
+  mounted() {
+    this.updateMetadata()
   },
 }
 </script>
@@ -245,6 +345,7 @@ export default {
 
 .media-info {
   width: 100%;
+  max-width: 60em;
 }
 
 .row {
@@ -331,11 +432,9 @@ export default {
   flex-direction: column;
   position: relative;
 
-  .image-container {
+  .item-container {
     @include from($desktop) {
-      .image-container {
-        width: 420px;
-      }
+      width: 420px;
     }
   }
 

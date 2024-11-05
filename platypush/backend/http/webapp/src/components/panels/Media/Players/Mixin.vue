@@ -36,12 +36,17 @@ export default {
       return await this.request(`${this.pluginName}.status`)
     },
 
-    async play(resource, subs) {
+    async play(resource, subs, _, opts) {
       if (!resource) {
         return await this.pause()
       }
 
-      return await this.request(`${this.pluginName}.play`, {resource: resource.url, subtitles: subs})
+      const args = {resource: resource.url, subtitles: subs, metadata: resource}
+      if (opts?.cache) {
+        args.cache_streams = true
+      }
+
+      return await this.request(`${this.pluginName}.play`, args)
     },
 
     async pause() {

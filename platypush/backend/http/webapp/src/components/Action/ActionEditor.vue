@@ -77,11 +77,13 @@
             </h2>
 
             <ActionArgs :action="action"
+                        :context="context"
                         :loading="loading"
                         :running="running"
                         :selected-arg="selectedArg"
                         :selected-argdoc="selectedArgdoc"
                         @add="addArg"
+                        @input="emitInput({name: action.name, args: $event})"
                         @select="selectArgdoc"
                         @remove="removeArg"
                         @arg-edit="action.args[$event.name].value = $event.value"
@@ -115,7 +117,7 @@
 
 <script>
 import 'highlight.js/lib/common'
-import 'highlight.js/styles/stackoverflow-dark.min.css'
+import 'highlight.js/styles/nord.min.css'
 import hljs from "highlight.js"
 import ActionArgs from "./ActionArgs"
 import ActionDoc from "./ActionDoc"
@@ -142,6 +144,11 @@ export default {
   },
 
   props: {
+    context: {
+      type: Object,
+      default: () => ({}),
+    },
+
     value: {
       type: Object,
     },
@@ -193,11 +200,26 @@ export default {
     },
 
     autocompleteItems() {
-      if (this.getPluginName(this.action.name) in this.plugins) {
-        return Object.keys(this.actions).sort()
+      let plugin = this.getPluginName(this.action.name)
+      let items = []
+
+      if (plugin in this.plugins) {
+        items = Object.keys(this.actions).sort()
+      } else {
+        plugin = undefined
+        items = Object.keys(this.plugins).sort().map((pluginName) => `${pluginName}.`)
       }
 
-      return Object.keys(this.plugins).sort().map((pluginName) => `${pluginName}.`)
+      return items.map((item) => {
+        const iconName = plugin || item.replace(/\.+$/, '')
+        return {
+          prefix: `
+            <img src="https://static.platypush.tech/icons/${iconName}-64.png"
+                 style="width: 1em; height: 1em; margin-right: 0.75em"
+                 class="plugin-icon" />`,
+          text: item,
+        }
+      })
     },
 
     actionInput() {
@@ -375,14 +397,14 @@ export default {
       this.actionDocsCache[this.action.name].html = this.selectedDoc
       this.setUrlArgs({action: this.action.name})
 
-      const firstArg = this.$el.querySelector('.action-arg-value')
-      if (firstArg) {
-        firstArg.focus()
-      } else {
-        this.$nextTick(() => {
+      this.$nextTick(() => {
+        const firstArg = this.$el.querySelector('.args-body input[type=text]')
+        if (firstArg) {
+            firstArg.focus()
+        } else {
           this.actionInput.focus()
-        })
-      }
+        }
+      })
 
       this.response = undefined
       this.error = undefined
@@ -407,6 +429,10 @@ export default {
     },
 
     async selectArgdoc(name) {
+      if (!name?.length) {
+        return
+      }
+
       this.selectedArg = name
       this.selectedArgdoc =
         this.actionDocsCache[this.action.name]?.[name]?.html ||
@@ -547,7 +573,12 @@ export default {
 
   async mounted() {
     await this.refresh()
-    await this.onValueChanged()
+    this.onValueChanged()
+  },
+
+  unmounted() {
+    this.actionDocsCache = {}
+    this.setUrlArgs({action: undefined})
   },
 }
 </script>

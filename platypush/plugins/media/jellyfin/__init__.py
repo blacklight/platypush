@@ -1,15 +1,19 @@
-from typing import Iterable, Optional, Type
+from typing import Iterable, List, Optional, Type
 
 import requests
 from marshmallow import Schema
 
 from platypush.plugins import Plugin, action
 from platypush.schemas.media.jellyfin import (
+    JellyfinAlbumSchema,
     JellyfinArtistSchema,
+    JellyfinBookSchema,
     JellyfinCollectionSchema,
-    JellyfinMovieSchema,
-    JellyfinVideoSchema,
     JellyfinEpisodeSchema,
+    JellyfinMovieSchema,
+    JellyfinPhotoSchema,
+    JellyfinTrackSchema,
+    JellyfinVideoSchema,
 )
 
 
@@ -79,6 +83,7 @@ class MediaJellyfinPlugin(Plugin):
         limit: Optional[int] = _default_limit,
         offset: int = 0,
         parent_id: Optional[str] = None,
+        recursive: bool = True,
         is_played: Optional[bool] = None,
         is_favourite: Optional[bool] = None,
         is_liked: Optional[bool] = None,
@@ -100,7 +105,7 @@ class MediaJellyfinPlugin(Plugin):
             'startIndex': offset,
             'includeMedia': True,
             'includeOverview': True,
-            'recursive': True,
+            'recursive': recursive,
             **({'parentId': parent_id} if parent_id else {}),
             **({'genres': '|'.join(genres)} if genres else {}),
             **({'tags': '|'.join(tags)} if tags else {}),
@@ -145,24 +150,31 @@ class MediaJellyfinPlugin(Plugin):
 
         return episodes
 
-    def _serialize_search_results(
-        self, search_results: Iterable[dict]
-    ) -> Iterable[dict]:
+    def _serialize_search_results(self, search_results: Iterable[dict]) -> List[dict]:
         serialized_results = []
         for result in search_results:
-            if result['Type'] == 'CollectionFolder':
-                result = JellyfinCollectionSchema().dump(result)
-                result['type'] = 'collection'  # type: ignore
-            elif result['Type'] == 'Movie':
+            if result['Type'] == 'Movie':
                 result = JellyfinMovieSchema().dump(result)
-                result['type'] = 'movie'  # type: ignore
             elif result['Type'] == 'Video':
                 result = JellyfinVideoSchema().dump(result)
-                result['type'] = 'video'  # type: ignore
+            elif result['Type'] == 'Photo':
+                result = JellyfinPhotoSchema().dump(result)
+            elif result['Type'] == 'Book':
+                result = JellyfinBookSchema().dump(result)
+            elif result['Type'] == 'Episode':
+                result = JellyfinEpisodeSchema().dump(result)
+            elif result['Type'] == 'Audio':
+                result = JellyfinTrackSchema().dump(result)
+            elif result['Type'] == 'MusicArtist':
+                result = JellyfinArtistSchema().dump(result)
+            elif result['Type'] == 'MusicAlbum':
+                result = JellyfinAlbumSchema().dump(result)
             elif result['Type'] == 'Series':
                 serialized_results += self._flatten_series_result(result)
                 for r in serialized_results:
                     r['type'] = 'episode'
+            elif result.get('IsFolder'):
+                result = JellyfinCollectionSchema().dump(result)
 
             if isinstance(result, dict) and result.get('type'):
                 serialized_results.append(result)
@@ -211,18 +223,61 @@ class MediaJellyfinPlugin(Plugin):
         )
 
     @action
-    def get_collections(self) -> Iterable[dict]:
+    def get_collections(
+        self, parent_id: Optional[str] = None, recursive: bool = False
+    ) -> Iterable[dict]:
         """
         Get the list of collections associated to the user on the server (Movies, Series, Channels etc.)
 
+        :param parent_id: Filter collections under the specified parent ID.
+        :param recursive: If true, return all the collections recursively under the parent.
         :return: .. schema:: media.jellyfin.JellyfinCollectionSchema(many=True)
         """
         return self._query(
             f'/Users/{self._user_id}/Items',
-            parent_id=None,
+            parent_id=parent_id,
             schema_class=JellyfinCollectionSchema,
-            params={'recursive': False},
+            recursive=recursive,
         )
+
+    @action
+    def get_items(
+        self,
+        parent_id: str,
+        recursive: bool = False,
+        limit: Optional[int] = _default_limit,
+    ) -> Iterable[dict]:
+        """
+        Get all the items under the specified parent ID.
+
+        :param parent_id: ID of the parent item.
+        :param recursive: If true, return all the items recursively under the parent.
+        :param limit: Maximum number of items to return (default: 100).
+        """
+        return self._serialize_search_results(
+            self._query(
+                f'/Users/{self._user_id}/Items',
+                parent_id=parent_id,
+                limit=limit,
+                recursive=recursive,
+            )
+        )
+
+    @action
+    def info(self, item_id: str) -> dict:
+        """
+        Get the metadata for a specific item.
+
+        :param parent_id: ID of the parent item.
+        """
+        ret = self._serialize_search_results(
+            [self._execute('get', f'/Users/{self._user_id}/Items/{item_id}')]
+        )
+
+        if not ret:
+            return {}
+
+        return ret[0]
 
     @action
     def search(
@@ -277,18 +332,17 @@ class MediaJellyfinPlugin(Plugin):
 
         """
         if collection:
-            collections = self.get_collections().output  # type: ignore
+            collections: List[dict] = self.get_collections().output  # type: ignore
             matching_collections = [
                 c
                 for c in collections
                 if c['id'] == collection or c['name'].lower() == collection.lower()
             ]
 
-            if not matching_collections:
-                return []  # No matching collections
-
             if not parent_id:
-                parent_id = matching_collections[0]['id']
+                parent_id = (
+                    matching_collections[0]['id'] if matching_collections else None
+                )
 
         results = self._query(
             f'/Users/{self._user_id}/Items',

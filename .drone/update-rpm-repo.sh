@@ -26,7 +26,7 @@ mkdir -p "$RPM_ROOT"
 echo "--- Parsing metadata"
 git config --global --add safe.directory $PWD
 git pull --rebase origin master --tags
-export VERSION=$(python3 setup.py --version)
+export VERSION=$(grep -e '^__version__' "${SRCDIR}/version.py" | sed -r -e 's/^__version__\s*=\s*"([^"]+)"$/\1/')
 export RELNUM="$(git log --pretty=oneline HEAD...v$VERSION | wc -l)"
 export SPECFILE="$WORKDIR/$PKG_NAME.spec"
 export BUILD_DIR="$WORKDIR/build"

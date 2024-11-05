@@ -1,9 +1,10 @@
 <template>
   <div class="media-file-browser">
-    <Loading v-if="loading" />
+    <Loading v-if="isLoading" />
     <Browser :is-media="true"
        :filter="filter"
        :has-back="true"
+       :homepage="mediaDirs"
        @back="$emit('back')"
        @path-change="$emit('path-change', $event)"
        @play="$emit('play', $event)"
@@ -21,6 +22,40 @@ export default {
   components: {
     Browser,
     Loading,
+  },
+
+  data() {
+    return {
+      loading_: false,
+      mediaDirs: {},
+    };
+  },
+
+  computed: {
+    isLoading() {
+      return this.loading_ || this.loading
+    },
+  },
+
+  methods: {
+    async refresh() {
+      this.loading_ = true
+
+      try {
+        this.mediaDirs = await this.request(`${this.mediaPlugin}.get_media_dirs`)
+      } finally {
+        this.loading_ = false
+      }
+    },
+  },
+
+  async mounted() {
+    const urlPath = this.getUrlArgs().path
+    if (urlPath) {
+      await this.$emit('path-change', urlPath)
+    }
+
+    await this.refresh()
   },
 }
 </script>

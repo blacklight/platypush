@@ -5,6 +5,7 @@
                  :status="selectedPlayer?.status || {}"
                  :track="selectedPlayer?.status || {}"
                  :buttons="mediaButtons"
+                 @info="infoTrack = $event"
                  @play="pause"
                  @pause="pause"
                  @stop="stop"
@@ -58,6 +59,7 @@
                        @open-channel="selectChannelFromItem"
                        @select="onResultSelect($event)"
                        @play="play"
+                       @play-with-opts="play($event.item, $event.opts)"
                        @view="view"
                        @download="download"
                        @download-audio="downloadAudio"
@@ -78,6 +80,8 @@
               />
 
               <Browser :filter="browserFilter"
+                       :loading="loading"
+                       :media-plugin="pluginName"
                        :selected-playlist="selectedPlaylist"
                        :selected-channel="selectedChannel"
                        @add-to-playlist="addToPlaylistItem = $event"
@@ -86,9 +90,15 @@
                        @download-audio="downloadAudio"
                        @path-change="browserFilter = ''"
                        @play="play($event)"
+                       @play-with-opts="play($event.item, $event.opts)"
+                       @view="view"
                        v-else-if="selectedView === 'browser'"
               />
             </div>
+          </div>
+
+          <div class="media-loading-indicator" v-if="opening">
+            <Loading />
           </div>
         </main>
       </MediaView>
@@ -119,6 +129,28 @@
           />
         </Modal>
       </div>
+
+      <div class="info-container" v-if="infoTrack != null">
+        <Modal ref="infoModal" title="Media info" :visible="infoTrack != null" @close="infoTrack = null">
+          <Info :item="infoTrack"
+                :pluginName="pluginName"
+                @add-to-playlist="addToPlaylistItem = $event"
+                @download="download"
+                @download-audio="downloadAudio"
+                @open-channel="selectChannelFromItem"
+                @play="play"
+                @play-with-opts="play($event.item, $event.opts)"
+          />
+        </Modal>
+      </div>
+
+      <div class="embed-player-container" v-if="viewItem != null">
+        <Modal :visible="true" @close="viewItem = null">
+          <EmbedPlayer :item="viewItem"
+                       :plugin-name="pluginName"
+                       @ended="viewItem = null" />
+        </Modal>
+      </div>
     </div>
   </keep-alive>
 </template>
@@ -128,7 +160,10 @@ import Modal from "@/components/Modal";
 import Utils from "@/Utils";
 
 import Browser from "@/components/panels/Media/Browser";
+import EmbedPlayer from "@/components/panels/Media/EmbedPlayer";
 import Header from "@/components/panels/Media/Header";
+import Info from "@/components/panels/Media/Info";
+import Loading from "@/components/Loading";
 import MediaDownloads from "@/components/panels/Media/Downloads";
 import MediaUtils from "@/components/Media/Utils";
 import MediaView from "@/components/Media/View";
@@ -144,7 +179,10 @@ export default {
   mixins: [Utils, MediaUtils],
   components: {
     Browser,
+    EmbedPlayer,
     Header,
+    Info,
+    Loading,
     MediaDownloads,
     MediaView,
     Modal,
@@ -176,33 +214,34 @@ export default {
 
   data() {
     return {
-      loading: false,
-      results: [],
-      selectedResult: null,
-      selectedPlayer: null,
-      selectedView: 'search',
-      selectedSubtitles: null,
-      prevSelectedView: null,
-      showSubtitlesModal: false,
-      forceShowNav: false,
-      awaitingPlayTorrent: null,
-      urlPlay: null,
-      browserFilter: null,
-      downloadsFilter: null,
       addToPlaylistItem: null,
-      torrentPlugin: null,
-      torrentPlugins: [
-        'torrent',
-        'rtorrent',
-      ],
-
+      awaitingPlayTorrent: null,
+      browserFilter: null,
+      downloads: {},
+      downloadsFilter: null,
+      forceShowNav: false,
+      infoTrack: null,
+      loading: false,
+      opening: false,
+      prevSelectedView: null,
+      results: [],
+      selectedPlayer: null,
+      selectedResult: null,
+      selectedSubtitles: null,
+      selectedView: 'search',
+      showSubtitlesModal: false,
       sources: {
         'file': true,
         'youtube': true,
         'torrent': true,
       },
-
-      downloads: {},
+      urlPlay: null,
+      viewItem: null,
+      torrentPlugin: null,
+      torrentPlugins: [
+        'torrent',
+        'rtorrent',
+      ],
     }
   },
 
@@ -281,6 +320,7 @@ export default {
   methods: {
     async search(event) {
       this.loading = true
+      this.setUrlArgs({q: event.query})
 
       try {
         this.results = await this.request(`${this.pluginName}.search`, event)
@@ -289,7 +329,7 @@ export default {
       }
     },
 
-    async play(item) {
+    async play(item, opts) {
       if (item?.type === 'torrent') {
         this.awaitingPlayTorrent = item.url
         this.notify({
@@ -303,16 +343,19 @@ export default {
         return
       }
 
-      this.loading = true
+      this.opening = true
 
       try {
         if (!this.selectedPlayer.component.supports(item))
           item = await this.startStreaming(item, this.pluginName)
 
-        await this.selectedPlayer.component.play(item, this.selectedSubtitles, this.selectedPlayer)
-        await this.refresh()
+        await this.selectedPlayer.component.play(
+          item, this.selectedSubtitles, this.selectedPlayer, opts
+        )
+
+        await this.refresh(item)
       } finally {
-        this.loading = false
+        this.opening = false
       }
     },
 
@@ -342,8 +385,7 @@ export default {
     },
 
     async view(item) {
-      const ret = await this.startStreaming(item, this.pluginName, true)
-      window.open(ret.url, '_blank')
+      this.viewItem = item
     },
 
     async download(item, args) {
@@ -352,6 +394,8 @@ export default {
           return await this.downloadTorrent(item, args)
         case 'youtube':
           return await this.downloadYoutube(item, args)
+        case 'jellyfin':
+          return await this.downloadUrl(item.url)
       }
     },
 
@@ -359,15 +403,36 @@ export default {
       await this.download(item, {onlyAudio: true})
     },
 
-    async refresh() {
-      this.selectedPlayer.status = await this.selectedPlayer.component.status(this.selectedPlayer)
+    async refresh(item) {
+      let newStatus = {
+        ...(await this.selectedPlayer.component.status(this.selectedPlayer)),
+        ...(item || {}),
+      }
+
+      this.setStatus(newStatus)
+    },
+
+    setStatus(status) {
+      const curStatus = this.selectedPlayer?.status || {}
+      let newStatus = {}
+
+      if (curStatus.resource === status.resource) {
+        newStatus = {
+          ...curStatus,
+          ...status,
+        }
+      } else {
+        newStatus = status
+      }
+
+      this.selectedPlayer.status = newStatus
     },
 
     onStatusUpdate(status) {
       if (!this.selectedPlayer)
         return
 
-      this.selectedPlayer.status = status
+      this.setStatus(status)
     },
 
     onPlayUrlModalOpen() {
@@ -534,17 +599,7 @@ export default {
 
     async playUrl(url) {
       this.urlPlay = url
-      this.loading = true
-
-      try {
-        await this.play({
-          url: url,
-        })
-
-        this.$refs.playUrlModal.close()
-      } finally {
-        this.loading = false
-      }
+      await this.play({ url: url })
     },
 
     async refreshDownloads() {
@@ -764,6 +819,7 @@ export default {
     height: 100%;
     display: flex;
     flex-direction: row-reverse;
+    position: relative;
 
     .view-container {
       display: flex;
@@ -780,6 +836,24 @@ export default {
 
       &.expanded-header {
         height: calc(100% - #{$media-header-height} - #{$filter-header-height} - #{$media-ctrl-panel-height});
+      }
+    }
+
+    :deep(.media-loading-indicator) {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 5em;
+      height: 5em;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+
+      .loading {
+        border-radius: 50%;
       }
     }
   }
@@ -801,6 +875,24 @@ export default {
 
 :deep(.add-to-playlist-container) {
   .body {
+    padding: 0 !important;
+  }
+}
+
+:deep(.embed-player-container) {
+  .modal {
+    width: 100%;
+  }
+
+  .content {
+    max-width: 95%;
+    background: black;
+  }
+
+  .body {
+    height: 100%;
+    max-height: 85vh !important;
+    background: black;
     padding: 0 !important;
   }
 }

@@ -5,26 +5,46 @@ import json
 import os
 import random
 import time
-from typing import Optional, Dict
+from typing import List, Optional, Tuple, Union
 
 import rsa
-
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import make_transient
 
 from platypush.common.db import Base
+from platypush.config import Config
 from platypush.context import get_plugin
 from platypush.exceptions.user import (
-    InvalidJWTTokenException,
     InvalidCredentialsException,
+    InvalidJWTTokenException,
+    InvalidTokenException,
+    NoUserException,
+    OtpRecordAlreadyExistsException,
 )
-from platypush.utils import get_or_generate_jwt_rsa_key_pair, utcnow
+from platypush.utils import get_or_generate_stored_rsa_key_pair, utcnow
+
+from ._model import (
+    AuthenticationStatus,
+    User,
+    UserBackupCode,
+    UserOtp,
+    UserSession,
+    UserToken,
+)
 
 
 class UserManager:
     """
     Main class for managing platform users
     """
+
+    _otp_workdir = os.path.join(Config.get_workdir(), 'otp')
+    _otp_keyfile = os.path.join(_otp_workdir, 'key')
+    _otp_keyfile_pub = f'{_otp_keyfile}.pub'
+
+    _jwt_workdir = os.path.join(Config.get_workdir(), 'jwt')
+    _jwt_keyfile = os.path.join(_jwt_workdir, 'id_rsa')
+    _jwt_keyfile_pub = f'{_jwt_keyfile}.pub'
 
     def __init__(self):
         db_plugin = get_plugin('db')
@@ -40,6 +60,44 @@ class UserManager:
 
     def _get_session(self, *args, **kwargs):
         return self.db.get_session(self.db.get_engine(), *args, **kwargs)
+
+    @classmethod
+    def _get_jwt_rsa_key_pair(cls):
+        """
+        Get or generate the JWT RSA key pair.
+        """
+        return get_or_generate_stored_rsa_key_pair(cls._jwt_keyfile, size=2048)
+
+    @classmethod
+    def _get_or_generate_otp_rsa_key_pair(cls):
+        """
+        Get or generate the OTP RSA key pair.
+        """
+        return get_or_generate_stored_rsa_key_pair(cls._otp_keyfile, size=2048)
+
+    @staticmethod
+    def _encrypt(data: Union[str, bytes, dict, list, tuple], key: rsa.PublicKey) -> str:
+        """
+        Encrypt the data using the given RSA public key.
+        """
+        if isinstance(data, tuple):
+            data = list(data)
+        if isinstance(data, (dict, list)):
+            data = json.dumps(data, sort_keys=True, indent=None)
+        if isinstance(data, str):
+            data = data.encode('ascii')
+
+        return base64.b64encode(rsa.encrypt(data, key)).decode()
+
+    @staticmethod
+    def _decrypt(data: Union[str, bytes], key: rsa.PrivateKey) -> str:
+        """
+        Decrypt the data using the given RSA private key.
+        """
+        if isinstance(data, str):
+            data = data.encode('ascii')
+
+        return rsa.decrypt(base64.b64decode(data), key).decode()
 
     def get_user(self, username):
         with self._get_session() as session:
@@ -88,9 +146,9 @@ class UserManager:
 
         return self._mask_password(user)
 
-    def update_password(self, username, old_password, new_password):
+    def update_password(self, username, old_password, new_password, code=None):
         with self._get_session(locked=True) as session:
-            if not self._authenticate_user(session, username, old_password):
+            if not self._authenticate_user(session, username, old_password, code=code):
                 return False
 
             user = self._get_user(session, username)
@@ -103,12 +161,29 @@ class UserManager:
             session.commit()
             return True
 
-    def authenticate_user(self, username, password):
+    def authenticate_user(
+        self, username, password, code=None, skip_2fa=False, with_status=False
+    ):
         with self._get_session() as session:
-            return self._authenticate_user(session, username, password)
+            return self._authenticate_user(
+                session,
+                username,
+                password,
+                code=code,
+                skip_2fa=skip_2fa,
+                with_status=with_status,
+            )
 
-    def authenticate_user_session(self, session_token):
+    def authenticate_user_session(self, session_token, with_status=False):
         with self._get_session() as session:
+            users_count = session.query(User).count()
+            if not users_count:
+                return (
+                    (None, None, AuthenticationStatus.REGISTRATION_REQUIRED)
+                    if with_status
+                    else (None, None)
+                )
+
             user_session = (
                 session.query(UserSession)
                 .filter_by(session_token=session_token)
@@ -122,10 +197,21 @@ class UserManager:
             )
 
             if not user_session or (expires_at and expires_at < utcnow()):
-                return None, None
+                return (
+                    (None, None, AuthenticationStatus.INVALID_CREDENTIALS)
+                    if with_status
+                    else (None, None)
+                )
 
             user = session.query(User).filter_by(user_id=user_session.user_id).first()
-            return self._mask_password(user), user_session
+            return (
+                (self._mask_password(user), user_session, AuthenticationStatus.OK)
+                if with_status
+                else (
+                    self._mask_password(user),
+                    user_session,
+                )
+            )
 
     def delete_user(self, username):
         with self._get_session(locked=True) as session:
@@ -158,11 +244,25 @@ class UserManager:
             session.commit()
             return True
 
-    def create_user_session(self, username, password, expires_at=None):
+    def create_user_session(
+        self,
+        username,
+        password,
+        code=None,
+        expires_at=None,
+        with_status=False,
+    ):
         with self._get_session(locked=True) as session:
-            user = self._authenticate_user(session, username, password)
+            user, status = self._authenticate_user(  # type: ignore
+                session,
+                username,
+                password,
+                code=code,
+                with_status=with_status,
+            )
+
             if not user:
-                return None
+                return None if not with_status else (None, status)
 
             if expires_at:
                 if isinstance(expires_at, (int, float)):
@@ -180,7 +280,65 @@ class UserManager:
 
             session.add(user_session)
             session.commit()
-            return user_session
+            return user_session, (
+                AuthenticationStatus.OK if not with_status else status
+            )
+
+    def create_otp_secret(
+        self,
+        username: str,
+        expires_at: Optional[datetime.datetime] = None,
+        otp_secret: Optional[str] = None,
+        dry_run: bool = False,
+    ):
+        # Generate a new OTP secret and encrypt it with the OTP RSA key pair
+        otp_secret = otp_secret or "".join(
+            random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567") for _ in range(32)
+        )
+
+        with self._get_session(locked=True) as session:
+            user = self._get_user(session, username)
+            if not user:
+                raise InvalidCredentialsException()
+
+            # Create a new OTP secret
+            user_otp = UserOtp(
+                user_id=user.user_id,
+                otp_secret=otp_secret,
+                created_at=utcnow(),
+                expires_at=expires_at,
+            )
+
+            if not dry_run:
+                # Store a copy of the OTP secret encrypted with the RSA public key
+                pubkey, _ = self._get_or_generate_otp_rsa_key_pair()
+                encrypted_secret = self._encrypt(otp_secret, pubkey)
+                encrypted_otp = UserOtp(
+                    user_id=user_otp.user_id,
+                    otp_secret=encrypted_secret,
+                    created_at=user_otp.created_at,
+                    expires_at=user_otp.expires_at,
+                )
+
+                # Remove any existing OTP secret and replace it with the new one
+                session.query(UserOtp).filter_by(user_id=user.user_id).delete()
+                session.add(encrypted_otp)
+                session.commit()
+
+        return user_otp
+
+    def get_otp_secret(self, username: str) -> Optional[str]:
+        with self._get_session() as session:
+            user = self._get_user(session, username)
+            if not user:
+                return None
+
+            user_otp = session.query(UserOtp).filter_by(user_id=user.user_id).first()
+            if not user_otp:
+                return None
+
+            _, priv_key = self._get_or_generate_otp_rsa_key_pair()
+            return self._decrypt(user_otp.otp_secret, priv_key)
 
     @staticmethod
     def _get_user(session, username):
@@ -188,7 +346,10 @@ class UserManager:
 
     @classmethod
     def _encrypt_password(
-        cls, pwd: str, salt: Optional[bytes] = None, iterations: Optional[int] = None
+        cls,
+        pwd: str,
+        salt: Optional[Union[str, bytes]] = None,
+        iterations: Optional[int] = None,
     ) -> str:
         # Legacy password check that uses bcrypt if no salt and iterations are provided
         # See https://git.platypush.tech/platypush/platypush/issues/397
@@ -196,6 +357,9 @@ class UserManager:
             import bcrypt
 
             return bcrypt.hashpw(pwd.encode(), bcrypt.gensalt(12)).decode()
+
+        if isinstance(salt, str):
+            salt = bytes.fromhex(salt)
 
         return hashlib.pbkdf2_hmac('sha256', pwd.encode(), salt, iterations).hex()
 
@@ -264,49 +428,36 @@ class UserManager:
         :return: The generated JWT token as a string.
         :raises: :class:`platypush.exceptions.user.InvalidCredentialsException` in case of invalid credentials.
         """
-        user = self.authenticate_user(username, password)
+        user = self.authenticate_user(username, password, skip_2fa=True)
         if not user:
             raise InvalidCredentialsException()
 
-        pub_key, _ = get_or_generate_jwt_rsa_key_pair()
-        payload = json.dumps(
+        pub_key, _ = self._get_jwt_rsa_key_pair()
+        return self._encrypt(
             {
                 'username': username,
                 'password': password,
                 'created_at': datetime.datetime.now().timestamp(),
                 'expires_at': expires_at.timestamp() if expires_at else None,
             },
-            sort_keys=True,
-            indent=None,
+            pub_key,
         )
 
-        return base64.b64encode(rsa.encrypt(payload.encode('ascii'), pub_key)).decode()
-
-    def validate_jwt_token(self, token: str) -> Dict[str, str]:
+    def validate_jwt_token(self, token: str) -> User:
         """
         Validate a JWT token.
 
         :param token: Token to validate.
-        :return: On success, it returns the JWT payload with the following structure:
-
-            .. code-block:: json
-
-                {
-                    "username": "user ID/name",
-                    "created_at": "token creation timestamp",
-                    "expires_at": "token expiration timestamp"
-                }
-
-        :raises: :class:`platypush.exceptions.user.InvalidJWTTokenException` in case of invalid token.
+        :return: On success, it returns the user associated to the token.
+        :raises: :class:`platypush.exceptions.user.InvalidJWTTokenException` in
+            case of invalid token.
+        :raises: :class:`platypush.exceptions.user.InvalidCredentialsException`
+            in case of invalid credentials stored in the token.
         """
-        _, priv_key = get_or_generate_jwt_rsa_key_pair()
+        _, priv_key = self._get_jwt_rsa_key_pair()
 
         try:
-            payload = json.loads(
-                rsa.decrypt(base64.b64decode(token.encode('ascii')), priv_key).decode(
-                    'ascii'
-                )
-            )
+            payload = json.loads(self._decrypt(token, priv_key))
         except (TypeError, ValueError) as e:
             raise InvalidJWTTokenException(f'Could not decode JWT token: {e}') from e
 
@@ -315,59 +466,375 @@ class UserManager:
             raise InvalidJWTTokenException('Expired JWT token')
 
         user = self.authenticate_user(
-            payload.get('username', ''), payload.get('password', '')
+            payload.get('username', ''), payload.get('password', ''), skip_2fa=True
         )
 
         if not user:
             raise InvalidCredentialsException()
 
-        return payload
+        return user
 
-    def _authenticate_user(self, session, username, password):
+    def _authenticate_user(
+        self,
+        session,
+        username: str,
+        password: str,
+        code: Optional[str] = None,
+        skip_2fa: bool = False,
+        with_status: bool = False,
+    ) -> Union[Optional['User'], Tuple[Optional['User'], 'AuthenticationStatus']]:
         """
-        :return: :class:`platypush.user.User` instance if the user exists and the password is valid, ``None`` otherwise.
+        :return: :class:`platypush.user.User` instance if the user exists and
+        the password is valid, ``None`` otherwise.
         """
         user = self._get_user(session, username)
-        if not user:
-            return None
 
+        # The user does not exist
+        if not user:
+            return (
+                None
+                if not with_status
+                else (None, AuthenticationStatus.INVALID_CREDENTIALS)
+            )
+
+        # The password is not correct
         if not self._check_password(
             password,
             user.password,
             bytes.fromhex(user.password_salt) if user.password_salt else None,
             user.hmac_iterations,
         ):
-            return None
+            return (
+                None
+                if not with_status
+                else (None, AuthenticationStatus.INVALID_CREDENTIALS)
+            )
 
-        return user
+        otp_secret = self.get_otp_secret(username)
 
+        # The user doesn't have 2FA enabled and the password is correct:
+        # authentication successful
+        if skip_2fa or not otp_secret:
+            return user if not with_status else (user, AuthenticationStatus.OK)
 
-class User(Base):
-    """Models the User table"""
+        # The user has 2FA enabled but the code is missing
+        if not code:
+            return (
+                None
+                if not with_status
+                else (None, AuthenticationStatus.MISSING_OTP_CODE)
+            )
 
-    __tablename__ = 'user'
-    __table_args__ = {'sqlite_autoincrement': True}
+        # The user has 2FA enabled and a TOTP code is provided
+        if self.validate_otp_code(username, code):
+            return user if not with_status else (user, AuthenticationStatus.OK)
 
-    user_id = Column(Integer, primary_key=True)
-    username = Column(String, unique=True, nullable=False)
-    password = Column(String)
-    password_salt = Column(String)
-    hmac_iterations = Column(Integer)
-    created_at = Column(DateTime)
+        # The user has 2FA enabled and a backup code is provided
+        if not self.validate_backup_code(username, code):
+            return (
+                None
+                if not with_status
+                else (None, AuthenticationStatus.INVALID_OTP_CODE)
+            )
 
+        return user if not with_status else (user, AuthenticationStatus.OK)
 
-class UserSession(Base):
-    """Models the UserSession table"""
+    def refresh_user_backup_codes(self, username: str) -> List[str]:
+        """
+        Refresh the backup codes for a user with 2FA enabled.
+        """
+        backup_codes = [
+            "".join(
+                random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567") for _ in range(16)
+            )
+            for _ in range(10)
+        ]
 
-    __tablename__ = 'user_session'
-    __table_args__ = {'sqlite_autoincrement': True}
+        with self._get_session(locked=True) as session:
+            user = self._get_user(session, username)
+            if not user:
+                return []
 
-    session_id = Column(Integer, primary_key=True)
-    session_token = Column(String, unique=True, nullable=False)
-    csrf_token = Column(String, unique=True)
-    user_id = Column(Integer, ForeignKey('user.user_id'), nullable=False)
-    created_at = Column(DateTime)
-    expires_at = Column(DateTime)
+            session.query(UserBackupCode).filter_by(user_id=user.user_id).delete()
+            stored_codes = []
+
+            for backup_code in backup_codes:
+                encrypted_code = self._encrypt_password(
+                    backup_code,
+                    salt=user.password_salt,
+                    iterations=user.hmac_iterations,
+                )
+
+                user_backup_code = UserBackupCode(
+                    user_id=user.user_id,
+                    code=encrypted_code,
+                    created_at=utcnow(),
+                    expires_at=utcnow() + datetime.timedelta(days=30),
+                )
+
+                session.add(user_backup_code)
+                stored_codes.append(backup_code)
+
+            session.commit()
+            return stored_codes
+
+    def validate_backup_code(self, username: str, code: str) -> bool:
+        with self._get_session() as session:
+            user = self._get_user(session, username)
+            if not user:
+                return False
+
+            encrypted_code = self._encrypt_password(
+                code,
+                salt=user.password_salt,
+                iterations=user.hmac_iterations,
+            )
+
+            user_backup_code = (
+                session.query(UserBackupCode)
+                .filter_by(user_id=user.user_id, code=encrypted_code)
+                .first()
+            )
+
+            if not user_backup_code:
+                return False
+
+            session.delete(user_backup_code)
+            session.commit()
+
+        return True
+
+    def validate_otp_code(self, username: str, code: str) -> bool:
+        otp = get_plugin('otp')
+        assert otp
+
+        with self._get_session() as session:
+            user = self._get_user(session, username)
+            if not user:
+                return False
+
+            otp_secret = self.get_otp_secret(username)
+            if not otp_secret:
+                return False
+
+        return otp.verify_time_otp(otp=code, secret=otp_secret).output
+
+    def disable_otp(self, username: str):
+        with self._get_session(locked=True) as session:
+            user = self._get_user(session, username)
+            if not user:
+                return False
+
+            session.query(UserOtp).filter_by(user_id=user.user_id).delete()
+            session.query(UserBackupCode).filter_by(user_id=user.user_id).delete()
+            session.commit()
+            return True
+
+    def enable_otp(
+        self,
+        username: str,
+        dry_run: bool = False,
+        otp_secret: Optional[str] = None,
+    ):
+        with self._get_session() as session:
+            user = self._get_user(session, username)
+            if not user:
+                raise InvalidCredentialsException()
+
+            user_otp = session.query(UserOtp).filter_by(user_id=user.user_id).first()
+            if user_otp:
+                raise OtpRecordAlreadyExistsException()
+
+            user_otp = self.create_otp_secret(
+                username, otp_secret=otp_secret, dry_run=dry_run
+            )
+
+            backup_codes = (
+                self.refresh_user_backup_codes(username) if not dry_run else []
+            )
+
+            return user_otp, backup_codes
+
+    def generate_api_token(
+        self,
+        username: str,
+        name: Optional[str] = None,
+        expires_at: Optional[datetime.datetime] = None,
+    ) -> str:
+        """
+        Create a random API token for a user.
+
+        These are randomly generated tokens stored encrypted in the server's
+        database. They are recommended for API usage over JWT tokens because:
+
+            1. JWT tokens rely on the user's password and are invalidated if
+               the user changes the password.
+            2. JWT tokens are stateless and can't be revoked once generated -
+               unless the user changes the password.
+            3. They can end up exposing either the user's password, the
+               server's keys, or both, if not handled properly.
+
+        :param username: User name.
+        :param name: Name of the token (default: ``<username>__<random-string>``).
+        :param expires_at: Expiration datetime of the token.
+        :return: The generated token as a string.
+        :raises: :class:`platypush.exceptions.user.NoUserException` if the user
+            does not exist.
+        """
+        user = self.get_user(username)
+        if not user:
+            raise NoUserException()
+
+        token = (
+            username
+            + ':'
+            + ''.join(
+                random.choice(
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._"
+                )
+                for _ in range(32)
+            )
+        )
+
+        name = name or f'{username}__' + ''.join(
+            random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567") for _ in range(8)
+        )
+
+        with self._get_session() as session:
+            user_token = UserToken(
+                user_id=user.user_id,
+                name=name,
+                token=self._encrypt_password(
+                    token, user.password_salt, user.hmac_iterations
+                ),
+                created_at=utcnow(),
+                expires_at=expires_at,
+            )
+
+            session.add(user_token)
+            session.commit()
+
+        return token
+
+    @staticmethod
+    def _user_by_token(session, token: str) -> Optional[User]:
+        username = token.split(':')[0]
+        return session.query(User).filter_by(username=username).first()
+
+    def validate_api_token(self, token: str) -> User:
+        """
+        Validate an API token.
+
+        :param token: Token to validate.
+        :return: On success, it returns the user associated to the token.
+        :raises: :class:`platypush.exceptions.user.InvalidTokenException` in
+            case of invalid token.
+        """
+        with self._get_session() as session:
+            user = self._user_by_token(session, token)
+            if not user:
+                raise InvalidTokenException()
+
+            encrypted_token = self._encrypt_password(
+                token, user.password_salt, user.hmac_iterations  # type: ignore
+            )
+
+            user_token = (
+                session.query(UserToken)
+                .filter(
+                    and_(
+                        UserToken.token == encrypted_token,
+                        UserToken.user_id == user.user_id,
+                        or_(
+                            UserToken.expires_at.is_(None),
+                            UserToken.expires_at >= utcnow(),
+                        ),
+                    )
+                )
+                .first()
+            )
+
+            if not user_token:
+                raise InvalidTokenException()
+
+            return user
+
+    def delete_api_token(
+        self,
+        username: str,
+        token: Optional[str] = None,
+        token_id: Optional[int] = None,
+    ):
+        """
+        Delete an API token.
+
+        Either <token> or <token_id> must be provided.
+
+        :param token: Token to delete.
+        :param username: User name.
+        :param token_id: Token ID.
+        :return: True if the token was successfully deleted, False otherwise.
+        """
+        assert token or token_id, 'Either token or token_id must be provided'
+
+        with self._get_session() as session:
+            if token:
+                user = self._user_by_token(session, token)
+            else:
+                user = self._get_user(session, username)
+
+            assert user, 'No such user'
+
+            if token_id:
+                user_token = (
+                    session.query(UserToken)
+                    .filter_by(user_id=user.user_id, id=token_id)
+                    .first()
+                )
+            else:
+                encrypted_token = self._encrypt_password(
+                    token, user.password_salt, user.hmac_iterations  # type: ignore
+                )
+
+                user_token = (
+                    session.query(UserToken)
+                    .filter_by(
+                        token=encrypted_token,
+                        user_id=user.user_id,
+                    )
+                    .first()
+                )
+
+            assert user_token, 'No such token'
+            session.delete(user_token)
+            session.commit()
+
+    def get_api_tokens(self, username: str) -> List[UserToken]:
+        """
+        Get all the API tokens for a user.
+
+        :param username: User name.
+        :return: List of tokens.
+        """
+        with self._get_session() as session:
+            user = self._get_user(session, username)
+            if not user:
+                return []
+
+            return (
+                session.query(UserToken)
+                .filter(
+                    and_(
+                        UserToken.user_id == user.user_id,
+                        or_(
+                            UserToken.expires_at.is_(None),
+                            UserToken.expires_at >= utcnow(),
+                        ),
+                    )
+                )
+                .order_by(UserToken.created_at.desc())
+                .all()
+            )
 
 
 # vim:sw=4:ts=4:et:

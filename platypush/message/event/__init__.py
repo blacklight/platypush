@@ -1,4 +1,3 @@
-import copy
 import json
 import logging
 import random
@@ -7,11 +6,11 @@ import time
 
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Any
+from typing import Any, Optional, Union
 
 from platypush.config import Config
 from platypush.message import Message
-from platypush.utils import get_event_class_by_type
+from platypush.utils import get_event_class_by_type, get_plugin_name_by_class
 
 logger = logging.getLogger('platypush')
 
@@ -261,7 +260,7 @@ class Event(Message):
         """
         Converts the event into a dictionary
         """
-        args = copy.deepcopy(self.args)
+        args = dict(deepcopy(self.args))
         flatten(args)
         return {
             'type': 'event',
@@ -277,7 +276,7 @@ class Event(Message):
         Overrides the str() operator and converts
         the message into a UTF-8 JSON string
         """
-        args = copy.deepcopy(self.args)
+        args = deepcopy(self.args)
         flatten(args)
         return json.dumps(self.as_dict(), cls=self.Encoder)
 
@@ -295,6 +294,43 @@ class EventMatchResult:
     is_match: bool
     score: float = 0.0
     parsed_args: dict = field(default_factory=dict)
+
+
+def deepcopy(
+    args: Union[dict, list], _out: Optional[Union[dict, list]] = None
+) -> Union[dict, list]:
+    """
+    Workaround implementation of deepcopy that doesn't raise exceptions
+    on non-pickeable objects.
+    """
+    from platypush.plugins import Plugin
+
+    if _out is None:
+        _out = {} if isinstance(args, dict) else []
+
+    if isinstance(args, list):
+        _out = [None] * len(args)
+        for i, v in enumerate(args):
+            if isinstance(v, dict):
+                _out[i] = deepcopy(v)
+            elif isinstance(v, (list, tuple, set)):
+                _out[i] = deepcopy(list(v))
+            elif isinstance(v, Plugin):
+                _out[i] = get_plugin_name_by_class(v.__class__)
+            else:
+                _out[i] = v
+    elif isinstance(args, dict):
+        for k, v in args.items():
+            if isinstance(v, dict):
+                _out[k] = deepcopy(v)
+            elif isinstance(v, (list, tuple, set)):
+                _out[k] = deepcopy(list(v))
+            elif isinstance(v, Plugin):
+                _out[k] = get_plugin_name_by_class(v.__class__)
+            else:
+                _out[k] = v
+
+    return _out
 
 
 def flatten(args):

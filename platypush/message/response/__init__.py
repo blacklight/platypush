@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+from typing import Optional
 
 from platypush.message import Message
 
@@ -99,8 +100,11 @@ class Response(Message):
 
         return json.dumps(response_dict, cls=self.Encoder)
 
-    def log(self, *args, **kwargs):
-        self.logging_level = logging.WARNING if self.is_error() else logging.INFO
+    def log(self, *args, level: Optional[int] = None, **kwargs):
+        if level is None:
+            level = logging.WARNING if self.is_error() else logging.INFO
+
+        kwargs['level'] = level
         super().log(*args, **kwargs)
 
 

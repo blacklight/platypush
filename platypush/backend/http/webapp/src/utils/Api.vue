@@ -27,10 +27,13 @@ export default {
                 resolve(response.output);
               } else {
                 const error = response.errors?.[0] || response
-                this.notify({
-                  text: error,
-                  error: true,
-                })
+
+                if (showError) {
+                  this.notify({
+                    text: error,
+                    error: true,
+                  })
+                }
 
                 reject(error)
               }
@@ -39,18 +42,18 @@ export default {
               // No users present -> redirect to the registration page
               if (
                 error?.response?.data?.code === 412 &&
-                window.location.href.indexOf('/register') < 0
+                window.location.pathname !== '/register'
               ) {
-                window.location.href = '/register?redirect=' + window.location.href
+                window.location.href = '/register?redirect=' + window.location.href.split('/').slice(3).join('/')
                 return
               }
 
               // Unauthorized -> redirect to the login page
               if (
                 error?.response?.data?.code === 401 &&
-                window.location.href.indexOf('/login') < 0
+                window.location.pathname !== '/login'
               ) {
-                window.location.href = '/login?redirect=' + window.location.href
+                window.location.href = '/login?redirect=' + window.location.href.split('/').slice(3).join('/')
                 return
               }
 

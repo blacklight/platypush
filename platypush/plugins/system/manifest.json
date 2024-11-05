@@ -3,19 +3,24 @@
     "events": {},
     "install": {
       "apk": [
-        "py3-py-cpuinfo"
+        "py3-py-cpuinfo",
+        "py3-psutil"
       ],
       "apt": [
-        "python3-cpuinfo"
+        "python3-cpuinfo",
+        "python3-psutil"
       ],
       "dnf": [
-        "python-cpuinfo"
+        "python-cpuinfo",
+        "python-psutil"
       ],
       "pacman": [
-        "python-py-cpuinfo"
+        "python-py-cpuinfo",
+        "python-psutil"
       ],
       "pip": [
-        "py-cpuinfo"
+        "py-cpuinfo",
+        "psutil"
       ]
     },
     "package": "platypush.plugins.system",

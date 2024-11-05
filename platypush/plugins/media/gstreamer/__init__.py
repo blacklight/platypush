@@ -1,4 +1,3 @@
-from dataclasses import asdict
 import os
 from typing import Optional
 
@@ -6,6 +5,7 @@ from platypush.plugins.media import PlayerState, MediaPlugin
 from platypush.message.event.media import MediaPlayRequestEvent, MediaVolumeChangedEvent
 
 from platypush.plugins import action
+from platypush.plugins.media import MediaResource
 from platypush.plugins.media.gstreamer.model import MediaPipeline
 
 
@@ -21,20 +21,61 @@ class MediaGstreamerPlugin(MediaPlugin):
         super().__init__(*args, **kwargs)
         self.sink = sink
         self._player: Optional[MediaPipeline] = None
-        self._resource: Optional[str] = None
 
-    def _allocate_pipeline(self, resource: str) -> MediaPipeline:
+    def _allocate_pipeline(self, resource: MediaResource) -> MediaPipeline:
         pipeline = MediaPipeline(resource)
         if self.sink:
             sink = pipeline.add_sink(self.sink, sync=False)
             pipeline.link(pipeline.get_source(), sink)
 
         self._player = pipeline
-        self._resource = resource
+        self._latest_resource = resource
         return pipeline
 
+    def _status(self) -> dict:
+        if not self._player:
+            return {'state': PlayerState.STOP.value}
+
+        pos = self._player.get_position()
+        length = self._player.get_duration()
+
+        status = {
+            'duration': length,
+            'mute': self._player.is_muted(),
+            'pause': self._player.is_paused(),
+            'percent_pos': (
+                pos / length
+                if pos is not None and length is not None and pos >= 0 and length > 0
+                else 0
+            ),
+            'position': pos,
+            'seekable': length is not None and length > 0,
+            'state': self._gst_to_player_state(self._player.get_state()).value,
+            'volume': self._player.get_volume() * 100,
+        }
+
+        if self._latest_resource:
+            status.update(
+                {
+                    k: v
+                    for k, v in self._latest_resource.to_dict().items()
+                    if v is not None
+                }
+            )
+
+        return status
+
+    def _get_volume(self) -> float:
+        assert self._player, 'No instance is running'
+        return self._player.get_volume() * 100.0
+
+    def _set_position(self, position: float) -> dict:
+        assert self._player, 'No instance is running'
+        self._player.seek(position)
+        return self._status()
+
     @action
-    def play(self, resource: Optional[str] = None, **_):
+    def play(self, resource: Optional[str] = None, **kwargs):
         """
         Play a resource.
 
@@ -44,36 +85,45 @@ class MediaGstreamerPlugin(MediaPlugin):
         if not resource:
             if self._player:
                 self._player.play()
-            return
+            return self._status()
 
-        resource = self._get_resource(resource)
-        path = os.path.abspath(os.path.expanduser(resource))
-        if os.path.exists(path):
-            resource = 'file://' + path
+        self._bus.post(
+            MediaPlayRequestEvent(
+                player='local', plugin='media.gstreamer', resource=resource
+            )
+        )
+        media = self._latest_resource = self._get_resource(resource, **kwargs)
+        media.open(**kwargs)
+        if media.resource and os.path.isfile(os.path.abspath(media.resource)):
+            media.resource = 'file://' + media.resource
 
-        MediaPipeline.post_event(MediaPlayRequestEvent, resource=resource)
-        pipeline = self._allocate_pipeline(resource)
+        pipeline = self._allocate_pipeline(media)
         pipeline.play()
         if self.volume:
             pipeline.set_volume(self.volume / 100.0)
 
-        return self.status()
+        return self._status()
 
     @action
-    def pause(self):
+    def pause(self, *_, **__):
         """Toggle the paused state"""
         assert self._player, 'No instance is running'
         self._player.pause()
-        return self.status()
+        return self._status()
 
     @action
-    def quit(self):
+    def quit(self, *_, **__):
         """Stop and quit the player (alias for :meth:`.stop`)"""
-        self._stop_torrent()
-        assert self._player, 'No instance is running'
+        if self._latest_resource:
+            self._latest_resource.close()
+            self._latest_resource = None
 
-        self._player.stop()
-        self._player = None
+        if self._player:
+            self._player.stop()
+            self._player = None
+        else:
+            self.logger.info('No instance is running')
+
         return {'state': PlayerState.STOP.value}
 
     @action
@@ -84,14 +134,12 @@ class MediaGstreamerPlugin(MediaPlugin):
     @action
     def voldown(self, step=10.0):
         """Volume down by (default: 10)%"""
-        # noinspection PyUnresolvedReferences
-        return self.set_volume(self.get_volume().output - step)
+        return self.set_volume(self._get_volume() - step)
 
     @action
     def volup(self, step=10.0):
         """Volume up by (default: 10)%"""
-        # noinspection PyUnresolvedReferences
-        return self.set_volume(self.get_volume().output + step)
+        return self.set_volume(self._get_volume() + step)
 
     @action
     def get_volume(self) -> float:
@@ -111,11 +159,10 @@ class MediaGstreamerPlugin(MediaPlugin):
         :param volume: Volume value between 0 and 100.
         """
         assert self._player, 'Player not running'
-        # noinspection PyTypeChecker
         volume = max(0, min(1, volume / 100.0))
         self._player.set_volume(volume)
-        MediaPipeline.post_event(MediaVolumeChangedEvent, volume=volume * 100)
-        return self.status()
+        self._player.post_event(MediaVolumeChangedEvent, volume=volume * 100)
+        return self._status()
 
     @action
     def seek(self, position: float) -> dict:
@@ -126,7 +173,8 @@ class MediaGstreamerPlugin(MediaPlugin):
         """
         assert self._player, 'No instance is running'
         cur_pos = self._player.get_position()
-        return self.set_position(cur_pos + position)
+        # return self._set_position(cur_pos + position)
+        return self._set_position((cur_pos or 0) + float(position))
 
     @action
     def back(self, offset=60.0):
@@ -174,60 +222,25 @@ class MediaGstreamerPlugin(MediaPlugin):
         """
         assert self._player, 'No instance is running'
         self._player.seek(position)
-        return self.status()
+        return self._status()
 
     @action
     def status(self) -> dict:
         """
         Get the current player state.
         """
-        if not self._player:
-            return {'state': PlayerState.STOP.value}
-
-        pos = self._player.get_position()
-        length = self._player.get_duration()
-
-        status = {
-            'duration': length,
-            'filename': self._resource[7:]
-            if self._resource.startswith('file://')
-            else self._resource,
-            'mute': self._player.is_muted(),
-            'name': self._resource,
-            'pause': self._player.is_paused(),
-            'percent_pos': pos / length
-            if pos is not None and length is not None and pos >= 0 and length > 0
-            else 0,
-            'position': pos,
-            'seekable': length is not None and length > 0,
-            'state': self._gst_to_player_state(self._player.get_state()).value,
-            'url': self._resource,
-            'volume': self._player.get_volume() * 100,
-        }
-
-        if self._latest_resource:
-            status.update(
-                {
-                    k: v
-                    for k, v in asdict(self._latest_resource).items()
-                    if v is not None
-                }
-            )
-
-        return status
+        return self._status()
 
     @staticmethod
     def _gst_to_player_state(state) -> PlayerState:
-        # noinspection PyUnresolvedReferences,PyPackageRequirements
-        from gi.repository import Gst
+        from gi.repository import Gst  # type: ignore
 
-        if state == Gst.State.READY:
-            return PlayerState.STOP
         if state == Gst.State.PAUSED:
             return PlayerState.PAUSE
         if state == Gst.State.PLAYING:
             return PlayerState.PLAY
-        return PlayerState.IDLE
+
+        return PlayerState.STOP
 
     def toggle_subtitles(self, *_, **__):
         raise NotImplementedError

@@ -15,6 +15,9 @@ class FileHandler(MediaHandler):
     prefix_handlers = ['file://']
 
     def __init__(self, source, *args, **kwargs):
+        if isinstance(source, str) and os.path.exists(source):
+            source = f'file://{source}'
+
         super().__init__(source, *args, **kwargs)
 
         self.path = os.path.abspath(
@@ -33,7 +36,7 @@ class FileHandler(MediaHandler):
         ), f'{source} is not a valid media file (detected format: {self.mime_type})'
 
         self.extension = mimetypes.guess_extension(self.mime_type)
-        if self.url and self.extension:
+        if self.url and self.extension and not self.url.endswith(self.extension):
             self.url += self.extension
         self.content_length = os.path.getsize(self.path)
 

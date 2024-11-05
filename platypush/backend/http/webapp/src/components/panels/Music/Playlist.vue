@@ -20,29 +20,29 @@
           </button>
 
           <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
-            <DropdownItem text="Add track" icon-class="fa fa-plus" @click="addTrack" />
-            <DropdownItem text="Refresh status" icon-class="fa fa-sync" @click="$emit('refresh-status')" v-if="devices != null" />
+            <DropdownItem text="Add track" icon-class="fa fa-plus" @input="addTrack" />
+            <DropdownItem text="Refresh status" icon-class="fa fa-sync" @input="$emit('refresh-status')" v-if="devices != null" />
             <DropdownItem text="Save as playlist" icon-class="fa fa-save" :disabled="!tracks?.length"
-                          @click="playlistSave" v-if="withSave" />
+                          @input="playlistSave" v-if="withSave" />
             <DropdownItem text="Swap tracks" icon-class="fa fa-retweet"
                           v-if="withSwap && selectedTracks?.length === 2"
-                          @click="$emit('swap', selectedTracks)" />
+                          @input="$emit('swap', selectedTracks)" />
             <DropdownItem :text="selectionMode ? 'End selection' : 'Start selection'" icon-class="far fa-check-square"
-                          :disabled="!tracks?.length" @click="selectionMode = !selectionMode" />
+                          :disabled="!tracks?.length" @input="selectionMode = !selectionMode" />
             <DropdownItem :text="selectedTracks?.length === tracks?.length ? 'Unselect all' : 'Select all'"
                           icon-class="fa fa-check-double" :disabled="!tracks?.length"
-                          @click="selectedTracks = selectedTracks.length === tracks.length ? [] : [...Array(tracks.length).keys()]" />
+                          @input="selectedTracks = selectedTracks.length === tracks.length ? [] : [...Array(tracks.length).keys()]" />
             <DropdownItem :text="'Remove track' + (selectedTracks.length > 1 ? 's' : '')"
                           icon-class="fa fa-trash" v-if="selectedTracks.length > 0"
-                          @click="$emit('remove', [...(new Set(selectedTracks))])" />
+                          @input="$emit('remove', [...(new Set(selectedTracks))])" />
             <DropdownItem text="Clear playlist" icon-class="fa fa-ban"
-                          :disabled="!tracks?.length" @click="$emit('clear')" v-if="withClear" />
+                          :disabled="!tracks?.length" @input="$emit('clear')" v-if="withClear" />
           </Dropdown>
 
           <Dropdown title="Players" icon-class="fa fa-volume-up" v-if="Object.keys(devices || {}).length">
             <DropdownItem v-for="(device, id) in devices" :key="id" v-text="device.name"
                           :item-class="{active: activeDevice === id, selected: selectedDevice === id}"
-                          icon-class="fa fa-volume-up" @click="$emit('select-device', id)" />
+                          icon-class="fa fa-volume-up" @input="$emit('select-device', id)" />
           </Dropdown>
         </div>
       </MusicHeader>
@@ -87,12 +87,12 @@
 
           <span class="actions">
             <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" :ref="'menu' + i">
-              <DropdownItem text="Play" icon-class="fa fa-play" @click="onMenuPlay(i)" />
+              <DropdownItem text="Play" icon-class="fa fa-play" @input="onMenuPlay(i)" />
               <DropdownItem text="Add to queue" icon-class="fa fa-plus"
-                @click="$emit('add-to-queue', [...(new Set([...selectedTracks, i]))])" v-if="withAddToQueue" />
-              <DropdownItem text="Add to playlist" icon-class="fa fa-list-ul" @click="$emit('add-to-playlist', tracks[i])" />
-              <DropdownItem text="Remove" icon-class="fa fa-trash" @click="$emit('remove', [...(new Set([...selectedTracks, i]))])" />
-              <DropdownItem text="Info" icon-class="fa fa-info" @click="$emit('info', tracks[i])" />
+                @input="$emit('add-to-queue', [...(new Set([...selectedTracks, i]))])" v-if="withAddToQueue" />
+              <DropdownItem text="Add to playlist" icon-class="fa fa-list-ul" @input="$emit('add-to-playlist', tracks[i])" />
+              <DropdownItem text="Remove" icon-class="fa fa-trash" @input="$emit('remove', [...(new Set([...selectedTracks, i]))])" />
+              <DropdownItem text="Info" icon-class="fa fa-info" @input="$emit('info', tracks[i])" />
             </Dropdown>
           </span>
         </div>

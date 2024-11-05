@@ -66,7 +66,6 @@ mock_imports = [
     "keras",
     "linode_api4",
     "luma",
-    "marshmallow_dataclass",
     "mpd",
     "ndef",
     "nfc",

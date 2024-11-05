@@ -59,8 +59,9 @@ class RssPlugin(RunnablePlugin):
         self._feed_workers = []
         self._latest_entries = []
 
-        self.subscriptions = list(self._parse_subscriptions(subscriptions or []))
         self._latest_timestamps = {}
+        self._subscriptions = subscriptions
+        self.subscriptions = []
 
     @staticmethod
     def _get_feed_latest_timestamp_varname(url: str) -> str:
@@ -318,6 +319,7 @@ class RssPlugin(RunnablePlugin):
         return ElementTree.tostring(root, encoding='utf-8', method='xml').decode()
 
     def main(self):
+        self.subscriptions = list(self._parse_subscriptions(self._subscriptions or []))
         self._latest_timestamps = self._get_latest_timestamps()
         self._feed_workers = [
             threading.Thread(target=self._feed_worker, args=(q,))
