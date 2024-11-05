@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[8499],{8499:function(n,e,r){r.r(e),r.d(e,{default:function(){return p}});var t=r(641);function u(n,e,r,u,a,s){const c=(0,t.g2)("Panel");return(0,t.uX)(),(0,t.Wv)(c,{"plugin-name":"rtorrent"})}var a=r(9142),s={name:"Torrent",components:{Panel:a.A}},c=r(6262);const o=(0,c.A)(s,[["render",u]]);var p=o}}]);
+//# sourceMappingURL=8499.aceaebed.js.map
