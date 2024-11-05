@@ -12,7 +12,7 @@ input[type=time],
 input[type=datetime-local],
 input[type=number] {
   border: $default-border-2;
-  border-radius: .5em;
+  border-radius: 1em;
   padding: .25em;
 
   &:hover {

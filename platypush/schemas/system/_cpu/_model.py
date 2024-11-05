@@ -1,8 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
-from platypush.schemas.dataclasses import percent_field
-
 
 @dataclass
 class CpuInfo:
@@ -10,117 +8,18 @@ class CpuInfo:
     CPU info data class.
     """
 
-    architecture: Optional[str] = field(
-        metadata={
-            'data_key': 'arch_string_raw',
-            'metadata': {
-                'description': 'CPU architecture',
-                'example': 'x86_64',
-            },
-        }
-    )
-
-    bits: int = field(
-        metadata={
-            'metadata': {
-                'description': 'CPU bits / register size',
-                'example': 64,
-            }
-        }
-    )
-
-    cores: int = field(
-        metadata={
-            'data_key': 'count',
-            'metadata': {
-                'description': 'Number of cores',
-                'example': 4,
-            },
-        }
-    )
-
-    vendor: Optional[str] = field(
-        metadata={
-            'data_key': 'vendor_id_raw',
-            'metadata': {
-                'description': 'Vendor string',
-                'example': 'GenuineIntel',
-            },
-        }
-    )
-
-    brand: Optional[str] = field(
-        metadata={
-            'data_key': 'brand_raw',
-            'metadata': {
-                'description': 'CPU brand string',
-                'example': 'Intel(R) Core(TM) i7-5500U CPU @ 2.40GHz',
-            },
-        }
-    )
-
-    frequency_advertised: Optional[float] = field(
-        metadata={
-            'metadata': {
-                'description': 'Advertised CPU frequency, in Hz',
-                'example': 2400000000,
-            }
-        }
-    )
-
-    frequency_actual: Optional[float] = field(
-        metadata={
-            'metadata': {
-                'description': 'Actual CPU frequency, in Hz',
-                'example': 2350000000,
-            }
-        }
-    )
-
-    flags: List[str] = field(
-        metadata={
-            'metadata': {
-                'description': 'CPU flags',
-                'example': ['acpi', 'aes', 'cpuid'],
-            }
-        }
-    )
-
-    l1_instruction_cache_size: Optional[float] = field(
-        metadata={
-            'metadata': {
-                'description': 'Size of the L1 instruction cache, in bytes',
-                'example': 65536,
-            }
-        }
-    )
-
-    l1_data_cache_size: Optional[float] = field(
-        metadata={
-            'metadata': {
-                'description': 'Size of the L1 data cache, in bytes',
-                'example': 65536,
-            }
-        }
-    )
-
-    l2_cache_size: Optional[float] = field(
-        metadata={
-            'metadata': {
-                'description': 'Size of the L2 cache, in bytes',
-                'example': 524288,
-            }
-        }
-    )
-
-    l3_cache_size: Optional[float] = field(
-        metadata={
-            'metadata': {
-                'description': 'Size of the L2 cache, in bytes',
-                'example': 4194304,
-            }
-        }
-    )
+    bits: int
+    cores: int
+    architecture: Optional[str] = None
+    vendor: Optional[str] = None
+    brand: Optional[str] = None
+    frequency_advertised: Optional[float] = None
+    frequency_actual: Optional[float] = None
+    flags: List[str] = field(default_factory=list)
+    l1_instruction_cache_size: Optional[float] = None
+    l1_data_cache_size: Optional[float] = None
+    l2_cache_size: Optional[float] = None
+    l3_cache_size: Optional[float] = None
 
 
 @dataclass
@@ -129,16 +28,16 @@ class CpuTimes:
     CPU times data class.
     """
 
-    user: Optional[float] = percent_field()
-    nice: Optional[float] = percent_field()
-    system: Optional[float] = percent_field()
-    idle: Optional[float] = percent_field()
-    iowait: Optional[float] = percent_field()
-    irq: Optional[float] = percent_field()
-    softirq: Optional[float] = percent_field()
-    steal: Optional[float] = percent_field()
-    guest: Optional[float] = percent_field()
-    guest_nice: Optional[float] = percent_field()
+    user: Optional[float] = None
+    nice: Optional[float] = None
+    system: Optional[float] = None
+    idle: Optional[float] = None
+    iowait: Optional[float] = None
+    irq: Optional[float] = None
+    softirq: Optional[float] = None
+    steal: Optional[float] = None
+    guest: Optional[float] = None
+    guest_nice: Optional[float] = None
 
 
 @dataclass
@@ -175,4 +74,4 @@ class Cpu:
     frequency: CpuFrequency
     stats: CpuStats
     load_avg: Tuple[float, float, float]
-    percent: float = percent_field()
+    percent: float

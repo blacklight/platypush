@@ -16,7 +16,7 @@ apt install -y curl dpkg-dev gpg git python3 python3-pip python3-setuptools
 echo "--- Parsing metadata"
 git config --global --add safe.directory "$PWD"
 git pull --rebase origin master --tags
-export VERSION=$(python3 setup.py --version)
+export VERSION=$(grep -e '^__version__' "${SRCDIR}/version.py" | sed -r -e 's/^__version__\s*=\s*"([^"]+)"$/\1/')
 export GIT_VERSION="$VERSION-$(git log --pretty=oneline HEAD...v$VERSION | wc -l)"
 export GIT_BUILD_DIR="$WORKDIR/${PKG_NAME}_${GIT_VERSION}_all"
 export GIT_DEB="$WORKDIR/${PKG_NAME}_${GIT_VERSION}_all.deb"

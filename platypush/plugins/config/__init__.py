@@ -1,4 +1,5 @@
 import json
+import os
 
 from platypush import Config
 from platypush.message import Message
@@ -65,6 +66,13 @@ class ConfigPlugin(Plugin):
         Get the path to the main configuration file.
         """
         return Config._instance.config_file
+
+    @action
+    def get_config_dir(self) -> str:
+        """
+        :return: The path to the configuration directory.
+        """
+        return os.path.dirname(Config._instance.config_file)
 
 
 # vim:sw=4:ts=4:et:

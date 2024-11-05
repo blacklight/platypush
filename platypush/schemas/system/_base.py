@@ -5,7 +5,7 @@ from platypush.schemas.dataclasses import DataClassSchema
 
 class SystemBaseSchema(DataClassSchema):
     """
-    Base schema for system info.
+    Base schema for system information.
     """
 
     @pre_load

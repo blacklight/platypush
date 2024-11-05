@@ -67,6 +67,7 @@
   * [Other Web panels](#other-web-panels)
   * [Dashboards](#dashboards)
   * [PWA support](#pwa-support)
+- [Two-factor authentication](#two-factor-authentication)
 - [Mobile app](#mobile-app)
 - [Browser extension](#browser-extension)
 - [Tests](#tests)
@@ -1246,6 +1247,16 @@ Note that having the web application served over SSL is a requirement for the
 PWA (progressive web app) to work. The Platypush PWA allows you to install a
 Platypush native-like client on your mobile devices if you don't want to use the
 full Android app.
+
+## Two-factor authentication
+
+Support for 2FA over OTP codes requires to enable the
+[`otp`](https://docs.platypush.tech/platypush/plugins/otp.html) and
+[`qrcode`](https://docs.platypush.tech/platypush/plugins/qrcode.html) plugins.
+
+After installing the dependencies, you can enable it by navigating to
+_Settings_ -> _Users_ from the Web panel. Then select your user, choose _Set up
+2FA_ and proceed with the steps on screen to set up your authenticator.
 
 ## Mobile app
 

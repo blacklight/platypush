@@ -44,7 +44,7 @@
 
 <script>
 import 'highlight.js/lib/common'
-import 'highlight.js/styles/stackoverflow-dark.min.css'
+import 'highlight.js/styles/nord.min.css'
 import hljs from "highlight.js"
 import CopyButton from "@/components/elements/CopyButton"
 import Loading from "@/components/Loading"
@@ -54,7 +54,7 @@ import Utils from "@/Utils"
 export default {
   name: "Install",
   mixins: [Utils],
-  emit: ['install-start', 'install-end'],
+  emits: ['install-start', 'install-end'],
   components: {
     CopyButton,
     Loading,

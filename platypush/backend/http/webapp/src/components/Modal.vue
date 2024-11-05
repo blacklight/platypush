@@ -1,13 +1,26 @@
 <template>
-  <div class="modal-container fade-in" :id="id" :class="{hidden: !isVisible}"
-    :style="{'--z-index': zIndex}" @click="close">
-    <div class="modal" :class="$attrs.class">
-      <div class="content" :style="{'--width': width, '--height': height}" @click="$event.stopPropagation()">
-        <div class="header" v-if="title">
+  <div class="modal-container fade-in"
+       :class="{hidden: !isVisible}"
+       :id="id"
+       :style="{'--z-index': zIndex}" 
+       ref="container"
+       @click.stop="close">
+    <div class="modal" :class="$attrs.class" ref="modal">
+      <div class="content" :style="{'--width': width, '--height': height}" @click.stop>
+        <div class="header" :class="{uppercase: uppercase}" v-if="title">
           <div class="title" v-text="title" v-if="title" />
-          <button title="Close" alt="Close" @click="close">
-            <i class="fas fa-xmark" />
-          </button>
+          <div class="buttons">
+            <button v-for="(button, index) in buttons"
+                    :key="index"
+                    :title="button.title"
+                    @click.stop="button.action">
+              <i :class="button.icon" />
+            </button>
+
+            <button title="Close" alt="Close" @click.stop="close">
+              <i class="fas fa-xmark" />
+            </button>
+          </div>
         </div>
         <div class="body">
           <slot @modal-close="close" />
@@ -18,6 +31,8 @@
 </template>
 
 <script>
+import { bus } from "@/bus";
+
 export default {
   name: "Modal",
   emits: ['close', 'open'],
@@ -58,13 +73,32 @@ export default {
       type: Number,
       default: 1,
     },
+
+    // Whether the header title should be uppercase
+    uppercase: {
+      type: Boolean,
+      default: true,
+    },
+
+    // Extra buttons to be added to the modal header
+    buttons: {
+      type: Array,
+      default: () => [],
+    },
+
+    // A function to be called before the modal is closed.
+    // If the function returns false, the modal will not be closed.
+    beforeClose: {
+      type: Function,
+      default: () => true,
+    },
   },
 
   data() {
     return {
-      timeoutId: undefined,
-      prevVisible: this.visible,
+      ignoreEscape: false,
       isVisible: this.visible,
+      timeoutId: undefined,
     }
   },
 
@@ -75,9 +109,18 @@ export default {
   },
 
   methods: {
-    close() {
-      this.prevVisible = this.isVisible
+    close(event) {
+      if (this.beforeClose && !this.beforeClose())
+        return
+
+      if (event)
+        event.preventDefault()
+
+      if (!this.isVisible)
+        return
+
       this.isVisible = false
+      this.visibleHndl(false, true)
     },
 
     hide() {
@@ -85,8 +128,15 @@ export default {
     },
 
     show() {
-      this.prevVisible = this.isVisible
+      if (this.isVisible)
+        return
+
       this.isVisible = true
+      this.visibleHndl(true, false)
+    },
+
+    open() {
+      this.show()
     },
 
     toggle() {
@@ -96,28 +146,73 @@ export default {
         this.show()
     },
 
+    onEscape() {
+      if (!this.isVisible || this.ignoreEscape || !this.$refs.container)
+        return
+
+      const myZIndex = parseInt(getComputedStyle(this.$refs.container).zIndex)
+      const maxZIndex = Math.max(
+        ...Array.from(
+          document.querySelectorAll('.modal-container:not(.hidden)')
+        ).map((modal) =>
+          parseInt(getComputedStyle(modal).zIndex)
+        )
+      )
+
+      // Close only if it's the outermost modal
+      if (myZIndex === maxZIndex)
+        this.close()
+    },
+
     onKeyUp(event) {
       event.stopPropagation()
       if (event.key === 'Escape') {
-        this.close()
+        this.onEscape()
+      }
+    },
+
+    onModalCloseMessage() {
+      if (!this.isVisible)
+        return
+
+      this.ignoreEscape = true
+      setTimeout(() => this.ignoreEscape = false, 100)
+    },
+
+    visibleHndl(visible, oldVisible) {
+      if (!this.$el?.classList?.contains('modal-container'))
+        return
+
+      if (!visible && oldVisible) {
+        this.$emit('close')
+        bus.emit('modal-close', this)
+      } else if (visible && !oldVisible) {
+        this.$emit('open')
+        bus.emit('modal-open', this)
       }
     },
   },
 
+  watch: {
+    visible(value, oldValue) {
+      this.visibleHndl(value, oldValue)
+      this.$nextTick(() => this.isVisible = value)
+    },
+
+    isVisible(value, oldValue) {
+      oldValue = oldValue == null ? this.visible : oldValue
+      this.visibleHndl(value, oldValue)
+    },
+  },
+
   mounted() {
-    const self = this
-    const visibleHndl = (visible) => {
-      if (!visible)
-        self.$emit('close')
-      else
-        self.$emit('open')
-
-      self.isVisible = visible
-    }
-
     document.body.addEventListener('keyup', this.onKeyUp)
-    this.$watch(() => this.visible, visibleHndl)
-    this.$watch(() => this.isVisible, visibleHndl)
+    this.visibleHndl(this.isVisible, this.isVisible ? false : undefined)
+  },
+
+  unmouted() {
+    document.body.removeEventListener('keyup', this.onKeyUp)
+    this.visibleHndl(false, this.isVisible)
   },
 
   unmounted() {
@@ -125,7 +220,6 @@ export default {
   },
 
   updated() {
-    this.prevVisible = this.isVisible
     if (this.isVisible) {
       // Make sure that a newly opened or visible+updated modal always comes to the front
       let maxZIndex = parseInt(getComputedStyle(this.$el).zIndex)
@@ -202,13 +296,20 @@ $icon-margin: 0.5em;
       justify-content: center;
       align-items: center;
       background: $modal-header-bg;
-      text-transform: uppercase;
+
+      &.uppercase {
+        text-transform: uppercase;
+      }
+
+      .buttons {
+        width: auto;
+        position: absolute;
+        right: 0;
+      }
 
       button {
         width: $icon-size;
         height: $icon-size;
-        position: absolute;
-        right: 0;
         margin: auto $icon-margin;
         padding: 0;
         border: 0;

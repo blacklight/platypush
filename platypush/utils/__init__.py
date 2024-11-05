@@ -14,6 +14,7 @@ import socket
 import ssl
 import time
 import urllib.request
+from collections import defaultdict
 from importlib.machinery import SourceFileLoader
 from importlib.util import spec_from_loader, module_from_spec
 from multiprocessing import Lock as PLock
@@ -29,6 +30,7 @@ logger = logging.getLogger('utils')
 Lock = Union[PLock, TLock]  # type: ignore
 
 redis_pools: dict[Tuple[str, int], ConnectionPool] = {}
+key_locks: dict[str, Lock] = defaultdict(PLock)
 
 
 def get_module_and_method_from_action(action):
@@ -411,7 +413,11 @@ def get_mime_type(resource: str) -> Optional[str]:
             )
 
         if mime:
-            return mime.mime_type if hasattr(mime, 'mime_type') else mime  # type: ignore
+            mime_type = mime.mime_type if hasattr(mime, 'mime_type') else mime  # type: ignore
+            if mime_type == 'inode/symlink':
+                mime_type = get_mime_type(os.path.realpath(resource))
+
+            return mime_type
 
     return None
 
@@ -532,7 +538,12 @@ def generate_rsa_key_pair(
     private_key_str = priv_key.save_pkcs1('PEM').decode()
 
     if key_file:
+        pathlib.Path(os.path.dirname(os.path.expanduser(key_file))).mkdir(
+            parents=True, exist_ok=True
+        )
+
         logger.info('Saving private key to %s', key_file)
+
         with open(os.path.expanduser(key_file), 'w') as f1, open(
             os.path.expanduser(key_file) + '.pub', 'w'
         ) as f2:
@@ -543,25 +554,39 @@ def generate_rsa_key_pair(
     return pub_key, priv_key
 
 
-def get_or_generate_jwt_rsa_key_pair():
+def get_or_generate_stored_rsa_key_pair(
+    keyfile: str, size: int = 2048
+) -> Tuple[PublicKey, PrivateKey]:
     """
-    Get or generate a JWT RSA key pair.
-    """
-    from platypush.config import Config
+    Get or generate an RSA key pair and store it in the given key file.
 
-    key_dir = os.path.join(Config.get_workdir(), 'jwt')
-    priv_key_file = os.path.join(key_dir, 'id_rsa')
+    The private key will be stored in the given file, while the public key will
+    be stored in ``<keyfile>.pub``.
+
+    :param keyfile: Path to the key file.
+    :param size: Key size in bits (default: 2048).
+    """
+    keydir = os.path.dirname(os.path.expanduser(keyfile))
+    priv_key_file = os.path.join(keydir, os.path.basename(keyfile))
     pub_key_file = priv_key_file + '.pub'
 
-    if os.path.isfile(priv_key_file) and os.path.isfile(pub_key_file):
-        with open(pub_key_file, 'r') as f1, open(priv_key_file, 'r') as f2:
-            return (
-                PublicKey.load_pkcs1(f1.read().encode()),
-                PrivateKey.load_pkcs1(f2.read().encode()),
-            )
+    with key_locks[keyfile]:
+        if os.path.isfile(priv_key_file) and os.path.isfile(pub_key_file):
+            with open(pub_key_file, 'r') as f1, open(priv_key_file, 'r') as f2:
+                return (
+                    PublicKey.load_pkcs1(f1.read().encode()),
+                    PrivateKey.load_pkcs1(f2.read().encode()),
+                )
 
-    pathlib.Path(key_dir).mkdir(parents=True, exist_ok=True, mode=0o755)
-    return generate_rsa_key_pair(priv_key_file, size=2048)
+        pub_key, priv_key = generate_rsa_key_pair(priv_key_file, size=size)
+        pathlib.Path(keydir).mkdir(parents=True, exist_ok=True, mode=0o755)
+
+        with open(pub_key_file, 'w') as f1, open(priv_key_file, 'w') as f2:
+            f1.write(pub_key.save_pkcs1('PEM').decode())
+            f2.write(priv_key.save_pkcs1('PEM').decode())
+            os.chmod(priv_key_file, 0o600)
+
+    return pub_key, priv_key
 
 
 def get_enabled_plugins() -> dict:
@@ -842,6 +867,22 @@ def utcnow():
     timezone.
     """
     return datetime.datetime.now(datetime.timezone.utc)
+
+
+def is_binary(data: Union[str, bytes]) -> bool:
+    """
+    Check if the given data is binary.
+
+    :param data: The data to be checked.
+    :return: True if the data is binary.
+    """
+    if isinstance(data, str):
+        return False
+
+    # From https://stackoverflow.com/questions/898669/how-can-i-detect-if-a-file-is-binary-non-text-in-python
+    assert isinstance(data, bytes), f"Invalid data type: {type(data)}"
+    textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F})
+    return bool(data.translate(None, textchars))
 
 
 # vim:sw=4:ts=4:et:

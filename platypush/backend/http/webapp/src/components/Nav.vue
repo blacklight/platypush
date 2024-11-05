@@ -19,7 +19,7 @@
       <li v-for="config, name in configSections" :key="name" class="entry"
           :class="{selected: name === selectedConfigPanel}"
           :title="config.name" @click="$emit('select-config', name)">
-        <a href="/#settings">
+        <a :href="`/#settings?page=${name}`">
         <span class="icon">
           <i :class="config.icon['class']" v-if="config.icon?.['class']" />
           <img :src="config.icon?.imgUrl" v-else-if="config.icon?.imgUrl" alt="name"/>
@@ -117,7 +117,7 @@ export default {
 
   computed: {
     specialPlugins() {
-      return ['execute', 'entities']
+      return ['execute', 'entities', 'file', 'procedures']
     },
 
     panelNames() {
@@ -130,6 +130,8 @@ export default {
       }
 
       let panelNames = Object.keys(this.panels).sort()
+      panelNames = prepend(panelNames, 'file')
+      panelNames = prepend(panelNames, 'procedures')
       panelNames = prepend(panelNames, 'execute')
       panelNames = prepend(panelNames, 'entities')
       return panelNames
@@ -153,6 +155,10 @@ export default {
         return 'Home'
       if (name === 'execute')
         return 'Execute'
+      if (name === 'file')
+        return 'Files'
+      if (name === 'procedures')
+        return 'Procedures'
 
       return name
     },

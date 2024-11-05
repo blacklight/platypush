@@ -15,14 +15,6 @@ def readfile(fname):
         return f.read()
 
 
-def pkg_files(dir):
-    paths = []
-    for p, _, files in os.walk(dir):
-        for file in files:
-            paths.append(os.path.join('..', p, file))
-    return paths
-
-
 def scan_manifests():
     for root, _, files in os.walk('platypush'):
         for file in files:
@@ -34,7 +26,7 @@ def parse_deps(deps):
     ret = []
     for dep in deps:
         if dep.startswith('git+'):
-            continue  # Don't include git dependencies in the setup.py, or Twine will complain
+            continue  # Don't include git dependencies in pip, or Twine will complain
 
         ret.append(dep)
 
@@ -61,21 +53,10 @@ def parse_manifests():
     return ret
 
 
-plugins = pkg_files('platypush/plugins')
-backend = pkg_files('platypush/backend')
-
 setup(
-    name="platypush",
-    version="1.1.3",
-    author="Fabio Manganiello",
-    author_email="fabio@manganiello.tech",
-    description="Platypush service",
-    license="MIT",
-    python_requires='>= 3.6',
-    keywords="home-automation automation iot mqtt websockets redis dashboard notifications",
-    url="https://platypush.tech",
     packages=find_packages(exclude=['tests']),
     include_package_data=True,
+    extras_require=parse_manifests(),
     package_data={
         'platypush': [
             'migrations/alembic.ini',
@@ -96,17 +77,9 @@ setup(
             'platyvenv=platypush.platyvenv:main',
         ],
     },
-    long_description=readfile('README.md'),
-    long_description_content_type='text/markdown',
-    classifiers=[
-        "Topic :: Utilities",
-        "License :: OSI Approved :: MIT License",
-        "Development Status :: 4 - Beta",
-    ],
     install_requires=[
         line.split('#')[0].strip()
         for line in readfile('requirements.txt').splitlines()
         if line.strip().split('#')[0].strip()
     ],
-    extras_require=parse_manifests(),
 )

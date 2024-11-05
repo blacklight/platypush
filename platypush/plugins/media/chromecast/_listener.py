@@ -1,8 +1,9 @@
 import logging
 import time
-from typing import Optional
+from typing import Optional, Type
 
 from platypush.message.event.media import (
+    MediaEvent,
     MediaPlayEvent,
     MediaStopEvent,
     MediaPauseEvent,
@@ -42,7 +43,10 @@ class MediaListener:
                 self._post_event(MediaPlayEvent)
             elif state == 'pause':
                 self._post_event(MediaPauseEvent)
-            elif state in ('stop', 'idle'):
+            elif state in ('stop', 'idle') and self.status.get('state') in (
+                'play',
+                'pause',
+            ):
                 self._post_event(MediaStopEvent)
 
         if status.get('volume') != self.status.get('volume'):
@@ -62,7 +66,7 @@ class MediaListener:
     def load_media_failed(self, item, error_code):
         logger.warning('Failed to load media %s: %d', item, error_code)
 
-    def _post_event(self, evt_type, **evt):
+    def _post_event(self, evt_type: Type[MediaEvent], **evt):
         status = evt.get('status', {})
         resource = status.get('url')
         args = {

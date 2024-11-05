@@ -8,7 +8,7 @@ import logging
 import inspect
 import json
 import time
-from typing import Union
+from typing import Optional, Union
 from uuid import UUID
 
 _logger = logging.getLogger('platypush')
@@ -114,18 +114,19 @@ class Message:
         self._logger = _logger
         self._default_log_prefix = ''
 
-    def log(self, prefix=''):
+    def log(self, level: Optional[int] = None, prefix=''):
         if self.logging_level is None:
             return  # Skip logging
 
         log_func = self._logger.info
-        if self.logging_level == logging.DEBUG:
+        level = level if level is not None else self.logging_level
+        if level == logging.DEBUG:
             log_func = self._logger.debug
-        elif self.logging_level == logging.WARNING:
+        elif level == logging.WARNING:
             log_func = self._logger.warning
-        elif self.logging_level == logging.ERROR:
+        elif level == logging.ERROR:
             log_func = self._logger.error
-        elif self.logging_level == logging.FATAL:
+        elif level == logging.FATAL:
             log_func = self._logger.fatal
 
         if not prefix:

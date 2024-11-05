@@ -14,6 +14,7 @@ export default {
       if (!component.keepOpenOnItemClick)
         this.onClose()
 
+      component.$el.classList.remove('hidden')
       this.$el.appendChild(component.$el)
     },
 

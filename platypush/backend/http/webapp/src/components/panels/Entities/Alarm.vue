@@ -370,22 +370,23 @@ $icon-width: 2em;
     cursor: default;
 
     .content {
-      width: 50em;
-      max-width: 90%;
-
       .body {
         width: 100%;
       }
     }
 
     .alarm-running-modal {
-      width: 100%;
+      min-width: 90vw;
       height: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       padding: 1em;
+
+      @include from($tablet) {
+        min-width: 40em;
+      }
 
       .icon {
         font-size: 3.5em;

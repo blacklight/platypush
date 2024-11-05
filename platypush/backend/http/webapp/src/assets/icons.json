@@ -44,6 +44,9 @@
   "execute": {
     "class": "fa fa-play"
   },
+  "file": {
+    "class": "fas fa-folder"
+  },
   "extensions": {
     "class": "fas fa-puzzle-piece"
   },
@@ -53,14 +56,14 @@
   "linode": {
     "class": "fas fa-cloud"
   },
+  "media.chromecast": {
+    "class": "fab fa-chromecast"
+  },
   "media.jellyfin": {
     "imgUrl": "/icons/jellyfin.svg"
   },
   "media.kodi": {
     "imgUrl": "/icons/kodi.svg"
-  },
-  "media.omxplayer": {
-    "class": "fa fa-film"
   },
   "media.mplayer": {
     "class": "fa fa-film"
@@ -85,6 +88,9 @@
   },
   "ping": {
     "class": "fas fa-server"
+  },
+  "procedures": {
+    "class": "fas fa-gears"
   },
   "torrent": {
     "class": "fa fa-magnet"

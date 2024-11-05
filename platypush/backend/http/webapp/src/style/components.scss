@@ -1,3 +1,6 @@
+$floating-btn-size: 4em;
+$monospace-font: 'Hack', 'Fira Code', 'Noto Sans Mono', 'Ubuntu Mono', 'Recursive', 'Inconsolata', 'Consolas', 'Courier New', monospace;
+
 button, .btn, .btn-default {
   border: $default-border-3;
   cursor: pointer;
@@ -10,9 +13,30 @@ button, .btn, .btn-default {
     border: $selected-border;
   }
 
+  &:hover {
+    color: $default-hover-fg;
+    // background: $hover-bg;
+    // border: 1px solid $default-hover-fg;
+  }
+
   .icon {
     margin-right: .5em;
   }
+
+  &:disabled,
+  &[disabled] {
+    background: none !important;
+    color: $disabled-fg !important;
+    cursor: not-allowed;
+  }
+}
+
+[draggable] {
+  cursor: grab !important;
+}
+
+.dragged {
+  opacity: 0.5 !important;
 }
 
 input[type=text], input[type=password] {
@@ -72,6 +96,10 @@ a {
   cursor: pointer;
 }
 
+.text-danger {
+  color: $error-fg;
+}
+
 body {
   scrollbar-width: thin;
   scrollbar-color: $scrollbar-thumb-bg $scrollbar-track-bg;
@@ -107,6 +135,10 @@ $nav-height: 2.5em;
       }
     }
   }
+}
+
+code {
+  font-family: $monospace-font;
 }
 
 // Tabs

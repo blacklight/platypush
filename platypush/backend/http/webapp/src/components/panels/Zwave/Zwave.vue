@@ -95,23 +95,23 @@
         </button>
 
         <Dropdown title="Network commands" icon-class="fa fa-cog">
-          <DropdownItem text="Network Info" :disabled="commandRunning" @click="networkInfoModalOpen" />
-          <DropdownItem text="Start Network" :disabled="commandRunning" @click="startNetwork" />
-          <DropdownItem text="Stop Network" :disabled="commandRunning" @click="stopNetwork" />
+          <DropdownItem text="Network Info" :disabled="commandRunning" @input="networkInfoModalOpen" />
+          <DropdownItem text="Start Network" :disabled="commandRunning" @input="startNetwork" />
+          <DropdownItem text="Stop Network" :disabled="commandRunning" @input="stopNetwork" />
           <DropdownItem text="Add Node" :disabled="commandRunning"
-            @click="openAddNodeModal()" v-if="selected.view === 'nodes'" />
-          <DropdownItem text="Remove Node" :disabled="commandRunning" @click="removeNode"
+            @input="openAddNodeModal()" v-if="selected.view === 'nodes'" />
+          <DropdownItem text="Remove Node" :disabled="commandRunning" @input="removeNode"
                         v-if="selected.view === 'nodes'" />
-          <DropdownItem text="Switch All On" :disabled="commandRunning" @click="switchAll(true)" />
-          <DropdownItem text="Switch All Off" :disabled="commandRunning" @click="switchAll(false)" />
-          <DropdownItem text="Cancel Command" :disabled="commandRunning" @click="cancelCommand" />
-          <DropdownItem text="Kill Command" :disabled="commandRunning" @click="killCommand" />
-          <DropdownItem text="Receive Configuration" :disabled="commandRunning" @click="receiveConfiguration" />
-          <DropdownItem text="Create New Primary" :disabled="commandRunning" @click="createNewPrimary" />
-          <DropdownItem text="Transfer Primary Role" :disabled="commandRunning" @click="transferPrimaryRole" />
-          <DropdownItem text="Heal Network" :disabled="commandRunning" @click="healNetwork" />
-          <DropdownItem text="Soft Reset" :disabled="commandRunning" @click="softReset" />
-          <DropdownItem text="Hard Reset" :disabled="commandRunning" @click="hardReset" />
+          <DropdownItem text="Switch All On" :disabled="commandRunning" @input="switchAll(true)" />
+          <DropdownItem text="Switch All Off" :disabled="commandRunning" @input="switchAll(false)" />
+          <DropdownItem text="Cancel Command" :disabled="commandRunning" @input="cancelCommand" />
+          <DropdownItem text="Kill Command" :disabled="commandRunning" @input="killCommand" />
+          <DropdownItem text="Receive Configuration" :disabled="commandRunning" @input="receiveConfiguration" />
+          <DropdownItem text="Create New Primary" :disabled="commandRunning" @input="createNewPrimary" />
+          <DropdownItem text="Transfer Primary Role" :disabled="commandRunning" @input="transferPrimaryRole" />
+          <DropdownItem text="Heal Network" :disabled="commandRunning" @input="healNetwork" />
+          <DropdownItem text="Soft Reset" :disabled="commandRunning" @input="softReset" />
+          <DropdownItem text="Hard Reset" :disabled="commandRunning" @input="hardReset" />
         </Dropdown>
 
         <button class="btn btn-default" title="Refresh Network" @click="refresh">

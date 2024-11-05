@@ -12,7 +12,7 @@
 
     <div class="canvas" v-if="selectedPanel === 'settings'">
       <div class="panel">
-        <Settings :selected-panel="selectedConfigPanel" />
+        <Settings :selected-panel="selectedConfigPanel" @change-page="selectedConfigPanel = $event" />
       </div>
     </div>
 
@@ -102,6 +102,7 @@ export default {
     initializeDefaultViews() {
       this.plugins.entities = {}
       this.plugins.execute = {}
+      this.plugins.file = this.plugins.file || {}
     },
   },
 

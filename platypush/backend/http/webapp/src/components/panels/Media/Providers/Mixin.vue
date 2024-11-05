@@ -22,6 +22,15 @@ export default {
       default: '',
     },
 
+    loading: {
+      type: Boolean,
+      default: false,
+    },
+
+    mediaPlugin: {
+      type: String,
+    },
+
     selectedPlaylist: {
       default: null,
     },
@@ -33,8 +42,14 @@ export default {
 
   data() {
     return {
-      loading: false,
+      loading_: false,
     }
+  },
+
+  computed: {
+    isLoading() {
+      return this.loading || this.loading_
+    },
   },
 }
 </script>

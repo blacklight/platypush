@@ -1,4 +1,3 @@
-from dataclasses import field
 from datetime import date, datetime
 from uuid import UUID
 
@@ -18,8 +17,7 @@ def percent_field(**kwargs):
     """
     Field used to model percentage float fields between 0 and 1.
     """
-    return field(
-        default_factory=float,
+    return fields.Float(
         metadata={
             'validate': Range(min=0, max=1),
             **kwargs,

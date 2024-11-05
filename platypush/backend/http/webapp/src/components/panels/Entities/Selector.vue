@@ -10,15 +10,15 @@
     <div class="selector actions-container col-1 pull-right">
       <Dropdown title="Actions" icon-class="fas fa-ellipsis">
         <DropdownItem  icon-class="fas fa-sync-alt" text="Refresh"
-          @click="$emit('refresh')" />
+          @input="$emit('refresh')" />
         <DropdownItem  icon-class="fas fa-square-root-variable"
-          text="Set Variable" @click="$emit('show-variable-modal')" />
+          text="Set Variable" @input="$emit('show-variable-modal')" />
 
         <Dropdown title="Group by" text="Group by"
           icon-class="fas fa-object-ungroup" ref="groupingSelector">
           <DropdownItem v-for="g in visibleGroupings" :key="g" :text="prettifyGroupingName(g)"
             :item-class="{selected: value?.grouping === g}"
-            @click="onGroupingChanged(g)" />
+            @input="onGroupingChanged(g)" />
         </Dropdown>
 
         <Dropdown title="Filter groups" text="Filter groups"

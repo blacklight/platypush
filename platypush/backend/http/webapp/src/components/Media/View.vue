@@ -9,6 +9,7 @@
                 :status="status"
                 :track="track"
                 @consume="$emit('consume', $event)"
+                @info="$emit('info', $event)"
                 @mute="$emit('mute')"
                 @next="$emit('next')"
                 @pause="$emit('pause', $event)"
@@ -33,6 +34,7 @@ export default {
   components: {Controls},
   emits: [
     'consume',
+    'info',
     'mute',
     'next',
     'pause',
@@ -95,6 +97,7 @@ export default {
     border-top: $default-border-2;
     background: $default-bg-2;
     box-shadow: $border-shadow-top;
+    z-index: 100;
   }
 }
 </style>

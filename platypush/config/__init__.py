@@ -179,6 +179,8 @@ class Config:
         self._config['logging'] = logging_config
 
     def _init_db(self, db: Optional[str] = None):
+        self._config['_db'] = self._config.get('db', {})
+
         # If the db connection string is passed as an argument, use it
         if db:
             self._config['db'] = {
@@ -272,6 +274,7 @@ class Config:
     @property
     def _core_plugins(self) -> Dict[str, dict]:
         return {
+            'procedures': {},
             'variable': {},
         }
 
@@ -422,6 +425,7 @@ class Config:
 
                 self.procedures[procedure_name] = {
                     '_async': _async,
+                    'type': 'config',
                     'actions': component,
                     'args': args,
                 }

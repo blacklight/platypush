@@ -13,7 +13,7 @@
 
 <script>
 import 'highlight.js/lib/common'
-import 'highlight.js/styles/stackoverflow-dark.min.css'
+import 'highlight.js/styles/night-owl.min.css'
 import hljs from "highlight.js"
 import CopyButton from "@/components/elements/CopyButton"
 import Utils from "@/Utils";
@@ -61,9 +61,9 @@ export default {
       }
 
       return hljs.highlight(
-        'yaml',
         '# Currently loaded configuration\n' +
-        this.curYamlConfig
+        this.curYamlConfig,
+        {language: 'yaml'}
       ).value.trim()
     },
   },

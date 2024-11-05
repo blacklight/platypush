@@ -7,7 +7,7 @@ from typing import Optional
 from tornado.web import RequestHandler, stream_request_body
 
 from platypush.backend.http.app.utils import logger
-from platypush.backend.http.app.utils.auth import AuthStatus, get_auth_status
+from platypush.backend.http.app.utils.auth import UserAuthStatus, get_auth_status
 
 from ..mixins import PubSubMixin
 
@@ -29,7 +29,7 @@ class StreamingRoute(RequestHandler, PubSubMixin, ABC):
         """
         if self.auth_required:
             auth_status = get_auth_status(self.request)
-            if auth_status != AuthStatus.OK:
+            if auth_status != UserAuthStatus.OK:
                 self.send_error(auth_status.value.code, error=auth_status.value.message)
                 return
 

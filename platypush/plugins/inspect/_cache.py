@@ -221,8 +221,10 @@ class Cache:
         :param obj_type: Object type.
         :param value: Value to set.
         """
+        old_value = self.get(category, obj_type)
         self._cache[category][obj_type] = value
-        self.has_changes = True
+        if old_value != value:
+            self.has_changes = True
 
     @property
     def plugins(self) -> Dict[type, dict]:

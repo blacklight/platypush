@@ -3,7 +3,7 @@ import io
 import os
 import threading
 import time
-from typing import Optional, List
+from typing import Optional, List, Union
 
 import qrcode
 from pyzbar import pyzbar
@@ -56,7 +56,8 @@ class QrcodePlugin(Plugin):
     @action
     def generate(
         self,
-        content: str,
+        content: Union[str, bytes],
+        binary: bool = False,
         output_file: Optional[str] = None,
         show: bool = False,
         format: str = 'png',
@@ -69,6 +70,9 @@ class QrcodePlugin(Plugin):
         ``http://<host>:<port>/qrcode?content=...``.
 
         :param content: Text, URL or content of the QR code.
+        :param binary: If True then the content will be treated as binary data.
+            Content needs to be either a bytes object or a base64-encoded
+            string.
         :param output_file: If set then the QR code will be exported in the
             specified image file. Otherwise, a base64-encoded representation of
             its binary content will be returned in the response as ``data``.
@@ -78,10 +82,23 @@ class QrcodePlugin(Plugin):
         :param format: Output image format (default: ``png``).
         :return: .. schema:: qrcode.QrcodeGeneratedSchema
         """
+        if binary:
+            if isinstance(content, str):
+                try:
+                    content = base64.b64decode(content)
+                except ValueError as e:
+                    raise AssertionError(f'Invalid base64-encoded binary content: {e}')
+
+            assert isinstance(content, bytes), 'Invalid binary content'
+
         qr = qrcode.make(content)
         img = qr.get_image()
         ret = {
-            'content': content,
+            'content': (
+                content
+                if isinstance(content, str)
+                else base64.b64encode(content).decode()
+            ),
             'format': format,
         }
 
@@ -95,7 +112,7 @@ class QrcodePlugin(Plugin):
         else:
             f = io.BytesIO()
             img.save(f, format=format)
-            ret['data'] = base64.encodebytes(f.getvalue()).decode()
+            ret['data'] = base64.b64encode(f.getvalue()).decode()
 
         return dict(QrcodeGeneratedSchema().dump(ret))
 

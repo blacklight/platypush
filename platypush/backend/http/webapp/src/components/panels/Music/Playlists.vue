@@ -40,7 +40,7 @@
           <Dropdown title="Players" icon-class="fa fa-volume-up" v-if="Object.keys(devices || {}).length">
             <DropdownItem v-for="(device, id) in devices" :key="id" v-text="device.name"
                           :item-class="{active: activeDevice === id, selected: selectedDevice === id}"
-                          icon-class="fa fa-volume-up" @click="$emit('select-device', id)" />
+                          icon-class="fa fa-volume-up" @input="$emit('select-device', id)" />
           </Dropdown>
 
           <button title="Refresh status" @click="$emit('refresh-status')" v-if="devices != null">

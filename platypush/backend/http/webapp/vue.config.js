@@ -34,16 +34,19 @@ module.exports = {
 
   devServer: {
     proxy: {
+      '^/auth': httpProxy,
+      '^/camera/': httpProxy,
+      '^/execute': httpProxy,
+      '^/file': httpProxy,
+      '^/logo.svg': httpProxy,
+      '^/logout': httpProxy,
+      '^/media/': httpProxy,
+      '^/otp': httpProxy,
+      '^/sound/': httpProxy,
+      '^/tokens': httpProxy,
       '^/ws/events': wsProxy,
       '^/ws/requests': wsProxy,
       '^/ws/shell': wsProxy,
-      '^/execute': httpProxy,
-      '^/file': httpProxy,
-      '^/auth': httpProxy,
-      '^/camera/': httpProxy,
-      '^/sound/': httpProxy,
-      '^/media/': httpProxy,
-      '^/logo.svg': httpProxy,
     }
   }
 };

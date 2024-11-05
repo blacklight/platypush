@@ -287,6 +287,14 @@
     }
   },
 
+  "procedure": {
+    "name": "Procedure",
+    "name_plural": "Procedures",
+    "icon": {
+      "class": "fas fa-cogs"
+    }
+  },
+
   "weight_sensor": {
     "name": "Sensor",
     "name_plural": "Sensors",

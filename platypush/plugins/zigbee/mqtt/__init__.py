@@ -954,11 +954,13 @@ class ZigbeeMqttPlugin(
         return device_info
 
     @staticmethod
-    def _preferred_name(device: dict) -> str:
+    def _preferred_name(device: Union[str, dict]) -> str:
         """
         Utility method that returns the preferred name of a device, on the basis
         of which attributes are exposed (friendly name or IEEE address).
         """
+        if isinstance(device, str):
+            return device
         return device.get('friendly_name') or device.get('ieee_address') or ''
 
     @classmethod
@@ -1131,7 +1133,6 @@ class ZigbeeMqttPlugin(
             the default configured device).
         """
         msg = (values or {}).copy()
-        reply_topic = None
         device_info = self._get_device_info(device, **kwargs)
         assert device_info, f'No such device: {device}'
         device = self._preferred_name(device_info)
@@ -1143,31 +1144,17 @@ class ZigbeeMqttPlugin(
                 return self.device_set_option(device, property, value, **kwargs)
 
             # Check if it's a property
-            reply_topic = self._topic(device)
             stored_property = self._get_properties(device_info).get(property)
             assert stored_property, f'No such property: {property}'
 
             # Set the new value on the message
             msg[property] = value
 
-            # Don't wait for an update from a value that is not readable
-            if self._is_write_only(stored_property):
-                reply_topic = None
-
-        properties = self._run_request(
+        self._run_request(
             topic=self._topic(device + '/set'),
-            reply_topic=reply_topic,
             msg=msg,
             **self._mqtt_args(**kwargs),
         )
-
-        if property and reply_topic:
-            assert (
-                property in properties
-            ), f'Could not retrieve the new state for {property}'
-            return {property: properties[property]}
-
-        return properties
 
     @action
     # pylint: disable=redefined-builtin
@@ -1670,9 +1657,11 @@ class ZigbeeMqttPlugin(
             prop,
             prop_info.get(
                 'value_toggle',
-                'OFF'
-                if device_state.get(prop) == prop_info.get('value_on', 'ON')
-                else 'ON',
+                (
+                    'OFF'
+                    if device_state.get(prop) == prop_info.get('value_on', 'ON')
+                    else 'ON'
+                ),
             ),
         )
 
@@ -2225,14 +2214,14 @@ class ZigbeeMqttPlugin(
         elif msg_type == 'device_group_remove_all_failed':
             self._bus.post(ZigbeeMqttGroupRemoveAllFailedEvent(group=text, **args))
         elif msg_type == 'zigbee_publish_error':
-            self.logger.error('zigbee2mqtt error: {}'.format(text))
+            self.logger.error('zigbee2mqtt error: %s', text)
             self._bus.post(ZigbeeMqttErrorEvent(error=text, **args))
         elif msg.get('level') in ['warning', 'error']:
             log = getattr(self.logger, msg['level'])
             log(
-                'zigbee2mqtt {}: {}'.format(
-                    msg['level'], text or msg.get('error', msg.get('warning'))
-                )
+                'zigbee2mqtt %s: %s',
+                msg['level'],
+                text or msg.get('error', msg.get('warning')),
             )
 
     def _process_devices(self, client: MqttClient, msg):

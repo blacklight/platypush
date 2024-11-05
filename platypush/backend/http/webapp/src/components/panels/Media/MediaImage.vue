@@ -1,9 +1,13 @@
 <template>
-  <div class="image-container"
-       :class="{ 'with-image': !!item?.image }">
-    <div class="play-overlay" @click="$emit(clickEvent, item)" v-if="hasPlay">
+  <div class="image-container" :class="containerClasses">
+    <div class="play-overlay"
+         @click.stop="onItemClick"
+         v-if="hasPlay || ['book', 'photo'].includes(item?.item_type)">
       <i :class="overlayIconClass" />
     </div>
+
+    <div class="backdrop" v-if="item?.image || item?.preview_url"
+         :style="{ backgroundImage: `url(${item.image || item.preview_url})` }" />
 
     <span class="icon type-icon" v-if="typeIcons[item?.type]">
       <a :href="item.url" target="_blank" v-if="item.url">
@@ -13,7 +17,8 @@
       </a>
     </span>
 
-    <img class="image" :src="item.image" :alt="item.title" v-if="item?.image" />
+    <img class="image" :src="imgUrl" :alt="item.title" v-if="imgUrl" />
+
     <div class="image" v-else>
       <div class="inner">
         <i :class="iconClass" />
@@ -62,17 +67,29 @@ export default {
   computed: {
     clickEvent() {
       switch (this.item?.item_type) {
+        case 'book':
         case 'channel':
         case 'playlist':
         case 'folder':
+        case 'photo':
           return 'select'
         default:
           return 'play'
       }
     },
 
+    containerClasses() {
+      return {
+        'with-image': !!this.item?.image,
+        photo: this.item?.item_type === 'photo',
+        book: this.item?.item_type === 'book',
+      }
+    },
+
     iconClass() {
       switch (this.item?.item_type) {
+        case 'book':
+          return 'fas fa-book'
         case 'channel':
           return 'fas fa-user'
         case 'playlist':
@@ -84,6 +101,19 @@ export default {
       }
     },
 
+    imgUrl() {
+      if (this.item?.item_type === 'photo') {
+        return this.item?.preview_url || this.item?.url
+      }
+
+      let img = this.item?.image
+      if (!img) {
+        img = this.item?.images?.[0]?.url
+      }
+
+      return img
+    },
+
     overlayIconClass() {
       if (
         this.item?.item_type === 'channel' ||
@@ -91,9 +121,19 @@ export default {
         this.item?.item_type === 'folder'
       ) {
         return 'fas fa-folder-open'
+      } else if (this.item?.item_type === 'photo') {
+        return 'fas fa-eye'
+      } else if (this.item?.item_type === 'book') {
+        return 'fas fa-book-open'
       }
 
       return 'fas fa-play'
+    },
+  },
+
+  methods: {
+    onItemClick() {
+      this.$emit(this.clickEvent, this.item)
     },
   },
 }
@@ -110,6 +150,7 @@ export default {
   background: rgba(0, 0, 0, 0.5);
   border-radius: 0.25em;
   color: $default-media-img-fg;
+  z-index: 3;
 
   a {
     width: 100%;
@@ -150,6 +191,7 @@ export default {
   color: white;
   padding: 0.25em 0.5em;
   border-radius: 0.25em;
+  z-index: 2;
 }
 
 .type-icon {
@@ -185,6 +227,7 @@ export default {
 
 .image {
   max-width: 100%;
+  z-index: 1;
 }
 
 div.image {
@@ -220,6 +263,7 @@ div.image {
   border-radius: 2em;
   opacity: 0;
   transition: opacity 0.2s ease-in-out;
+  z-index: 3;
 
   &:hover {
     opacity: 1;
@@ -229,5 +273,15 @@ div.image {
     font-size: 5em;
     color: $default-media-img-fg;
   }
+}
+
+.backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  filter: blur(5px) brightness(0.5);
 }
 </style>
