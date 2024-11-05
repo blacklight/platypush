@@ -124,6 +124,8 @@ class TtsOpenaiPlugin(TtsPlugin):
             duration, channels etc.).
         """
         response_processor: Optional[Process] = None
+        # The language argument isn't required here
+        player_args.pop('language', None)
 
         try:
             response = self._make_request(text, model=model, voice=voice)

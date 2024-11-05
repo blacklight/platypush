@@ -1,6 +1,8 @@
 import json
 import threading
 import time
+from typing import Optional
+from urllib.parse import urlparse
 
 from platypush.context import get_bus
 from platypush.plugins import action
@@ -19,42 +21,36 @@ class MediaKodiPlugin(MediaPlugin):
     Plugin to interact with a Kodi media player instance
     """
 
-    # noinspection HttpUrlsUsage
     def __init__(
         self,
-        host,
-        http_port=8080,
-        websocket_port=9090,
-        username=None,
-        password=None,
+        rpc_url: str = 'http://localhost:8080/jsonrpc',
+        websocket_port: int = 9090,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
         **kwargs,
     ):
         """
-        :param host: Kodi host name or IP
-        :type host: str
-
-        :param http_port: Kodi JSON RPC web port. Remember to enable "Allow remote control via HTTP"
-            in Kodi service settings -> advanced configuration and "Allow remote control from applications"
-            on this system and, optionally, on other systems if the Kodi server is on another machine
-        :type http_port: int
-
+        :param rpc_url: Base URL for the Kodi JSON RPC API (default:
+            http://localhost:8080/jsonrpc). You need to make sure that the RPC
+            API is enabled on your Kodi instance - you can enable it from the
+            settings.
         :param websocket_port: Kodi JSON RPC websocket port, used to receive player events
-        :type websocket_port: int
-
         :param username: Kodi username (optional)
-        :type username: str
-
         :param password: Kodi password (optional)
-        :type password: str
         """
 
         super().__init__(**kwargs)
 
-        self.host = host
-        self.http_port = http_port
+        self.url = rpc_url
+        host, port = kwargs.get('host'), kwargs.get('port', 8080)
+
+        if host and port:
+            self.logger.warning('host and port are deprecated, use rpc_url instead')
+            self.url = f'http://{host}:{port}/jsonrpc'
+
+        self.host = urlparse(self.url).hostname
         self.websocket_port = websocket_port
-        self.url = 'http://{}:{}/jsonrpc'.format(host, http_port)
-        self.websocket_url = 'ws://{}:{}/jsonrpc'.format(host, websocket_port)
+        self.websocket_url = f'ws://{self.host}:{websocket_port}/jsonrpc'
         self.username = username
         self.password = password
         self._ws = None
@@ -113,7 +109,7 @@ class MediaKodiPlugin(MediaPlugin):
     def _on_ws_msg(self):
         def hndl(*args):
             msg = args[1] if len(args) > 1 else args[0]
-            self.logger.info("Received Kodi message: {}".format(msg))
+            self.logger.info("Received Kodi message: %s", msg)
             msg = json.loads(msg)
             method = msg.get('method')
 
@@ -138,6 +134,7 @@ class MediaKodiPlugin(MediaPlugin):
             elif method == 'Player.OnStop':
                 player = msg.get('params', {}).get('data', {}).get('player', {})
                 self._post_event(MediaStopEvent, player_id=player.get('playerid'))
+                self._clear_resource()
             elif method == 'Player.OnSeek':
                 player = msg.get('params', {}).get('data', {}).get('player', {})
                 position = self._time_obj_to_pos(player.get('seekoffset'))
@@ -153,7 +150,7 @@ class MediaKodiPlugin(MediaPlugin):
     def _on_ws_error(self):
         def hndl(*args):
             error = args[1] if len(args) > 1 else args[0]
-            self.logger.warning("Kodi websocket connection error: {}".format(error))
+            self.logger.warning("Kodi websocket connection error: %s", error)
 
         return hndl
 
@@ -171,25 +168,28 @@ class MediaKodiPlugin(MediaPlugin):
         status['result'] = result.get('result')
         return status, result.get('error')
 
+    def _clear_resource(self):
+        if self._latest_resource:
+            self._latest_resource.close()
+            self._latest_resource = None
+
     @action
-    def play(self, resource, *args, **kwargs):
+    def play(self, resource: str, **kwargs):
         """
         Open and play the specified file or URL
 
         :param resource: URL or path to the media to be played
         """
-
-        if resource.startswith('file://'):
-            resource = resource[7:]
-
-        result = self._get_kodi().Player.Open(item={'file': resource})
+        media = self._latest_resource = self._get_resource(resource, **kwargs)
+        media.open(**kwargs)
+        result = self._get_kodi().Player.Open(item={'file': media.resource})
         if self.volume:
             self.set_volume(volume=int(self.volume))
 
         return self._build_result(result)
 
     @action
-    def pause(self, player_id=None, *args, **kwargs):
+    def pause(self, player_id=None, **_):
         """
         Play/pause the current media
         """
@@ -212,7 +212,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def get_movies(self, *args, **kwargs):
+    def get_movies(self, **_):
         """
         Get the list of movies on the Kodi server
         """
@@ -221,7 +221,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def stop(self, player_id=None, *args, **kwargs):
+    def stop(self, player_id=None, **_):
         """
         Stop the current media
         """
@@ -232,10 +232,11 @@ class MediaKodiPlugin(MediaPlugin):
             return None, 'No active players found'
 
         result = self._get_kodi().Player.Stop(playerid=player_id)
+        self._clear_resource()
         return self._build_result(result)
 
     @action
-    def notify(self, title, message, *args, **kwargs):
+    def notify(self, title, message, **_):
         """
         Send a notification to the Kodi UI
         """
@@ -244,7 +245,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def left(self, *args, **kwargs):
+    def left(self, **_):
         """
         Simulate a left input event
         """
@@ -253,7 +254,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def right(self, *args, **kwargs):
+    def right(self, **_):
         """
         Simulate a right input event
         """
@@ -262,7 +263,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def up(self, *args, **kwargs):
+    def up(self, **_):
         """
         Simulate an up input event
         """
@@ -271,7 +272,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def down(self, *args, **kwargs):
+    def down(self, **_):
         """
         Simulate a down input event
         """
@@ -280,7 +281,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def back_btn(self, *args, **kwargs):
+    def back_btn(self, **_):
         """
         Simulate a back input event
         """
@@ -289,7 +290,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def select(self, *args, **kwargs):
+    def select(self, **_):
         """
         Simulate a select input event
         """
@@ -298,7 +299,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def send_text(self, text, *args, **kwargs):
+    def send_text(self, text, **_):
         """
         Simulate a send_text input event
 
@@ -310,13 +311,13 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def get_volume(self, *args, **kwargs):
+    def get_volume(self, **_):
         result = self._get_kodi().Application.GetProperties(properties=['volume'])
 
         return result.get('result'), result.get('error')
 
     @action
-    def volup(self, step=10.0, *args, **kwargs):
+    def volup(self, step=10.0, **_):
         """Volume up (default: +10%)"""
         volume = (
             self._get_kodi()
@@ -331,7 +332,7 @@ class MediaKodiPlugin(MediaPlugin):
         return self._build_result(result)
 
     @action
-    def voldown(self, step=10.0, *args, **kwargs):
+    def voldown(self, step=10.0, **_):
         """Volume down (default: -10%)"""
         volume = (
             self._get_kodi()
@@ -346,7 +347,7 @@ class MediaKodiPlugin(MediaPlugin):
         return self._build_result(result)
 
     @action
-    def set_volume(self, volume, *args, **kwargs):
+    def set_volume(self, volume, **_):
         """
         Set the application volume
 
@@ -358,7 +359,7 @@ class MediaKodiPlugin(MediaPlugin):
         return self._build_result(result)
 
     @action
-    def mute(self, *args, **kwargs):
+    def mute(self, **_):
         """
         Mute/unmute the application
         """
@@ -374,7 +375,7 @@ class MediaKodiPlugin(MediaPlugin):
         return self._build_result(result)
 
     @action
-    def is_muted(self, *args, **kwargs):
+    def is_muted(self, **_):
         """
         Return the muted status of the application
         """
@@ -383,7 +384,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result')
 
     @action
-    def scan_video_library(self, *args, **kwargs):
+    def scan_video_library(self, **_):
         """
         Scan the video library
         """
@@ -392,7 +393,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def scan_audio_library(self, *args, **kwargs):
+    def scan_audio_library(self, **_):
         """
         Scan the audio library
         """
@@ -401,7 +402,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def clean_video_library(self, *args, **kwargs):
+    def clean_video_library(self, **_):
         """
         Clean the video library
         """
@@ -410,7 +411,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def clean_audio_library(self, *args, **kwargs):
+    def clean_audio_library(self, **_):
         """
         Clean the audio library
         """
@@ -419,16 +420,17 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def quit(self, *args, **kwargs):
+    def quit(self, **_):
         """
         Quit the application
         """
 
         result = self._get_kodi().Application.Quit()
+        self._clear_resource()
         return result.get('result'), result.get('error')
 
     @action
-    def get_songs(self, *args, **kwargs):
+    def get_songs(self, **_):
         """
         Get the list of songs in the audio library
         """
@@ -437,7 +439,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def get_artists(self, *args, **kwargs):
+    def get_artists(self, **_):
         """
         Get the list of artists in the audio library
         """
@@ -446,7 +448,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def get_albums(self, *args, **kwargs):
+    def get_albums(self, **_):
         """
         Get the list of albums in the audio library
         """
@@ -455,7 +457,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def fullscreen(self, *args, **kwargs):
+    def fullscreen(self, **_):
         """
         Set/unset fullscreen mode
         """
@@ -471,7 +473,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def shuffle(self, player_id=None, shuffle=None, *args, **kwargs):
+    def shuffle(self, player_id=None, shuffle=None, **_):
         """
         Set/unset shuffle mode
         """
@@ -495,7 +497,7 @@ class MediaKodiPlugin(MediaPlugin):
         return result.get('result'), result.get('error')
 
     @action
-    def repeat(self, player_id=None, repeat=None, *args, **kwargs):
+    def repeat(self, player_id=None, repeat=None, **_):
         """
         Set/unset repeat mode
         """
@@ -543,7 +545,7 @@ class MediaKodiPlugin(MediaPlugin):
         )
 
     @action
-    def seek(self, position, player_id=None, *args, **kwargs):
+    def seek(self, position, player_id=None, **_):
         """
         Move to the specified time position in seconds
 
@@ -573,7 +575,7 @@ class MediaKodiPlugin(MediaPlugin):
         return self.seek(*args, position=position, player_id=player_id, **kwargs)
 
     @action
-    def back(self, offset=30, player_id=None, *args, **kwargs):
+    def back(self, offset=30, player_id=None, **_):
         """
         Move the player execution backward by delta_seconds
 
@@ -594,11 +596,11 @@ class MediaKodiPlugin(MediaPlugin):
             .get('time', {})
         )
 
-        position = self._time_obj_to_pos(position)
+        position = self._time_obj_to_pos(position) - offset
         return self.seek(player_id=player_id, position=position)
 
     @action
-    def forward(self, offset=30, player_id=None, *args, **kwargs):
+    def forward(self, offset=30, player_id=None, **_):
         """
         Move the player execution forward by delta_seconds
 
@@ -619,7 +621,7 @@ class MediaKodiPlugin(MediaPlugin):
             .get('time', {})
         )
 
-        position = self._time_obj_to_pos(position)
+        position = self._time_obj_to_pos(position) + offset
         return self.seek(player_id=player_id, position=position)
 
     @action
@@ -715,20 +717,28 @@ class MediaKodiPlugin(MediaPlugin):
         )
         return ret
 
-    def toggle_subtitles(self, *args, **kwargs):
+    def toggle_subtitles(self, *_, **__):
         raise NotImplementedError
 
-    def set_subtitles(self, filename, *args, **kwargs):
+    def set_subtitles(self, *_, **__):
         raise NotImplementedError
 
-    def remove_subtitles(self, *args, **kwargs):
+    def remove_subtitles(self, *_, **__):
         raise NotImplementedError
 
-    def is_playing(self, *args, **kwargs):
+    def is_playing(self, *_, **__):
         raise NotImplementedError
 
-    def load(self, resource, *args, **kwargs):
+    def load(self, *_, **__):
         raise NotImplementedError
+
+    @property
+    def supports_local_media(self) -> bool:
+        return False
+
+    @property
+    def supports_local_pipe(self) -> bool:
+        return False
 
 
 # vim:sw=4:ts=4:et:

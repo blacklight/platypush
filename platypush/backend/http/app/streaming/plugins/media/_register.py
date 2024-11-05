@@ -3,7 +3,9 @@ from typing import Optional
 from platypush.backend.http.app.utils import logger, send_request
 from platypush.backend.http.media.handlers import MediaHandler
 
-from ._registry import load_media_map, save_media_map
+from ._registry import clear_media_map, load_media_map, save_media_map
+
+_init = False
 
 
 def get_media_url(media_id: str) -> str:
@@ -17,6 +19,12 @@ def register_media(source: str, subtitles: Optional[str] = None) -> MediaHandler
     """
     Registers a media file and returns its associated media handler.
     """
+    global _init
+
+    if not _init:
+        clear_media_map()
+        _init = True
+
     media_id = MediaHandler.get_media_id(source)
     media_url = get_media_url(media_id)
     media_map = load_media_map()

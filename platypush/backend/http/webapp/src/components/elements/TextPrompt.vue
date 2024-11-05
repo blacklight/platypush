@@ -113,9 +113,6 @@ export default {
   mounted() {
     this.visible_ = this.visible
     this.value_ = this.value || ""
-    this.$nextTick(() => {
-      this.$refs.input.focus()
-    })
   },
 }
 </script>

@@ -1,22 +1,19 @@
-import functools
-import inspect
-import json
 import os
+import pathlib
 import queue
-import re
-import subprocess
 import tempfile
 import threading
 from abc import ABC, abstractmethod
 from typing import (
     Dict,
     Iterable,
-    List,
     Optional,
+    Sequence,
     Tuple,
     Type,
     Union,
 )
+from urllib.parse import urlparse
 
 import requests
 
@@ -24,16 +21,20 @@ from platypush.config import Config
 from platypush.context import get_plugin, get_backend
 from platypush.message.event.media import MediaEvent
 from platypush.plugins import RunnablePlugin, action
-from platypush.utils import get_default_downloads_dir, get_plugin_name_by_class
-
-from ._download import (
-    DownloadState,
-    DownloadThread,
-    FileDownloadThread,
-    YouTubeDownloadThread,
+from platypush.utils import (
+    get_default_downloads_dir,
+    get_mime_type,
+    get_plugin_name_by_class,
 )
+
+from ._constants import audio_extensions, video_extensions
+from ._model import DownloadState, MediaDirectory, PlayerState
 from ._resource import MediaResource
-from ._state import PlayerState
+from ._resource.downloaders import DownloadThread, MediaResourceDownloader, downloaders
+from ._resource.parsers import MediaResourceParser, parsers
+from ._search import MediaSearcher, searchers
+
+_MediaDirs = Union[str, Iterable[Union[str, dict]], Dict[str, Union[str, dict]]]
 
 
 class MediaPlugin(RunnablePlugin, ABC):
@@ -51,99 +52,15 @@ class MediaPlugin(RunnablePlugin, ABC):
         'This method must be implemented in a derived class'
     )
 
-    # Supported audio extensions
-    audio_extensions = {
-        '3gp',
-        'aa',
-        'aac',
-        'aax',
-        'act',
-        'aiff',
-        'amr',
-        'ape',
-        'au',
-        'awb',
-        'dct',
-        'dss',
-        'dvf',
-        'flac',
-        'gsm',
-        'iklax',
-        'ivs',
-        'm4a',
-        'm4b',
-        'm4p',
-        'mmf',
-        'mp3',
-        'mpc',
-        'msv',
-        'nmf',
-        'nsf',
-        'ogg,',
-        'opus',
-        'ra,',
-        'raw',
-        'sln',
-        'tta',
-        'vox',
-        'wav',
-        'wma',
-        'wv',
-        'webm',
-        '8svx',
-    }
-
-    # Supported video extensions
-    video_extensions = {
-        'webm',
-        'mkv',
-        'flv',
-        'vob',
-        'ogv',
-        'ogg',
-        'drc',
-        'gif',
-        'gifv',
-        'mng',
-        'avi',
-        'mts',
-        'm2ts',
-        'mov',
-        'qt',
-        'wmv',
-        'yuv',
-        'rm',
-        'rmvb',
-        'asf',
-        'amv',
-        'mp4',
-        'm4p',
-        'm4v',
-        'mpg',
-        'mp2',
-        'mpeg',
-        'mpe',
-        'mpv',
-        'm2v',
-        'svi',
-        '3gp',
-        '3g2',
-        'mxf',
-        'roq',
-        'nsv',
-        'f4v',
-        'f4p',
-        'f4a',
-        'f4b',
-    }
-
+    audio_extensions = audio_extensions
+    video_extensions = video_extensions
     supported_media_plugins = [
-        'media.mplayer',
-        'media.omxplayer',
-        'media.mpv',
         'media.vlc',
-        'media.chromecast',
+        'media.mpv',
         'media.gstreamer',
+        'media.mplayer',
+        'media.chromecast',
+        'media.kodi',
     ]
 
     _supported_media_types = ['file', 'jellyfin', 'plex', 'torrent', 'youtube']
@@ -151,33 +68,80 @@ class MediaPlugin(RunnablePlugin, ABC):
 
     def __init__(
         self,
-        media_dirs: Optional[List[str]] = None,
+        media_dirs: Optional[_MediaDirs] = None,
         download_dir: Optional[str] = None,
         env: Optional[Dict[str, str]] = None,
         volume: Optional[Union[float, int]] = None,
         torrent_plugin: str = 'torrent',
-        youtube_format: Optional[str] = None,
+        youtube_format: Optional[str] = 'bv[height<=?1080]+ba/bv+ba',
+        youtube_audio_format: Optional[str] = 'ba',
         youtube_dl: str = 'yt-dlp',
         merge_output_format: str = 'mp4',
+        cache_dir: Optional[str] = None,
+        cache_streams: bool = False,
+        ytdl_args: Optional[Sequence[str]] = None,
         **kwargs,
     ):
         """
         :param media_dirs: Directories that will be scanned for media files when
-            a search is performed (default: none)
+            a search is performed (default: only ``download_dir``). You can
+            specify it either:
+
+                - As a list of strings:
+
+                  .. code-block:: yaml
+
+                    media_dirs:
+                        - /mnt/hd/media/movies
+                        - /mnt/hd/media/music
+                        - /mnt/hd/media/series
+
+                - As a dictionary where the key is the name of the media display
+                  name and the value is the path:
+
+                    .. code-block:: yaml
+
+                      media_dirs:
+                          Movies: /mnt/hd/media/movies
+                          Music: /mnt/hd/media/music
+                          Series: /mnt/hd/media/series
+
+                - As a dictionary where the key is the name of the media display
+                  name and the value is a dictionary with the path and additional
+                  display information:
+
+                      media_dirs:
+                          Movies:
+                              path: /mnt/hd/media/movies
+                              icon:
+                                  url: https://example.com/icon.png
+                                  # FontAwesome icon classes are supported
+                                  class: fa fa-film
+
+                          Music:
+                              path: /mnt/hd/media/music
+                              icon:
+                                  url: https://example.com/icon.png
+                                  class: fa fa-music
+
+                          Series:
+                              path: /mnt/hd/media/series
+                              icon:
+                                  url: https://example.com/icon.png
+                                  class: fa fa-tv
 
         :param download_dir: Directory where external resources/torrents will be
             downloaded (default: ~/Downloads)
-
         :param env: Environment variables key-values to pass to the
             player executable (e.g. DISPLAY, XDG_VTNR, PULSE_SINK etc.)
-
         :param volume: Default volume for the player (default: None, maximum volume).
+        :param torrent_plugin: Optional plugin to be used for torrent download.
+            Possible values:
 
-        :param torrent_plugin: Optional plugin to be used for torrent download. Possible values:
-
-            - ``torrent`` - native ``libtorrent``-based plugin (default, recommended)
-            - ``rtorrent`` - torrent support over rtorrent RPC/XML interface
-            - ``webtorrent`` - torrent support over webtorrent (unstable)
+                - ``torrent`` - native ``libtorrent``-based plugin (default,
+                  recommended)
+                - ``rtorrent`` - torrent support over rtorrent RPC/XML interface
+                - ``webtorrent`` - torrent support over webtorrent (unstable)
 
         :param youtube_format: Select the preferred video/audio format for
             YouTube videos - and any media supported by youtube-dl or the
@@ -186,23 +150,34 @@ class MediaPlugin(RunnablePlugin, ABC):
             info on supported formats. Example:
             ``bestvideo[height<=?1080][ext=mp4]+bestaudio`` - select the best
             mp4 video with a resolution <= 1080p, and the best audio format.
-
+        :param youtube_audio_format: Select the preferred audio format for
+            YouTube videos downloaded only for audio. Default: ``bestaudio``.
         :param youtube_dl: Path to the ``youtube-dl`` executable, used to
             extract information from YouTube videos and other media platforms.
             Default: ``yt-dlp``. The default has changed from ``youtube-dl`` to
             the ``yt-dlp`` fork because the former is badly maintained and its
             latest release was pushed in 2021.
-
         :param merge_output_format: If media download requires ``youtube_dl``,
             and the upstream media contains both audio and video to be merged,
             this can be used to specify the format of the output container -
             e.g. ``mp4``, ``mkv``, ``avi``, ``flv``. Default: ``mp4``.
+        :param cache_dir: Directory where the media cache will be stored. If not
+            specified, the cache will be stored in the default cache directory
+            (usually ``~/.cache/platypush/media/<media_plugin>``).
+        :param cache_streams: If set to True, streams transcoded via yt-dlp or
+            ffmpeg will be cached in ``cache_dir`` directory. If not set
+            (default), then streams will be played directly via memory pipe.
+            You may want to set this to True if you have a slow network, or if
+            you want to play media at high quality, even though the start time
+            may be delayed. If set to False, the media will start playing as
+            soon as the stream is ready, but the quality may be lower,
+            especially at the beginning, and seeking may not be supported.
+        :param ytdl_args: Additional arguments to pass to the youtube-dl
+            executable. Default: None.
         """
 
         super().__init__(**kwargs)
 
-        if media_dirs is None:
-            media_dirs = []
         player = None
         player_config = {}
         self._download_threads: Dict[Tuple[str, str], DownloadThread] = {}
@@ -221,8 +196,6 @@ class MediaPlugin(RunnablePlugin, ABC):
         if not player:
             raise AttributeError('No media plugin configured')
 
-        media_dirs = media_dirs or player_config.get('media_dirs', [])
-
         if self.__class__.__name__ == 'MediaPlugin':
             # Populate this plugin with the actions of the configured player
             for act in player.registered_actions:
@@ -230,13 +203,7 @@ class MediaPlugin(RunnablePlugin, ABC):
                 self.registered_actions.add(act)
 
         self._env = env or {}
-        self.media_dirs = set(
-            filter(
-                os.path.isdir,
-                [os.path.abspath(os.path.expanduser(d)) for d in media_dirs],
-            )
-        )
-
+        self.cache_streams = cache_streams
         self.download_dir = os.path.abspath(
             os.path.expanduser(
                 download_dir
@@ -245,70 +212,106 @@ class MediaPlugin(RunnablePlugin, ABC):
             )
         )
 
-        os.makedirs(self.download_dir, exist_ok=True)
+        self.cache_dir = os.path.abspath(
+            os.path.expanduser(cache_dir)
+            if cache_dir
+            else os.path.join(
+                Config.get_cachedir(),
+                'media',
+                get_plugin_name_by_class(self.__class__),
+            )
+        )
+
+        pathlib.Path(self.cache_dir).mkdir(parents=True, exist_ok=True)
+        pathlib.Path(self.download_dir).mkdir(parents=True, exist_ok=True)
         self._ytdl = youtube_dl
-        self.media_dirs.add(self.download_dir)
         self.volume = volume
         self._videos_queue = []
         self._youtube_proc = None
         self.torrent_plugin = torrent_plugin
         self.youtube_format = youtube_format
+        self.youtube_audio_format = youtube_audio_format
         self.merge_output_format = merge_output_format
+        self.ytdl_args = ytdl_args or []
         self._latest_resource: Optional[MediaResource] = None
 
-    @staticmethod
-    def _torrent_event_handler(evt_queue):
-        def handler(event):
-            # More than 5% of the torrent has been downloaded
-            if event.args.get('progress', 0) > 5 and event.args.get('files'):
-                evt_queue.put(event.args['files'])
-
-        return handler
-
-    def get_extractors(self):
-        try:
-            from yt_dlp.extractor import _extractors  # type: ignore
-        except ImportError:
-            self.logger.debug('yt_dlp not installed')
-            return
-
-        for _, obj_type in inspect.getmembers(_extractors):
-            if (
-                inspect.isclass(obj_type)
-                and isinstance(getattr(obj_type, "_VALID_URL", None), str)
-                and obj_type.__name__ != "GenericIE"
-            ):
-                yield obj_type
-
-    def _is_youtube_resource(self, resource: str):
-        return any(
-            re.search(getattr(extractor, '_VALID_URL', '^$'), resource)
-            for extractor in self.get_extractors()
+        self.media_dirs = self._parse_media_dirs(
+            media_dirs or player_config.get('media_dirs', [])
         )
 
-    def _get_youtube_best_thumbnail(self, info: Dict[str, dict]):
-        thumbnails = info.get('thumbnails', {})
-        if not thumbnails:
-            return None
+        self._parsers: Dict[Type[MediaResourceParser], MediaResourceParser] = {
+            parser: parser(self) for parser in parsers
+        }
 
-        # Preferred resolution
-        for res in ((640, 480), (480, 360), (320, 240)):
-            thumb = next(
-                (
-                    thumb
-                    for thumb in thumbnails
-                    if thumb.get('width') == res[0] and thumb.get('height') == res[1]
-                ),
-                None,
+        self._downloaders: Dict[
+            Type[MediaResourceDownloader], MediaResourceDownloader
+        ] = {downloader: downloader(self) for downloader in downloaders}
+
+        self._searchers: Dict[Type[MediaSearcher], MediaSearcher] = {
+            searcher: searcher(
+                dirs=[d.path for d in self.media_dirs.values()], media_plugin=self
+            )
+            for searcher in searchers
+        }
+
+    @staticmethod
+    def _parse_media_dirs(
+        media_dirs: Optional[_MediaDirs],
+    ) -> Dict[str, MediaDirectory]:
+        dirs = {}
+
+        if media_dirs:
+            if isinstance(media_dirs, str):
+                dirs = [media_dirs]
+            if isinstance(media_dirs, (list, tuple, set)):
+                dirs = {d: d for d in media_dirs}
+            if isinstance(media_dirs, dict):
+                dirs = media_dirs
+
+        assert isinstance(dirs, dict), f'Invalid media_dirs format: {media_dirs}'
+
+        ret = {}
+        for k, v in dirs.items():
+            assert isinstance(k, str), f'Invalid media_dirs key format: {k}'
+            if isinstance(v, str):
+                v = {'path': v}
+
+            assert isinstance(v, dict), f'Invalid media_dirs format: {v}'
+            path = v.get('path')
+            assert path, f'Missing path in media_dirs entry {k}'
+            path = os.path.abspath(os.path.expanduser(path))
+            assert os.path.isdir(path), f'Invalid path in media_dirs entry {k}'
+
+            icon = v.get('icon', {})
+            if isinstance(icon, str):
+                # Fill up the URL field if it's a URL, otherwise assume that
+                # it's a FontAwesome icon class
+                icon = {'url': icon} if urlparse(icon).scheme else {'class': icon}
+
+            ret[k] = MediaDirectory.build(
+                name=k,
+                path=path,
+                icon_class=icon.get('class'),
+                icon_url=icon.get('url'),
             )
 
-            if thumb:
-                return thumb.get('url')
+        # Add the downloads directory if it's missing
+        if not any(d.path == get_default_downloads_dir() for d in ret.values()):
+            ret['Downloads'] = MediaDirectory.build(
+                name='Downloads',
+                path=get_default_downloads_dir(),
+                icon_class='fas fa-download',
+            )
 
-        # Default fallback (best quality)
-        return info.get('thumbnail')
+        return {k: ret[k] for k in sorted(ret.keys())}
 
-    def _get_resource(self, resource: str):
+    def _get_resource(
+        self,
+        resource: str,
+        metadata: Optional[dict] = None,
+        only_audio: bool = False,
+        **_,
+    ):
         """
         :param resource: Resource to play/parse. Supported types:
 
@@ -319,72 +322,19 @@ class MediaPlugin(RunnablePlugin, ABC):
 
         """
 
-        if resource.startswith('file://'):
-            path = resource[len('file://') :]
-            assert os.path.isfile(path), f'File {path} not found'
-            self._latest_resource = MediaResource(
-                resource=resource,
-                url=resource,
-                title=os.path.basename(resource),
-                filename=os.path.basename(resource),
-            )
-        elif self._is_youtube_resource(resource):
-            info = self._get_youtube_info(resource)
-            if info:
-                url = info.get('url')
-                if url:
-                    resource = url
-                    self._latest_resource = MediaResource(
-                        resource=resource,
-                        url=resource,
-                        title=info.get('title'),
-                        description=info.get('description'),
-                        filename=info.get('filename'),
-                        image=info.get('thumbnail'),
-                        duration=float(info.get('duration') or 0) or None,
-                        channel=info.get('channel'),
-                        channel_url=info.get('channel_url'),
-                        resolution=info.get('resolution'),
-                        type=info.get('extractor'),
-                    )
-        elif resource.startswith('magnet:?'):
-            self.logger.info(
-                'Downloading torrent %s to %s', resource, self.download_dir
-            )
-            torrents = get_plugin(self.torrent_plugin)
-            assert torrents, f'{self.torrent_plugin} plugin not configured'
+        for parser in self._parsers.values():
+            media_resource = parser.parse(resource, only_audio=only_audio)
+            if media_resource:
+                for k, v in (metadata or {}).items():
+                    setattr(media_resource, k, v)
 
-            evt_queue = queue.Queue()
-            torrents.download(
-                resource,
-                download_dir=self.download_dir,
-                _async=True,
-                is_media=True,
-                event_hndl=self._torrent_event_handler(evt_queue),
-            )
+                return media_resource
 
-            resources = [f for f in evt_queue.get()]  # noqa: C416,R1721
-
-            if resources:
-                self._videos_queue = sorted(resources)
-                resource = self._videos_queue.pop(0)
-            else:
-                raise RuntimeError(f'No media file found in torrent {resource}')
-
-        assert resource, 'Unable to find any compatible media resource'
-        return resource
-
-    def _stop_torrent(self):
-        try:
-            torrents = get_plugin(self.torrent_plugin)
-            assert torrents, f'{self.torrent_plugin} plugin not configured'
-            torrents.quit()
-        except Exception as e:
-            self.logger.warning('Could not stop torrent plugin: %s', e)
+        raise AssertionError(f'Unknown media resource: {resource}')
 
     @action
     @abstractmethod
-    def play(self, resource, **kwargs):
+    def play(self, resource: str, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
@@ -567,43 +517,45 @@ class MediaPlugin(RunnablePlugin, ABC):
         return thread
 
     def _get_search_handler_by_type(self, search_type: str):
-        if search_type == 'file':
-            from .search import LocalMediaSearcher
+        searcher = next(
+            iter(filter(lambda s: s.supports(search_type), self._searchers.values())),
+            None,
+        )
 
-            return LocalMediaSearcher(self.media_dirs, media_plugin=self)
-        if search_type == 'torrent':
-            from .search import TorrentMediaSearcher
+        if not searcher:
+            self.logger.warning('Unsupported search type: %s', search_type)
+            return None
 
-            return TorrentMediaSearcher(media_plugin=self)
-        if search_type == 'youtube':
-            from .search import YoutubeMediaSearcher
-
-            return YoutubeMediaSearcher(media_plugin=self)
-        if search_type == 'plex':
-            from .search import PlexMediaSearcher
-
-            return PlexMediaSearcher(media_plugin=self)
-        if search_type == 'jellyfin':
-            from .search import JellyfinMediaSearcher
-
-            return JellyfinMediaSearcher(media_plugin=self)
-
-        self.logger.warning('Unsupported search type: %s', search_type)
-        return None
+        return searcher
 
     @classmethod
     def is_video_file(cls, filename: str):
-        return filename.lower().split('.')[-1] in cls.video_extensions
+        if filename.lower().split('.')[-1] in cls.video_extensions:
+            return True
+
+        mime_type = get_mime_type(filename)
+        return bool(mime_type and mime_type.startswith('video/'))
 
     @classmethod
     def is_audio_file(cls, filename: str):
-        return filename.lower().split('.')[-1] in cls.audio_extensions
+        if filename.lower().split('.')[-1] in cls.audio_extensions:
+            return True
 
-    def _get_info(self, resource: str):
-        if self._is_youtube_resource(resource):
-            return self.get_youtube_info(resource)
+        mime_type = get_mime_type(filename)
+        return bool(mime_type and mime_type.startswith('audio/'))
 
-        return {'url': resource}
+    @classmethod
+    def is_media_file(cls, file: str) -> bool:
+        if file.split('.')[-1].lower() in cls.video_extensions.union(
+            cls.audio_extensions
+        ):
+            return True
+
+        mime_type = get_mime_type(file)
+        return bool(
+            mime_type
+            and (mime_type.startswith('video/') or mime_type.startswith('audio/'))
+        )
 
     @action
     def start_streaming(
@@ -660,109 +612,14 @@ class MediaPlugin(RunnablePlugin, ABC):
         assert response.ok, response.text or response.reason
         return response.json()
 
-    def _get_youtube_info(self, url, youtube_format: Optional[str] = None):
-        ytdl_cmd = [
-            self._ytdl,
-            *(
-                ['-f', youtube_format or self.youtube_format]
-                if youtube_format or self.youtube_format
-                else []
-            ),
-            '-j',
-            '-g',
-            url,
-        ]
-
-        self.logger.info('Executing command %s', ' '.join(ytdl_cmd))
-        with subprocess.Popen(ytdl_cmd, stdout=subprocess.PIPE) as ytdl:
-            output = ytdl.communicate()[0].decode().strip()
-            ytdl.wait()
-
-        self.logger.debug('yt-dlp output: %s', output)
-        lines = output.split('\n')
-
-        if not lines:
-            self.logger.warning('No output from yt-dlp')
-            return None
-
-        stream_url = lines[1] if len(lines) > 2 else lines[0]
-        info = lines[-1]
-        return {
-            **json.loads(info),
-            'url': stream_url,
-        }
-
-    @staticmethod
-    def get_youtube_id(url: str) -> Optional[str]:
-        patterns = [
-            re.compile(pattern)
-            for pattern in [
-                r'https?://www.youtube.com/watch\?v=([^&#]+)',
-                r'https?://youtube.com/watch\?v=([^&#]+)',
-                r'https?://youtu.be/([^&#/]+)',
-                r'youtube:video:([^&#:])',
-            ]
-        ]
-
-        for pattern in patterns:
-            m = pattern.search(url)
-            if m:
-                return m.group(1)
-
-        return None
-
-    @action
-    def get_youtube_info(self, url):
-        # Legacy conversion for Mopidy YouTube URIs
-        m = re.match('youtube:video:(.*)', url)
-        if m:
-            url = f'https://www.youtube.com/watch?v={m.group(1)}'
-
-        with subprocess.Popen([self._ytdl, '-j', url], stdout=subprocess.PIPE) as proc:
-            if proc.stdout is None:
-                return None
-
-            return proc.stdout.read().decode("utf-8", "strict")[:-1]
-
     @action
     def get_info(self, resource: str):
-        return self._get_info(resource)
+        for parser in self._parsers.values():
+            info = parser.parse(resource)
+            if info:
+                return info.to_dict()
 
-    @action
-    def get_media_file_duration(self, filename):
-        """
-        Get the duration of a media file in seconds. Requires ffmpeg
-        """
-
-        if filename.startswith('file://'):
-            filename = filename[7:]
-
-        with subprocess.Popen(
-            ["ffprobe", filename], stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-        ) as result:
-            if not result.stdout:
-                return 0
-
-            return functools.reduce(
-                lambda t, t_i: t + t_i,
-                [
-                    float(t) * pow(60, i)
-                    for (i, t) in enumerate(
-                        re.search(
-                            r'^Duration:\s*([^,]+)',
-                            [
-                                x.decode()
-                                for x in result.stdout.readlines()
-                                if "Duration" in x.decode()
-                            ]
-                            .pop()
-                            .strip(),
-                        )
-                        .group(1)  # type: ignore
-                        .split(':')[::-1]
-                    )
-                ],
-            )
+        return {'url': resource}
 
     @action
     def download(
@@ -774,6 +631,7 @@ class MediaPlugin(RunnablePlugin, ABC):
         sync: bool = False,
         only_audio: bool = False,
         youtube_format: Optional[str] = None,
+        youtube_audio_format: Optional[str] = None,
         merge_output_format: Optional[str] = None,
     ):
         """
@@ -802,25 +660,46 @@ class MediaPlugin(RunnablePlugin, ABC):
         :param only_audio: If set to True, only the audio track will be downloaded
             (only supported for yt-dlp-compatible URLs for now).
         :param youtube_format: Override the default ``youtube_format`` setting.
+        :param youtube_audio_format: Override the default ``youtube_audio_format``
         :param merge_output_format: Override the default
             ``merge_output_format`` setting.
         :return: The absolute path to the downloaded file.
         """
-        path = self._get_download_path(
-            url, directory=directory, filename=filename, youtube_format=youtube_format
-        )
+        dl_thread = None
+        resource = self._get_resource(url, only_audio=only_audio)
 
-        if self._is_youtube_resource(url):
-            dl_thread = self._download_youtube_url(
-                url, path, youtube_format=youtube_format, only_audio=only_audio
-            )
+        if filename:
+            path = os.path.expanduser(filename)
+        elif resource.filename:
+            path = resource.filename
         else:
-            if only_audio:
-                self.logger.warning(
-                    'Only audio download is not supported for non-YouTube URLs'
+            path = os.path.basename(resource.url)
+
+        if not os.path.isabs(path):
+            directory = os.path.expanduser(directory or self.download_dir)
+            path = os.path.join(directory, path)
+
+        for downloader in self._downloaders.values():
+            if downloader.supports(resource):
+                if only_audio and not downloader.supports_only_audio():
+                    self.logger.warning(
+                        'Only audio download is not supported for this resource'
+                    )
+
+                dl_thread = downloader.download(
+                    resource=resource,
+                    path=path,
+                    timeout=timeout,
+                    only_audio=only_audio,
+                    youtube_format=youtube_format or self.youtube_format,
+                    youtube_audio_format=youtube_audio_format
+                    or self.youtube_audio_format,
+                    merge_output_format=merge_output_format,
                 )
 
-            dl_thread = self._download_url(url, path, timeout=timeout)
+                break
+
+        assert dl_thread, f'No downloader found for resource {url}'
 
         if sync:
             dl_thread.join()
@@ -908,6 +787,13 @@ class MediaPlugin(RunnablePlugin, ABC):
             many=True,
         )
 
+    @action
+    def get_media_dirs(self) -> Dict[str, dict]:
+        """
+        :return: List of configured media directories.
+        """
+        return {dir.name: dir.to_dict() for dir in self.media_dirs.values()}
+
     def _get_downloads(self, url: Optional[str] = None, path: Optional[str] = None):
         assert url or path, 'URL or path must be specified'
         threads = []
@@ -934,90 +820,10 @@ class MediaPlugin(RunnablePlugin, ABC):
         assert threads, f'No matching downloads found for [url={url}, path={path}]'
         return threads
 
-    def _get_download_path(
-        self,
-        url: str,
-        directory: Optional[str] = None,
-        filename: Optional[str] = None,
-        youtube_format: Optional[str] = None,
-    ) -> str:
-        if not directory:
-            directory = self.download_dir
-
-        directory = os.path.expanduser(directory)
-        youtube_format = youtube_format or self.youtube_format
-
-        if self._is_youtube_resource(url):
-            with subprocess.Popen(
-                [
-                    self._ytdl,
-                    *(
-                        [
-                            '-f',
-                            youtube_format,
-                        ]
-                        if youtube_format
-                        else []
-                    ),
-                    *(
-                        ['--merge-output-format', self.merge_output_format]
-                        if self.merge_output_format
-                        else []
-                    ),
-                    '-O',
-                    '%(title)s.%(ext)s',
-                    url,
-                ],
-                stdout=subprocess.PIPE,
-            ) as proc:
-                assert proc.stdout, 'yt-dlp stdout is None'
-                filename = proc.stdout.read().decode()[:-1]
-
-        if not filename:
-            filename = url.split('/')[-1]
-
-        return os.path.join(directory, filename)
-
-    def _download_url(self, url: str, path: str, timeout: int) -> FileDownloadThread:
-        download_thread = FileDownloadThread(
-            url=url,
-            path=path,
-            timeout=timeout,
-            on_start=self._on_download_start,
-            post_event=self._post_event,
-            stop_event=self._should_stop,
-        )
-
-        self._start_download(download_thread)
-        return download_thread
-
-    def _download_youtube_url(
-        self,
-        url: str,
-        path: str,
-        youtube_format: Optional[str] = None,
-        merge_output_format: Optional[str] = None,
-        only_audio: bool = False,
-    ) -> YouTubeDownloadThread:
-        download_thread = YouTubeDownloadThread(
-            url=url,
-            path=path,
-            ytdl=self._ytdl,
-            only_audio=only_audio,
-            youtube_format=youtube_format or self.youtube_format,
-            merge_output_format=merge_output_format or self.merge_output_format,
-            on_start=self._on_download_start,
-            post_event=self._post_event,
-            stop_event=self._should_stop,
-        )
-
-        self._start_download(download_thread)
-        return download_thread
-
-    def _on_download_start(self, thread: DownloadThread):
+    def on_download_start(self, thread: DownloadThread):
         self._download_threads[thread.url, thread.path] = thread
 
-    def _start_download(self, thread: DownloadThread):
+    def start_download(self, thread: DownloadThread):
         if (thread.url, thread.path) in self._download_threads:
             self.logger.warning(
                 'A download of %s to %s is already in progress', thread.url, thread.path
@@ -1026,7 +832,7 @@ class MediaPlugin(RunnablePlugin, ABC):
 
         thread.start()
 
-    def _post_event(self, event_type: Type[MediaEvent], **kwargs):
+    def post_event(self, event_type: Type[MediaEvent], **kwargs):
         evt = event_type(
             player=get_plugin_name_by_class(self.__class__), plugin=self, **kwargs
         )
@@ -1054,6 +860,14 @@ class MediaPlugin(RunnablePlugin, ABC):
             f.write(content)
         return f.name
 
+    @property
+    def supports_local_media(self) -> bool:
+        return True
+
+    @property
+    def supports_local_pipe(self) -> bool:
+        return True
+
     def main(self):
         self.wait_stop()
 
@@ -1061,6 +875,8 @@ class MediaPlugin(RunnablePlugin, ABC):
 __all__ = [
     'DownloadState',
     'MediaPlugin',
+    'MediaResource',
+    'MediaSearcher',
     'PlayerState',
 ]
 

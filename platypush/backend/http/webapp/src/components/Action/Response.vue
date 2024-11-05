@@ -23,7 +23,7 @@
 
 <script>
 import 'highlight.js/lib/common'
-import 'highlight.js/styles/stackoverflow-dark.min.css'
+import 'highlight.js/styles/nord.min.css'
 import hljs from "highlight.js"
 import Utils from "@/Utils"
 
@@ -31,8 +31,13 @@ export default {
   name: 'Response',
   mixins: [Utils],
   props: {
-    response: String,
-    error: String,
+    response: {
+      type: [String, Object, Array, Number, Boolean],
+    },
+
+    error: {
+      type: [String, Object],
+    },
   },
 
   computed: {
@@ -46,7 +51,7 @@ export default {
 
     jsonResponse() {
       if (this.isJSON) {
-        return hljs.highlight(this.response, {language: 'json'}).value
+        return hljs.highlight(this.response.toString(), {language: 'json'}).value
       }
 
       return null
@@ -57,4 +62,14 @@ export default {
 
 <style lang="scss" scoped>
 @import "common";
+
+.response {
+  .buttons {
+    button:hover {
+      color: $default-hover-fg;
+      background: none;
+      border: none;
+    }
+  }
+}
 </style>

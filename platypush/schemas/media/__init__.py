@@ -1,52 +1,72 @@
 from marshmallow import fields
 from marshmallow.schema import Schema
 
+from platypush.schemas import DateTime
+
 
 class MediaCollectionSchema(Schema):
     id = fields.String(
-        metadata=dict(
-            description='Collection ID',
-        )
+        metadata={
+            'description': 'Collection ID',
+        }
     )
 
     name = fields.String(
         required=True,
-        metadata=dict(
-            description='Collection name',
-        )
+        metadata={
+            'description': 'Collection name',
+        },
     )
 
     type = fields.String(
-        metadata=dict(
-            description='Collection type (movies, music, series etc.)',
-        )
+        metadata={
+            'description': 'Collection type (movies, music, series etc.)',
+        }
     )
 
     image = fields.URL(
-        metadata=dict(
-            description='Collection image (URL)',
-        )
+        metadata={
+            'description': 'Collection image (URL)',
+        }
+    )
+
+    path = fields.String(
+        metadata={
+            'description': 'Path to collection',
+        }
+    )
+
+    created_at = DateTime(
+        metadata={
+            'description': 'Creation date',
+        }
     )
 
 
 class MediaArtistSchema(Schema):
     id = fields.String(
-        metadata=dict(
-            description='Artist ID',
-        )
+        metadata={
+            'description': 'Artist ID',
+        }
     )
 
     name = fields.String(
         required=True,
-        metadata=dict(
-            description='Artist name',
-        )
+        metadata={
+            'description': 'Artist name',
+        },
     )
 
     image = fields.URL(
-        metadata=dict(
-            description='Artist main image (URL)',
-        )
+        metadata={
+            'description': 'Artist main image (URL)',
+        }
+    )
+
+    created_at = DateTime(
+        metadata={
+            'description': 'Creation date',
+        }
     )
 
 
@@ -56,6 +76,12 @@ class MediaItemSchema(Schema):
     url = fields.URL()
     file = fields.String()
     image = fields.URL()
+    path = fields.String()
+    created_at = DateTime(
+        metadata={
+            'description': 'Creation date',
+        }
+    )
 
 
 class MediaVideoSchema(MediaItemSchema):
@@ -69,4 +95,3 @@ class MediaMovieSchema(MediaItemSchema):
 
 class MediaEpisodeSchema(MediaItemSchema):
     pass
-

@@ -1,5 +1,65 @@
 # Changelog
 
+## [1.3.1]
+
+- [[#344](https://git.platypush.tech/platypush/platypush/issues/344)]: removed
+  `marshmallow_dataclass` dependency. That package isn't included in the
+  package managers of any supported distros and requires to be installed via
+  pip. Making the Platypush' system packages depend on a pip-only package is
+  not a good idea. Plus, the library seems to be still in heavy development and
+  it has already broken compatibility with at least the `system` package.
+
+## [1.3.0]
+
+- [[#333](https://git.platypush.tech/platypush/platypush/issues/333)]: new file
+  browser UI/component. It includes custom MIME type support, a file editor
+  with syntax highlight, file download and file upload.
+
+- [[#341](https://git.platypush.tech/platypush/platypush/issues/341)]:
+  procedures are now native entities that can be managed from the entities panel.
+  A new versatile procedure editor has also been added, with support for nested
+  blocks, conditions, loops, variables, context autocomplete, and more.
+
+- [`procedure`]: Added the following features to YAML/structured procedures:
+
+  - `set`: to set variables whose scope is limited to the procedure / code
+    block where they are created. `variable.set` is useful to permanently
+    store variables on the db, `variable.mset` is useful to set temporary
+    global variables in memory through Redis, but sometimes you may just want
+    to assign a value to a variable that only needs to live within a procedure,
+    event hook or cron.
+
+    ```yaml
+    - set:
+        foo: bar
+        temperature: ${output.get('temperature')}
+    ```
+
+  - `return` can now return values too when invoked within a procedure:
+
+      ```yaml
+      - return: something
+      # Or
+      - return: "Result: ${output.get('response')}"
+      ```
+
+- The default logging format is now much more compact. The full body of events
+  and requests is no longer included by default in `info` mode - instead, a
+  summary with the message type, ID and response time is logged. The full
+  payloads can still be logged by enabling `debug` logs through e.g. `-v`.
+
+## [1.2.3]
+
+- [[#422](https://git.platypush.tech/platypush/platypush/issues/422)]: adapted
+  media plugins to support streaming from the yt-dlp process. This allows
+  videos to have merged audio+video even if they had separate tracks upstream.
+
+- [`media.*`] Many improvements on the media UI.
+
+- [`zigbee.mqtt`] Removed synchronous logic from `zigbee.mqtt.device_set`. It
+  was prone to timeouts as well as pointless - the updated device state will
+  anyway be received as an event.
+
 ## [1.2.2]
 
 - Fixed regression on older version of Python that don't fully support

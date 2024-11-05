@@ -1,7 +1,9 @@
 <template>
   <button class="edit-btn"
-    @click="proxy($event)" @touch="proxy($event)" @input="proxy($event)"
-  >
+          :title="title"
+          @click="proxy($event)"
+          @touch="proxy($event)"
+          @input="proxy($event)">
     <i class="fas fa-pen-to-square" />
   </button>
 </template>
@@ -9,6 +11,13 @@
 <script>
 export default {
   emits: ['input', 'click', 'touch'],
+  props: {
+    title: {
+      type: String,
+      default: 'Edit',
+    },
+  },
+
   methods: {
     proxy(e) {
       this.$emit(e.type, e)
@@ -26,8 +35,8 @@ export default {
   border: 1px solid rgba(0, 0, 0, 0);
 
   &:hover {
-    background: $hover-bg;
-    border: 1px solid $selected-fg;
+    color: $default-hover-fg;
+    border: none;
   }
 }
 </style>

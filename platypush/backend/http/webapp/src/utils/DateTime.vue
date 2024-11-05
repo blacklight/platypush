@@ -3,6 +3,8 @@ export default {
   name: "DateTime",
   methods: {
     formatDate(date, year=false) {
+      if (date == null)
+        return null
       if (typeof date === 'number')
         date = new Date(date * 1000)
       else if (typeof date === 'string')
@@ -12,6 +14,8 @@ export default {
     },
 
     formatTime(date, seconds=true) {
+      if (date == null)
+        return null
       if (typeof date === 'number')
         date = new Date(date * 1000)
       if (typeof date === 'string')
@@ -21,6 +25,9 @@ export default {
     },
 
     formatDateTime(date, year=false, seconds=true, skipTimeIfMidnight=false) {
+      if (date == null)
+        return null
+
       const now = new Date()
 
       if (typeof date === 'number')
@@ -34,6 +41,25 @@ export default {
         return this.formatDate(date, year)
 
       return `${this.formatDate(date, year)}, ${this.formatTime(date, seconds)}`
+    },
+
+    formatDuration(duration, seconds=true) {
+      if (duration == null)
+        return null
+
+      if (duration == null)
+        return ''
+
+      let hours = Math.floor(duration / 3600)
+      let minutes = Math.floor((duration % 3600) / 60)
+      let secs = duration % 60
+
+      if (hours > 0)
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+      else if (minutes > 0)
+        return `${minutes}:${secs.toString().padStart(2, '0')}`
+      else
+        return seconds ? `0:${secs.toString().padStart(2, '0')}` : `0:00`
     },
   },
 }

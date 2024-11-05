@@ -8,14 +8,13 @@ $default-bg-6: #e4eae8 !default;
 $default-bg-7: #e4e4e4 !default;
 $ok-fg: #17ad17 !default;
 $error-fg: #ad1717 !default;
+$error-fg-2: red !default;
 $error-bg: #ffaaa2 !default;
-$tile-bg: linear-gradient(90deg, rgba(9,174,128,1) 0%, rgba(71,226,179,1) 120%);
-$tile-fg: white;
-$tile-hover-bg: linear-gradient(90deg, rgba(41,216,159,1) 0%, rgba(9,188,138,1) 70%);
 
 $default-fg: black !default;
 $default-fg-2: #23513a !default;
 $default-fg-3: #195331b3 !default;
+$inverse-fg: white !default;
 $header-bg: linear-gradient(0deg, #c0e8e4, #e4f8f4) !default;
 $header-bg-2: linear-gradient(90deg, #f3f3f3, white) !default;
 $no-items-color: #555555;
@@ -67,8 +66,11 @@ $border-shadow-bottom-right: 2.5px 2.5px 3px 0 $default-shadow-color;
 $border-shadow: 0 0 3px 3px #c0c0c0 !default;
 $header-shadow: 0px 1px 3px 1px #bbb !default;
 $group-shadow: 3px -2px 6px 1px #98b0a0;
-$primary-btn-shadow: 1px 1px 0.5px 0.75px #32b64640 !default;
 $search-bar-shadow: 1px 1px 1px 1px #ddd !default;
+
+//// Buttons
+$submit-btn-bg: #ebffeb;
+$primary-btn-shadow: 1px 1px 0.5px 0.75px #32b64640 !default;
 
 //// Modals
 $modal-header-bg: #e0e0e0 !default;
@@ -180,3 +182,29 @@ $code-dark-bg: rgb(11, 11, 13) !default;
 $code-dark-fg: rgb(243, 243, 250) !default;
 $code-light-bg: #f2f0e9 !default;
 $code-light-fg: #090909 !default;
+
+//// Sections
+$section-shadow: 0 3px 3px 0 rgba(187,187,187,0.75), 0 3px 3px 0 rgba(187,187,187,0.75);
+$doc-bg: linear-gradient(#effbe3, #e0ecdb);
+$doc-shadow: 0 1px 3px 1px #d7d3c0, inset 0 1px 1px 0 #d7d3c9;
+$output-bg: #151515;
+$output-shadow: $doc-shadow;
+
+//// Titles
+$title-bg: #eee;
+$title-border: 1px solid #ddd;
+$title-shadow: 0 3px 3px 0 rgba(187,187,187,0.75);
+
+//// Tiles
+$tile-bg: linear-gradient(90deg, rgba(9,174,128,1) 0%, rgba(71,226,179,1) 120%);
+$tile-bg-2: linear-gradient(270deg, rgb(71, 226, 179) 0%, rgb(81, 186, 210) 120%);
+$tile-bg-3: linear-gradient(90deg, rgb(9, 174, 43) 0%, rgb(71, 226, 179) 120%);
+$tile-fg: white;
+$tile-hover-bg: linear-gradient(90deg, rgba(41,216,159,1) 0%, rgba(9,188,138,1) 70%);
+$tile-hover-bg-2: linear-gradient(90deg, rgb(71, 226, 179) 0%, rgb(81, 186, 210) 120%);
+$tile-hover-bg-3: linear-gradient(90deg, rgb(41, 216, 63) 0%, rgb(9, 188, 138) 120%);
+$tile-keyword-fg: #f8ff00;
+$tile-code-fg: #2a5ab7;
+
+//// Misc
+$info-header-bg: #f2f7f5;

@@ -64,12 +64,13 @@ class Request(Message):
         msg = super().parse(msg)
         args = {
             'target': msg.get('target', Config.get('device_id')),
-            'action': msg['action'],
+            'action': msg.get('action', msg.get('name')),
             'args': msg.get('args', {}),
             'id': msg['id'] if 'id' in msg else cls._generate_id(),
             'timestamp': msg['_timestamp'] if '_timestamp' in msg else time.time(),
         }
 
+        assert args.get('action'), 'No action specified in the request'
         if 'origin' in msg:
             args['origin'] = msg['origin']
         if 'token' in msg:
@@ -100,7 +101,7 @@ class Request(Message):
         proc = Procedure.build(
             name=proc_name,
             requests=proc_config['actions'],
-            _async=proc_config['_async'],
+            _async=proc_config.get('_async', False),
             args=self.args,
             backend=self.backend,
             id=self.id,
@@ -165,6 +166,11 @@ class Request(Message):
                         context_value = [*context_value]
                     if isinstance(context_value, datetime.date):
                         context_value = context_value.isoformat()
+                except NameError as e:
+                    logger.warning(
+                        'Could not expand expression "%s": %s', inner_expr, e
+                    )
+                    context_value = expr
                 except Exception as e:
                     logger.exception(e)
                     context_value = expr
@@ -188,7 +194,13 @@ class Request(Message):
         response.id = self.id
         response.target = self.origin
         response.origin = Config.get('device_id')
-        response.log()
+        self._logger.info(
+            'Sending response to request[id=%s, action=%s], response_time=%.02fs',
+            self.id,
+            self.action,
+            response.timestamp - self.timestamp,
+        )
+        response.log(level=logging.DEBUG)
 
         if self.backend and self.origin:
             self.backend.send_response(response=response, request=self)
@@ -221,7 +233,10 @@ class Request(Message):
             from platypush.plugins import RunnablePlugin
 
             response = None
-            self.log()
+            self._logger.info(
+                'Executing request[id=%s, action=%s]', self.id, self.action
+            )
+            self.log(level=logging.DEBUG)
 
             try:
                 if self.action.startswith('procedure.'):

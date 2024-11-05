@@ -4,7 +4,7 @@ import re
 import subprocess
 import threading
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from multiprocessing import Process, Queue, RLock
 from queue import Empty
 from typing import Any, Collection, Dict, List, Optional
@@ -395,7 +395,7 @@ class MediaMplayerPlugin(MediaPlugin):
         resource: str,
         subtitles: Optional[str] = None,
         mplayer_args: Optional[List[str]] = None,
-        **_,
+        **kwargs,
     ):
         """
         Play a resource.
@@ -412,11 +412,11 @@ class MediaMplayerPlugin(MediaPlugin):
             if subs:
                 mplayer_args = list(mplayer_args or []) + ['-sub', subs]
 
-        resource = self._get_resource(resource)
-        if resource.startswith('file://'):
-            resource = resource[7:]
+        media = self._latest_resource = self._get_resource(resource, **kwargs)
+        media.open(**kwargs)
+        self.logger.debug('Playing media: %s', media)
+        self._exec('loadfile', media.resource, mplayer_args=mplayer_args)
 
-        self._exec('loadfile', resource, mplayer_args=mplayer_args)
         if self.volume:
             self.set_volume(volume=self.volume)
 
@@ -435,6 +435,10 @@ class MediaMplayerPlugin(MediaPlugin):
 
     def _cleanup(self):
         with self._cleanup_lock:
+            if self._latest_resource:
+                self._latest_resource.close()
+                self._latest_resource = None
+
             if self._player:
                 self._player.terminate()
                 self._player.wait()
@@ -666,7 +670,7 @@ class MediaMplayerPlugin(MediaPlugin):
             status.update(
                 {
                     k: v
-                    for k, v in asdict(self._latest_resource).items()
+                    for k, v in self._latest_resource.to_dict().items()
                     if v is not None
                 }
             )
@@ -688,7 +692,7 @@ class MediaMplayerPlugin(MediaPlugin):
                 property,
                 prefix='pausing_keep_force',
                 wait_for_response=True,
-                *args,
+                *args,  # noqa: B026
             )
             or {}
         )
@@ -757,7 +761,7 @@ class MediaMplayerPlugin(MediaPlugin):
                 value,
                 prefix='pausing_keep_force' if property != 'pause' else None,
                 wait_for_response=True,
-                *args,
+                *args,  # noqa: B026
             )
             or {}
         )
@@ -799,7 +803,7 @@ class MediaMplayerPlugin(MediaPlugin):
                 value,
                 prefix='pausing_keep_force',
                 wait_for_response=True,
-                *args,
+                *args,  # noqa: B026
             )
             or {}
         )
@@ -819,6 +823,10 @@ class MediaMplayerPlugin(MediaPlugin):
     def set_subtitles(self, filename: str, *_, **__):
         self.logger.debug('set_subtitles called with filename=%s', filename)
         raise NotImplementedError
+
+    @property
+    def supports_local_pipe(self) -> bool:
+        return False
 
 
 # vim:sw=4:ts=4:et:

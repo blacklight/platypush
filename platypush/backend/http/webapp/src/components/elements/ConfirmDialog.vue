@@ -1,5 +1,5 @@
 <template>
-  <Modal ref="modal" :title="title" @close="close">
+  <Modal ref="modal" :visible="visible" :title="title" @close="close">
     <div class="dialog-content">
       <slot />
     </div>
@@ -35,6 +35,11 @@ export default {
       type: String,
       default: "Cancel",
     },
+
+    visible: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   methods: {
@@ -44,11 +49,11 @@ export default {
     },
 
     open() {
-      this.$refs.modal.show()
+      this.$refs.modal?.show()
     },
 
     close() {
-      this.$refs.modal.hide()
+      this.$refs.modal?.hide()
       this.$emit('close')
     },
 
@@ -58,6 +63,19 @@ export default {
 
     hide() {
       this.close()
+    },
+  },
+
+  watch: {
+    visible: {
+      immediate: true,
+      handler(val) {
+        if (val) {
+          this.open()
+        } else {
+          this.close()
+        }
+      },
     },
   },
 }

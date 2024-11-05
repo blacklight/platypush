@@ -7,7 +7,6 @@ croniter
 docutils
 flask
 marshmallow
-marshmallow_dataclass
 python-dateutil
 python-magic
 pyyaml

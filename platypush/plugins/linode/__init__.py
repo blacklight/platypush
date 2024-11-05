@@ -66,26 +66,48 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
         assert instances, f'No such Linode instance: {instance}'
         return instances[0]
 
-    def _linode_instance_to_dict(self, instance: Instance) -> dict:
+    @classmethod
+    def _expand_mapped_objects(cls, data) -> dict:
+        """
+        Expand the mapped objects in a :class:`linode_api4.Instance` to
+        dictionaries.
+        """
+        if not isinstance(data, dict):
+            return data
+
+        for key, value in data.items():
+            if isinstance(value, objects.MappedObject):
+                value = data[key] = value.dict
+            if isinstance(value, dict):
+                data[key] = cls._expand_mapped_objects(value)
+
+        return data
+
+    @classmethod
+    def _linode_instance_to_dict(cls, instance: Instance) -> dict:
         """
         Convert an internal :class:`linode_api4.Instance` to a
         dictionary representation that can be used to create a
         :class:`platypush.entities.cloud.CloudInstance` object.
         """
         return {
-            key: (value.dict if isinstance(value, objects.MappedObject) else value)
+            key: cls._expand_mapped_objects(value)
             for key, value in instance.__dict__.items()
             if not key.startswith('_')
         }
+
+    @staticmethod
+    def _getattr(instance, key: str):
+        return getattr(instance, key, instance.get(key))
 
     def main(self):
         instances = []
 
         while not self.should_stop():
-            status = {instance.id: instance for instance in instances}
+            status = {self._getattr(instance, 'id'): instance for instance in instances}
 
             new_status = {
-                instance.id: instance
+                self._getattr(instance, 'id'): instance
                 for instance in self.status(publish_entities=False).output
             }
 
@@ -94,8 +116,11 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
                     instance
                     for instance in new_status.values()
                     if not (
-                        status.get(instance.id)
-                        and status[instance.id].status == instance.status
+                        status.get(self._getattr(instance, 'id'))
+                        and self._getattr(
+                            status[self._getattr(instance, 'id')], 'status'
+                        )
+                        == self._getattr(instance, 'status')
                     )
                 ]
                 if new_status
@@ -106,12 +131,14 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
                 for instance in changed_instances:
                     get_bus().post(
                         LinodeInstanceStatusChanged(
-                            instance_id=instance.id,
-                            instance_name=instance.name,
-                            status=instance.status,
+                            instance_id=self._getattr(instance, 'id'),
+                            instance_name=self._getattr(instance, 'label'),
+                            status=self._getattr(instance, 'status'),
                             old_status=(
-                                status[instance.id].status
-                                if status.get(instance.id)
+                                self._getattr(
+                                    status[self._getattr(instance, 'id')], 'status'
+                                )
+                                if status.get(self._getattr(instance, 'id'))
                                 else None
                             ),
                         )
@@ -123,16 +150,16 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
             self.wait_stop(self.poll_interval)
 
     def transform_entities(
-        self, entities: Collection[LinodeInstance]
+        self, entities: Collection[dict], **_
     ) -> Collection[CloudInstance]:
         schema = LinodeInstanceSchema()
         return super().transform_entities(
             [
                 CloudInstance(
-                    reachable=instance.status == LinodeInstanceStatus.RUNNING,
+                    reachable=instance['status'] == LinodeInstanceStatus.RUNNING,
                     children=[
                         EnumSwitch(
-                            id=f'{instance.id}:__action__',
+                            id=f'{instance["id"]}:__action__',
                             name='Actions',
                             values=['boot', 'reboot', 'shutdown'],
                             is_write_only=True,
@@ -174,8 +201,10 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
             ]
         )
 
-        mapped_instances = LinodeInstanceSchema(many=True).load(
-            map(self._linode_instance_to_dict, instances)
+        mapped_instances = list(
+            LinodeInstanceSchema(many=True).load(  # type: ignore
+                map(self._linode_instance_to_dict, instances)
+            )
         )
 
         if publish_entities:

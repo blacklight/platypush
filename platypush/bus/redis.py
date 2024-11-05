@@ -70,6 +70,7 @@ class RedisBus(Bus):
 
                         try:
                             data = msg.get('data', b'').decode('utf-8')
+                            logger.debug('Received message on the Redis bus: %r', data)
                             parsed_msg = Message.build(data)
                             if parsed_msg and self.on_message:
                                 self.on_message(parsed_msg)

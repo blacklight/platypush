@@ -1,32 +1,39 @@
 <template>
   <div
     class="item media-item"
-    :class="{selected: selected}"
-    @click.right.prevent="$refs.dropdown.toggle()"
+    :class="{selected: selected, 'list': listView}"
+    @click.right="onContextClick"
     v-if="!hidden">
-    <div class="thumbnail">
-      <MediaImage :item="item" @play="$emit('play')" @select="$emit('select')" />
+
+    <div class="thumbnail" v-if="!listView">
+      <MediaImage :item="item" @play="$emit('play')" @select="onMediaSelect" />
     </div>
 
     <div class="body">
       <div class="row title">
-        <div class="col-11 left side" v-text="item.title || item.name" @click="$emit('select')" />
-        <div class="col-1 right side">
-          <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" ref="dropdown">
-            <DropdownItem icon-class="fa fa-play" text="Play" @input="$emit('play')"
-                          v-if="item.type !== 'torrent'" />
-            <DropdownItem icon-class="fa fa-download" text="Download" @input="$emit('download')"
-                          v-if="(item.type === 'torrent' || item.type === 'youtube') && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
-            <DropdownItem icon-class="fa fa-volume-high" text="Download Audio" @input="$emit('download-audio')"
-                          v-if="item.type === 'youtube' && item.item_type !== 'channel' && item.item_type !== 'playlist'" />
-            <DropdownItem icon-class="fa fa-list" text="Add to playlist" @input="$emit('add-to-playlist')"
-                          v-if="item.type === 'youtube'" />
-            <DropdownItem icon-class="fa fa-trash" text="Remove from playlist" @input="$emit('remove-from-playlist')"
-                          v-if="item.type === 'youtube' && playlist?.length" />
-            <DropdownItem icon-class="fa fa-window-maximize" text="View in browser" @input="$emit('view')"
-                          v-if="item.type === 'file'" />
-            <DropdownItem icon-class="fa fa-info-circle" text="Info" @input="$emit('select')" />
-          </Dropdown>
+        <div class="left side"
+             :class="{'col-11': !listView, 'col-10': listView }"
+             @click.stop="$emit('select')">
+          <span class="track-number" v-if="listView && item.track_number">
+            {{ item.track_number }}
+          </span>
+
+          {{item.title || item.name}}
+        </div>
+
+        <div class="right side" :class="{'col-1': !listView, 'col-2': listView }">
+          <span class="duration" v-if="item.duration && listView">
+            <span v-text="formatDuration(item.duration, true)" />
+          </span>
+
+          <span class="actions">
+            <Dropdown title="Actions" icon-class="fa fa-ellipsis-h" ref="dropdown">
+              <DropdownItem v-for="action in actions" :key="action.text"
+                            :icon-class="action.iconClass"
+                            :text="action.text"
+                            @input="action.action" />
+            </Dropdown>
+          </span>
         </div>
       </div>
 
@@ -37,9 +44,29 @@
         </a>
       </div>
 
-      <div class="row creation-date" v-if="item.created_at">
+      <div class="row creation-date" v-if="item.created_at && showDate">
         {{ formatDateTime(item.created_at, true) }}
       </div>
+
+      <div class="row creation-date" v-text="item.year" v-else-if="item.year && showDate" />
+
+      <div class="row ratings" v-if="item.critic_rating != null || item.community_rating != null">
+        <span class="rating" title="Critic rating" v-if="item.critic_rating != null">
+          <i class="fa fa-star" />&nbsp;
+          <span v-text="Math.round(item.critic_rating)" />%
+        </span>
+
+        <span class="rating" title="Community rating" v-if="item.community_rating != null">
+          <i class="fa fa-users" />&nbsp;
+          <span v-text="Math.round(item.community_rating)" />%
+        </span>
+      </div>
+    </div>
+
+    <div class="photo-container" v-if="item.item_type === 'photo' && showPhoto">
+      <Modal :title="item.title || item.name" :visible="true" @close="showPhoto = false">
+        <img :src="item.url" ref="image" @load="onImgLoad" />
+      </Modal>
     </div>
   </div>
 </template>
@@ -49,17 +76,25 @@ import Dropdown from "@/components/elements/Dropdown";
 import DropdownItem from "@/components/elements/DropdownItem";
 import Icons from "./icons.json";
 import MediaImage from "./MediaImage";
+import Modal from "@/components/Modal";
 import Utils from "@/Utils";
 
 export default {
-  components: {Dropdown, DropdownItem, MediaImage},
   mixins: [Utils],
+  components: {
+    Dropdown,
+    DropdownItem,
+    MediaImage,
+    Modal,
+  },
+
   emits: [
     'add-to-playlist',
     'download',
     'download-audio',
     'open-channel',
     'play',
+    'play-with-opts',
     'remove-from-playlist',
     'select',
     'view',
@@ -76,7 +111,7 @@ export default {
       default: false,
     },
 
-    selected: {
+    listView: {
       type: Boolean,
       default: false,
     },
@@ -84,10 +119,133 @@ export default {
     playlist: {
       type: String,
     },
+
+    selected: {
+      type: Boolean,
+      default: false,
+    },
+
+    showDate: {
+      type: Boolean,
+      default: true,
+    },
+  },
+
+  computed: {
+    actions() {
+      const actions = []
+
+      if (!['book', 'photo', 'torrent'].includes(this.item.item_type)) {
+        actions.push({
+          iconClass: 'fa fa-play',
+          text: 'Play',
+          action: () => this.$emit('play'),
+        })
+      }
+
+      if (this.item.type === 'youtube') {
+        actions.push({
+          iconClass: 'fa fa-play',
+          text: 'Play (With Cache)',
+          action: () => this.$emit('play-with-opts', {item: this.item, opts: {cache: true}}),
+        })
+      }
+
+      if (this.item.item_type === 'photo') {
+        actions.push({
+          iconClass: 'fa fa-eye',
+          text: 'View',
+          action: () => this.showPhoto = true,
+        })
+      }
+
+      if (['file', 'jellyfin', 'youtube'].includes(this.item.type)) {
+        actions.push({
+          iconClass: 'fa fa-window-maximize',
+          text: 'View in Browser',
+          action: () => this.$emit('view'),
+        })
+      }
+
+      if ((['torrent', 'youtube', 'jellyfin'].includes(this.item.type)) &&
+          this.item.item_type !== 'channel' &&
+          this.item.item_type !== 'playlist') {
+        actions.push({
+          iconClass: 'fa fa-download',
+          text: 'Download',
+          action: () => this.$emit('download'),
+        })
+      }
+
+      if (this.item.type === 'youtube' &&
+          this.item.item_type !== 'channel' &&
+          this.item.item_type !== 'playlist') {
+        actions.push({
+          iconClass: 'fa fa-volume-high',
+          text: 'Download Audio',
+          action: () => this.$emit('download-audio'),
+        })
+      }
+
+      if (this.item.type === 'youtube') {
+        actions.push({
+          iconClass: 'fa fa-list',
+          text: 'Add to Playlist',
+          action: () => this.$emit('add-to-playlist'),
+        })
+      }
+
+      if (this.item.type === 'youtube' && this.playlist?.length) {
+        actions.push({
+          iconClass: 'fa fa-trash',
+          text: 'Remove from Playlist',
+          action: () => this.$emit('remove-from-playlist'),
+        })
+      }
+
+      actions.push({
+        iconClass: 'fa fa-info-circle',
+        text: 'Info',
+        action: () => this.$emit('select'),
+      })
+
+      return actions
+    },
+  },
+
+  methods: {
+    onContextClick(e) {
+      if (this.item?.item_type === 'photo') {
+        return
+      }
+
+      e.preventDefault()
+      this.$refs.dropdown.toggle()
+    },
+
+    onImgLoad() {
+      const width = this.$refs.image.naturalWidth
+      const height = this.$refs.image.naturalHeight
+
+      if (width > height) {
+        this.$refs.image.classList.add('horizontal')
+      } else {
+        this.$refs.image.classList.add('vertical')
+      }
+    },
+
+    onMediaSelect() {
+      if (this.item?.item_type === 'photo') {
+        this.showPhoto = true
+      } else {
+        this.$emit('select')
+      }
+    },
   },
 
   data() {
     return {
+      showPhoto: false,
       typeIcons: Icons,
     }
   },
@@ -224,6 +382,92 @@ export default {
     font-size: .85em;
     color: $default-fg-2;
     flex: 1;
+  }
+
+  .ratings {
+    width: 100%;
+    font-size: .75em;
+    opacity: .75;
+    display: flex;
+    justify-content: space-between;
+
+    .rating {
+      display: flex;
+      align-items: center;
+      margin-right: 1em;
+
+      i {
+        margin-right: .25em;
+      }
+    }
+  }
+
+  &.list {
+    max-height: none;
+    border-bottom: 1px solid $default-shadow-color !important;
+    margin: 0;
+    padding: 0.25em 0.5em;
+
+    &:hover {
+      text-decoration: none;
+    }
+
+    .side {
+      display: flex;
+      align-items: center;
+
+      &.left {
+        max-height: none;
+        flex-direction: row;
+        overflow: visible;
+      }
+
+      &.right {
+        display: flex;
+        justify-content: flex-end;
+        margin-right: 0;
+      }
+
+      .duration {
+        font-size: .9em;
+        opacity: .75;
+        margin-right: 1em;
+      }
+
+      .track-number {
+        display: inline-flex;
+        font-size: .9em;
+        margin-right: 1em;
+        color: $default-fg-2;
+        justify-content: flex-end;
+      }
+    }
+  }
+
+  .photo-container {
+    :deep(.modal) {
+      .body {
+        max-width: 95vh;
+        max-height: 90vh;
+        padding: 0;
+      }
+
+      img {
+        &.horizontal {
+          width: 100%;
+          height: auto;
+          max-width: 95vh;
+          max-height: 100%;
+        }
+
+        &.vertical {
+          width: auto;
+          height: 100%;
+          max-width: 100%;
+          max-height: 90vh;
+        }
+      }
+    }
   }
 }
 </style>

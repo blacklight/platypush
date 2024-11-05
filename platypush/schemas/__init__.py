@@ -3,7 +3,6 @@ from enum import Enum
 from typing import Any, Optional, Type, Union
 
 from dateutil.parser import isoparse
-from dateutil.tz import tzutc
 from marshmallow import fields
 
 
@@ -38,7 +37,7 @@ class DateTime(Function):  # lgtm [py/missing-call-to-init]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = {
-            'example': datetime.now(tz=tzutc()).isoformat(),
+            'example': '2020-01-01T00:00:00+00:00',
             **(self.metadata or {}),
         }
 
@@ -55,7 +54,7 @@ class Date(Function):  # lgtm [py/missing-call-to-init]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.metadata = {
-            'example': date.today().isoformat(),
+            'example': '2020-01-01',
             **(self.metadata or {}),
         }
 

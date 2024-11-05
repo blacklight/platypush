@@ -85,7 +85,7 @@
             </span>
           </div>
 
-          <div class="value">
+          <div class="value file-selector">
             <FileSelector :value="editForm.media" @input="editForm.media = $event" />
           </div>
         </div>
@@ -127,7 +127,7 @@
 
             <div class="value">
               <ToggleSwitch :value="editForm.media_repeat"
-                            @input="editForm.media_repeat = $event.target.checked" />
+                            @input="editForm.media_repeat = !!$event.target.checked" />
             </div>
           </label>
         </div>
@@ -208,9 +208,7 @@
           </div>
 
           <div class="value">
-            <ProcedureEditor :value="procedure"
-                             :with-name="false"
-                             @input="onActionsInput($event)" />
+            <ActionsList :value="procedure" @update="onActionsUpdate($event)" />
           </div>
         </div>
       </div>
@@ -219,8 +217,8 @@
 </template>
 
 <script>
-import Loading from "@/components/Loading";
-import ProcedureEditor from "@/components/Procedure/ProcedureEditor"
+import ActionsList from "@/components/Action/ActionsList"
+import Loading from "@/components/Loading"
 import Slider from "@/components/elements/Slider"
 import CronEditor from "@/components/elements/CronEditor"
 import FileSelector from "@/components/elements/FileSelector"
@@ -232,10 +230,10 @@ export default {
   emits: ['input'],
   mixins: [Utils],
   components: {
+    ActionsList,
     CronEditor,
     FileSelector,
     Loading,
-    ProcedureEditor,
     Slider,
     TimeInterval,
     ToggleSwitch,
@@ -262,9 +260,7 @@ export default {
 
   computed: {
     procedure() {
-      return {
-        actions: [...(this.editForm.actions || [])],
-      }
+      return [...(this.editForm.actions || [])]
     },
 
     audioVolume() {
@@ -338,8 +334,12 @@ export default {
       this.editForm.condition_type = type
     },
 
-    onActionsInput(procedure) {
-      this.editForm.actions = procedure.actions
+    onActionsUpdate(actions) {
+      actions = [...(actions ?? [])]
+      if (JSON.stringify(this.editForm.actions) === JSON.stringify(actions))
+        return
+
+      this.editForm.actions = actions
     },
 
     onVolumeChange(event) {
@@ -497,6 +497,18 @@ $header-height: 3.5em;
 
   input[type=text] {
     min-height: 2em;
+  }
+
+  :deep(.file-selector) {
+    .modal {
+      .body {
+        min-width: 95vw;
+
+        @include from($tablet) {
+          min-width: 40em;
+        }
+      }
+    }
   }
 }
 </style>

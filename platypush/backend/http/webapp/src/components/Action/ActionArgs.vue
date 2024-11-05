@@ -1,18 +1,19 @@
 <template>
-  <div class="args-body">
+  <div class="args-body" @keydown="onKeyDown">
     <div class="args-list"
          v-if="Object.keys(action.args).length || action.supportsExtraArgs">
       <!-- Supported action arguments -->
       <div class="arg" :key="name" v-for="name in Object.keys(action.args)">
         <label>
-          <input type="text"
-                 class="action-arg-value"
-                 :class="{required: action.args[name].required}"
-                 :disabled="running"
-                 :placeholder="name"
-                 :value="action.args[name].value"
-                 @input="onArgEdit(name, $event)"
-                 @focus="onSelect(name)">
+          <ContextAutocomplete :value="action.args[name].value"
+                               :disabled="running"
+                               :items="contextAutocompleteItems"
+                               :placeholder="name"
+                               :quote="true"
+                               :select-on-tab="false"
+                               @input="onArgEdit(name, $event)"
+                               @blur="onSelect(null)"
+                               @focus="onSelect(name)" />
           <span class="required-flag" v-if="action.args[name].required">*</span>
         </label>
 
@@ -36,12 +37,13 @@
                    @input="onExtraArgNameEdit(i, $event.target.value)">
           </label>
           <label class="col-6">
-            <input type="text"
-                   class="action-extra-arg-value"
-                   placeholder="Value"
-                   :disabled="running"
-                   :value="arg.value"
-                   @input="onExtraArgValueEdit(i, $event.target.value)">
+            <ContextAutocomplete :value="arg.value"
+                                 :disabled="running"
+                                 :items="contextAutocompleteItems"
+                                 :quote="true"
+                                 :select-on-tab="false"
+                                 placeholder="Value"
+                                 @input="onExtraArgValueEdit(i, $event.detail)" />
           </label>
           <label class="col-1 buttons">
             <button type="button" class="action-extra-arg-del" title="Remove argument" @click="$emit('remove', i)">
@@ -68,24 +70,44 @@
 
 <script>
 import Argdoc from "./Argdoc"
+import ContextAutocomplete from "./ContextAutocomplete"
+import Mixin from "./Mixin"
 
 export default {
-  name: 'ActionArgs',
-  components: { Argdoc },
+  mixins: [Mixin],
+  components: {
+    Argdoc,
+    ContextAutocomplete,
+  },
+
   emits: [
     'add',
     'arg-edit',
     'extra-arg-name-edit',
     'extra-arg-value-edit',
+    'input',
     'remove',
     'select',
   ],
+
   props: {
     action: Object,
     loading: Boolean,
     running: Boolean,
     selectedArg: String,
     selectedArgdoc: String,
+  },
+
+  computed: {
+    allArgs() {
+      return {
+        ...this.action.args,
+        ...this.action.extraArgs.reduce((acc, arg) => {
+          acc[arg.name] = arg
+          return acc
+        }, {}),
+      }
+    },
   },
 
   methods: {
@@ -103,7 +125,7 @@ export default {
     onArgEdit(name, event) {
       this.$emit('arg-edit', {
         name: name,
-        value: event.target.value,
+        value: event.target?.value || event.detail,
       })
     },
 
@@ -123,6 +145,19 @@ export default {
 
     onSelect(arg) {
       this.$emit('select', arg)
+    },
+
+    onKeyDown(event) {
+      if (event.key === 'Enter' && !(event.shiftKey || event.ctrlKey || event.altKey || event.metaKey))
+        this.onEnter(event)
+    },
+
+    onEnter(event) {
+      if (!event.target.tagName.match(/input|textarea/i))
+        return
+
+      event.preventDefault()
+      this.$emit('input', this.allArgs)
     },
   },
 }

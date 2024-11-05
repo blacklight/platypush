@@ -1,17 +1,18 @@
 <template>
   <keep-alive>
     <div class="media-browser">
-      <Loading v-if="loading" />
-
-      <div class="media-index grid" v-else-if="!mediaProvider">
+      <div class="media-index grid" v-if="!mediaProvider">
         <div class="item"
-             v-for="(provider, name) in mediaProviders"
+             v-for="(provider, name) in visibleMediaProviders"
              :key="name"
              @click="mediaProvider = provider">
           <div class="icon">
             <i v-bind="providersMetadata[name].icon"
                :style="{ color: providersMetadata[name].icon?.color || 'inherit' }"
-               v-if="providersMetadata[name].icon" />
+               v-if="providersMetadata[name].icon?.class" />
+
+            <img :src="providersMetadata[name].icon.url"
+                 v-else-if="providersMetadata[name].icon?.url" />
           </div>
           <div class="name">
             {{ providersMetadata[name].name }}
@@ -19,10 +20,12 @@
         </div>
       </div>
 
-      <div class="media-browser-body" v-else-if="mediaProvider">
+      <div class="media-browser-body" v-if="mediaProvider">
         <component
             :is="mediaProvider"
             :filter="filter"
+            :loading="loading"
+            :media-plugin="mediaPlugin"
             :selected-playlist="selectedPlaylist"
             :selected-channel="selectedChannel"
             @add-to-playlist="$emit('add-to-playlist', $event)"
@@ -31,6 +34,8 @@
             @download-audio="$emit('download-audio', $event)"
             @path-change="$emit('path-change', $event)"
             @play="$emit('play', $event)"
+            @play-with-opts="$emit('play-with-opts', $event)"
+            @view="$emit('view', $event)"
         />
       </div>
     </div>
@@ -40,7 +45,6 @@
 <script>
 import { defineAsyncComponent, ref } from "vue";
 import Browser from "@/components/File/Browser";
-import Loading from "@/components/Loading";
 import Utils from "@/Utils";
 import providersMetadata from "./Providers/meta.json";
 
@@ -54,20 +58,25 @@ export default {
     'download-audio',
     'path-change',
     'play',
+    'play-with-opts',
     'remove-from-playlist',
     'remove-playlist',
     'rename-playlist',
+    'view',
   ],
 
   components: {
     Browser,
-    Loading,
   },
 
   props: {
     filter: {
       type: String,
       default: '',
+    },
+
+    mediaPlugin: {
+      type: String,
     },
 
     selectedPlaylist: {
@@ -77,11 +86,15 @@ export default {
     selectedChannel: {
       type: Object,
     },
+
+    loading: {
+      type: Boolean,
+      default: false,
+    },
   },
 
   data() {
     return {
-      loading: false,
       mediaProvider: null,
       mediaProviders: {},
       providersMetadata: providersMetadata,
@@ -93,6 +106,15 @@ export default {
       return Object.keys(this.mediaProviders)
         .reduce((acc, key) => {
           acc[key.toLowerCase()] = key
+          return acc
+        }, {})
+    },
+
+    visibleMediaProviders() {
+      return Object.entries(this.mediaProviders)
+        .filter(([provider, component]) => component && (!this.filter || provider.toLowerCase().includes(this.filter.toLowerCase())))
+        .reduce((acc, [provider, component]) => {
+          acc[provider] = component
           return acc
         }, {})
     },
@@ -116,13 +138,16 @@ export default {
     },
 
     async refreshMediaProviders() {
-      const config = await this.request('config.get')
+      const config = this.$root.config
       this.mediaProviders = {}
       // The local File provider is always enabled
       this.registerMediaProvider('File')
 
       if (config.youtube)
         this.registerMediaProvider('YouTube')
+
+      if (config['media.jellyfin'])
+        this.registerMediaProvider('Jellyfin')
     },
 
     onPlaylistChange() {

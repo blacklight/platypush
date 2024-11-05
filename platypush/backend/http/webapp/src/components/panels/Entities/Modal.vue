@@ -20,40 +20,7 @@
     </div>
 
     <div class="table-row">
-      <div class="title">
-        Icon
-        <EditButton @click="editIcon = true" v-if="!editIcon" />
-      </div>
-      <div class="value icon-canvas">
-        <span class="icon-editor" v-if="editIcon">
-          <NameEditor :value="entity.meta?.icon?.class || entity.meta?.icon?.url" @input="onIconEdit"
-            @cancel="editIcon = false" :disabled="loading">
-            <button type="button" title="Reset" @click="onIconEdit(null)"
-                @touch="onIconEdit(null)">
-              <i class="fas fa-rotate-left" />
-            </button>
-          </NameEditor>
-          <span class="help">
-            Supported: image URLs or
-            <a href="https://fontawesome.com/icons" target="_blank">FontAwesome icon classes</a>.
-          </span>
-        </span>
-
-        <Icon v-bind="entity?.meta?.icon || {}" v-else />
-      </div>
-    </div>
-
-    <div class="table-row">
-      <div class="title">
-        Icon color
-      </div>
-      <div class="value icon-color-picker">
-        <input type="color" :value="entity.meta?.icon?.color" @change="onIconColorEdit">
-        <button type="button" title="Reset" @click="onIconColorEdit(null)"
-            @touch="onIconColorEdit(null)">
-          <i class="fas fa-rotate-left" />
-        </button>
-      </div>
+      <IconEditor :entity="entity" @input="onIconEdit" />
     </div>
 
     <div class="table-row">
@@ -206,14 +173,13 @@
 
 <script>
 import Modal from "@/components/Modal";
-import Icon from "@/components/elements/Icon";
+import IconEditor from "./IconEditor";
 import ConfirmDialog from "@/components/elements/ConfirmDialog";
 import EditButton from "@/components/elements/EditButton";
 import EntityIcon from "./EntityIcon"
 import NameEditor from "@/components/elements/NameEditor";
 import Utils from "@/Utils";
 import Entity from "./Entity";
-import meta from './meta.json';
 
 // These fields have a different rendering logic than the general-purpose one
 const specialFields = [
@@ -233,9 +199,14 @@ const specialFields = [
 ]
 
 export default {
-  name: "EntityModal",
   components: {
-    Entity, EntityIcon, Modal, EditButton, NameEditor, Icon, ConfirmDialog
+    ConfirmDialog,
+    EditButton,
+    Entity,
+    EntityIcon,
+    IconEditor,
+    Modal,
+    NameEditor,
   },
   mixins: [Utils],
   emits: ['input', 'loading', 'entity-update'],
@@ -276,7 +247,6 @@ export default {
     return {
       loading: false,
       editName: false,
-      editIcon: false,
       configCollapsed: true,
       childrenCollapsed: true,
       extraInfoCollapsed: true,
@@ -308,47 +278,14 @@ export default {
       }
     },
 
-    async onIconEdit(newIcon) {
-      this.loading = true
-
-      try {
-        const icon = {url: null, class: null}
-        if (newIcon?.length) {
-          if (newIcon.startsWith('http'))
-            icon.url = newIcon
-          else
-            icon.class = newIcon
-        } else {
-          icon.url = (meta[this.entity.type] || {})?.icon?.url
-          icon.class = (meta[this.entity.type] || {})?.icon?.['class']
+    onIconEdit(icon) {
+      this.$emit(
+        'input',
+        {
+          ...this.entity,
+          meta: {...this.entity.meta, icon},
         }
-
-        const req = {}
-        req[this.entity.id] = {icon: icon}
-        await this.request('entities.set_meta', req)
-      } finally {
-        this.loading = false
-        this.editIcon = false
-      }
-    },
-
-    async onIconColorEdit(event) {
-      this.loading = true
-
-      try {
-        const icon = this.entity.meta?.icon || {}
-        if (event)
-          icon.color = event.target.value
-        else
-          icon.color = null
-
-        const req = {}
-        req[this.entity.id] = {icon: icon}
-        await this.request('entities.set_meta', req)
-      } finally {
-        this.loading = false
-        this.editIcon = false
-      }
+      )
     },
 
     stringify(value) {
@@ -419,37 +356,10 @@ export default {
     }
   }
 
-  .icon-canvas {
-    display: inline-flex;
-    align-items: center;
-
-    @include until($tablet) {
-      .icon-container {
-        justify-content: left;
-      }
-    }
-
-    @include from($tablet) {
-      .icon-container {
-        justify-content: right;
-        margin-right: 0.5em;
-      }
-    }
-  }
-
-  .icon-editor {
-    display: flex;
-    flex-direction: column;
-  }
-
   button {
     border: none;
     background: none;
     padding: 0 0.5em;
-  }
-
-  .help {
-    font-size: 0.75em;
   }
 
   .delete-entity-container {
