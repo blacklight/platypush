@@ -79,6 +79,21 @@ class HttpWebpagePlugin(Plugin):
         os.path.dirname(os.path.abspath(__file__)), 'mercury-parser.js'
     )
 
+    _default_headers = {
+        'User-Agent': (
+            # Default user agent for a desktop browser
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 10_3_1 like Mac OS X) AppleWebKit/603.1.30 '
+            '(KHTML, like Gecko) Version/10.0 Mobile/14E304 Safari/602.1'
+        ),
+    }
+
+    def __init__(self, *args, headers: Optional[dict] = None, **kwargs):
+        """
+        :param headers: Custom headers to be sent to the Mercury API.
+        """
+        super().__init__(*args, **kwargs)
+        self._headers = {**self._default_headers, **(headers or {})}
+
     @staticmethod
     def _parse(proc):
         """
@@ -104,6 +119,7 @@ class HttpWebpagePlugin(Plugin):
             str, OutputFormats
         ] = OutputFormats.HTML,
         html: Optional[str] = None,
+        headers: Optional[dict] = None,
         outfile: Optional[str] = None,
         font_size: str = '19px',
         font_family: Union[str, Iterable[str]] = (
@@ -132,6 +148,7 @@ class HttpWebpagePlugin(Plugin):
             already fetched. Note that URL is still required by Mercury to
             properly style the output, but it won't be used to actually fetch
             the content.
+        :param headers: Custom headers to be sent to the Mercury API.
         :param outfile: If set then the output will be written to the specified
             file. If the file extension is ``.pdf`` then the content will be
             exported in PDF format. If the output ``type`` is not specified
@@ -163,6 +180,11 @@ class HttpWebpagePlugin(Plugin):
         self.logger.info('Parsing URL %s', url)
         fmt = OutputFormats.parse(type=type, outfile=outfile)
         proc = ['node', self._mercury_script, url, fmt.value.cmd_fmt]
+        headers = {**self._headers, **(headers or {})}
+
+        for k, v in headers.items():
+            proc.extend((f'--{k}', v))
+
         tmp_file = None
 
         if html:
@@ -217,11 +239,13 @@ class HttpWebpagePlugin(Plugin):
             content=content,
             outfile=outfile,
             font_size=font_size,
-            font_family=tuple(
-                font_family,
-            )
-            if isinstance(font_family, str)
-            else tuple(font_family),
+            font_family=(
+                tuple(
+                    font_family,
+                )
+                if isinstance(font_family, str)
+                else tuple(font_family)
+            ),
         )
 
     @staticmethod
