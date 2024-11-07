@@ -313,3 +313,18 @@ class JellyfinBookSchema(JellyfinSchema):
         ] = f'{self._server}/Items/{data["Id"]}/Download?api_key={self._api_key}'
         data['embed_url'] = f'{self._server}/web/#/details?id={data["Id"]}'
         return data
+
+
+class JellyfinPlaylistSchema(JellyfinSchema, MediaCollectionSchema):
+    id = fields.String(attribute='Id')
+    type = fields.Constant('playlist')
+    item_type = fields.Constant('playlist')
+    collection_type = fields.Constant('music')
+    name = fields.String(attribute='Name')
+    image = fields.String()
+    public = fields.Boolean(attribute='IsPublic')
+    duration = fields.Number(attribute='RunTimeTicks')
+    n_items = fields.Number(attribute='ChildCount')
+    genres = fields.List(fields.String, attribute='Genres')
+    tags = fields.List(fields.String, attribute='Tags')
+    created_at = DateTime(attribute='DateCreated')

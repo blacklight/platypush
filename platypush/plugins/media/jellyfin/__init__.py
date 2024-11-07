@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional, Type
+from typing import Collection, Iterable, List, Optional, Type
 
 import requests
 from marshmallow import Schema
@@ -12,6 +12,7 @@ from platypush.schemas.media.jellyfin import (
     JellyfinEpisodeSchema,
     JellyfinMovieSchema,
     JellyfinPhotoSchema,
+    JellyfinPlaylistSchema,
     JellyfinTrackSchema,
     JellyfinVideoSchema,
 )
@@ -46,7 +47,9 @@ class MediaJellyfinPlugin(Plugin):
         self._api_key = api_key
         self.__user_id = None
 
-    def _execute(self, method: str, url: str, *args, **kwargs) -> dict:
+    def _execute(
+        self, method: str, url: str, *args, return_json: bool = True, **kwargs
+    ) -> dict:
         url = '/' + url.lstrip('/')
         url = self.server + url
 
@@ -59,7 +62,7 @@ class MediaJellyfinPlugin(Plugin):
         rs = getattr(requests, method.lower())(url, *args, **kwargs)
         rs.raise_for_status()
 
-        return rs.json()
+        return rs.json() if return_json else {}
 
     @property
     def _user_id(self) -> str:
@@ -165,6 +168,8 @@ class MediaJellyfinPlugin(Plugin):
                 result = JellyfinEpisodeSchema().dump(result)
             elif result['Type'] == 'Audio':
                 result = JellyfinTrackSchema().dump(result)
+            elif result['Type'] == 'Playlist':
+                result = JellyfinPlaylistSchema().dump(result)
             elif result['Type'] == 'MusicArtist':
                 result = JellyfinArtistSchema().dump(result)
             elif result['Type'] == 'MusicAlbum':
@@ -379,3 +384,58 @@ class MediaJellyfinPlugin(Plugin):
         )
 
         return self._serialize_search_results(results)
+
+    @action
+    def create_playlist(
+        self, name: str, public: bool = True, item_ids: Optional[Collection[str]] = None
+    ) -> dict:
+        """
+        Create a new playlist.
+
+        :param name: Name of the playlist.
+        :param public: Whether the playlist should be visible to any logged-in user.
+        :param item_ids: List of item IDs to add to the playlist.
+        """
+        playlist = self._execute(
+            'POST',
+            '/Playlists',
+            json={
+                'Name': name,
+                'UserId': self._user_id,
+                'IsPublic': public,
+                'Items': item_ids or [],
+            },
+        )
+
+        return dict(
+            JellyfinPlaylistSchema().dump(
+                {
+                    'Name': name,
+                    'IsPublic': public,
+                    **playlist,
+                }
+            )
+        )
+
+    @action
+    def delete_item(self, item_id: str) -> dict:
+        """
+        Delete an item from the server.
+
+        :param item_id: ID of the item to delete.
+        """
+        return self._execute('DELETE', f'/Items/{item_id}', return_json=False)
+
+    @action
+    def add_to_playlist(self, playlist_id: str, item_ids: Collection[str]) -> dict:
+        """
+        Add items to a playlist.
+
+        :param playlist_id: ID of the playlist.
+        :param item_ids: List of item IDs to add to the playlist.
+        """
+        return self._execute(
+            'POST',
+            f'/Playlists/{playlist_id}/Items',
+            params={'ids': ','.join(item_ids)},
+        )
