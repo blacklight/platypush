@@ -27,6 +27,16 @@
       </div>
     </div>
 
+    <div class="row duration" v-if="computedItem?.duration">
+      <div class="left side">Duration</div>
+      <div class="right side" v-text="formatDuration(computedItem.duration, true)" />
+    </div>
+
+    <div class="row duration" v-if="computedItem?.n_items != null">
+      <div class="left side">Items</div>
+      <div class="right side" v-text="computedItem.n_items" />
+    </div>
+
     <div class="row direct-url" v-if="computedItem?.imdb_url">
       <div class="left side">ImDB URL</div>
       <div class="right side">

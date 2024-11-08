@@ -22,12 +22,61 @@
         </div>
       </div>
     </div>
+
+    <div class="add-playlist floating-btn-container" v-if="isPlaylistsCollection">
+      <FloatingButton icon-class="fa fa-plus"
+                      title="Create Playlist"
+                      :disabled="loading"
+                      @click="showNewPlaylist = true" />
+    </div>
+
+    <div class="add-playlist-modal" v-if="showNewPlaylist">
+      <Modal title="Create Playlist"
+             :visible="true"
+             @close="showNewPlaylist = false">
+        <form class="modal-body" @submit.prevent="createPlaylist">
+          <div class="row">
+            <label for="newPlaylistName">Playlist Name</label>
+            <input name="name"
+                   type="text"
+                   id="newPlaylistName"
+                   placeholder="Playlist Name"
+                   required>
+          </div>
+
+          <div class="row">
+            <label for="newPlaylistPublic">Public</label>
+            <input name="public" type="checkbox" checked id="newPlaylistPublic">
+          </div>
+
+          <div class="row buttons">
+            <button type="button" @click="showNewPlaylist = false">Cancel</button>
+            <button type="submit">Create</button>
+          </div>
+        </form>
+      </Modal>
+    </div>
   </div>
 </template>
 
 <script>
+import FloatingButton from "@/components/elements/FloatingButton";
+import Modal from "@/components/Modal";
+import Utils from '@/Utils'
+
 export default {
+  mixins: [Utils],
+  emits: ['refresh', 'select'],
+  components: {
+    FloatingButton,
+    Modal,
+  },
+
   props: {
+    collection: {
+      type: Object,
+    },
+
     filter: {
       type: String,
     },
@@ -50,7 +99,9 @@ export default {
   data() {
     return {
       fallbackImageCollections: {},
+      loading: false,
       maxResultIndex: this.batchItems,
+      showNewPlaylist: false,
     };
   },
 
@@ -82,9 +133,23 @@ export default {
         return a.name.localeCompare(b.name)
       }).slice(0, this.maxResultIndex)
     },
+
+    isPlaylistsCollection() {
+      return this.collection?.collection_type === 'playlists'
+    },
   },
 
   methods: {
+    async createPlaylist(event) {
+      const form = new FormData(event.target)
+      await this.request('media.jellyfin.create_playlist', {
+        name: form.get('name'),
+        public: form.get('public') === 'on',
+      })
+
+      this.$emit('refresh')
+    },
+
     onImageError(collection) {
       this.fallbackImageCollections[collection.id] = true
     },
@@ -99,6 +164,13 @@ export default {
         return
 
       this.maxResultIndex += this.batchItems
+    },
+  },
+
+  watch: {
+    showNewPlaylist(value) {
+      if (value)
+        this.$nextTick(() => this.$el.querySelector('input[name="name"]').focus())
     },
   },
 
@@ -146,6 +218,46 @@ export default {
     .item {
       h2 {
         font-size: 2em;
+      }
+    }
+  }
+
+  :deep(.add-playlist-modal) {
+    .modal-body {
+      min-width: 30em;
+      max-width: calc(100% - 2em);
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+
+      .row {
+        margin-bottom: 1em;
+
+        label {
+          @extend .col-m-4;
+          @extend .col-s-12;
+        }
+
+        input {
+          @extend .col-m-8;
+          @extend .col-s-12;
+        }
+
+        &.buttons {
+          display: flex;
+          justify-content: flex-end;
+
+          button {
+            margin-left: 1em;
+
+            &[type="submit"] {
+              width: 10em;
+              cursor: pointer;
+            }
+          }
+        }
       }
     }
   }

@@ -5,6 +5,7 @@
       <Item v-for="(item, i) in visibleResults"
             :key="i"
             :hidden="!!Object.keys(sources || {}).length && !sources[item.type]"
+            :index="i"
             :item="item"
             :list-view="listView"
             :playlist="playlist"
@@ -184,6 +185,8 @@ export default {
 
   &.list {
     :deep(.grid) {
+      height: fit-content;
+      max-height: 100%;
       display: flex;
       flex-direction: column;
       padding: 0;

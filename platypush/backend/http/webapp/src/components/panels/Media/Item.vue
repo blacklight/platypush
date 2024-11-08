@@ -14,8 +14,16 @@
         <div class="left side"
              :class="{'col-11': !listView, 'col-10': listView }"
              @click.stop="$emit('select')">
-          <span class="track-number" v-if="listView && item.track_number">
+          <span class="track-number" v-if="playlistView">
+            {{ index + 1 }}
+          </span>
+
+          <span class="track-number" v-else-if="listView && item.track_number">
             {{ item.track_number }}
+          </span>
+
+          <span class="artist" v-if="playlistView && item.artist">
+            {{ item.artist.name ?? item.artist }} &nbsp;&mdash;&nbsp;
           </span>
 
           {{item.title || item.name}}
@@ -111,6 +119,10 @@ export default {
       default: false,
     },
 
+    index: {
+      type: Number,
+    },
+
     listView: {
       type: Boolean,
       default: false,
@@ -187,7 +199,7 @@ export default {
         })
       }
 
-      if (this.item.type === 'youtube') {
+      if (['jellyfin', 'youtube'].includes(this.item.type)) {
         actions.push({
           iconClass: 'fa fa-list',
           text: 'Add to Playlist',
@@ -195,7 +207,7 @@ export default {
         })
       }
 
-      if (this.item.type === 'youtube' && this.playlist?.length) {
+      if (['jellyfin', 'youtube'].includes(this.item.type) && this.playlist) {
         actions.push({
           iconClass: 'fa fa-trash',
           text: 'Remove from Playlist',
@@ -210,6 +222,10 @@ export default {
       })
 
       return actions
+    },
+
+    playlistView() {
+      return this.playlist && this.listView
     },
   },
 
@@ -307,6 +323,12 @@ export default {
 
     &:hover {
       text-decoration: underline;
+    }
+
+    .artist {
+      font-weight: 300;
+      opacity: .75;
+      letter-spacing: 0.065em;
     }
   }
 

@@ -7,8 +7,11 @@
              :filter="filter"
              :loading="isLoading"
              :path="path"
+             @add-to-playlist="$emit('add-to-playlist', $event)"
+             @delete="$emit('delete', $event)"
              @play="$emit('play', $event)"
              @play-with-opts="$emit('play-with-opts', $event)"
+             @remove-from-playlist="$emit('remove-from-playlist', $event)"
              @select="selectedResult = $event; $emit('select', $event)"
              @select-collection="selectCollection"
              @view="$emit('view', $event)" />
@@ -16,7 +19,7 @@
 
     <NoItems :with-shadow="false"
              v-else-if="!items?.length">
-      No videos found.
+      No media found.
     </NoItems>
 
     <div class="wrapper items-wrapper" v-else>
@@ -25,6 +28,7 @@
                    :items="collections"
                    :loading="isLoading"
                    :parent-id="collection?.id"
+                   @refresh="refresh"
                    @select="selectCollection"
                    v-if="collections.length > 0" />
 
@@ -54,7 +58,18 @@ import Results from "@/components/panels/Media/Results";
 
 export default {
   mixins: [Mixin],
-  emits: ['select', 'select-collection'],
+  emits: [
+    'add-to-playlist',
+    'delete',
+    'download',
+    'play',
+    'play-with-opts',
+    'remove-from-playlist',
+    'select',
+    'select-collection',
+    'view',
+  ],
+
   components: {
     Collections,
     Loading,
@@ -65,11 +80,11 @@ export default {
 
   computed: {
     collections() {
-      return this.sortedItems?.filter((item) => item.item_type === 'collection') ?? []
+      return this.sortedItems?.filter((item) => ['collection', 'playlist'].includes(item.item_type)) ?? []
     },
 
     mediaItems() {
-      const items = this.sortedItems?.filter((item) => item.item_type !== 'collection') ?? []
+      const items = this.sortedItems?.filter((item) => !['collection', 'playlist'].includes(item.item_type)) ?? []
 
       if (this.collection && (!this.collection.collection_type || this.collection.collection_type === 'books')) {
         return items.sort((a, b) => {
@@ -192,6 +207,19 @@ export default {
 
   .music-wrapper {
     height: 100%;
+  }
+
+  :deep(.floating-btn-container) {
+    position: fixed;
+    bottom: 5.5em;
+
+    @include until($tablet) {
+      right: 1em;
+    }
+
+    @include from($tablet) {
+      right: 2.5em;
+    }
   }
 }
 </style>

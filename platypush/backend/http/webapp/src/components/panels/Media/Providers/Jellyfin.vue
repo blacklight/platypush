@@ -15,6 +15,7 @@
       <Media v-bind="componentData.props"
              v-on="componentData.on"
              :collection="collection"
+             @delete="deleteItem"
              @select="select"
              @select-collection="selectCollection"
              @view="$emit('view', $event)"
@@ -147,6 +148,27 @@ export default {
     selectCollection(collection) {
       this.collection = collection
       this.select(collection)
+    },
+
+    async deleteItem(item_id) {
+      this.loading_ = true
+
+      try {
+        await this.request('media.jellyfin.delete_item', {
+          item_id: item_id,
+        })
+      } finally {
+        this.loading_ = false
+      }
+
+      if (this.path.length > 1) {
+        if (this.path[this.path.length - 1].id === item_id) {
+          this.selectCollection(this.path[this.path.length - 2])
+        }
+      } else {
+        this.collection = null
+        this.select(this.rootItem)
+      }
     },
   },
 

@@ -2,11 +2,7 @@
   <div class="music index">
     <Loading v-if="isLoading" />
 
-    <NoItems :with-shadow="false" v-else-if="!items?.length">
-      No music found.
-    </NoItems>
-
-    <main :class="{ album: view === 'album', artist: view === 'artist' }" v-else>
+    <main :class="containerClass">
       <div class="artist header" v-if="view === 'artist'">
         <div class="image" v-if="collection.image">
           <img :src="collection.image" />
@@ -17,7 +13,7 @@
         </div>
       </div>
 
-      <div class="album header" v-if="view === 'album'">
+      <div class="album header" v-else-if="view === 'album'">
         <div class="image" v-if="collection.image">
           <img :src="collection.image" />
         </div>
@@ -44,6 +40,38 @@
         </div>
       </div>
 
+      <div class="playlist header" v-else-if="view === 'playlist'">
+        <div class="image" v-if="collection.image">
+          <img :src="collection.image" />
+        </div>
+
+        <div class="info">
+          <h1 v-text="collection.name" />
+          <div class="details">
+            <div class="row" v-if="collection.duration">
+              <span class="label">Duration:</span>
+              <span class="value" v-text="formatDuration(collection.duration, true)" />
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <Dropdown title="Playlist Actions">
+            <DropdownItem text="Remove Playlist"
+                          icon-class="fas fa-trash"
+                          @input="$refs.deleteConfirmDialog.show()" />
+
+            <DropdownItem text="Info"
+                          icon-class="fas fa-info"
+                          @input="showInfoModal = true" />
+          </Dropdown>
+        </div>
+      </div>
+
+      <NoItems :with-shadow="false" v-if="!items?.length">
+        No media found.
+      </NoItems>
+
       <Collections :collection="collection"
                    :filter="filter"
                    :items="collections"
@@ -56,6 +84,7 @@
                :sources="{'jellyfin': true}"
                :filter="filter"
                :list-view="true"
+               :playlist="collection?.item_type === 'playlist' ? collection : null"
                :selected-result="selectedResult"
                :show-date="false"
                @add-to-playlist="$emit('add-to-playlist', $event)"
@@ -66,23 +95,54 @@
                @select="selectedResult = $event"
                @view="$emit('view', $event)"
                v-if="mediaItems?.length > 0" />
+
+      <div class="collection-modal" v-if="showInfoModal">
+        <Modal title="Collection Info" visible @close="showInfoModal = false">
+          <Info :item="collection" :pluginName="pluginName" />
+        </Modal>
+      </div>
+
+      <ConfirmDialog ref="deleteConfirmDialog" @input="$emit('delete', collection.id)">
+        Are you sure you want to delete this playlist?
+      </ConfirmDialog>
     </main>
   </div>
 </template>
 
 <script>
 import Collections from "@/components/panels/Media/Providers/Jellyfin/Collections";
+import ConfirmDialog from "@/components/elements/ConfirmDialog";
+import Dropdown from "@/components/elements/Dropdown";
+import DropdownItem from "@/components/elements/DropdownItem";
+import Info from "@/components/panels/Media/Info";
 import Loading from "@/components/Loading";
 import Mixin from "@/components/panels/Media/Providers/Jellyfin/Mixin";
+import Modal from "@/components/Modal";
 import NoItems from "@/components/elements/NoItems";
 import Results from "@/components/panels/Media/Results";
 
 export default {
   mixins: [Mixin],
-  emits: ['select', 'select-collection'],
+  emits: [
+    'add-to-playlist',
+    'delete',
+    'download',
+    'play',
+    'play-with-opts',
+    'remove-from-playlist',
+    'select',
+    'select-collection',
+    'view',
+  ],
+
   components: {
     Collections,
+    ConfirmDialog,
+    Dropdown,
+    DropdownItem,
+    Info,
     Loading,
+    Modal,
     NoItems,
     Results,
   },
@@ -90,6 +150,7 @@ export default {
   data() {
     return {
       artist: null,
+      showInfoModal: false,
     }
   },
 
@@ -98,6 +159,14 @@ export default {
       return (
         this.sortedItems?.filter((item) => ['collection', 'artist', 'album'].includes(item.item_type)) ?? []
       ).sort((a, b) => a.name.localeCompare(b.name))
+    },
+
+    containerClass() {
+      return {
+        artist: this.view === 'artist',
+        album: this.view === 'album',
+        playlist: this.view === 'playlist',
+      }
     },
 
     displayedArtist() {
@@ -134,6 +203,8 @@ export default {
           return 'artist'
         case 'album':
           return 'album'
+        case 'playlist':
+          return 'playlist'
         default:
           return 'index'
       }
@@ -240,6 +311,16 @@ export default {
             )
             break
 
+          case 'playlist':
+            this.items = await this.request(
+              'media.jellyfin.get_items',
+              {
+                parent_id: this.collection.id,
+                limit: 25000,
+              }
+            )
+            break
+
           default:
             this.artist = null
             this.items = await this.request(
@@ -274,6 +355,8 @@ export default {
 
 $artist-header-height: 5em;
 $album-header-height: 10em;
+$playlist-header-height: 5em;
+$actions-dropdown-width: 5em;
 
 .index {
   position: relative;
@@ -310,6 +393,12 @@ $album-header-height: 10em;
     &.album {
       .media-results {
         height: calc(100% - #{$album-header-height} - 0.5em);
+      }
+    }
+
+    &.playlist {
+      .media-results {
+        height: calc(100% - #{$playlist-header-height} - 0.5em);
       }
     }
 
@@ -360,6 +449,32 @@ $album-header-height: 10em;
           width: $album-header-height;
           height: $album-header-height;
         }
+      }
+    }
+
+    &.playlist {
+      height: $playlist-header-height;
+      border-bottom: 1px solid $default-shadow-color;
+
+      .image {
+        img {
+          width: calc($playlist-header-height - 0.5em);
+          height: calc($playlist-header-height - 0.5em);
+          padding: 0.25em;
+        }
+      }
+
+      .info {
+        width: calc(100% - #{$actions-dropdown-width});
+      }
+
+      .actions {
+        width: $actions-dropdown-width;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-right: -0.75em;
+        position: relative;
       }
     }
 
