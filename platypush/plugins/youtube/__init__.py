@@ -259,50 +259,67 @@ class YoutubePlugin(Plugin):
     def remove_from_playlist(
         self,
         playlist_id: str,
-        video_id: Optional[str] = None,
-        index: Optional[int] = None,
+        item_ids: Optional[Collection[str]] = None,
+        indices: Optional[Collection[int]] = None,
+        **kwargs,
     ):
         """
         Remove a video from a playlist.
 
-        Note that either the video ID or the index must be provided.
+        Note that either ``item_ids`` or ``indices`` must be provided.
 
-        :param video_id: YouTube video ID or URL.
-        :param index: (0-based) index of the video in the playlist.
+        :param item_ids: YouTube video IDs or URLs to remove from the playlist.
+        :param indices: (0-based) indices of the items in the playlist to remove.
         :param playlist_id: Piped playlist ID.
         """
-        assert video_id or index, 'Either the video ID or the index must be provided'
-
-        if index is None:
-            assert video_id
-            video_id = self._get_video_id(video_id)
-            index = next(
-                (
-                    i
-                    for i, v in enumerate(
-                        self._request(f'playlists/{playlist_id}').get(
-                            'relatedStreams', []
-                        )
-                    )
-                    if self._get_video_id(v.get('url')) == video_id
-                ),
-                None,
-            )
-
-        if index is None:
+        items = item_ids
+        if kwargs.get('video_id'):
             self.logger.warning(
-                'Video %s not found in the playlist %s', video_id, playlist_id
+                'The "video_id" parameter is deprecated. Use "item_ids" instead.'
+            )
+            items = [kwargs['video_id']]
+
+        if kwargs.get('index'):
+            self.logger.warning(
+                'The "index" parameter is deprecated. Use "indices" instead.'
+            )
+            indices = [kwargs['index']]
+
+        assert items or indices, 'Either item_ids or indices must be provided'
+
+        if not indices:
+            item_ids = {
+                video_id
+                for video_id in [
+                    self._get_video_id(item_id) for item_id in (items or [])
+                ]
+                if video_id
+            }
+
+            playlist_items = self._request(f'playlists/{playlist_id}').get(
+                'relatedStreams', []
+            )
+            indices = [
+                i
+                for i, v in enumerate(playlist_items)
+                if self._get_video_id(v.get('url')) in item_ids
+            ]
+
+        if not indices:
+            self.logger.warning(
+                'Items not found in the playlist %s: %s', playlist_id, items or []
             )
             return
 
-        self._request(
-            'user/playlists/remove',
-            method='post',
-            json={
-                'index': index,
-                'playlistId': playlist_id,
-            },
-        )
+        for index in indices:
+            self._request(
+                'user/playlists/remove',
+                method='post',
+                json={
+                    'index': index,
+                    'playlistId': playlist_id,
+                },
+            )
 
     @action
     def create_playlist(self, name: str) -> dict:
