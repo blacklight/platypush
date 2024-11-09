@@ -1,5 +1,5 @@
 <template>
-  <div
+  <div ref="item"
     class="item media-item"
     :class="{selected: selected, 'list': listView}"
     @click.right="onContextClick"
@@ -22,11 +22,15 @@
             {{ item.track_number }}
           </span>
 
-          <span class="artist" v-if="playlistView && item.artist">
-            {{ item.artist.name ?? item.artist }} &nbsp;&mdash;&nbsp;
-          </span>
+          <div class="artist-and-title">
+            <span class="artist" v-if="playlistView && item.artist">
+              {{ item.artist.name ?? item.artist }}
+            </span>
 
-          {{item.title || item.name}}
+            <span class="title">
+              {{item.title || item.name}}
+            </span>
+          </div>
         </div>
 
         <div class="right side" :class="{'col-1': !listView, 'col-2': listView }">
@@ -129,7 +133,7 @@ export default {
     },
 
     playlist: {
-      type: String,
+      type: [Object, String],
     },
 
     selected: {
@@ -326,9 +330,21 @@ export default {
     }
 
     .artist {
+      font-size: 0.9em;
       font-weight: 300;
       opacity: .75;
       letter-spacing: 0.065em;
+    }
+
+    .artist-and-title {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+
+      .title {
+        font-size: 1em;
+        padding: 0;
+      }
     }
   }
 

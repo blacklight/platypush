@@ -47,6 +47,11 @@ export default {
         return []
       }
 
+      if (this.collection?.item_type === 'playlist') {
+        // Don't sort playlists
+        return this.items
+      }
+
       return [...this.items].sort((a, b) => {
         const attr = this.sort.attr
         const desc = this.sort.desc

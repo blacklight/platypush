@@ -89,6 +89,7 @@
                :show-date="false"
                @add-to-playlist="$emit('add-to-playlist', $event)"
                @download="$emit('download', $event)"
+               @move="$emit('playlist-move', $event)"
                @play="$emit('play', $event)"
                @play-with-opts="$emit('play-with-opts', $event)"
                @remove-from-playlist="$emit('remove-from-playlist', $event)"
@@ -129,6 +130,7 @@ export default {
     'download',
     'play',
     'play-with-opts',
+    'playlist-move',
     'remove-from-playlist',
     'select',
     'select-collection',
@@ -177,6 +179,11 @@ export default {
       return (
         this.sortedItems?.filter((item) => !['collection', 'artist', 'album'].includes(item.item_type)) ?? []
       ).sort((a, b) => {
+        if (this.view === 'playlist') {
+          // Skip sorting if this is a playlist
+          return 0
+        }
+
         if (this.view === 'album') {
           if (a.track_number && b.track_number) {
             if (a.track_number !== b.track_number) {
@@ -313,9 +320,9 @@ export default {
 
           case 'playlist':
             this.items = await this.request(
-              'media.jellyfin.get_items',
+              'media.jellyfin.get_playlist_items',
               {
-                parent_id: this.collection.id,
+                playlist: this.collection.id,
                 limit: 25000,
               }
             )

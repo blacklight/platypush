@@ -11,6 +11,7 @@
              @delete="$emit('delete', $event)"
              @play="$emit('play', $event)"
              @play-with-opts="$emit('play-with-opts', $event)"
+             @playlist-move="playlistMove"
              @remove-from-playlist="$emit('remove-from-playlist', $event)"
              @select="selectedResult = $event; $emit('select', $event)"
              @select-collection="selectCollection"
@@ -122,6 +123,23 @@ export default {
       }
 
       this.selectedResult = index
+    },
+
+    async playlistMove(event) {
+      const { item, to } = event
+      this.loading_ = true
+
+      try {
+        await this.request('media.jellyfin.playlist_move', {
+          playlist: this.collection.id,
+          playlist_item_id: item.playlist_item_id,
+          to_pos: to,
+        })
+
+        await this.refresh()
+      } finally {
+        this.loading_ = false
+      }
     },
 
     async init() {
