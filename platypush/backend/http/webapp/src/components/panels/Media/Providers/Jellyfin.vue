@@ -15,6 +15,7 @@
       <Media v-bind="componentData.props"
              v-on="componentData.on"
              :collection="collection"
+             @add-to-playlist="$emit('add-to-playlist', $event)"
              @delete="deleteItem"
              @select="select"
              @select-collection="selectCollection"

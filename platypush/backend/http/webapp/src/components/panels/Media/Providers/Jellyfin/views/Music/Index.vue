@@ -92,7 +92,7 @@
                @move="$emit('playlist-move', $event)"
                @play="$emit('play', $event)"
                @play-with-opts="$emit('play-with-opts', $event)"
-               @remove-from-playlist="$emit('remove-from-playlist', $event)"
+               @remove-from-playlist="removeFromPlaylist"
                @select="selectedResult = $event"
                @view="$emit('view', $event)"
                v-if="mediaItems?.length > 0" />
@@ -131,7 +131,6 @@ export default {
     'play',
     'play-with-opts',
     'playlist-move',
-    'remove-from-playlist',
     'select',
     'select-collection',
     'view',
@@ -178,7 +177,11 @@ export default {
     mediaItems() {
       return (
         this.sortedItems?.filter((item) => !['collection', 'artist', 'album'].includes(item.item_type)) ?? []
-      ).sort((a, b) => {
+      ).map((item) => {
+        item.media_type = item.type
+        item.type = 'jellyfin'
+        return item
+      }).sort((a, b) => {
         if (this.view === 'playlist') {
           // Skip sorting if this is a playlist
           return 0
@@ -219,6 +222,20 @@ export default {
   },
 
   methods: {
+    async removeFromPlaylist(item) {
+      this.loading_ = true
+      try {
+        await this.request('media.jellyfin.remove_from_playlist', {
+          playlist_id: this.collection.id,
+          item_ids: [item.playlist_item_id],
+        })
+
+        await this.refresh()
+      } finally {
+        this.loading_ = false
+      }
+    },
+
     async selectArtist() {
       const artistId = this.displayedArtist?.id || this.getUrlArgs().artist
       if (!artistId?.length)
@@ -319,12 +336,22 @@ export default {
             break
 
           case 'playlist':
-            this.items = await this.request(
-              'media.jellyfin.get_playlist_items',
-              {
-                playlist: this.collection.id,
-                limit: 25000,
-              }
+            this.items = this.collection?.item_type === 'playlist' ? (
+              await this.request(
+                'media.jellyfin.get_playlist_items',
+                {
+                  playlist_id: this.collection.id,
+                  limit: 25000,
+                }
+              )
+            ) : (
+              await this.request(
+                'media.jellyfin.get_items',
+                {
+                  parent_id: this.collection.id,
+                  limit: 25000,
+                }
+              )
             )
             break
 

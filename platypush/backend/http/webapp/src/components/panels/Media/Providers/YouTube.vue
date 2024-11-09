@@ -133,7 +133,7 @@ export default {
       try {
         await this.request('youtube.remove_from_playlist', {
           playlist_id: playlistId,
-          video_id: videoId,
+          item_ids: [videoId],
         })
       } finally {
         this.loading_ = false

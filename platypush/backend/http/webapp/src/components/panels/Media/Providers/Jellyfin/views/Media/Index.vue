@@ -131,8 +131,8 @@ export default {
 
       try {
         await this.request('media.jellyfin.playlist_move', {
-          playlist: this.collection.id,
-          playlist_item_id: item.playlist_item_id,
+          playlist_id: this.collection.id,
+          item_id: item.playlist_item_id,
           to_pos: to,
         })
 
