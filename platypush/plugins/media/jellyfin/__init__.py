@@ -47,9 +47,7 @@ class MediaJellyfinPlugin(Plugin):
         self._api_key = api_key
         self.__user_id = None
 
-    def _execute(
-        self, method: str, url: str, *args, return_json: bool = True, **kwargs
-    ) -> dict:
+    def _execute(self, method: str, url: str, *args, **kwargs) -> dict:
         url = '/' + url.lstrip('/')
         url = self.server + url
 
@@ -75,7 +73,10 @@ class MediaJellyfinPlugin(Plugin):
             )
             rs.raise_for_status()
 
-        return rs.json() if return_json else {}
+        try:
+            return rs.json()
+        except Exception:
+            return rs.text
 
     @property
     def _user_id(self) -> str:
@@ -259,6 +260,24 @@ class MediaJellyfinPlugin(Plugin):
         )
 
     @action
+    def get_playlists(self) -> Iterable[dict]:
+        """
+        Get the list of playlists associated to the user on the server.
+
+        :return: .. schema:: media.jellyfin.JellyfinPlaylistSchema(many=True)
+        """
+        return self._query(
+            '/Items',
+            schema_class=JellyfinPlaylistSchema,
+            recursive=True,
+            params={
+                'userId': self._user_id,
+                'includeItemTypes': 'Playlist',
+                'sortBy': 'SortName',
+            },
+        )
+
+    @action
     def get_items(
         self,
         parent_id: str,
@@ -284,18 +303,18 @@ class MediaJellyfinPlugin(Plugin):
     @action
     def get_playlist_items(
         self,
-        playlist: str,
+        playlist_id: str,
         limit: Optional[int] = 10000,
     ) -> Iterable[dict]:
         """
         Get the items in a playlist.
 
-        :param playlist: ID of the playlist.
+        :param playlist_id: ID of the playlist.
         :param limit: Maximum number of items to return (default: 10000).
         """
         return self._serialize_search_results(
             self._query(
-                f'/Playlists/{playlist}/Items',
+                f'/Playlists/{playlist_id}/Items',
                 limit=limit,
                 params={'UserId': self._user_id},
             )
@@ -457,30 +476,46 @@ class MediaJellyfinPlugin(Plugin):
 
         :param item_id: ID of the item to delete.
         """
-        return self._execute('DELETE', f'/Items/{item_id}', return_json=False)
+        return self._execute('DELETE', f'/Items/{item_id}')
 
     @action
-    def add_to_playlist(self, playlist: str, item_ids: Collection[str]) -> dict:
+    def add_to_playlist(self, playlist_id: str, item_ids: Collection[str]) -> dict:
         """
         Add items to a playlist.
 
-        :param playlist: ID of the playlist.
+        :param playlist_id: ID of the playlist.
         :param item_ids: List of item IDs to add to the playlist.
         """
         return self._execute(
             'POST',
-            f'/Playlists/{playlist}/Items',
+            f'/Playlists/{playlist_id}/Items',
             params={'ids': ','.join(item_ids)},
+        )
+
+    @action
+    def remove_from_playlist(self, playlist_id: str, item_ids: Collection[str]) -> dict:
+        """
+        Remove items from a playlist.
+
+        :param playlist_id: ID of the playlist.
+        :param item_ids: List of item IDs to remove from the playlist. **Note**: These
+            are the ``playlist_item_id`` on the response of :meth:`.get_playlist_items`,
+            not the ``id``.
+        """
+        return self._execute(
+            'DELETE',
+            f'/Playlists/{playlist_id}/Items',
+            params={'EntryIds': ','.join(item_ids)},
         )
 
     @action
     def playlist_move(
         self,
-        playlist: str,
+        playlist_id: str,
         *_,
         from_pos: Optional[int] = None,
         to_pos: int,
-        playlist_item_id: Optional[str] = None,
+        item_id: Optional[str] = None,
         **__,
     ):
         """
@@ -488,17 +523,18 @@ class MediaJellyfinPlugin(Plugin):
 
         Either ``from_pos`` or ``item`` must be specified.
 
-        :param playlist: ID of the playlist.
+        :param playlist_id: ID of the playlist.
         :param from_pos: Starting position of the item to move (0-based).
         :param to_pos: New position of the item (0-based).
-        :param playlist_item_id: Playlist ID of the item to move, as returned
-            by :meth:`.get_playlist_items`.
+        :param item_id: Playlist ID of the item to move, as returned
+            by :meth:`.get_playlist_items`. **Note**: This is the
+            ``playlist_item_id`` on the response, not the ``id``.
         """
         assert (
-            from_pos is not None or playlist_item_id is not None
+            from_pos is not None or item_id is not None
         ), 'Either from_pos or item must be set'
         assert (
-            from_pos is None or playlist_item_id is None
+            from_pos is None or item_id is None
         ), 'Either from_pos or item must be set'
         assert to_pos >= 0, 'to_pos must be >= 0'
 
@@ -512,7 +548,7 @@ class MediaJellyfinPlugin(Plugin):
 
             items = self._execute(
                 'GET',
-                f'/Playlists/{playlist}/Items',
+                f'/Playlists/{playlist_id}/Items',
                 params={
                     'userId': self._user_id,
                     'limit': 25000,
@@ -527,10 +563,9 @@ class MediaJellyfinPlugin(Plugin):
                 )
                 return
 
-            playlist_item_id = items[from_pos]['PlaylistItemId']
+            item_id = items[from_pos]['PlaylistItemId']
 
         self._execute(
             'POST',
-            f'/Playlists/{playlist}/Items/{playlist_item_id}/Move/{to_pos}',
-            return_json=False,
+            f'/Playlists/{playlist_id}/Items/{item_id}/Move/{to_pos}',
         )
