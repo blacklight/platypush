@@ -28,6 +28,7 @@
         @download-audio="$emit('download-audio', $event)"
         @play="$emit('play', $event)"
         @play-with-opts="$emit('play-with-opts', $event)"
+        @view="$emit('view', $event)"
       />
     </div>
   </div>
@@ -48,6 +49,7 @@ export default {
     'play',
     'play-with-opts',
     'select',
+    'view',
   ],
 
   components: {
