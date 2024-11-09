@@ -1,7 +1,7 @@
 import base64
 import re
 from functools import lru_cache
-from typing import List, Optional
+from typing import Collection, List, Optional
 
 import requests
 
@@ -229,18 +229,28 @@ class YoutubePlugin(Plugin):
         return PipedChannelSchema().dump(response) or {}  # type: ignore
 
     @action
-    def add_to_playlist(self, video_id: str, playlist_id: str):
+    def add_to_playlist(
+        self, playlist_id: str, item_ids: Optional[Collection[str]] = None, **kwargs
+    ):
         """
         Add a video to a playlist.
 
-        :param video_id: YouTube video ID.
         :param playlist_id: Piped playlist ID.
+        :param item_ids: YouTube IDs or URLs to add to the playlist.
         """
+        items = item_ids
+        if kwargs.get('video_id'):
+            self.logger.warning(
+                'The "video_id" parameter is deprecated. Use "item_ids" instead.'
+            )
+            items = [kwargs['video_id']]
+
+        assert items, 'No items provided to add to the playlist'
         self._request(
             'user/playlists/add',
             method='post',
             json={
-                'videoIds': [self._get_video_id(video_id)],
+                'videoIds': [self._get_video_id(item_id) for item_id in items],
                 'playlistId': playlist_id,
             },
         )
