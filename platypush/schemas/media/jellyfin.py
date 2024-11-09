@@ -119,6 +119,7 @@ class JellyfinTrackSchema(JellyfinSchema):
     track_number = fields.Number(attribute='IndexNumber')
     disc_number = fields.Number(attribute='ParentIndexNumber')
     year = fields.Number(attribute='ProductionYear')
+    playlist_item_id = fields.String(attribute='PlaylistItemId')
     image = fields.String()
     created_at = DateTime(attribute='DateCreated')
 
@@ -127,6 +128,12 @@ class JellyfinTrackSchema(JellyfinSchema):
         artists = data.get('Artists', [])
         if artists:
             data['artist'] = ', '.join(artists)
+        return data
+
+    @post_dump
+    def _skip_missing_playlist_item_id(self, data: dict, **_) -> dict:
+        if not data.get('playlist_item_id'):
+            data.pop('playlist_item_id', None)
         return data
 
     @post_dump

@@ -60,7 +60,20 @@ class MediaJellyfinPlugin(Plugin):
         }
 
         rs = getattr(requests, method.lower())(url, *args, **kwargs)
-        rs.raise_for_status()
+
+        if rs.status_code >= 400:
+            try:
+                error = rs.json()
+            except Exception:
+                error = rs.text
+
+            self.logger.error(
+                'Error while executing %s on %s: %s',
+                method,
+                url,
+                error,
+            )
+            rs.raise_for_status()
 
         return rs.json() if return_json else {}
 
@@ -269,6 +282,26 @@ class MediaJellyfinPlugin(Plugin):
         )
 
     @action
+    def get_playlist_items(
+        self,
+        playlist: str,
+        limit: Optional[int] = 10000,
+    ) -> Iterable[dict]:
+        """
+        Get the items in a playlist.
+
+        :param playlist: ID of the playlist.
+        :param limit: Maximum number of items to return (default: 10000).
+        """
+        return self._serialize_search_results(
+            self._query(
+                f'/Playlists/{playlist}/Items',
+                limit=limit,
+                params={'UserId': self._user_id},
+            )
+        )
+
+    @action
     def info(self, item_id: str) -> dict:
         """
         Get the metadata for a specific item.
@@ -427,15 +460,77 @@ class MediaJellyfinPlugin(Plugin):
         return self._execute('DELETE', f'/Items/{item_id}', return_json=False)
 
     @action
-    def add_to_playlist(self, playlist_id: str, item_ids: Collection[str]) -> dict:
+    def add_to_playlist(self, playlist: str, item_ids: Collection[str]) -> dict:
         """
         Add items to a playlist.
 
-        :param playlist_id: ID of the playlist.
+        :param playlist: ID of the playlist.
         :param item_ids: List of item IDs to add to the playlist.
         """
         return self._execute(
             'POST',
-            f'/Playlists/{playlist_id}/Items',
+            f'/Playlists/{playlist}/Items',
             params={'ids': ','.join(item_ids)},
+        )
+
+    @action
+    def playlist_move(
+        self,
+        playlist: str,
+        *_,
+        from_pos: Optional[int] = None,
+        to_pos: int,
+        playlist_item_id: Optional[str] = None,
+        **__,
+    ):
+        """
+        Move items in a playlist.
+
+        Either ``from_pos`` or ``item`` must be specified.
+
+        :param playlist: ID of the playlist.
+        :param from_pos: Starting position of the item to move (0-based).
+        :param to_pos: New position of the item (0-based).
+        :param playlist_item_id: Playlist ID of the item to move, as returned
+            by :meth:`.get_playlist_items`.
+        """
+        assert (
+            from_pos is not None or playlist_item_id is not None
+        ), 'Either from_pos or item must be set'
+        assert (
+            from_pos is None or playlist_item_id is None
+        ), 'Either from_pos or item must be set'
+        assert to_pos >= 0, 'to_pos must be >= 0'
+
+        if from_pos is not None:
+            assert from_pos >= 0, 'from_pos must be >= 0'
+            if from_pos == to_pos:
+                self.logger.info(
+                    'from_pos and to_pos are the same, no need to move the item'
+                )
+                return
+
+            items = self._execute(
+                'GET',
+                f'/Playlists/{playlist}/Items',
+                params={
+                    'userId': self._user_id,
+                    'limit': 25000,
+                },
+            ).get('Items', [])
+
+            if len(items) <= from_pos:
+                self.logger.warning(
+                    'Invalid from_pos %d, playlist has only %d items',
+                    from_pos,
+                    len(items),
+                )
+                return
+
+            playlist_item_id = items[from_pos]['PlaylistItemId']
+
+        self._execute(
+            'POST',
+            f'/Playlists/{playlist}/Items/{playlist_item_id}/Move/{to_pos}',
+            return_json=False,
         )
