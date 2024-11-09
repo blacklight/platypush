@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[6372],{6372:function(e,n,a){a.r(n),a.d(n,{default:function(){return l}});var u=a(641);function t(e,n,a,t,c,r){const s=(0,u.g2)("Media");return(0,u.uX)(),(0,u.Wv)(s,{"plugin-name":"media.vlc"})}var c=a(4277),r={name:"MediaVlc",components:{Media:c["default"]}},s=a(6262);const i=(0,s.A)(r,[["render",t]]);var l=i}}]);
+//# sourceMappingURL=6372.637d9728.js.map
