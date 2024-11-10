@@ -12,6 +12,7 @@ python3-mypy-extensions
 python3-psutil
 python3-pygments
 python3-pyotp
+python3-pyzbar
 python3-qrcode
 python3-redis
 python3-requests

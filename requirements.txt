@@ -7,11 +7,13 @@ croniter
 docutils
 flask
 marshmallow
+Pillow
 python-dateutil
 python-magic
 pygments
 pyotp
 pyyaml
+pyzbar
 qrcode
 redis
 requests

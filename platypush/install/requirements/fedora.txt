@@ -12,6 +12,7 @@ python-mypy_extensions
 python-psutil
 python-pygments
 python-pyotp
+python-pyzbar
 python-qrcode
 python-redis
 python-requests
