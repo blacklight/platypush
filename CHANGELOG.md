@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.2]
 
 - [[#414](https://git.platypush.tech/platypush/platypush/issues/414)]: added
   Jellyfin UI for all media plugins. This makes it possible to browse and play
