@@ -25,6 +25,16 @@ class MediaJellyfinPlugin(Plugin):
     Note: As of February 2022, this plugin also works with Emby
     media server instances. Future back-compatibility if the two
     APIs diverge, however, is not guaranteed.
+
+    Note: At the current state, it is advised to use API keys retrieved from the
+    frontend rather than the server-generated API keys (open Developer Tools in
+    your browser while logged in to Jellyfin, go to the Network tab, select any
+    request, and grab the ``Token`` from the ``Authorization`` header).
+
+    This is because of known limitations in the user session management in the
+    Jellyfin API - see `this discussion
+    <https://github.com/jellyfin/jellyfin/discussions/12868>`_ and `this issue
+    <https://github.com/jellyfin/jellyfin/issues/12999>`_.
     """
 
     # Maximum number of results returned per query action
