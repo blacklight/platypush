@@ -6,6 +6,7 @@ py3-docutils
 py3-flask
 py3-greenlet
 py3-magic
+py3-marshmallow
 py3-mypy-extensions
 py3-psutil
 py3-redis

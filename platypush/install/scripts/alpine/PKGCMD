@@ -1,1 +1,1 @@
-apk add --update --no-interactive --no-cache
+apk add --update --no-interactive --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing/
