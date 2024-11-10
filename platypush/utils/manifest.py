@@ -475,6 +475,7 @@ class Dependencies:
                 yield (
                     'pip install -U --no-input '
                     + ('--no-cache-dir ' if self._is_docker else '')
+                    + ('--ignore-installed ' if not self._is_venv else '')
                     + (
                         '--break-system-packages '
                         if wants_break_system_packages

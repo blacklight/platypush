@@ -19,7 +19,7 @@ RUN --mount=type=bind,source=.,target=/curdir \
 
 RUN /install/platypush/install/scripts/fedora/install.sh && \
   cd /install && \
-  pip install -U --no-input --no-cache-dir --no-deps . --break-system-packages && \
+  pip install -U --no-input --no-cache-dir --no-deps --ignore-installed --break-system-packages . && \
   rm -rf /install && \
   rm -rf /root/.cache && \
   dnf remove -y build-essential git && \
