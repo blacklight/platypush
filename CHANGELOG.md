@@ -1,5 +1,36 @@
 # Changelog
 
+## [Unreleased]
+
+- [[#414](https://git.platypush.tech/platypush/platypush/issues/414)]: added
+  Jellyfin UI for all media plugins. This makes it possible to browse and play
+  media items from the Jellyfin library on multiple devices.
+
+- [[#434](https://git.platypush.tech/platypush/platypush/issues/434)]: added
+  official Docker base image - [see
+  documentation](https://docs.platypush.tech/wiki/Installation.html#docker).
+
+- [_Other Docker improvements_]
+  * Reduced size for the base images.
+  * Better self-documented [`docker-compose.yml`
+    file](https://git.platypush.tech/platypush/platypush/src/branch/master/docker-compose.yml).
+
+- [[`db`](https://git.platypush.tech/platypush/platypush/commit/dd02be12)]:
+  Fixed compatibility of transaction scopes with SQLAlchemy 2.0.
+
+- [`media.vlc`]: Improved state management.
+
+- [`media.mpv`]: Enhanced compatibility. mpv 1.0 introduced many breaking
+  changes in the event management API, but it may not yet be available on all
+  distros. Platypush has now introduced a compatibility layer to seamlessly
+  interact with any version of mpv.
+
+- [_Media UI_] Added support for embedded players for Jellyfin, YouTube and
+  local media.
+
+- [[`http.webpage`](https://git.platypush.tech/platypush/platypush/commit/09413bc0)]:
+  Added support for custom headers to the scraping functions.
+
 ## [1.3.1]
 
 - [[#344](https://git.platypush.tech/platypush/platypush/issues/344)]: removed
