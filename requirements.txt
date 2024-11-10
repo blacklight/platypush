@@ -9,7 +9,9 @@ flask
 marshmallow
 python-dateutil
 python-magic
+pyotp
 pyyaml
+qrcode
 redis
 requests
 rsa

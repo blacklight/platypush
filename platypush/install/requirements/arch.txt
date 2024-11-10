@@ -8,6 +8,8 @@ python-magic
 python-marshmallow
 python-pip
 python-psutil
+python-pyotp
+python-qrcode
 python-redis
 python-requests
 python-rsa

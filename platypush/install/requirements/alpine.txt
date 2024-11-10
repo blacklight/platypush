@@ -8,7 +8,9 @@ py3-greenlet
 py3-magic
 py3-marshmallow
 py3-mypy-extensions
+py3-otp
 py3-psutil
+py3-qrcode
 py3-redis
 py3-requests
 py3-rsa
