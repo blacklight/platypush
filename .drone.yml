@@ -350,7 +350,7 @@ steps:
 
   environment:
     REGISTRY_ENDPOINT: quay.io
-    DOCKER_HOST: "tcp://localhost:2375/"
+    DOCKER_HOST: "unix:///var/run/docker.sock"
     DOCKER_USER: platypush
     DOCKER_PASS:
       from_secret: registry_token
