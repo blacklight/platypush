@@ -23,7 +23,7 @@ fi
 . .drone/macros/configure-gpg.sh
 
 echo 'Updating components cache'
-apk add --update --no-cache $(cat platypush/install/requirements/alpine.txt)
+apk add --update --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing/ $(cat platypush/install/requirements/alpine.txt)
 pip install . --break-system-packages
 
 python - <<EOF
