@@ -10,7 +10,6 @@ python-pip
 python-psutil
 python-pygments
 python-pyotp
-python-pyzbar
 python-qrcode
 python-redis
 python-requests
@@ -21,3 +20,4 @@ python-websocket-client
 python-websockets
 python-yaml
 python-zeroconf
+zbar
