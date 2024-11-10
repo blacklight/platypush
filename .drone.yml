@@ -342,7 +342,7 @@ steps:
 ###
 
 - name: update-image-registry
-  image: alpine
+  image: docker
   privileged: true
   volumes:
     - name: docker_sock
