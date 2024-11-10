@@ -12,6 +12,10 @@ volumes:
     host:
       path: /opt/repos/platypush
 
+  - name: docker_sock
+    host:
+      path: /var/run/docker.sock
+
 steps:
 
 ###
@@ -334,6 +338,31 @@ steps:
     - . .drone/update-pip-package.sh
 
 ###
+### Update the Docker image
+###
+
+- name: update-image-registry
+  image: alpine
+  privileged: true
+  volumes:
+    - name: docker_sock
+      path: /var/run/docker.sock
+
+  environment:
+    REGISTRY_ENDPOINT: quay.io
+    DOCKER_HOST: "tcp://localhost:2375/"
+    DOCKER_USER: platypush
+    DOCKER_PASS:
+      from_secret: registry_token
+
+  commands:
+    - . .drone/update-image-registry.sh
+
+  when:
+    event:
+      - tag
+
+###
 ### Checkpoint step that waits for all the package update
 ### steps to complete before proceeding to the next steps.
 ###
@@ -351,6 +380,7 @@ steps:
     # - update-arch-git-package
     - update-rpm-repo
     - update-apt-repo
+    - update-image-registry
 
   commands:
     - echo "All packages have been successfully updated"
