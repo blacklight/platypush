@@ -14,7 +14,7 @@ fi
 
 git remote add github git@github.com:/blacklight/platypush.git
 
-if (( "$branch" == "master" )); then
+if [[ "$branch" == "master" ]]; then
   git pull --rebase github "${branch}" || echo "No such branch on Github"
 fi
 
