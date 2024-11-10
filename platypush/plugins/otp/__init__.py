@@ -80,7 +80,7 @@ class OtpPlugin(Plugin):
 
         :return: The new secret token.
         """
-        return pyotp.random_base32()
+        return str(pyotp.random_base32())
 
     @action
     def refresh_secret(self, secret_path: Optional[str] = None) -> str:
