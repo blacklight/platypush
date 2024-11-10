@@ -10,6 +10,7 @@ python3-magic
 python3-marshmallow
 python3-mypy-extensions
 python3-psutil
+python3-pygments
 python3-pyotp
 python3-qrcode
 python3-redis

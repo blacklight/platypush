@@ -8,6 +8,7 @@ python-magic
 python-marshmallow
 python-pip
 python-psutil
+python-pygments
 python-pyotp
 python-qrcode
 python-redis

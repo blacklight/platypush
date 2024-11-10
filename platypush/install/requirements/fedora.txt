@@ -10,6 +10,7 @@ python-magic
 python-marshmallow
 python-mypy_extensions
 python-psutil
+python-pygments
 python-pyotp
 python-qrcode
 python-redis

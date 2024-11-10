@@ -9,6 +9,7 @@ flask
 marshmallow
 python-dateutil
 python-magic
+pygments
 pyotp
 pyyaml
 qrcode
