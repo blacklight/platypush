@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.3]
 
 - [`3e02304a`](https://git.platypush.tech/platypush/platypush/commit/3e02304ac203625650ab4b03f9d4146a40839f2f)
   [Auth]: Fixed generation of API tokens when 2FA is enabled.
