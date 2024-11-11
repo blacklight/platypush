@@ -662,6 +662,14 @@ $ docker run -it --name platypush \
     quay.io/platypush/platypush
 ```
 
+The following architectures are currently supported:
+
+- `amd64`/`x86_64` (standard Intel-based architectures)
+- `arm64`/`aarch64` (ARM64, such as modern ARM-based MacBooks, most of the
+  Android devices or RaspberryPi 4 and 5)
+- `armv7l` (older ARM-based devices, such as RaspberryPi 2 and 3 or older
+  Android devices)
+
 The Web service will be available on `http://localhost:8008`, and a default
 configuration file will be initialized under
 `/path/to/your/platypush/config/config.yaml` if not available. The next
