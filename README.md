@@ -656,7 +656,7 @@ $ pip install git+https://github.com/blacklight/platypush
 ```bash
 $ docker run -it --name platypush \
     -p 8008:8008 \
-    -e "PLATYPUSH_DEVICE_ID=my-device"
+    -e "PLATYPUSH_DEVICE_ID=my-device" \
     -v /path/to/your/platypush/config:/etc/platypush \
     -v /path/to/your/platypush/share:/var/lib/platypush \
     quay.io/platypush/platypush
