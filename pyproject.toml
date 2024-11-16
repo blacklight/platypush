@@ -19,7 +19,7 @@ keywords = [
 ]
 
 [tool.setuptools.dynamic]
-version = {attr = "version.__version__"}
+version = {attr = "platypush.__version__"}
 dependencies = {file = "requirements.txt"}
 
 [project.urls]
