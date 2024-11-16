@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.4]
 
 - [Bug]: Fixed installation bug in `pip install platypush` introduced by the
   `pyproject.toml` migration.
