@@ -70,8 +70,11 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         dcc_max_connections: Optional[int] = None,
     ):
         connection_factory = ConnectionFactory()
+        self._ssl_ctx = None
+
         if ssl:
-            connection_factory.wrapper = _ssl.wrap_socket
+            self._ssl_ctx = _ssl.create_default_context()
+            connection_factory.wrapper = self._ssl_ctx.wrap_socket
         if ipv6:
             connection_factory.family = socket.AF_INET6
 
@@ -86,7 +89,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         self.port = port
         self.alias = alias
         self._password = password
-        self.channels.update({channel: None for channel in channels})
+        self.channels.update(dict.fromkeys(channels))
         self._stop_message = stop_message
         self.dcc_ip_whitelist = set(dcc_ip_whitelist or [])
         self.dcc_ip_blacklist = set(dcc_ip_blacklist or [])
@@ -455,7 +458,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
     def on_disconnect(self, connection: Connection, event: _IRCEvent):
         self._post_event(connection, IRCDisconnectEvent)
         # Cache channels for reconnect logic
-        channels = {ch: None for ch in self.channels.keys()}
+        channels = dict.fromkeys(self.channels)
         super()._on_disconnect(connection, event)
         self.channels.update(channels)
 
