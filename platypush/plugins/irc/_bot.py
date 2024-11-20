@@ -74,6 +74,8 @@ class IRCBot(irc.bot.SingleServerIRCBot):
 
         if ssl:
             self._ssl_ctx = _ssl.create_default_context()
+            # Temporary workaround for check_hostname issues on Python >= 3.12
+            self._ssl_ctx.check_hostname = False
             connection_factory.wrapper = self._ssl_ctx.wrap_socket
         if ipv6:
             connection_factory.family = socket.AF_INET6
