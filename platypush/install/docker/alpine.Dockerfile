@@ -18,7 +18,7 @@ RUN --mount=type=bind,source=.,target=/curdir \
 
 RUN /install/platypush/install/scripts/alpine/install.sh && \
     cd /install && \
-    pip install -U --no-input --no-cache-dir --no-deps --ignore-installed --break-system-packages . croniter && \
+    pip install -U --no-input --no-cache-dir --no-deps --ignore-installed --break-system-packages . croniter marshmallow  && \
     rm -rf /install && \
     rm -rf /root/.cache && \
     apk del gcc git && \

@@ -6,7 +6,6 @@ py3-docutils
 py3-flask
 py3-greenlet
 py3-magic
-py3-marshmallow
 py3-mypy-extensions
 py3-otp
 py3-psutil
@@ -16,11 +15,13 @@ py3-qrcode
 py3-redis
 py3-requests
 py3-rsa
+py3-simplejson
 py3-sqlalchemy
 py3-tornado
 py3-tz
 py3-websocket-client
 py3-websockets
+py3-wheel
 py3-yaml
 py3-zeroconf
 redis

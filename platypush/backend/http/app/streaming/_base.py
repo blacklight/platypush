@@ -31,6 +31,7 @@ class StreamingRoute(RequestHandler, PubSubMixin, ABC):
             auth_status = get_auth_status(self.request)
             if auth_status != UserAuthStatus.OK:
                 self.send_error(auth_status.value.code, error=auth_status.value.message)
+                self.finish()
                 return
 
         self.logger.info(

@@ -27,7 +27,7 @@ class WSRoute(WebSocketHandler, Thread, PubSubMixin, ABC):
         auth_status = get_auth_status(self.request)
         if auth_status != UserAuthStatus.OK:
             self.close(code=1008, reason=auth_status.value.message)  # Policy Violation
-            return
+            raise ValueError(f'Unauthorized connection: {auth_status.value.message}')
 
         logger.info(
             'Client %s connected to %s', self.request.remote_ip, self.request.path
