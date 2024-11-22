@@ -33,7 +33,7 @@
 <script>
 import axios from 'axios';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/intellij-light.css';
+import 'highlight.js/styles/night-owl.min.css'
 
 import FloatingButton from "@/components/elements/FloatingButton";
 import Highlighter from "./Highlighter";
@@ -51,7 +51,16 @@ export default {
   props: {
     file: {
       type: String,
-      required: true,
+    },
+
+    text: {
+      type: String,
+      default: '',
+    },
+
+    contentType: {
+      type: String,
+      default: 'plaintext',
     },
 
     isNew: {
@@ -114,41 +123,43 @@ export default {
 
   methods: {
     async loadFile() {
-      this.setUrlArgs({file: this.file})
-      if (this.isNew) {
-        this.content = ''
-        this.initialContentHash = 0
-        this.highlightedContent = ''
-        this.info = {}
-        this.type = this.getLanguageType({path: this.file})
-        return
-      }
-
-      this.loading = true
-
-      try {
-        this.info = (
-          await this.request('file.info', {files: [this.file]})
-        )[this.file] || {}
-
-        this.type = this.getLanguageType(this.info)
-        this.content = (
-          await axios.get(`/file?path=${encodeURIComponent(this.file)}`)
-        ).data
-
-        if (typeof this.content === 'object') {
-          this.content = JSON.stringify(this.content, null, 2)
+      if (!this.text?.length) {
+        this.setUrlArgs({file: this.file})
+        if (this.isNew) {
+          this.content = ''
+          this.initialContentHash = 0
+          this.highlightedContent = ''
+          this.info = {}
+          this.type = this.getLanguageType({path: this.file})
+          return
         }
 
-        this.initialContentHash = this.content.hashCode()
-      } catch (e) {
-        this.notify({
-          error: true,
-          text: e.message,
-          title: 'Failed to load file',
-        })
-      } finally {
-        this.loading = false
+        this.loading = true
+
+        try {
+          this.info = (
+            await this.request('file.info', {files: [this.file]})
+          )[this.file] || {}
+
+          this.type = this.getLanguageType(this.info)
+          this.content = (
+            await axios.get(`/file?path=${encodeURIComponent(this.file)}`)
+          ).data
+
+          if (typeof this.content === 'object') {
+            this.content = JSON.stringify(this.content, null, 2)
+          }
+
+          this.initialContentHash = this.content.hashCode()
+        } catch (e) {
+          this.notify({
+            error: true,
+            text: e.message,
+            title: 'Failed to load file',
+          })
+        } finally {
+          this.loading = false
+        }
       }
 
       if (this.selectedLine) {
@@ -270,6 +281,11 @@ export default {
       window.removeEventListener('beforeunload', this.beforeUnload)
     },
 
+    convertType(type) {
+      const parts = type.split('/')
+      return parts[parts.length - 1]
+    },
+
     reset() {
       this.setUrlArgs({file: null, line: null})
       this.removeBeforeUnload()
@@ -278,6 +294,14 @@ export default {
   },
 
   watch: {
+    contentType() {
+      if (!this.contentType?.length) {
+        return
+      }
+
+      this.type = this.convertType(this.contentType)
+    },
+
     file() {
       this.loadFile()
     },
@@ -323,6 +347,10 @@ export default {
         this.$refs.selectedLine.style.top = `${offset}px`
       })
     },
+
+    text() {
+      this.content = this.text
+    },
   },
 
   mounted() {
@@ -334,6 +362,8 @@ export default {
       }
     }
 
+    this.content = this.text
+    this.type = this.convertType(this.contentType)
     this.loadFile()
     this.addBeforeUnload()
     this.addKeyListener()
@@ -354,6 +384,11 @@ export default {
 $line-numbers-width: 2.5em;
 
 .file-editor {
+  --body-bg: #080808;
+  --body-fg: #f8f8f2;
+  --line-numbers-bg: #282a36;
+  --line-numbers-fg: #6272a4;
+
   width: 100%;
   height: 100%;
   display: flex;
@@ -366,6 +401,8 @@ $line-numbers-width: 2.5em;
     position: relative;
     display: flex;
     flex-direction: column;
+    background: var(--body-bg);
+    color: var(--body-fg);
   }
 
   .editor-highlight-loading {
@@ -412,6 +449,8 @@ $line-numbers-width: 2.5em;
       align-items: flex-end;
       overflow: hidden;
       z-index: 2;
+      background: var(--line-numbers-bg);
+      color: var(--line-numbers-fg);
 
       .line-number {
         width: 100%;
@@ -444,7 +483,7 @@ $line-numbers-width: 2.5em;
       overflow-x: scroll;
       z-index: 2;
       color: rgba(0, 0, 0, 0);
-      caret-color: black;
+      caret-color: var(--body-fg);
       border: none;
       outline: none;
     }

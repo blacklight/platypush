@@ -9,6 +9,9 @@
                       :file="file"
                       :is-new="isNew"
                       :line="line"
+                      :text="text"
+                      :content-type="contentType"
+                      :with-save="withSave"
                       @save="$emit('save', $event)"
                       v-if="file" />
         </div>
@@ -41,7 +44,16 @@ export default {
   props: {
     file: {
       type: String,
-      required: true,
+    },
+
+    text: {
+      type: String,
+      default: '',
+    },
+
+    contentType: {
+      type: String,
+      default: 'text/plain',
     },
 
     isNew: {
