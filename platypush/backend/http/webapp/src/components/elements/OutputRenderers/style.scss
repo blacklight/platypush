@@ -1,0 +1,142 @@
+.renderer {
+  --default-bg: #{$background-color};
+  --even-color: #{$default-bg-2};
+  --odd-color: inherit;
+  --hover-bg: #{$hover-bg};
+  --text-color: #{$default-fg};
+  --time-color: #{$no-items-color};
+  --type-color: #{$default-fg-2};
+
+  &.dark {
+    --default-bg: black;
+    --even-color: #141414;
+    --odd-color: inherit;
+    --hover-bg: #333;
+    --text-color: #fff;
+    --time-color: #999;
+    --type-color: #fbf6bb;
+  }
+
+  width: fit-content;
+  min-width: 100%;
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  text-decoration: none;
+  cursor: initial;
+
+  &.even, .even {
+    background: var(--even-color);
+  }
+
+  &.odd, .odd {
+    background: var(--odd-color);
+  }
+
+  &:hover {
+    .expanded, .editor-container {
+      color: initial !important;
+    }
+  }
+
+  .header, .expanded {
+    display: flex;
+    flex: 1 1 auto;
+  }
+
+  .header {
+    padding: 0.5em 1em;
+    cursor: pointer;
+
+    @include until($tablet) {
+      flex-direction: column;
+    }
+
+    &:hover {
+      background: var(--hover-bg) !important;
+    }
+
+    @include from($tablet) {
+      align-items: center;
+    }
+  }
+
+  &.expanded {
+    .header {
+      padding: 1em;
+      font-weight: bold;
+      border-bottom: 1px solid var(--time-color);
+    }
+  }
+
+  .expanded {
+    background: var(--default-bg);
+    cursor: default;
+    flex-direction: column;
+
+    .rows {
+      width: calc(100% - 1.35em);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      padding: 0.25em 0;
+      margin: 0.25em 0;
+
+      @include until($tablet) {
+        flex-direction: column;
+      }
+
+      &.args {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .key {
+        @extend .col-s-12, .col-m-4;
+      }
+
+      .value {
+        display: flex;
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        @include from($tablet) {
+          justify-content: flex-end;
+        }
+
+        &.scalar {
+          @extend .col-s-12, .col-m-8;
+          padding-right: 0.5em;
+        }
+
+        &.object {
+          width: 100%;
+        }
+      }
+    }
+  }
+
+  .time {
+    color: var(--time-color);
+    letter-spacing: 0.02em;
+  }
+
+  .type {
+    color: var(--type-color);
+    letter-spacing: 0.03em;
+  }
+
+  pre {
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+    overflow: initial;
+  }
+}

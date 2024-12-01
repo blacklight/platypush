@@ -117,7 +117,7 @@ export default {
 
   computed: {
     specialPlugins() {
-      return ['execute', 'entities', 'file', 'procedures']
+      return ['execute', 'entities', 'file', 'application', 'procedures']
     },
 
     panelNames() {
@@ -132,6 +132,7 @@ export default {
       let panelNames = Object.keys(this.panels).sort()
       panelNames = prepend(panelNames, 'file')
       panelNames = prepend(panelNames, 'procedures')
+      panelNames = prepend(panelNames, 'application')
       panelNames = prepend(panelNames, 'execute')
       panelNames = prepend(panelNames, 'entities')
       return panelNames
@@ -151,16 +152,20 @@ export default {
     },
 
     displayName(name) {
-      if (name === 'entities')
-        return 'Home'
-      if (name === 'execute')
-        return 'Execute'
-      if (name === 'file')
-        return 'Files'
-      if (name === 'procedures')
-        return 'Procedures'
-
-      return name
+      switch (name) {
+        case 'application':
+          return 'Application'
+        case 'entities':
+          return 'Home'
+        case 'execute':
+          return 'Execute'
+        case 'file':
+          return 'Files'
+        case 'procedures':
+          return 'Procedures'
+        default:
+          return name
+      }
     },
 
     setConnected(connected) {

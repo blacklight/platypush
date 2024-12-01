@@ -13,10 +13,15 @@
 <script>
 import RestartButton from "@/components/elements/RestartButton"
 import StopButton from "@/components/elements/StopButton"
+import Utils from '@/Utils'
 
 export default {
-  name: "Application",
+  mixins: [Utils],
   components: {RestartButton, StopButton},
+
+  mounted() {
+    this.setUrlArgs({ view: 'actions' })
+  },
 }
 </script>
 

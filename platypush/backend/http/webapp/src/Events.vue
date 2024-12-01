@@ -53,6 +53,8 @@ export default {
         return
       }
 
+      bus.emit('event', event)
+
       if (null in this.handlers) {    // lgtm [js/implicit-operand-conversion]
         handlers.push(this.handlers[null])    // lgtm [js/implicit-operand-conversion]
       }

@@ -2,6 +2,9 @@
   "alarm": {
     "class": "fas fa-stopwatch"
   },
+  "application": {
+    "class": "fas fa-sliders"
+  },
   "arduino": {
     "class": "fas fa-microchip"
   },

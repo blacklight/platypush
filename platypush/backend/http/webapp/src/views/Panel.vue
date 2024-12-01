@@ -102,6 +102,7 @@ export default {
     initializeDefaultViews() {
       this.plugins.entities = {}
       this.plugins.execute = {}
+      this.plugins.application = {}
       this.plugins.file = this.plugins.file || {}
     },
   },
