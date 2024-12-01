@@ -33,6 +33,8 @@ class Message:
         """
         JSON encoder that can serialize custom types commonly handled in
         Platypush messages.
+
+        :meta private:
         """
 
         @staticmethod

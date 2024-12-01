@@ -52,11 +52,10 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
     ):
         """
         :param bus: Reference to the bus object to be used in the backend
-        :param poll_seconds: If the backend implements a ``loop`` method, this parameter expresses how often the
-            loop should run in seconds.
+        :param poll_seconds: If the backend implements a ``loop`` method, this
+            parameter expresses how often the loop should run in seconds.
         :param kwargs: Key-value configuration for the backend
         """
-
         self._thread_name = self.__class__.__name__
         EventGenerator.__init__(self)
         ExtensionWithManifest.__init__(self)
@@ -91,8 +90,11 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         It should be called by the derived classes whenever
         a new message should be processed.
 
-        :param msg: Received message.  It can be either a key-value dictionary, a platypush.message.Message object,
-            or a string/byte UTF-8 encoded string
+        :param msg: Received message.  It can be either a key-value dictionary,
+            a :class:`platypush.message.Message` object, or a string/byte UTF-8
+            encoded string.
+
+        :meta private:
         """
 
         msg = Message.build(msg)
@@ -292,10 +294,18 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         self.logger.info('Terminated backend %s', self.__class__.__name__)
 
     def on_stop(self):
-        """Callback invoked when the process stops"""
+        """
+        Callback invoked when the process stops.
+
+        :meta private:
+        """
 
     def stop(self):
-        """Stops the backend thread by sending a STOP event on its bus"""
+        """
+        Stops the backend thread by sending a STOP event on its bus.
+
+        :meta private:
+        """
 
         def _async_stop():
             self._stop_event.set()
@@ -310,6 +320,7 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
     def should_stop(self):
         """
         :return: True if the backend thread should be stopped, False otherwise.
+        :meta private:
         """
         return self._stop_event.is_set()
 
@@ -319,6 +330,7 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
 
         :param timeout: The maximum time to wait for the backend thread to stop (default: None)
         :return: True if the backend thread has stopped, False otherwise.
+        :meta private:
         """
         start = time.time()
 
@@ -392,6 +404,7 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
                     "version": "{platypush_version}"
                 }
 
+        :meta private:
         """
         try:
             from zeroconf import ServiceInfo, Zeroconf
@@ -447,6 +460,8 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
     def unregister_service(self):
         """
         Unregister the Zeroconf service configuration if available.
+
+        :meta private:
         """
         from redis import exceptions
 

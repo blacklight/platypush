@@ -175,6 +175,8 @@ class RunnablePlugin(Plugin):
     def main(self):
         """
         Implementation of the main loop of the plugin.
+
+        :meta private:
         """
         raise NotImplementedError()
 
@@ -184,6 +186,8 @@ class RunnablePlugin(Plugin):
     def wait_stop(self, timeout=None):
         """
         Wait until a stop event is received.
+
+        :meta private:
         """
         if self.disable_monitor:
             # Wait indefinitely if the monitor is disabled
@@ -194,6 +198,8 @@ class RunnablePlugin(Plugin):
     def start(self):
         """
         Start the plugin.
+
+        :meta private:
         """
         self._thread = threading.Thread(
             target=self._runner, name=self.__class__.__name__
@@ -203,6 +209,8 @@ class RunnablePlugin(Plugin):
     def stop(self):
         """
         Stop the plugin.
+
+        :meta private:
         """
         self._should_stop.set()
         if (
@@ -273,6 +281,8 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
         """
         Main body of the async plugin. When it's called, the event loop should
         already be running and available over `self._loop`.
+
+        :meta private:
         """
 
     async def _listen(self):

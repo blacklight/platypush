@@ -199,7 +199,8 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 autodoc_default_options = {
     'members': True,
     'show-inheritance': True,
-    'inherited-members': True,
+    # Skip these classes from the documented inheritance tree
+    'inherited-members': 'threading.Thread',
 }
 
 sys.path.insert(0, os.path.abspath('../..'))

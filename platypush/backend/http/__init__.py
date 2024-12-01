@@ -8,7 +8,7 @@ import threading
 from functools import partial
 from multiprocessing import Process
 from time import time
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Union
 
 from tornado.httpserver import HTTPServer
 from tornado.netutil import bind_sockets, bind_unix_socket
@@ -199,7 +199,7 @@ class HttpBackend(Backend):
         self,
         port: int = DEFAULT_HTTP_PORT,
         bind_address: Optional[str] = '0.0.0.0',
-        bind_socket: Optional[str] = None,
+        bind_socket: Optional[Union[str, bool]] = None,
         resource_dirs: Optional[Mapping[str, str]] = None,
         secret_key_file: Optional[str] = None,
         num_workers: Optional[int] = None,
@@ -236,12 +236,11 @@ class HttpBackend(Backend):
                   example, you are running the application on a small embedded
                   device that doesn't support Tornado.
         """
-
         super().__init__(**kwargs)
-
         assert (
             bind_address or bind_socket
         ), 'Either bind_address or bind_socket must be set'
+
         self.port = port
         self._server_proc: Optional[Process] = None
         self._service_registry_thread = None
@@ -311,7 +310,11 @@ class HttpBackend(Backend):
         self.logger.info('HTTP server terminated')
 
     def notify_web_clients(self, event):
-        """Notify all the connected web clients (over websocket) of a new event"""
+        """
+        Notify all the connected web clients (over websocket) of a new event.
+
+        :meta private:
+        """
         WSEventProxy.publish(event)  # noqa: E1120
 
     def _get_secret_key(self, _create=False):
