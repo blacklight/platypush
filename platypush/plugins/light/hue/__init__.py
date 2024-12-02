@@ -40,8 +40,7 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
     MIN_CT = 154
     MAX_CT = 500
     ANIMATION_CTRL_QUEUE_NAME = 'platypush/light/hue/AnimationCtrl'
-    _BRIDGE_RECONNECT_SECONDS = 5
-    _MAX_RECONNECT_TRIES = 5
+    _MAX_RECONNECT_SECS = 60
     _UNINITIALIZED_BRIDGE_ERR = 'The Hue bridge is not initialized'
 
     class Animation(Enum):
@@ -67,7 +66,7 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         bridge: str,
         lights: Optional[Iterable[str]] = None,
         groups: Optional[Iterable[str]] = None,
-        poll_interval: float = 20.0,
+        poll_interval: Optional[float] = 20.0,
         config_file: Optional[str] = None,
         **kwargs,
     ):
@@ -161,6 +160,23 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         for light_id in self._get_lights():
             self.animations['lights'][light_id] = None
 
+    @classmethod
+    def _parse_error(cls, response) -> Optional[str]:
+        errors = []
+        if isinstance(response, (list, tuple, set)):
+            errors = [e for e in [cls._parse_error(r) for r in response] if e]
+        elif isinstance(response, dict):
+            error = response.get('error')
+            if not error:
+                return None
+
+            if isinstance(error, dict):
+                error = error.get('description', error.get('type', 'Unknown error'))
+
+            errors = [error]
+
+        return ', '.join(errors)
+
     @action
     def connect(self):
         """
@@ -173,29 +189,49 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         if not self.bridge:
             from phue import Bridge, PhueRegistrationException
 
-            success = False
             n_tries = 0
+            retry_secs = 2
 
-            while not success:
+            while True:
                 try:
                     n_tries += 1
                     self.bridge = Bridge(
                         self.bridge_address, config_file_path=self.config_file
                     )
 
-                    success = True
-                except PhueRegistrationException as e:
-                    self.logger.warning('Bridge registration error: %s', e)
+                    self.bridge.connect()
+                    # Check the connection (newer versions of the API may not
+                    # throw an exception if the bridge is not paired)
+                    err = self._parse_error(self.bridge.get_api())
+                    if err in {
+                        'method, GET, not available for resource, /',
+                        'unauthorized user',
+                    }:
+                        raise PhueRegistrationException(id=1, message=err)
 
-                    if n_tries >= self._MAX_RECONNECT_TRIES:
-                        self.logger.error(
-                            (
-                                'Bridge registration failed after ' + '{} attempts'
-                            ).format(n_tries)
+                    assert not err, err
+                    break
+                except Exception as e:
+                    retry_secs = min(retry_secs * 2, self._MAX_RECONNECT_SECS)
+                    if isinstance(e, PhueRegistrationException):
+                        self.logger.warning('Bridge registration error: %s', e.message)  # type: ignore
+                        err = 'Press the pairing button on the bridge'
+                        if os.path.exists(self.config_file):
+                            err += f', or remove the config file {self.config_file}'
+
+                        legacy_config_file = os.path.join(
+                            os.path.expanduser('~'), '.python_hue'
                         )
-                        break
 
-                    time.sleep(self._BRIDGE_RECONNECT_SECONDS)
+                        if os.path.exists(legacy_config_file):
+                            err += f' (or {legacy_config_file})'
+
+                        self.logger.info(err)
+                    else:
+                        self.logger.error('Error connecting to the bridge: %s', e)
+
+                    self.logger.info('Retrying in %d seconds', retry_secs)
+                    time.sleep(retry_secs)
 
             self.logger.info('Bridge connected')
             self.get_scenes()
