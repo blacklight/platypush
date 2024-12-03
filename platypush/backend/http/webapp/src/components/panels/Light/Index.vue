@@ -30,8 +30,17 @@ export default {
   name: "Light",
   components: {Group, Groups},
   mixins: [Utils, Panel],
-  emits: ['group-toggle', 'light-toggle', 'set-light', 'set-group', 'select-scene', 'start-animation', 'stop-animation',
-    'refresh', 'light-changed'],
+  emits: [
+    'group-toggle',
+    'light-changed',
+    'light-toggle',
+    'refresh',
+    'select-scene',
+    'set-group',
+    'set-light',
+    'start-animation',
+    'stop-animation',
+  ],
 
   props: {
     lights: {
@@ -63,10 +72,6 @@ export default {
     loadingGroups: {
       type: Object,
       default: () => {},
-    },
-
-    pluginName: {
-      type: String,
     },
 
     initialGroup: {
@@ -140,7 +145,7 @@ export default {
       return {
         ...animations,
         ...Object.entries(this.animations?.lights || {}).reduce((obj, [lightId, animation]) => {
-          const group = Object.values(self.groupsByLight[lightId])?.[0]
+          const group = Object.values(self.groupsByLight[lightId] || {})?.[0]
           if (group) {
             if (animation && group.id != null) {
               if (!obj[group.id])
