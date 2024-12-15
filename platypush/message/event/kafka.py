@@ -1,4 +1,5 @@
-from typing import Union
+from typing import Iterable, Optional, Union
+
 from platypush.message.event import Event
 
 
@@ -15,6 +16,11 @@ class KafkaMessageEvent(Event):
         topic: str,
         host: str,
         port: int,
+        partition: int,
+        offset: int,
+        timestamp: float,
+        key: Optional[str] = None,
+        headers: Optional[Iterable] = None,
         **kwargs
     ):
         """
@@ -24,8 +30,25 @@ class KafkaMessageEvent(Event):
         :param topic: Topic where the message was received.
         :param host: Host where the message was received.
         :param port: Port where the message was received.
+        :param partition: Partition where the message was received.
+        :param offset: Offset of the message.
+        :param timestamp: Timestamp of the message.
+        :param key: Optional message key.
+        :param headers: Optional message headers.
         """
-        super().__init__(*args, msg=msg, topic=topic, host=host, port=port, **kwargs)
+        super().__init__(
+            *args,
+            msg=msg,
+            topic=topic,
+            host=host,
+            port=port,
+            partition=partition,
+            offset=offset,
+            timestamp=timestamp,
+            key=key,
+            headers=headers,
+            **kwargs,
+        )
 
 
 # vim:sw=4:ts=4:et:
