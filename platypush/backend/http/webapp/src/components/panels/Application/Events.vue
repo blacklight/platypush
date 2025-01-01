@@ -1,5 +1,5 @@
 <template>
-  <div class="events-container">
+  <div class="app-tab events-container">
     <div class="header">
       <div class="filter-container">
         <input type="text" v-model="filter" placeholder="Filter events" />
@@ -154,82 +154,5 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-$header-height: 3.25em;
-$header-margin: 0.25em;
-$footer-height: 2em;
-$btn-container-width: 5em;
-
-.events-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  margin: 0;
-  background: $background-color;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-
-  .header {
-    width: 100%;
-    height: $header-height;
-    margin-bottom: $header-margin;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    background: $default-bg-4;
-    padding: 0 0.5em;
-    box-shadow: $border-shadow-bottom;
-
-    .filter-container {
-      width: calc(100% - #{$btn-container-width});
-    }
-
-    .btn-container {
-      width: $btn-container-width;
-      display: flex;
-      flex-direction: row;
-      justify-content: flex-end;
-
-      button {
-        background: none;
-        border: none;
-        padding: 0.5em;
-        margin-right: 0.5em;
-      }
-    }
-
-    input[type="text"] {
-      width: 100%;
-      max-width: 40em;
-    }
-  }
-
-  .body {
-    width: 100%;
-    height: calc(100% - #{$header-height} - #{$header-margin} - #{$footer-height});
-    position: relative;
-    margin: 0 0 $footer-height 0;
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 auto;
-    overflow: auto;
-  }
-
-  .footer {
-    width: 100%;
-    height: $footer-height;
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    position: absolute;
-    bottom: 0;
-    font-size: 0.75em;
-    background: $default-bg-4;
-    box-shadow: $border-shadow-top;
-  }
-}
+@import "./style.scss";
 </style>
