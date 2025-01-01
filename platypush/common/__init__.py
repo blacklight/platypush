@@ -32,18 +32,39 @@ def exec_wrapper(f: Callable[..., Any], *args, **kwargs):
     response into a ``Response`` object and handles errors/exceptions.
     """
     from platypush import Response
+    from platypush.plugins import register_action, unregister_action
 
     func_args, func_kwargs = _build_args(f, *args, **kwargs)
+    action_name = f'{f.__module__}.{f.__name__}'
+
+    if getattr(f, 'procedure', False):
+        action_name = f'procedure:{getattr(f, "procedure_name", action_name)}'
+    elif getattr(f, 'hook', False):
+        action_name = f'event_hook:{action_name}'
+    elif getattr(f, 'cron', False):
+        action_name = f'cron:{action_name}'
+
+    response = None
+    action_id = register_action(
+        {
+            'action': action_name,
+            'args': func_kwargs,
+        }
+    )
 
     try:
         ret = f(*func_args, **func_kwargs)
         if isinstance(ret, Response):
             return ret
 
-        return Response(output=ret)
+        response = Response(output=ret)
+        return response
     except Exception as e:
         logger.exception(e)
-        return Response(errors=[str(e)])
+        response = Response(errors=[str(e)])
+        return response
+    finally:
+        unregister_action(action_id, response=response)
 
 
 # pylint: disable=too-few-public-methods

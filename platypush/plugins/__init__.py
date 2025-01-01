@@ -12,6 +12,8 @@ from platypush.event import EventGenerator
 from platypush.message.response import Response
 from platypush.utils import get_decorators, get_plugin_name_by_class
 
+from ._actions import register_action, unregister_action
+
 PLUGIN_STOP_TIMEOUT = 5  # Plugin stop timeout in seconds
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +30,17 @@ def action(f: Callable[..., Any]) -> Callable[..., Response]:
     @wraps(f)
     def _execute_action(*args, **kwargs) -> Response:
         response = Response()
+        action_id = None
+
         try:
+            action_id = register_action(
+                {
+                    'action': '.'.join(
+                        [get_plugin_name_by_class(args[0].__class__), f.__name__]
+                    ),
+                    'args': kwargs,
+                }
+            )
             result = f(*args, **kwargs)
         except Exception as e:
             if isinstance(e, KeyboardInterrupt):
@@ -51,6 +63,7 @@ def action(f: Callable[..., Any]) -> Callable[..., Response]:
         else:
             response = Response(output=result, errors=[])
 
+        unregister_action(action_id, response=response)
         return response
 
     # Propagate the docstring

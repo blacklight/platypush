@@ -70,6 +70,34 @@ class ApplicationPlugin(Plugin):
         """
         return self._get_install_cmds(extension)
 
+    @action
+    def get_pending_actions(self) -> List[dict]:
+        """
+        Get the list of actions being executed or pending execution.
+
+        Format:
+
+            .. code-block:: python
+
+                [
+                    {
+                        "id": "action_id",
+                        "action": "plugin.action_name",
+                        # Current running time in seconds
+                        "running_time": 3.14,
+                        "args": {
+                            "arg1": "value1",
+                            ...
+                        }
+                    },
+                    ...
+                ]
+
+        """
+        from platypush.plugins._actions import pending_actions
+
+        return pending_actions.dump()
+
     @lru_cache(maxsize=256)  # noqa
     def _get_install_cmds(self, extension: str) -> List[str]:
         getter = get_plugin_class_by_name
