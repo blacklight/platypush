@@ -12,7 +12,8 @@
 
         <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
           <DropdownItem :text="follow ? 'Unfollow' : 'Follow'" icon-class="fa fa-eye" @input="follow = !follow" />
-          <DropdownItem text="Export Actions" icon-class="fa fa-download" @input="download" />
+          <DropdownItem text="Export Actions Dump" icon-class="fa fa-download" @input="download" />
+          <DropdownItem text="Import Actions Dump" icon-class="fa fa-upload" @input="importActions" />
           <DropdownItem text="Clear Completed Actions" icon-class="fa fa-trash"
                         @input="actions = Object.fromEntries(Object.entries(actions).filter(([_, action]) => action.status === 'running'))" />
           <DropdownItem text="Clear Actions" icon-class="fa fa-trash" @input="actions = {}" />
@@ -80,18 +81,19 @@ export default {
     },
 
     actionsString() {
-      return this.outputStrings.join('\n')
-    },
-
-    actionsStrings() {
-      return Object.values(this.actions).map((item) => {
-        try {
-          return JSON.stringify(item)
-        } catch (err) {
-          // Already a string
-          return item
-        }
-      })
+      return JSON.stringify(
+        Object.values(this.actions || [])
+          .sort((a, b) => a.started_at - b.started_at)
+          .map((item) => {
+            try {
+              return JSON.parse(item)
+            } catch (err) {
+              // Already a string
+              return item
+            }
+          }
+        ), null, 2
+      )
     },
 
     serializedActions() {
@@ -120,6 +122,29 @@ export default {
       a.download = `monitor-${new Date().toISOString()}.json`
       a.click()
       URL.revokeObjectURL(url)
+    },
+
+    importActions() {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = '.json'
+      input.onchange = async () => {
+        const file = input.files[0]
+        const reader = new FileReader()
+        reader.onload = async () => {
+          try {
+            this.actions = JSON.parse(reader.result)
+          } catch (err) {
+            this.notify({
+              error: true,
+              title: 'Error importing actions',
+              text: err.toString(),
+            })
+          }
+        }
+        reader.readAsText(file)
+      }
+      input.click()
     },
 
     initWs() {
