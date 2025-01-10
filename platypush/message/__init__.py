@@ -177,7 +177,7 @@ class Message:
             except (ValueError, TypeError):
                 _logger.warning('Invalid JSON message: %s', msg)
 
-        assert isinstance(msg, dict)
+        assert isinstance(msg, dict), f'Invalid message [type={type(msg)}]: <{msg}>'
 
         if '_timestamp' not in msg:
             msg['_timestamp'] = time.time()
