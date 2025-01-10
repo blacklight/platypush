@@ -991,11 +991,20 @@ class MusicMopidyPlugin(RunnablePlugin):
         :param resources: List of URIs.
         :return: Dictionary in the form ``{uri: image_url}``.
         """
+        response = self._exec(
+            {'method': 'core.library.get_images', 'uris': list(resources)}
+        )
+
+        if not response:
+            return {}
+
+        response = response[0]
+        if not isinstance(response, dict):
+            return {}
+
         return {
             uri: next(iter(images or []), {}).get('uri')
-            for uri, images in self._exec(
-                {'method': 'core.library.get_images', 'uris': list(resources)}
-            )[0].items()
+            for uri, images in response[0].items()
         }
 
     @action
