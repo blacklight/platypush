@@ -123,7 +123,11 @@ class MopidyClient(Thread):
                 yield None
 
             try:
-                ret = self._tasks[task.id].get_response(timeout=remaining_timeout)
+                task_state = self._tasks.get(task.id)
+                assert (
+                    task_state
+                ), f'The Mopidy task {task.id} is not found or is no longer running'
+                ret = task_state.get_response(timeout=remaining_timeout)
                 assert not isinstance(ret, Exception), ret
                 self.logger.debug('Got response for %s: %s', task, ret)
                 yield ret
