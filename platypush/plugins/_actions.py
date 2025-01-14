@@ -49,10 +49,24 @@ class LoggedAction:
         else:
             response = self.response
 
+        args = {
+            k: v
+            for k, v in self.args.items()
+            if k
+            not in (
+                'password',
+                'new_password',
+                'token',
+                'access_token',
+                'new_context',
+                '__stack__',
+            )
+        }
+
         return {
             'id': self.id,
             'action': self.action,
-            'args': self.args,
+            'args': args,
             'status': self.status.value,
             **({'origin': self.origin} if self.origin else {}),
             **({'target': self.target} if self.target else {}),
