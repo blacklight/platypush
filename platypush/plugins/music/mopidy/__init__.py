@@ -1004,7 +1004,7 @@ class MusicMopidyPlugin(RunnablePlugin):
 
         return {
             uri: next(iter(images or []), {}).get('uri')
-            for uri, images in response[0].items()
+            for uri, images in response.items()
         }
 
     @action
