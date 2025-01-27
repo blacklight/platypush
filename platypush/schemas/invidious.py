@@ -1,5 +1,3 @@
-import base64
-import re
 from datetime import datetime
 
 from marshmallow import EXCLUDE, fields, pre_dump
@@ -8,9 +6,9 @@ from marshmallow.schema import Schema
 from platypush.schemas import StrippedString
 
 
-class PipedVideoSchema(Schema):
+class InvidiousVideoSchema(Schema):
     """
-    Class for video items returned by the Piped API.
+    Class for video items returned by the Invidious API.
     """
 
     # pylint: disable=too-few-public-methods
@@ -46,7 +44,6 @@ class PipedVideoSchema(Schema):
     )
 
     image = fields.Url(
-        attribute='thumbnail',
         metadata={
             'description': 'Image URL',
             'example': 'https://i.ytimg.com/vi/1234567890/hqdefault.jpg',
@@ -63,6 +60,7 @@ class PipedVideoSchema(Schema):
 
     duration = fields.Int(
         missing=0,
+        attribute='lengthSeconds',
         metadata={
             'description': 'Video duration in seconds',
             'example': 120,
@@ -70,7 +68,7 @@ class PipedVideoSchema(Schema):
     )
 
     channel = fields.String(
-        attribute='uploaderName',
+        attribute='author',
         metadata={
             'description': 'Channel name',
             'example': 'My Channel',
@@ -78,23 +76,30 @@ class PipedVideoSchema(Schema):
     )
 
     channel_url = fields.Url(
-        attribute='uploaderUrl',
+        attribute='authorUrl',
         metadata={
             'description': 'Channel URL',
             'example': 'https://youtube.com/channel/1234567890',
         },
     )
 
-    channel_image = fields.Url(
-        attribute='uploaderAvatar',
+    index = fields.Int(
         metadata={
-            'description': 'Channel image URL',
-            'example': 'https://i.ytimg.com/vi/1234567890/hqdefault.jpg',
+            'description': "Index of the video, if it's part of a playlist",
+            'example': 1,
+        },
+    )
+
+    index_id = fields.String(
+        attribute='indexId',
+        metadata={
+            'description': "Index ID of the video, if it's part of a playlist and the backend supports it",
+            'example': '1234567890abcdef',
         },
     )
 
     created_at = fields.DateTime(
-        attribute='uploaded',
+        attribute='published',
         metadata={
             'description': 'Video upload date',
             'example': '2020-01-01T00:00:00',
@@ -102,24 +107,29 @@ class PipedVideoSchema(Schema):
     )
 
     @pre_dump
-    def fill_urls(self, data: dict, **_):
-        for attr in ('url', 'uploaderUrl'):
-            if data.get(attr) and not data[attr].startswith('https://'):
-                data[attr] = f'https://youtube.com{data[attr]}'
+    def fill_image(self, data: dict, **_):
+        thumbnails = data.get('videoThumbnails')
+        if not thumbnails:
+            return data
+
+        data['image'] = next(
+            (t['url'] for t in thumbnails),
+            None,
+        )
 
         return data
 
     @pre_dump
     def normalize_timestamps(self, data: dict, **_):
-        if data.get('uploaded') and isinstance(data['uploaded'], int):
-            data['uploaded'] = datetime.fromtimestamp(data["uploaded"] / 1000)
+        if data.get('published') and isinstance(data['published'], int):
+            data['published'] = datetime.fromtimestamp(data["published"])
 
         return data
 
 
-class PipedPlaylistSchema(Schema):
+class InvidiousPlaylistSchema(Schema):
     """
-    Class for playlist items returned by the Piped API.
+    Class for playlist items returned by the Invidious API.
     """
 
     # pylint: disable=too-few-public-methods
@@ -138,15 +148,17 @@ class PipedPlaylistSchema(Schema):
         },
     )
 
-    id = fields.UUID(
+    id = fields.String(
         required=True,
+        attribute='playlistId',
         metadata={
             'description': 'Playlist ID',
-            'example': '12345678-1234-1234-1234-1234567890ab',
+            'example': '1234567890abcdef',
         },
     )
 
-    name = StrippedString(
+    name = fields.String(
+        attribute='title',
         missing='[No Name]',
         metadata={
             'description': 'Playlist name',
@@ -155,22 +167,15 @@ class PipedPlaylistSchema(Schema):
     )
 
     image = fields.Url(
-        attribute='thumbnail',
+        attribute='playlistThumbnail',
         metadata={
             'description': 'Image URL',
             'example': 'https://i.ytimg.com/vi/1234567890/hqdefault.jpg',
         },
     )
 
-    description = StrippedString(
-        attribute='shortDescription',
-        metadata={
-            'description': 'Video description',
-            'example': 'My video description',
-        },
-    )
-
     videos = fields.Int(
+        attribute='videoCount',
         missing=0,
         metadata={
             'description': 'Number of videos in the playlist',
@@ -179,7 +184,7 @@ class PipedPlaylistSchema(Schema):
     )
 
     channel = fields.String(
-        attribute='uploaderName',
+        attribute='author',
         metadata={
             'description': 'Channel name',
             'example': 'My Channel',
@@ -187,7 +192,7 @@ class PipedPlaylistSchema(Schema):
     )
 
     channel_url = fields.Url(
-        attribute='uploaderUrl',
+        attribute='authorUrl',
         metadata={
             'description': 'Channel URL',
             'example': 'https://youtube.com/channel/1234567890',
@@ -195,7 +200,6 @@ class PipedPlaylistSchema(Schema):
     )
 
     channel_image = fields.Url(
-        attribute='uploaderAvatar',
         metadata={
             'description': 'Channel image URL',
             'example': 'https://i.ytimg.com/vi/1234567890/hqdefault.jpg',
@@ -210,27 +214,32 @@ class PipedPlaylistSchema(Schema):
     )
 
     @pre_dump
-    def fill_urls(self, data: dict, **_):
-        for attr in ('url', 'uploaderUrl'):
-            if data.get(attr) and not re.match('^https?://', data[attr]):
-                data[attr] = f'https://youtube.com{data[attr]}'
-
-        if not data.get('id') and data.get('url'):
-            data['id'] = data['url'].split('=')[-1]
+    def fill_counters(self, data: dict, **_):
+        if not data.get('videoCount') and data.get('videos') is not None:
+            data['videoCount'] = len(data['videos'])
 
         return data
 
     @pre_dump
-    def normalize_timestamps(self, data: dict, **_):
-        if data.get('uploaded') and isinstance(data['uploaded'], int):
-            data['uploaded'] = datetime.fromtimestamp(data["uploaded"] / 1000)
+    def fill_channel_image(self, data: dict, **_):
+        images = data.get('authorThumbnails', [])
+        data['channel_image'] = next(
+            iter(
+                sorted(
+                    images,
+                    key=lambda i: i.get('width', 0),
+                    reverse=True,
+                )
+            ),
+            None,
+        )
 
         return data
 
 
-class PipedChannelSchema(Schema):
+class InvidiousChannelSchema(Schema):
     """
-    Class for channel items returned by the Piped API.
+    Class for channel items returned by the Invidious API.
     """
 
     # pylint: disable=too-few-public-methods
@@ -243,6 +252,7 @@ class PipedChannelSchema(Schema):
 
     id = fields.String(
         required=True,
+        attribute='authorId',
         metadata={
             'description': 'Channel ID',
             'example': '1234567890',
@@ -259,13 +269,15 @@ class PipedChannelSchema(Schema):
 
     url = fields.String(
         required=True,
+        attribute='authorUrl',
         metadata={
             'description': 'Channel URL',
             'example': 'https://youtube.com/channel/1234567890',
         },
     )
 
-    name = StrippedString(
+    name = fields.String(
+        attribute='author',
         missing='[No Name]',
         metadata={
             'description': 'Channel name',
@@ -281,7 +293,6 @@ class PipedChannelSchema(Schema):
     )
 
     image = fields.Url(
-        attribute='avatar',
         metadata={
             'description': 'Channel image URL',
             'example': 'https://i.ytimg.com/vi/1234567890/hqdefault.jpg',
@@ -289,7 +300,6 @@ class PipedChannelSchema(Schema):
     )
 
     banner = fields.Url(
-        attribute='bannerUrl',
         metadata={
             'description': 'Channel banner URL',
             'example': 'https://i.ytimg.com/vi/1234567890/hqdefault.jpg',
@@ -297,7 +307,7 @@ class PipedChannelSchema(Schema):
     )
 
     subscribers = fields.Int(
-        attribute='subscriberCount',
+        attribute='subCount',
         missing=0,
         metadata={
             'description': 'Number of subscribers',
@@ -306,39 +316,46 @@ class PipedChannelSchema(Schema):
     )
 
     next_page_token = fields.String(
-        attribute='nextpage',
+        attribute='continuation',
         metadata={
             'description': 'The token that should be passed to get the next page of results',
             'example': '1234567890',
         },
     )
 
-    items = fields.Nested(PipedVideoSchema, attribute='relatedStreams', many=True)
+    items = fields.List(
+        fields.Nested(InvidiousVideoSchema),
+        metadata={
+            'description': 'List of videos',
+        },
+    )
 
     @pre_dump
-    def normalize_id_and_url(self, data: dict, **_):
-        if data.get('id'):
-            if not data.get('url'):
-                data['url'] = f'https://youtube.com/channel/{data["id"]}'
-        elif data.get('url'):
-            data['id'] = data['url'].split('/')[-1]
-            if not re.match('^https?://', data['url']):
-                data['url'] = f'https://youtube.com{data["url"]}'
-        else:
-            raise AssertionError('Channel ID or URL not found')
+    def fill_images(self, data: dict, **_):
+        images = data.get('authorThumbnails', [])
+        banners = data.get('authorBanners', [])
+        data['banner'] = next(
+            iter(
+                sorted(
+                    banners,
+                    key=lambda i: i.get('width', 0),
+                    reverse=True,
+                )
+            ),
+            None,
+        )
+
+        if data['banner']:
+            data['banner'] = data['banner']['url']
+
+        data['image'] = next(
+            (t['url'] for t in images),
+            None,
+        )
 
         return data
 
     @pre_dump
-    def normalize_avatar(self, data: dict, **_):
-        if data.get('avatarUrl'):
-            data['avatar'] = data.pop('avatarUrl')
-
-        return data
-
-    @pre_dump
-    def serialize_next_page_token(self, data: dict, **_):
-        if data.get('nextpage'):
-            data['nextpage'] = base64.b64encode(data['nextpage'].encode()).decode()
-
+    def default_items(self, data: dict, **_):
+        data['items'] = data.get('items', [])
         return data

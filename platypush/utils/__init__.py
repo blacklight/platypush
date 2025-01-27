@@ -885,4 +885,27 @@ def is_binary(data: Union[str, bytes]) -> bool:
     return bool(data.translate(None, textchars))
 
 
+def ignore_unhashable(func):
+    """
+    A workaround to ensure that @functools.lru_cache ignores unhashable
+    types instead of raising a TypeError.
+
+    See https://stackoverflow.com/questions/49210801/python3-pass-lists-to-function-with-functools-lru-cache.
+    """
+    uncached = func.__wrapped__
+    attributes = functools.WRAPPER_ASSIGNMENTS + ('cache_info', 'cache_clear')
+
+    @functools.wraps(func, assigned=attributes)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except TypeError as error:
+            if 'unhashable type' in str(error):
+                return uncached(*args, **kwargs)
+            raise
+
+    wrapper.__uncached__ = uncached  # type: ignore
+    return wrapper
+
+
 # vim:sw=4:ts=4:et:
