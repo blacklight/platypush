@@ -136,7 +136,7 @@ export default {
     async updateChannel(init) {
       const channel = await this.request(
         'youtube.get_channel',
-        {id: this.id, next_page_token: this.channel?.next_page_token}
+        {id: this.id, page: this.channel?.next_page_token}
       )
 
       const itemsByUrl = this.itemsByUrl || {}

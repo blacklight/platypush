@@ -98,7 +98,14 @@ export default {
 
   computed: {
     authToken() {
-      return this.youtubeConfig?.auth_token
+      const cfg = this.youtubeConfig
+
+      // Deprecated auth_token setting
+      if (cfg?.auth_token)
+        return cfg.auth_token
+
+      const backends = cfg?.backends || {}
+      return Object.values(backends).find(b => !!b.auth_token)?.auth_token
     },
 
     computedPath() {
@@ -168,15 +175,23 @@ export default {
       }
     },
 
+    viewItem(view, item) {
+      this.selectedView = view
+      const existingItemIndex = this.path.findIndex(i => i.title === item)
+
+      if (existingItemIndex !== -1) {
+        this.path = this.path.slice(0, existingItemIndex + 1)
+      } else {
+        this.path.push({ title: item })
+      }
+    },
+
     onPlaylistSelected(playlist) {
       this.selectedPlaylist_ = playlist
       if (!playlist)
         return
 
-      this.selectedView = 'playlists'
-      this.path.push({
-        title: playlist.name,
-      })
+      this.viewItem('playlists', playlist.name)
     },
 
     onChannelSelected(channel) {
@@ -184,10 +199,7 @@ export default {
       if (!channel)
         return
 
-      this.selectedView = 'subscriptions'
-      this.path.push({
-        title: channel.name,
-      })
+      this.viewItem('subscriptions', channel.name)
     },
 
     initView() {

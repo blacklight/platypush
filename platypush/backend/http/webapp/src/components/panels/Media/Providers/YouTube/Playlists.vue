@@ -221,7 +221,7 @@ export default {
 
       this.loading_ = true
       try {
-        await this.request('youtube.rename_playlist', {
+        await this.request('youtube.edit_playlist', {
           id: this.editedPlaylist,
           name: this.editedPlaylistName,
           description: this.editedPlaylistDescription,
