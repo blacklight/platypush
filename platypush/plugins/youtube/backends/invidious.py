@@ -2,7 +2,7 @@ import json
 import re
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Collection, List, Optional, Union
+from typing import Any, Collection, List, Optional, Union
 from urllib.parse import urljoin
 
 from marshmallow import Schema
@@ -211,8 +211,8 @@ class InvidiousBackend(BaseBackend):
 
         return [self._to_entity(item) for item in rs]
 
-    def get_feed(self) -> List[YoutubeVideo]:
-        resp = self._json_dict(self._request("feed"))
+    def get_feed(self, page: Optional[Any] = None, **_) -> List[YoutubeVideo]:
+        resp = self._json_dict(self._request("feed", params={"page": page or 1}))
         return [
             self._to_video(video)
             for video in sorted(

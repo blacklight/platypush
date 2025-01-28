@@ -162,7 +162,7 @@ class PipedBackend(BaseBackend):
         results = [self._to_entity(item) for item in rs.get('items', [])]
         return results
 
-    def get_feed(self) -> List[YoutubeVideo]:
+    def get_feed(self, **_) -> List[YoutubeVideo]:
         return [self._to_video(item) for item in (self._request('feed') or [])]
 
     def get_playlists(self) -> List[YoutubePlaylist]:

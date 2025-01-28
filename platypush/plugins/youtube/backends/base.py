@@ -40,7 +40,7 @@ class BaseBackend(ABC):
         pass
 
     @abstractmethod
-    def get_feed(self) -> List[YoutubeVideo]:
+    def get_feed(self, **_) -> List[YoutubeVideo]:
         pass
 
     @abstractmethod

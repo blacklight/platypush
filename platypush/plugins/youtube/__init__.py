@@ -1,4 +1,4 @@
-from typing import Collection, Dict, List, Optional, Type
+from typing import Any, Collection, Dict, List, Optional, Type
 
 from platypush.plugins import Plugin, action
 
@@ -180,19 +180,27 @@ class YoutubePlugin(Plugin):
         return results
 
     @action
-    def get_feed(self, backend: Optional[str] = None) -> List[dict]:
+    def get_feed(
+        self, page: Optional[Any] = None, backend: Optional[str] = None
+    ) -> List[dict]:
         """
         Retrieve the YouTube feed.
 
         Depending on your account settings on the configured Piped instance,
         this may return either the latest videos uploaded by your subscribed
-        channels, or the trending videos in the configured area.
+        channels (if you provided an authentication token), or the trending
+        videos in the configured area (if you didn't).
 
+        :param page: (Optional) ID/index of the page to retrieve.
         :param backend: Optional backend to use. If not specified, the default
-            one will be used.
+            one will be used. This isn't supported by the Piped backend (all
+            the videos are returned at once), and it's instead an integer >= 1
+            on the Invidious backend.
         :return: .. schema:: piped.PipedVideoSchema(many=True)
         """
-        return [item.to_dict() for item in self._get_backend(backend).get_feed()]
+        return [
+            item.to_dict() for item in self._get_backend(backend).get_feed(page=page)
+        ]
 
     @action
     def get_playlists(self, backend: Optional[str] = None) -> List[dict]:
