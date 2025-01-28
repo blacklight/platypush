@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Collection, Optional
 
 from marshmallow import EXCLUDE, fields, pre_dump
 from marshmallow.schema import Schema
@@ -108,14 +109,25 @@ class InvidiousVideoSchema(Schema):
 
     @pre_dump
     def fill_image(self, data: dict, **_):
-        thumbnails = data.get('videoThumbnails')
-        if not thumbnails:
-            return data
+        images = {img['quality']: img for img in data.get('videoThumbnails', [])}
+        img = None
 
-        data['image'] = next(
-            (t['url'] for t in thumbnails),
-            None,
-        )
+        if images.get('high'):
+            img = images['high']
+        elif images.get('sddefault'):
+            img = images['sddefault']
+        elif images.get('medium'):
+            img = images['medium']
+        elif images.get('maxresdefault'):
+            img = images['maxresdefault']
+        elif images.get('default'):
+            img = images['default']
+        else:
+            # Fallback to the first image
+            img = next(iter(images.values()), None)
+
+        if img:
+            data['image'] = img['url']
 
         return data
 
@@ -332,27 +344,28 @@ class InvidiousChannelSchema(Schema):
 
     @pre_dump
     def fill_images(self, data: dict, **_):
-        images = data.get('authorThumbnails', [])
-        banners = data.get('authorBanners', [])
-        data['banner'] = next(
-            iter(
-                sorted(
-                    banners,
-                    key=lambda i: i.get('width', 0),
-                    reverse=True,
-                )
-            ),
-            None,
-        )
+        def get_image(data: Optional[Collection[dict]]) -> Optional[str]:
+            if not data:
+                return None
 
-        if data['banner']:
-            data['banner'] = data['banner']['url']
+            img = next(
+                iter(
+                    sorted(
+                        data,
+                        key=lambda i: i.get('width', 0),
+                        reverse=True,
+                    )
+                ),
+                None,
+            )
 
-        data['image'] = next(
-            (t['url'] for t in images),
-            None,
-        )
+            if img:
+                return img['url']
 
+            return None
+
+        data['banner'] = get_image(data.get('authorBanners', []))
+        data['image'] = get_image(data.get('authorThumbnails', []))
         return data
 
     @pre_dump
