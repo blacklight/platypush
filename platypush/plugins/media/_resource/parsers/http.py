@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Optional
 
 from .. import HttpMediaResource
@@ -13,6 +14,11 @@ class HttpResourceParser(MediaResourceParser):
 
     def parse(self, resource: str, *_, **__) -> Optional[HttpMediaResource]:
         if resource.startswith('http://') or resource.startswith('https://'):
+            # Process YouTube-like URLs
+            m = re.match(r'^https?://[^/]+/watch\?v=([^&]+).*', resource)
+            if m:
+                resource = f'https://www.youtube.com/watch?v={m.group(1)}'
+
             assert self._media.is_media_file(
                 resource
             ), f'Invalid media resource: {resource}'
