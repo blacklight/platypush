@@ -404,9 +404,17 @@ def get_mime_type(resource: str) -> Optional[str]:
             return response.info().get_content_type()
     else:
         if hasattr(magic, 'detect_from_filename'):
-            mime = magic.detect_from_filename(resource)  # type: ignore
+            try:
+                mime = magic.detect_from_filename(resource)  # type: ignore
+            except ValueError:
+                logger.warning('Could not detect the MIME type of %s', resource)
+                return None
         elif hasattr(magic, 'from_file'):
-            mime = magic.from_file(resource, mime=True)
+            try:
+                mime = magic.from_file(resource, mime=True)
+            except ValueError:
+                logger.warning('Could not detect the MIME type of %s', resource)
+                return None
         else:
             raise RuntimeError(
                 'The installed magic version provides neither detect_from_filename nor from_file'
