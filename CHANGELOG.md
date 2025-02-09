@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.5]
 
 - [[#440](https://git.platypush.tech/platypush/platypush/issues/440)]: the
   `youtube` plugin now supports multiple backends:
