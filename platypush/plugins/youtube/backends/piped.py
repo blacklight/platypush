@@ -165,13 +165,15 @@ class PipedBackend(BaseBackend):
     def get_feed(self, **_) -> List[YoutubeVideo]:
         return [self._to_video(item) for item in (self._request('feed') or [])]
 
-    def get_playlists(self) -> List[YoutubePlaylist]:
+    def get_playlists(self, **_) -> List[YoutubePlaylist]:
         return [
             self._to_playlist(item) for item in (self._request('user/playlists') or [])
         ]
 
     def get_playlist(
-        self, id: str  # pylint: disable=redefined-builtin
+        self,
+        id: str,  # pylint: disable=redefined-builtin
+        **_,
     ) -> List[YoutubeVideo]:
         return [
             self._to_video(item)
@@ -180,7 +182,7 @@ class PipedBackend(BaseBackend):
             )
         ]
 
-    def get_subscriptions(self) -> List[YoutubeChannel]:
+    def get_subscriptions(self, **_) -> List[YoutubeChannel]:
         return [
             self._to_channel(item) for item in (self._request('subscriptions') or [])
         ]

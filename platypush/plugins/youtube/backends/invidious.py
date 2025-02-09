@@ -163,6 +163,10 @@ class InvidiousBackend(BaseBackend):
         assert isinstance(resp, list), f'Expected a list, got {type(resp)}'
         return resp
 
+    @staticmethod
+    def _to_video_id(s: str) -> str:
+        return re.sub(r'^https?://.*?/watch\?v=', '', s)
+
     def search(  # pylint: disable=too-many-positional-arguments
         self,
         query: str,
@@ -230,23 +234,32 @@ class InvidiousBackend(BaseBackend):
             )
         ]
 
-    def get_playlists(self) -> List[YoutubePlaylist]:
+    def get_playlists(self, **_) -> List[YoutubePlaylist]:
         return [
             self._to_playlist(playlist)
             for playlist in self._json_list(self._request("playlists"))
         ]
 
     def get_playlist(
-        self, id: str  # pylint: disable=redefined-builtin
+        self,
+        id: str,  # pylint: disable=redefined-builtin
+        page: Optional[int] = None,
+        **_,
     ) -> List[YoutubeVideo]:
-        return [
+        page = page or 1
+        videos = [
             self._to_video(video)
-            for video in self._json_dict(self._request(f"playlists/{id}")).get(
-                "videos", []
-            )
+            for video in self._json_dict(
+                self._request(f"playlists/{id}", params={"page": page})
+            ).get("videos", [])
         ]
 
-    def get_subscriptions(self) -> List[YoutubeChannel]:
+        for video in videos:
+            video.next_page_token = page + 1
+
+        return videos
+
+    def get_subscriptions(self, **_) -> List[YoutubeChannel]:
         return sorted(
             [
                 self._to_channel(channel)
@@ -295,7 +308,7 @@ class InvidiousBackend(BaseBackend):
             self._request(
                 f"playlists/{playlist_id}/videos",
                 method="post",
-                body={"videoId": item_id},
+                body={"videoId": self._to_video_id(item_id)},
             )
 
     def remove_from_playlist(
@@ -311,15 +324,15 @@ class InvidiousBackend(BaseBackend):
 
         # Convert item_ids to indices
         if item_ids:
-            item_ids = {
-                re.sub(r'^https?://.*?/watch\?v=', '', item_id) for item_id in item_ids
-            }
+            item_ids = set(item_ids)
+            video_ids = {self._to_video_id(item_id) for item_id in item_ids}
 
             index_ids.update(
                 [
                     item.index_id
                     for item in items
-                    if item.id in item_ids and item.index is not None
+                    if (item.id in video_ids or item.index_id in item_ids)
+                    and item.index is not None
                 ]
             )
 
@@ -327,7 +340,7 @@ class InvidiousBackend(BaseBackend):
         for index_id in indices or []:
             if isinstance(index_id, int):
                 item = items_by_index.get(index_id)
-                if item and item.index_id:
+                if item and item.index_id is not None:
                     index_ids.add(index_id)
 
         if not index_ids:

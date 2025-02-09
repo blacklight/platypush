@@ -2,7 +2,7 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, List, Optional
 
 
 @dataclass
@@ -48,6 +48,7 @@ class YoutubeVideo(YoutubeEntity):
     image: Optional[str] = None
     index: Optional[int] = None
     index_id: Optional[str] = None
+    next_page_token: Optional[Any] = None
 
     @property
     def item_type(self) -> str:
@@ -71,6 +72,7 @@ class YoutubePlaylist(YoutubeEntity):
     description: Optional[str] = None
     image: Optional[str] = None
     channel_image: Optional[str] = None
+    next_page_token: Optional[Any] = None
 
     @property
     def item_type(self) -> str:
@@ -89,11 +91,12 @@ class YoutubeChannel(YoutubeEntity):
 
     name: str
     subscribers: int = 0
-    next_page_token: Optional[str] = None
+    next_page_token: Optional[Any] = None
     items: List[YoutubeEntity] = field(default_factory=list)
     image: Optional[str] = None
     description: Optional[str] = None
     banner: Optional[str] = None
+    count: Optional[int] = None
 
     @property
     def item_type(self) -> str:

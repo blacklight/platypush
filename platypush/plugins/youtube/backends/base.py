@@ -35,7 +35,7 @@ class BaseBackend(ABC):
 
     @abstractmethod
     def search(
-        self, query: str, page: Optional[int] = 1, sort=None, **kwargs
+        self, query: str, page: Optional[Any] = 1, sort=None, **kwargs
     ) -> List[YoutubeEntity]:
         pass
 
@@ -44,15 +44,15 @@ class BaseBackend(ABC):
         pass
 
     @abstractmethod
-    def get_playlists(self) -> List[YoutubePlaylist]:
+    def get_playlists(self, **_) -> List[YoutubePlaylist]:
         pass
 
     @abstractmethod
-    def get_playlist(self, id: str) -> List[YoutubeVideo]:
+    def get_playlist(self, id: str, **_) -> List[YoutubeVideo]:
         pass
 
     @abstractmethod
-    def get_subscriptions(self) -> List[YoutubeChannel]:
+    def get_subscriptions(self, **_) -> List[YoutubeChannel]:
         pass
 
     @abstractmethod
