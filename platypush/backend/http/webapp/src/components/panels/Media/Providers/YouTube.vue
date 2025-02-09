@@ -4,7 +4,7 @@
 
     <div class="browser" v-else>
       <MediaNav :path="computedPath" @back="$emit('back')" />
-      <NoToken v-if="!authToken" />
+      <NoToken v-if="!isAuthenticated" />
 
       <div class="body" v-else>
         <Feed :filter="filter"
@@ -97,15 +97,20 @@ export default {
   },
 
   computed: {
-    authToken() {
+    isAuthenticated() {
       const cfg = this.youtubeConfig
 
       // Deprecated auth_token setting
       if (cfg?.auth_token)
-        return cfg.auth_token
+        return !!cfg.auth_token
 
       const backends = cfg?.backends || {}
-      return Object.values(backends).find(b => !!b.auth_token)?.auth_token
+
+      // The Google backend has its separate authentication flow
+      if ('google' in backends)
+        return true
+
+      return !!Object.values(backends).find(b => !!b?.auth_token)?.auth_token
     },
 
     computedPath() {
@@ -134,13 +139,13 @@ export default {
 
     async removeFromPlaylist(event) {
       const playlistId = event.playlist_id
-      const videoId = event.item.url
+      const item = event.item.index_id || event.item.url
       this.loading_ = true
 
       try {
         await this.request('youtube.remove_from_playlist', {
           playlist_id: playlistId,
-          item_ids: [videoId],
+          item_ids: [item],
         })
       } finally {
         this.loading_ = false

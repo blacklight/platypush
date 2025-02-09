@@ -1,7 +1,7 @@
 <template>
   <div class="media-youtube-subscriptions">
-    <div class="subscriptions-index" v-if="!selectedChannel?.id">
-      <Loading v-if="loading" />
+    <div class="subscriptions-index" v-if="!selectedChannel?.id" @scroll="onScroll">
+      <Loading v-if="showLoading" />
       <NoItems :with-shadow="false" v-else-if="!channels?.length">
         No channels found.
       </NoItems>
@@ -74,6 +74,7 @@ export default {
     return {
       channels: [],
       loading: false,
+      nextPageToken: null,
     }
   },
 
@@ -86,13 +87,27 @@ export default {
           return acc
         }, {})
     },
+
+    showLoading() {
+      return this.loading && !this.channels.length
+    },
   },
 
   methods: {
     async loadSubscriptions() {
+      if (this.loading)
+        return
+
       this.loading = true
+
       try {
-        this.channels = (await this.request('youtube.get_subscriptions'))
+        this.channels = [
+          ...this.channels,
+          ...(await this.request('youtube.get_subscriptions', {page: this.nextPageToken}))
+        ]
+        if (this.channels.length) {
+          this.nextPageToken = this.channels[this.channels.length - 1].next_page_token
+        }
       } finally {
         this.loading = false
       }
@@ -103,6 +118,18 @@ export default {
       if (args.channel) {
         this.$emit('select', {id: args.channel})
       }
+    },
+
+    onScroll(e) {
+      const el = e.target
+      if (!el)
+        return
+
+      const bottom = (el.scrollHeight - el.scrollTop) <= el.clientHeight + 150
+      if (!bottom)
+        return
+
+      this.loadSubscriptions()
     },
   },
 
@@ -116,6 +143,11 @@ export default {
 <style lang="scss" scoped>
 .media-youtube-subscriptions {
   height: 100%;
+
+  .subscriptions-index {
+    height: 100%;
+    overflow-y: auto;
+  }
 
   .channel.item {
     display: flex;

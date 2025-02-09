@@ -62,6 +62,7 @@ export default {
     'remove-from-playlist',
     'remove-playlist',
     'rename-playlist',
+    'set-filter',
     'view',
   ],
 
@@ -193,6 +194,10 @@ export default {
   },
 
   watch: {
+    $route() {
+      this.$emit('set-filter', '')
+    },
+
     mediaProvider(provider) {
       if (!provider) {
         this.setUrlArgs({provider: null})

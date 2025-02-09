@@ -91,6 +91,7 @@
                        @path-change="browserFilter = ''"
                        @play="play($event)"
                        @play-with-opts="play($event.item, $event.opts)"
+                       @set-filter="browserFilter = $event"
                        @view="view"
                        v-else-if="selectedView === 'browser'"
               />

@@ -1,6 +1,6 @@
 <template>
   <div class="media-youtube-playlist">
-    <Loading v-if="loading" />
+    <Loading v-if="showLoading" />
 
     <div class="playlist-container" v-else>
       <div class="header">
@@ -56,6 +56,7 @@
                @play="$emit('play', $event)"
                @play-with-opts="$emit('play-with-opts', $event)"
                @remove-from-playlist="$emit('remove-from-playlist', $event)"
+               @scroll-end="loadItems"
                @select="selectedResult = $event"
                @view="$emit('view', $event)"
                v-else />
@@ -107,8 +108,11 @@ export default {
 
   data() {
     return {
+      initialLoading: true,
       items: [],
       loading: false,
+      nextPageToken: null,
+      renderedPageTokens: {},
       selectedResult: null,
     }
   },
@@ -121,18 +125,41 @@ export default {
     nItems() {
       return this.metadata?.videos || this.items?.length || 0
     },
+
+    showLoading() {
+      return this.loading && this.initialLoading
+    },
   },
 
   methods: {
     async loadItems() {
+      if (this.loading) {
+        return
+      }
+
       this.loading = true
       try {
-        this.items = (
-          await this.request('youtube.get_playlist', {id: this.id})
-        ).map(item => ({
-          ...item,
-          type: 'youtube',
-        }))
+        // Don't load the same page twice
+        if (this.renderedPageTokens[this.nextPageToken]) {
+          return
+        }
+
+        this.items = [
+          ...this.items,
+          ...(
+            await this.request('youtube.get_playlist', {id: this.id, page: this.nextPageToken})
+          ).map(item => ({
+            ...item,
+            type: 'youtube',
+          }))
+        ]
+
+        this.initialLoading = false
+        this.renderedPageTokens[this.nextPageToken] = true
+
+        if (this.items.length) {
+          this.nextPageToken = this.items[this.items.length - 1].next_page_token
+        }
       } finally {
         this.loading = false
       }

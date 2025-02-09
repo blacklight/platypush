@@ -1,12 +1,12 @@
 <template>
   <div class="media-youtube-playlists">
     <div class="playlists-index" v-if="!selectedPlaylist?.id">
-      <Loading v-if="isLoading" />
+      <Loading v-if="showLoading" />
       <NoItems :with-shadow="false" v-else-if="!playlists?.length">
         No playlists found.
       </NoItems>
 
-      <div class="body grid" v-else>
+      <div class="body grid" ref="body" @scroll="onScroll" v-else>
         <div class="playlist item"
              v-for="(playlist, id) in playlistsById"
              :key="id"
@@ -37,6 +37,7 @@
         @remove-from-playlist="$emit('remove-from-playlist', {item: $event, playlist_id: selectedPlaylist.id})"
         @play="$emit('play', $event)"
         @play-with-opts="$emit('play-with-opts', $event)"
+        @view="$emit('view', $event)"
       />
     </div>
 
@@ -52,7 +53,6 @@
       ref="removePlaylist"
       title="Remove Playlist"
       :visible="deletedPlaylist != null"
-      @close="deletedPlaylist = null"
       @input="removePlaylist"
     >
       Are you sure you want to remove this playlist?
@@ -159,8 +159,11 @@ export default {
       editedPlaylist: null,
       editedPlaylistName: '',
       editedPlaylistDescription: '',
+      nextPageToken: null,
       playlists: [],
+      initialLoading: true,
       loading_: false,
+      renderedPageTokens: {},
       showCreatePlaylist: false,
     }
   },
@@ -175,16 +178,49 @@ export default {
         }, {})
     },
 
-    isLoading() {
-      return this.loading_ || this.loading
+    showLoading() {
+      return this.initialLoading && (this.loading_ || this.loading)
     },
   },
 
   methods: {
+    async onScroll() {
+      const offset = this.$refs.body.scrollTop
+      const bodyHeight = parseFloat(getComputedStyle(this.$refs.body).height)
+      const scrollHeight = this.$refs.body.scrollHeight
+
+      if (offset >= (scrollHeight - bodyHeight - 5)) {
+        if (
+          this.scrollTimeout ||
+          !this.playlists.length ||
+          this.renderedPageTokens[this.nextPageToken]
+        )
+          return
+
+        this.scrollTimeout = setTimeout(() => {
+          this.scrollTimeout = null
+        }, 1000)
+
+        await this.loadPlaylists()
+      }
+    },
+
     async loadPlaylists() {
       this.loading_ = true
       try {
-        this.playlists = (await this.request('youtube.get_playlists'))
+        this.playlists = [
+          ...this.playlists,
+          ...(await this.request('youtube.get_playlists', {page: this.nextPageToken})),
+        ]
+
+        this.initialLoading = false
+        if (this.nextPageToken) {
+          this.renderedPageTokens[this.nextPageToken] = true
+        }
+
+        if (this.playlists.length) {
+          this.nextPageToken = this.playlists[this.playlists.length - 1].next_page_token
+        }
       } finally {
         this.loading_ = false
       }
@@ -192,10 +228,11 @@ export default {
 
     async createPlaylist(name) {
       this.loading_ = true
+
       try {
-        await this.request('youtube.create_playlist', {name: name})
+        const playlist = await this.request('youtube.create_playlist', {name: name})
         this.showCreatePlaylist = false
-        this.loadPlaylists()
+        this.playlists = [playlist, ...this.playlists]
       } finally {
         this.loading_ = false
       }
@@ -206,10 +243,11 @@ export default {
         return
 
       this.loading_ = true
+
       try {
         await this.request('youtube.delete_playlist', {id: this.deletedPlaylist})
+        this.playlists = this.playlists.filter(playlist => playlist.id !== this.deletedPlaylist)
         this.deletedPlaylist = null
-        this.loadPlaylists()
       } finally {
         this.loading_ = false
       }
@@ -274,8 +312,16 @@ export default {
   height: 100%;
   position: relative;
 
-  .playlist-body {
+  .playlists-index {
     height: 100%;
+  }
+
+  .body, .playlist-body {
+    height: 100%;
+  }
+
+  .body {
+    overflow-y: auto;
   }
 
   :deep(.playlist.item) {

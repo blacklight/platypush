@@ -5,16 +5,16 @@
     <div class="channel" v-else-if="channel">
       <div class="header">
         <div class="banner">
-          <img :src="channel.banner" v-if="channel?.banner?.length" />
+          <img :src="channel.banner" @error="onBannerError" v-if="banner?.length" />
         </div>
 
         <div class="row info-container">
           <div class="info">
             <div class="row">
               <div class="title-container">
-                <a :href="channel.url" target="_blank" rel="noopener noreferrer" v-if="channel?.image?.length">
+                <a :href="channel.url" target="_blank" rel="noopener noreferrer" v-if="image?.length">
                   <div class="image">
-                    <img :src="channel.image" />
+                    <img :src="image" @error="onImageError" />
                   </div>
                 </a>
 
@@ -33,11 +33,20 @@
                 </div>
               </div>
             </div>
-
-            <div class="description" v-if="channel?.description">
-              {{ channel.description }}
-            </div>
           </div>
+        </div>
+      </div>
+
+      <div class="row description-container" v-if="channel?.description">
+        <div class="description-toggle">
+          <button :title="showDescription ? 'Hide description' : 'Show description'"
+                  @click="showDescription = !showDescription">
+            <i class="fas" :class="{'fa-chevron-down': !showDescription, 'fa-chevron-up': showDescription}"></i>
+          </button>
+        </div>
+
+        <div class="description" :class="{hidden: !showDescription}" v-if="channel?.description">
+          {{ channel.description }}
         </div>
       </div>
 
@@ -101,10 +110,15 @@ export default {
 
   data() {
     return {
+      banner: null,
       channel: null,
+      image: null,
       loading_: false,
       loadingNextPage: false,
+      nextPageToken: null,
+      renderedPageTokens: {},
       selectedResult: null,
+      showDescription: false,
       subscribed: false,
     }
   },
@@ -134,10 +148,19 @@ export default {
     },
 
     async updateChannel(init) {
+      const nextPageToken = this.channel?.next_page_token
       const channel = await this.request(
         'youtube.get_channel',
-        {id: this.id, page: this.channel?.next_page_token}
+        {id: this.id, page: nextPageToken}
       )
+
+      if (nextPageToken) {
+        this.renderedPageTokens[nextPageToken] = true
+      }
+
+      this.nextPageToken = channel.next_page_token
+      this.image = channel.image
+      this.banner = channel.banner
 
       const itemsByUrl = this.itemsByUrl || {}
       let items = channel.items
@@ -158,7 +181,7 @@ export default {
     },
 
     async loadNextPage() {
-      if (!this.channel?.next_page_token || this.loadingNextPage) {
+      if (!this.nextPageToken || this.renderedPageTokens[this.nextPageToken] || this.loadingNextPage) {
         return
       }
 
@@ -176,6 +199,14 @@ export default {
       const action = this.subscribed ? 'unsubscribe' : 'subscribe'
       await this.request(`youtube.${action}`, {channel_id: this.id})
       this.subscribed = !this.subscribed
+    },
+
+    onBannerError() {
+      this.banner = null
+    },
+
+    onImageError() {
+      this.image = null
     },
   },
 
@@ -199,6 +230,7 @@ export default {
 
   .channel {
     height: 100%;
+    position: relative;
   }
 
   .header {
