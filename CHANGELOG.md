@@ -1,5 +1,45 @@
 # Changelog
 
+## [Unreleased]
+
+- [[#440](https://git.platypush.tech/platypush/platypush/issues/440)]: the
+  `youtube` plugin now supports multiple backends:
+
+  - `piped` (originally supported)
+  - `invidious` (new integration, and recommended over `piped`)
+  - `google` (implementation that leverages the native YouTube Data API)
+
+- [[#437](https://git.platypush.tech/platypush/platypush/issues/437)]: added a
+  new _Application_ panel to the UI, which includes real-time monitors for
+  events and executed commands.
+
+- [`music.mopidy`]: many performance improvements and better handling of failures.
+
+- [`14f97904`]((https://git.platypush.tech/platypush/platypush/commit/14f979049bd97ff96f37a9f2a50d0193ae784aa8):
+  fixed handling of ungrouped lights on the `light.hue` UI.
+
+- [`f7125376`](https://git.platypush.tech/platypush/platypush/commit/f7125376730f8b890e6681d8302e2fc2740cf26e):
+  replaced `kafka` dependency for the `kafka` plugin with `kafka-python-ng`,
+  given the low maintenance status of the Kafka package. This also adds the
+  following features to the Kafka plugin:
+
+  - Added partition, key, offset, timestamp and headers to
+    `KafkaMessageEvent`.
+
+  - Added `group_id` to consumers configuration.
+
+  - Added `key`, `timeout` and `compression_type` to `kafka.publish`.
+
+- [`acaca67c`](https://git.platypush.tech/platypush/platypush/commit/acaca67c615dff3cb2ca527e8533a2cd32d19ef8):
+  fixed a resource leak on the Websocket interface when authentication fails.
+
+- [`61b2afce`](https://git.platypush.tech/platypush/platypush/commit/61b2afce91b3b376b8aa028360c87aeef54e2be3):
+  removed deprecated `ssl.wrap_socket()` calls from SSL initialization logic (it's been removed in Python 3.12).
+  This also fixes the `irc` integration on newer versions of Python.
+
+- [`575c0ab7`](https://git.platypush.tech/platypush/platypush/commit/61b2afce91b3b376b8aa028360c87aeef54e2be3):
+  improved file editor UI.
+
 ## [1.3.4]
 
 - [Bug]: Fixed installation bug in `pip install platypush` introduced by the
