@@ -62,10 +62,19 @@ export default {
     return {
       loading: false,
       mediaItem: null,
+      youtubeConfig: null,
     }
   },
 
   computed: {
+    invidiousUrl() {
+      const instanceUrl = this.youtubeConfig?.backends?.invidious?.instance_url
+      if (!instanceUrl)
+        return null
+
+      return `${instanceUrl}/embed/${this.youtubeId}?autoplay=1`
+    },
+
     isAudio() {
       return (this.mediaItem?.mime_type || '').startsWith('audio')
     },
@@ -78,16 +87,23 @@ export default {
       return null
     },
 
+    youtubeId() {
+      return this.item.id || this.item.url.match(/(?:\?v=|\/embed\/|\/\d\/|\/vi\/|\/v\/|https?:\/\/(?:www\.)?youtu\.be\/)([^?&"'>]+)/)[1]
+    },
+
     youtubeUrl() {
       if (this.item.type !== 'youtube')
         return null
 
-      const youtubeId = this.item.url.match(/(?:\?v=|\/embed\/|\/\d\/|\/vi\/|\/v\/|https?:\/\/(?:www\.)?youtu\.be\/)([^?&"'>]+)/)[1]
-      return `https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1`
+      return this.invidiousUrl || `https://www.youtube-nocookie.com/embed/${this.youtubeId}?autoplay=1`
     },
   },
 
   methods: {
+    async getYoutubeConfig() {
+      return (await this.request('config.get_plugins')).youtube
+    },
+
     async refresh() {
       this.loading = true
 
@@ -126,6 +142,8 @@ export default {
             ...this.item,
             mime_type: response.headers["content-type"],
           }
+        } else {
+          this.youtubeConfig = this.youtubeConfig || await this.getYoutubeConfig()
         }
       } finally {
         this.loading = false

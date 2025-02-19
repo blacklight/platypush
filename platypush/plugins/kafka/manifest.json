@@ -4,14 +4,8 @@
       "platypush.message.event.kafka.KafkaMessageEvent"
     ],
     "install": {
-      "apt": [
-        "python-kafka"
-      ],
-      "dnf": [
-        "python-kafka"
-      ],
       "pip": [
-        "kafka"
+        "kafka-python-ng"
       ]
     },
     "package": "platypush.plugins.kafka",

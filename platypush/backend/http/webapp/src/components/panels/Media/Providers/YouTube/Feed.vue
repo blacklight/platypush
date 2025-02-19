@@ -16,6 +16,7 @@
              @select="selectedResult = $event"
              @play="$emit('play', $event)"
              @play-with-opts="$emit('play-with-opts', $event)"
+             @scroll-end="loadFeed"
              @view="$emit('view', $event)"
              v-else />
   </div>
@@ -60,14 +61,16 @@ export default {
   data() {
     return {
       feed: [],
+      firstLoad: true,
       loading_: false,
+      page: 1,
       selectedResult: null,
     }
   },
 
   computed: {
     isLoading() {
-      return this.loading_ || this.loading
+      return (this.loading_ || this.loading) && this.firstLoad
     },
   },
 
@@ -75,10 +78,21 @@ export default {
     async loadFeed() {
       this.loading_ = true
       try {
-        this.feed = (await this.request('youtube.get_feed')).map(item => ({
-          ...item,
-          type: 'youtube',
-        }))
+        this.feed.push(
+          ...(
+            await this.request('youtube.get_feed', {
+              page: this.page,
+            })
+          ).map(item => ({
+            ...item,
+            type: 'youtube',
+          }))
+        )
+
+        this.firstLoad = false
+        if (this.feed.length) {
+          this.page++
+        }
       } finally {
         this.loading_ = false
       }

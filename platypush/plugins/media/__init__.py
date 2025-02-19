@@ -474,7 +474,7 @@ class MediaPlugin(RunnablePlugin, ABC):
 
         for media_type in types:
             try:
-                items = results_queues[media_type].get(timeout=timeout)
+                items = results_queues[media_type].get(timeout=timeout) or []
                 if isinstance(items, Exception):
                     raise items
 

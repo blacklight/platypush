@@ -1,7 +1,6 @@
 <template>
   <div class="settings-container">
     <main>
-      <Application v-if="selectedPanel === 'application'" />
       <Users :session-token="sessionToken" :current-user="currentUser"
              v-if="selectedPanel === 'users' && currentUser" />
       <Tokens :current-user="currentUser"
@@ -11,14 +10,13 @@
 </template>
 
 <script>
-import Application from "@/components/panels/Settings/Application";
 import Tokens from "@/components/panels/Settings/Tokens/Index";
 import Users from "@/components/panels/Settings/Users";
 import Utils from "@/Utils";
 
 export default {
   name: "Settings",
-  components: {Application, Users, Tokens},
+  components: {Users, Tokens},
   mixins: [Utils],
   emits: ['change-page'],
 

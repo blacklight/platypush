@@ -59,11 +59,13 @@ class MopidyClient(Thread):
         self._tasks = tasks
         self._refresh_in_progress = Event()
         self._refresh_lock = RLock()
+        self._refresh_start_lock = RLock()
         self._req_lock = RLock()
         self._close_lock = RLock()
         self._tracks: List[MopidyTrack] = []
         self._msg_id = 0
         self._ws = None
+        self._refresh_status_thread: Optional[Thread] = None
         self.connected_event = Event()
         self.closed_event = Event()
 
@@ -119,11 +121,12 @@ class MopidyClient(Thread):
                 max(0, timeout - (time.time() - t_start)) if timeout else None
             )
 
-            if not self._tasks.get(task.id):
-                yield None
-
             try:
-                ret = self._tasks[task.id].get_response(timeout=remaining_timeout)
+                task_state = self._tasks.get(task.id)
+                assert (
+                    task_state
+                ), f'The Mopidy task {task.id} is not found or is no longer running'
+                ret = task_state.get_response(timeout=remaining_timeout)
                 assert not isinstance(ret, Exception), ret
                 self.logger.debug('Got response for %s: %s', task, ret)
                 yield ret
@@ -248,8 +251,13 @@ class MopidyClient(Thread):
 
             for evt in events:
                 self._post_event(evt[0], **evt[1])
+        except Exception as e:
+            self.logger.warning(
+                'Error while refreshing Mopidy status: %s', e, exc_info=True
+            )
         finally:
             self._refresh_in_progress.clear()
+            self._refresh_status_thread = None
 
     def _refresh_status(
         self, timeout: Optional[float] = DEFAULT_TIMEOUT, with_tracks: bool = False
@@ -264,15 +272,18 @@ class MopidyClient(Thread):
         Also, an event+reenrant lock mechanism is used to ensure that only one
         refresh task is running at a time.
         """
-        if self._refresh_in_progress.is_set():
-            return
+        with self._refresh_start_lock:
+            if self._refresh_in_progress.is_set() or self._refresh_status_thread:
+                return
 
-        with self._refresh_lock:
-            Thread(
+            self._refresh_status_thread = Thread(
                 target=self.refresh_status,
                 kwargs={'timeout': timeout, 'with_tracks': with_tracks},
+                name='platypush:mopidy:status_refresh',
                 daemon=True,
-            ).start()
+            )
+
+            self._refresh_status_thread.start()
 
     def _post_event(self, evt_cls: Type[MusicEvent], **kwargs):
         self._bus.post(
@@ -385,7 +396,13 @@ class MopidyClient(Thread):
         self._refresh_status()
 
     def _on_msg(self, *args):
-        msg = args[1] if len(args) > 1 else args[0]
+        if len(args) > 1:
+            msg = args[1]
+        elif len(args) == 1:
+            msg = args[0]
+        else:
+            return
+
         msg = json.loads(msg)
         msg_id = msg.get('id')
         event = msg.get('event')
@@ -419,7 +436,13 @@ class MopidyClient(Thread):
         hndl(self, msg, track=track)
 
     def _on_error(self, *args):
-        error = args[1] if len(args) > 1 else args[0]
+        if len(args) > 1:
+            error = args[1]
+        elif len(args) == 1:
+            error = args[0]
+        else:
+            error = None
+
         ws = args[0] if len(args) > 1 else None
         self.logger.warning('Mopidy websocket error: %s', error)
         if ws:

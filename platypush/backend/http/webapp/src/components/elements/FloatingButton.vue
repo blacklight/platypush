@@ -86,6 +86,7 @@ export default {
 <style lang="scss" scoped>
 .floating-btn {
   position: absolute;
+  z-index: 2;
 
   &.left {
     left: 0;

@@ -126,6 +126,7 @@ class MqttPlugin(RunnablePlugin):
         self.client_id = client_id or str(Config.get('device_id'))
         self.run_topic = (
             f'{run_topic_prefix}/{Config.get("device_id")}'
+            # flake8: noqa
             if type(self) == MqttPlugin and run_topic_prefix
             else None
         )
@@ -338,11 +339,7 @@ class MqttPlugin(RunnablePlugin):
         with self._listeners_lock[client_id]:
             client = self.listeners.get(client_id)
             if not (client and client.is_alive()):
-                client = self.listeners[
-                    client_id
-                ] = MqttClient(  # pylint: disable=E1125
-                    **kwargs
-                )
+                client = self.listeners[client_id] = MqttClient(**kwargs)
 
         if topics:
             client.subscribe(*topics)
@@ -382,7 +379,7 @@ class MqttPlugin(RunnablePlugin):
 
                 try:
                     msg = Message.build(json.loads(msg))
-                except (KeyError, TypeError, ValueError):
+                except Exception:
                     pass
 
             client = self._get_client(**mqtt_kwargs)

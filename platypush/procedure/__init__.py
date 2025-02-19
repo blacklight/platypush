@@ -12,6 +12,7 @@ from ..common import exec_wrapper
 from ..config import Config
 from ..message.request import Request
 from ..message.response import Response
+from ..plugins import register_action, unregister_action
 
 logger = logging.getLogger('platypush')
 
@@ -293,76 +294,94 @@ class Procedure:
             logger.info('Executing procedure %s', self.name)
 
         response = Response()
-        token = Config.get('token')
-        context = _update_context(context)
-        locals().update(context)
+        action_id = register_action(
+            {
+                'action': self.name,
+                'args': self.args,
+                'origin': Config.get('device_id'),
+                'target': Config.get('device_id'),
+            }
+        )
 
-        # pylint: disable=too-many-nested-blocks
-        for request in self.requests:
-            if callable(request):
-                response = request(**context)
-                continue
+        try:  # pylint: disable=too-many-nested-blocks
+            token = Config.get('token')
+            context = _update_context(context)
+            locals().update(context)
 
-            context['_async'] = self._async
-            context['n_tries'] = n_tries
-            context['__stack__'] = __stack__
-            context['new_context'] = new_context
-
-            if isinstance(request, Statement):
-                if isinstance(request, ReturnStatement):
-                    response = request.run(**context)
-                    self._should_return = True
-                    for proc in __stack__:
-                        proc._should_return = True  # pylint: disable=protected-access
-
-                    break
-
-                if isinstance(request, SetStatement):
-                    rs: dict = request.run(**context).output  # type: ignore
-                    context.update(rs)
-                    new_context.update(rs)
-                    locals().update(rs)
+            # pylint: disable=too-many-nested-blocks
+            for request in self.requests:
+                if callable(request):
+                    response = request(**context)
                     continue
 
-                if request.type in [StatementType.BREAK, StatementType.CONTINUE]:
-                    for proc in __stack__:
-                        if isinstance(proc, LoopProcedure):
-                            if request.type == StatementType.BREAK:
-                                setattr(proc, '_should_break', True)  # noqa: B010
-                            else:
-                                setattr(proc, '_should_continue', True)  # noqa: B010
-                            break
+                context['_async'] = self._async
+                context['n_tries'] = n_tries
+                context['__stack__'] = __stack__
+                context['new_context'] = new_context
 
-                        proc._should_return = True  # pylint: disable=protected-access
+                if isinstance(request, Statement):
+                    if isinstance(request, ReturnStatement):
+                        response = request.run(**context)
+                        self._should_return = True
+                        for proc in __stack__:
+                            proc._should_return = (
+                                True  # pylint: disable=protected-access
+                            )
 
+                        break
+
+                    if isinstance(request, SetStatement):
+                        rs: dict = request.run(**context).output  # type: ignore
+                        context.update(rs)
+                        new_context.update(rs)
+                        locals().update(rs)
+                        continue
+
+                    if request.type in [StatementType.BREAK, StatementType.CONTINUE]:
+                        for proc in __stack__:
+                            if isinstance(proc, LoopProcedure):
+                                if request.type == StatementType.BREAK:
+                                    setattr(proc, '_should_break', True)  # noqa: B010
+                                else:
+                                    setattr(  # noqa: B010
+                                        proc, '_should_continue', True
+                                    )
+                                break
+
+                            proc._should_return = (
+                                True  # pylint: disable=protected-access
+                            )
+
+                        break
+
+                should_continue = getattr(self, '_should_continue', False)
+                should_break = getattr(self, '_should_break', False)
+                if self._should_return or should_continue or should_break:
                     break
 
-            should_continue = getattr(self, '_should_continue', False)
-            should_break = getattr(self, '_should_break', False)
-            if self._should_return or should_continue or should_break:
-                break
+                if token and not isinstance(request, Statement):
+                    request.token = token
 
-            if token and not isinstance(request, Statement):
-                request.token = token
+                exec_ = getattr(request, 'execute', None)
+                if callable(exec_):
+                    response = exec_(**context)
+                    context.update(context.get('new_context', {}))
 
-            exec_ = getattr(request, 'execute', None)
-            if callable(exec_):
-                response = exec_(**context)
-                context.update(context.get('new_context', {}))
+                if not self._async and response:
+                    if isinstance(response.output, dict):
+                        context.update(response.output)
 
-            if not self._async and response:
-                if isinstance(response.output, dict):
-                    context.update(response.output)
+                    context['output'] = response.output
+                    context['errors'] = response.errors
+                    new_context.update(context)
+                    locals().update(context)
 
-                context['output'] = response.output
-                context['errors'] = response.errors
-                new_context.update(context)
-                locals().update(context)
+                if self._should_return:
+                    break
 
-            if self._should_return:
-                break
-
-        return response or Response()
+            return response
+        finally:
+            unregister_action(action_id, response=response)
 
     def to_dict(self):
         return {

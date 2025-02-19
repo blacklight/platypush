@@ -67,7 +67,10 @@ export default {
 
     async getScenes() {
       return Object.entries(await this.request('light.hue.get_scenes'))
-          .filter((scene) => !scene[1].recycle && scene[1].type.toLowerCase() === 'lightscene')
+          .filter((scene) =>
+            !scene[1].recycle &&
+            ['lightscene', 'groupscene'].includes(scene[1].type.toLowerCase())
+          )
           .reduce((obj, [id, scene]) => {
             obj[id] = scene
             return obj

@@ -11,20 +11,19 @@ class WSEventProxy(WSRoute):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, subscriptions=[self.events_channel], **kwargs)
+        super().__init__(*args, subscriptions=[self._get_events_channel()], **kwargs)
 
     @classmethod
     def app_name(cls) -> str:
         return 'events'
 
     @classmethod
-    @property
-    def events_channel(cls) -> str:
+    def _get_events_channel(cls) -> str:
         return cls.get_channel('events')
 
     @classmethod
     def publish(cls, data: MessageType, *_) -> None:
-        super().publish(data, cls.events_channel)
+        super().publish(data, cls._get_events_channel())
 
     def on_message(self, message):
         try:

@@ -12,6 +12,8 @@ from platypush.event import EventGenerator
 from platypush.message.response import Response
 from platypush.utils import get_decorators, get_plugin_name_by_class
 
+from ._actions import register_action, unregister_action
+
 PLUGIN_STOP_TIMEOUT = 5  # Plugin stop timeout in seconds
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +30,17 @@ def action(f: Callable[..., Any]) -> Callable[..., Response]:
     @wraps(f)
     def _execute_action(*args, **kwargs) -> Response:
         response = Response()
+        action_id = None
+
         try:
+            action_id = register_action(
+                {
+                    'action': '.'.join(
+                        [get_plugin_name_by_class(args[0].__class__), f.__name__]
+                    ),
+                    'args': kwargs,
+                }
+            )
             result = f(*args, **kwargs)
         except Exception as e:
             if isinstance(e, KeyboardInterrupt):
@@ -51,6 +63,7 @@ def action(f: Callable[..., Any]) -> Callable[..., Response]:
         else:
             response = Response(output=result, errors=[])
 
+        unregister_action(action_id, response=response)
         return response
 
     # Propagate the docstring
@@ -175,6 +188,8 @@ class RunnablePlugin(Plugin):
     def main(self):
         """
         Implementation of the main loop of the plugin.
+
+        :meta private:
         """
         raise NotImplementedError()
 
@@ -184,6 +199,8 @@ class RunnablePlugin(Plugin):
     def wait_stop(self, timeout=None):
         """
         Wait until a stop event is received.
+
+        :meta private:
         """
         if self.disable_monitor:
             # Wait indefinitely if the monitor is disabled
@@ -194,6 +211,8 @@ class RunnablePlugin(Plugin):
     def start(self):
         """
         Start the plugin.
+
+        :meta private:
         """
         self._thread = threading.Thread(
             target=self._runner, name=self.__class__.__name__
@@ -203,6 +222,8 @@ class RunnablePlugin(Plugin):
     def stop(self):
         """
         Stop the plugin.
+
+        :meta private:
         """
         self._should_stop.set()
         if (
@@ -273,6 +294,8 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
         """
         Main body of the async plugin. When it's called, the event loop should
         already be running and available over `self._loop`.
+
+        :meta private:
         """
 
     async def _listen(self):
