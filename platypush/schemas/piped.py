@@ -1,4 +1,5 @@
 import base64
+import re
 from datetime import datetime
 
 from marshmallow import EXCLUDE, fields, pre_dump
@@ -12,7 +13,8 @@ class PipedVideoSchema(Schema):
     Class for video items returned by the Piped API.
     """
 
-    class Meta:
+    # pylint: disable=too-few-public-methods
+    class Meta:  # type: ignore
         """
         Exclude unknown fields.
         """
@@ -120,7 +122,8 @@ class PipedPlaylistSchema(Schema):
     Class for playlist items returned by the Piped API.
     """
 
-    class Meta:
+    # pylint: disable=too-few-public-methods
+    class Meta:  # type: ignore
         """
         Exclude unknown fields.
         """
@@ -209,7 +212,7 @@ class PipedPlaylistSchema(Schema):
     @pre_dump
     def fill_urls(self, data: dict, **_):
         for attr in ('url', 'uploaderUrl'):
-            if data.get(attr) and not data[attr].startswith('https://'):
+            if data.get(attr) and not re.match('^https?://', data[attr]):
                 data[attr] = f'https://youtube.com{data[attr]}'
 
         if not data.get('id') and data.get('url'):
@@ -230,7 +233,8 @@ class PipedChannelSchema(Schema):
     Class for channel items returned by the Piped API.
     """
 
-    class Meta:
+    # pylint: disable=too-few-public-methods
+    class Meta:  # type: ignore
         """
         Exclude unknown fields.
         """
@@ -318,7 +322,8 @@ class PipedChannelSchema(Schema):
                 data['url'] = f'https://youtube.com/channel/{data["id"]}'
         elif data.get('url'):
             data['id'] = data['url'].split('/')[-1]
-            data['url'] = f'https://youtube.com{data["url"]}'
+            if not re.match('^https?://', data['url']):
+                data['url'] = f'https://youtube.com{data["url"]}'
         else:
             raise AssertionError('Channel ID or URL not found')
 

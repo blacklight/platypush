@@ -1,6 +1,11 @@
 $banner-height: var(--banner-height);
 $info-bg: rgba(0, 0, 0, 0.5);
 $info-fg: rgba(255, 255, 255, 0.9);
+$description-toggle-bg: linear-gradient(180deg, rgb(105, 105, 105) 0%, rgb(50, 50, 50) 50%);
+$description-bg: linear-gradient(0deg, rgba(70, 70, 70, 0.95) 0%, rgba(20, 20, 20, 0.95) 50%);
+$description-fg: rgba(255, 255, 255, 0.9);
+$description-btn-height: 1.5em;
+$description-shadow-color: rgba(50, 50, 50, 0.95);
 
 @include until($tablet) {
   .playlist-container, .channel {
@@ -35,7 +40,7 @@ $info-fg: rgba(255, 255, 255, 0.9);
 
   .image {
     height: 100px;
-    margin: -2.5em 2em 0.5em 0.5em;
+    margin-right: 1em;
 
     img {
       height: 100%;
@@ -101,6 +106,8 @@ $info-fg: rgba(255, 255, 255, 0.9);
   .title-container {
     max-height: var(--banner-height);
     overflow-y: hidden;
+    display: flex;
+    align-items: center;
   }
 
   .title {
@@ -117,9 +124,45 @@ $info-fg: rgba(255, 255, 255, 0.9);
     }
   }
 
+}
+
+.description-container {
+  width: 100%;
+  min-height: $description-btn-height;
+  position: absolute;
+  top: $banner-height;
+  left: 0;
+  z-index: 5;
+
+  .description-toggle {
+    width: 100%;
+    height: $description-btn-height;
+    background: $description-toggle-bg;
+
+    button {
+      width: 100%;
+      height: $description-btn-height;
+      background: none;
+      color: $description-fg;
+      margin: 0;
+      padding: 0;
+      cursor: pointer;
+
+      i {
+        font-size: 0.75em;
+      }
+    }
+  }
+
   .description {
+    background: $description-bg;
+    color: $description-fg;
     font-size: 0.9em;
-    margin-right: 0.5em;
+    max-height: 10em;
+    overflow: auto;
+    padding: 0.5em;
+    border-radius: 0 0 1em 1em;
+    box-shadow: 0 3px 2px -1px $description-shadow-color;
   }
 }
 

@@ -3,7 +3,7 @@
     <MenuPanel>
       <div class="panel-row header">
         <div class="col-3" v-if="group">
-          <button class="back-btn" title="Back" @click="close">
+          <button class="back-btn" title="Back" @click="close" v-if="withBackButton">
             <i class="fas fa-chevron-left" />
           </button>
         </div>
@@ -12,7 +12,7 @@
              v-text="groupName" @click="selectedView = selectedView === 'group' ? null : 'group'" />
 
         <div class="col-3 pull-right" v-if="group">
-          <ToggleSwitch :value="group.state.any_on" @input="$emit('group-toggle', group)" />
+          <ToggleSwitch :value="anyLightsOn" @input="$emit('group-toggle', group)" />
         </div>
       </div>
 
@@ -22,7 +22,7 @@
 
       <div class="lights-view" v-else>
         <div class="row view-selector">
-          <button :class="{selected: selectedView === 'lights'}" title="Lights" @click="selectedView = 'lights'">
+          <button :class="{selected: selectedView === 'lights'}" :title="title" @click="selectedView = 'lights'">
             <i class="icon fas fa-lightbulb" />
           </button>
           <button :class="{selected: selectedView === 'scenes'}" title="Scenes" @click="selectedView = 'scenes'">
@@ -98,6 +98,11 @@ export default {
       type: Object,
     },
 
+    title: {
+      type: String,
+      default: 'Lights',
+    },
+
     animations: {
       type: Object,
       default: () => {},
@@ -106,6 +111,11 @@ export default {
     colorConverter: {
       type: Object,
       default: () => new ColorConverter(),
+    },
+
+    withBackButton: {
+      type: Boolean,
+      default: true,
     },
   },
 
@@ -118,6 +128,13 @@ export default {
   },
 
   computed: {
+    anyLightsOn() {
+      if (this.group?.state?.any_on != null)
+        return this.group.state.any_on
+
+      return Object.values(this.lights).some(light => light.state.on)
+    },
+
     lightsSorted() {
       if (!this.lights)
         return []
@@ -151,7 +168,7 @@ export default {
         return this.group.name
       if (this.group?.id != null)
         return `[Group ${this.group.id}]`
-      return 'Lights'
+      return this.title
     },
   },
 
@@ -169,90 +186,6 @@ export default {
 }
 </script>
 
-<style lang="scss">
-.light-group-container {
-  width: 100%;
-  min-height: 100%;
-
-  .row.panel-row {
-    flex-direction: column;
-
-    &.expanded,
-    &.selected {
-      background: $selected-bg;
-    }
-  }
-
-  .header {
-    padding: 0.5em !important;
-    display: flex;
-    align-items: center;
-
-    .back-btn {
-      border: 0;
-      background: none;
-
-      &:hover {
-        border: 0;
-        color: $default-hover-fg;
-      }
-    }
-
-    .name {
-      text-align: center;
-
-      &.selected {
-        color: $selected-fg;
-      }
-
-      &:hover {
-        color: $default-hover-fg;
-      }
-    }
-  }
-
-  .view-selector {
-    width: 100%;
-    border-radius: 0;
-
-    button {
-      width: 33.3%;
-      padding: 1.5em;
-      text-align: left;
-      opacity: 0.8;
-      box-shadow: $plugin-panel-entry-shadow;
-      border-right: 0;
-
-      &.selected {
-        background: $selected-bg;
-      }
-
-      &:hover {
-        background: $hover-bg;
-      }
-    }
-
-    .icon {
-      width: 100%;
-      text-align: center;
-      font-size: 1.2em;
-    }
-  }
-}
-</style>
-
-<style lang="scss">
-.light-group-container {
-  .group-controls {
-    margin: 0;
-    padding: 1em;
-    background-color: $default-bg-6;
-    border-radius: 0 0 1em 1em;
-
-    .controls {
-      margin: 0;
-      padding: 1em;
-    }
-  }
-}
+<style lang="scss" scoped>
+@import "./groups.scss";
 </style>

@@ -53,17 +53,17 @@
         </div>
       </div>
     </div>
-
-    <div class="editor-container" v-if="showEditor">
-      <FileEditor :file="type.split('.').pop()"
-                  :text="indentedOutput"
-                  :visible="true"
-                  :uppercase="false"
-                  :with-save="false"
-                  content-type="json"
-                  @close="showEditor = false" />
-    </div>
   </a>
+
+  <div class="editor-container" v-if="showEditor">
+    <FileEditor :file="type.split('.').pop()"
+                :text="indentedOutput"
+                :visible="true"
+                :uppercase="false"
+                :with-save="false"
+                content-type="json"
+                @close="showEditor = false" />
+  </div>
 </template>
 
 <script>

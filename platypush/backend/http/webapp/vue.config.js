@@ -44,9 +44,7 @@ module.exports = {
       '^/otp': httpProxy,
       '^/sound/': httpProxy,
       '^/tokens': httpProxy,
-      '^/ws/events': wsProxy,
-      '^/ws/requests': wsProxy,
-      '^/ws/shell': wsProxy,
+      '^/ws/': wsProxy,
     }
   }
 };

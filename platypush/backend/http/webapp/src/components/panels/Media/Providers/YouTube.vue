@@ -4,7 +4,7 @@
 
     <div class="browser" v-else>
       <MediaNav :path="computedPath" @back="$emit('back')" />
-      <NoToken v-if="!authToken" />
+      <NoToken v-if="!isAuthenticated" />
 
       <div class="body" v-else>
         <Feed :filter="filter"
@@ -97,8 +97,20 @@ export default {
   },
 
   computed: {
-    authToken() {
-      return this.youtubeConfig?.auth_token
+    isAuthenticated() {
+      const cfg = this.youtubeConfig
+
+      // Deprecated auth_token setting
+      if (cfg?.auth_token)
+        return !!cfg.auth_token
+
+      const backends = cfg?.backends || {}
+
+      // The Google backend has its separate authentication flow
+      if ('google' in backends)
+        return true
+
+      return !!Object.values(backends).find(b => !!b?.auth_token)?.auth_token
     },
 
     computedPath() {
@@ -127,13 +139,13 @@ export default {
 
     async removeFromPlaylist(event) {
       const playlistId = event.playlist_id
-      const videoId = event.item.url
+      const item = event.item.index_id || event.item.url
       this.loading_ = true
 
       try {
         await this.request('youtube.remove_from_playlist', {
           playlist_id: playlistId,
-          item_ids: [videoId],
+          item_ids: [item],
         })
       } finally {
         this.loading_ = false
@@ -168,15 +180,23 @@ export default {
       }
     },
 
+    viewItem(view, item) {
+      this.selectedView = view
+      const existingItemIndex = this.path.findIndex(i => i.title === item)
+
+      if (existingItemIndex !== -1) {
+        this.path = this.path.slice(0, existingItemIndex + 1)
+      } else {
+        this.path.push({ title: item })
+      }
+    },
+
     onPlaylistSelected(playlist) {
       this.selectedPlaylist_ = playlist
       if (!playlist)
         return
 
-      this.selectedView = 'playlists'
-      this.path.push({
-        title: playlist.name,
-      })
+      this.viewItem('playlists', playlist.name)
     },
 
     onChannelSelected(channel) {
@@ -184,10 +204,7 @@ export default {
       if (!channel)
         return
 
-      this.selectedView = 'subscriptions'
-      this.path.push({
-        title: channel.name,
-      })
+      this.viewItem('subscriptions', channel.name)
     },
 
     initView() {

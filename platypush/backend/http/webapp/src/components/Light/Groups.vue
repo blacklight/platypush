@@ -1,27 +1,29 @@
 <template>
-  <MenuPanel>
-    <div class="panel-row header">
-      <div class="col-3">
-        <i class="icon fas fa-home" />
+  <div class="light-groups-container">
+    <MenuPanel>
+      <div class="panel-row header">
+        <div class="col-3">
+          <i class="icon fas fa-home" />
+        </div>
+        <div class="col-6 name">
+          Rooms
+        </div>
+        <div class="col-3 pull-right">
+          <ToggleSwitch :value="anyLightsOn" @input="$emit('toggle')" />
+        </div>
       </div>
-      <div class="col-6 name">
-        Rooms
-      </div>
-      <div class="col-3 pull-right">
-        <ToggleSwitch :value="anyLightsOn" @input="$emit('toggle')" />
-      </div>
-    </div>
 
-    <div class="panel-row row group" v-for="group in groupsSorted" :key="group.id" @click="$emit('select', group.id)">
-      <span class="name col-9">
-        {{ group.name || `[Group ${group.id}]` }}
-      </span>
-      <span class="controls col-3 pull-right">
-        <ToggleSwitch :value="group.state.any_on" :disabled="group.id in (loadingGroups || {})"
-                      @input="$emit('toggle', group)" />
-      </span>
-    </div>
-  </MenuPanel>
+      <div class="panel-row row group" v-for="group in groupsSorted" :key="group.id" @click="$emit('select', group.id)">
+        <span class="name col-9">
+          {{ group.name || `[Group ${group.id}]` }}
+        </span>
+        <span class="controls col-3 pull-right">
+          <ToggleSwitch :value="group.state.any_on" :disabled="group.id in (loadingGroups || {})"
+                        @input="$emit('toggle', group)" />
+        </span>
+      </div>
+    </MenuPanel>
+  </div>
 </template>
 
 <script>
@@ -74,23 +76,5 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.header {
-  display: flex;
-  align-items: center;
-  padding-top: 0.75em !important;
-  padding-bottom: 0.75em !important;
-
-  .icon {
-    margin-left: 0.5em;
-  }
-
-  .name {
-    text-align: center;
-  }
-}
-
-.group {
-  display: flex;
-  align-items: center;
-}
+@import "./groups.scss";
 </style>

@@ -13,12 +13,19 @@
              @input="selectedView = 'events'">
           Events
         </Tab>
+
+        <Tab :selected="selectedView === 'monitor'"
+             icon-class="fas fa-chart-line"
+             @input="selectedView = 'monitor'">
+          Monitor
+        </Tab>
       </Tabs>
     </div>
 
     <div class="content">
       <Actions v-if="selectedView === 'actions'" />
       <Events v-else-if="selectedView === 'events'" />
+      <Monitor v-else-if="selectedView === 'monitor'" />
     </div>
   </div>
 </template>
@@ -26,6 +33,7 @@
 <script>
 import Actions from "./Actions"
 import Events from "./Events"
+import Monitor from "./Monitor"
 import Tabs from "@/components/elements/Tabs"
 import Tab from "@/components/elements/Tab"
 import Utils from '@/Utils'
@@ -35,6 +43,7 @@ export default {
   components: {
     Actions,
     Events,
+    Monitor,
     Tab,
     Tabs,
   },

@@ -15,6 +15,15 @@ class YoutubeResourceParser(MediaResourceParser):
     """
 
     @staticmethod
+    def _extract_youtube_id(resource: str) -> Optional[str]:
+        # Process YouTube-like URLs
+        m = re.match(r'^https?://[^/]+/watch\?v=([^&]+).*', resource)
+        if m:
+            return m.group(1)
+
+        return None
+
+    @staticmethod
     def _get_extractors():
         try:
             from yt_dlp.extractor import _extractors  # type: ignore
@@ -67,8 +76,12 @@ class YoutubeResourceParser(MediaResourceParser):
         youtube_format: Optional[str] = None,
         youtube_audio_format: Optional[str] = None,
         only_audio: bool = False,
-        **__
+        **__,
     ) -> Optional[YoutubeMediaResource]:
+        yt_id = self._extract_youtube_id(resource)
+        if yt_id:
+            resource = f'https://www.youtube.com/watch?v={yt_id}'
+
         if not self.is_youtube_resource(resource):
             return None
 

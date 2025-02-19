@@ -1,137 +1,230 @@
-import base64
-import re
-from functools import lru_cache
-from typing import Collection, List, Optional
-
-import requests
+from typing import Any, Collection, Dict, List, Optional, Type
 
 from platypush.plugins import Plugin, action
-from platypush.schemas.piped import (
-    PipedChannelSchema,
-    PipedPlaylistSchema,
-    PipedVideoSchema,
-)
+
+from .backends import BaseBackend, GoogleBackend, PipedBackend, InvidiousBackend
 
 
 class YoutubePlugin(Plugin):
     r"""
     YouTube plugin.
 
-    Unlike other Google plugins, this plugin doesn't rely on the Google API.
+    This plugin supports multiple backends to interact with YouTube:
 
-    That's because the official YouTube API has been subject to many changes to
-    prevent scraping, and it requires the user to tinker with the OAuth layer,
-    app permissions and app validation in order to get it working.
+        - ``piped``: Uses a `Piped <https://docs.piped.video/>`_ instance.
+        - ``invidious``: Uses an `Invidious <https://github.com/iv-org/invidious>`_
+            instance.
+        - ``google``: Uses the official Google YouTube API.
 
-    Instead, it relies on a `Piped <https://docs.piped.video/>`_, an open-source
-    alternative YouTube gateway.
+    You can specify the backend configuration in the plugin configuration
+    through the ``backends`` parameter:
 
-    It thus requires a link to a valid Piped instance.
+        .. code-block:: yaml
+
+            youtube:
+                backends:
+                    # For Piped
+                    piped:
+                        instance_url: https://pipedapi.kavin.rocks
+                        auth_token: <auth_token>
+                        frontend_url: https://piped.kavin.rocks
+
+                    # For Invidious
+                    invidious:
+                        instance_url: https://yewtu.be
+                        auth_token: <auth_token>
+
+                    # For the official YouTube API
+                    google:
+                        # OAuth authentication will be performed through the Google plugin
+                        # the first time you run the plugin.
+
+    Piped
+    -----
+
+    .. warning:: At the time of writing (February 2025), the Piped backend isn't
+        actively tested. That's because most of the instances seem to be either
+        down or `blocked by Google <https://github.com/TeamPiped/Piped/issues/3658>`_.
+        ``invidious`` is the recommended backend.
+
+    Parameters:
+
+        - ``instance_url``: Base URL of the Piped instance (default:
+          ``https://pipedapi.kavin.rocks``). **NOTE**: This should be the URL
+          of the Piped API, not the Piped instance/frontend itself.
+        - ``auth_token``: Optional authentication token from the Piped
+          instance. This is required if you want to access your private feed
+          and playlists, but not for searching public videos.
+        - ``frontend_url``: Optional URL of the Piped frontend. This is needed
+          to generate channels and playlists URLs. If not provided, the plugin
+          will try and infer it by stripping the ``api`` string from
+          ``instance_url``.
+
+    In order to retrieve an authentication token:
+
+      1. Login to your configured Piped instance.
+      2. Copy the RSS/Atom feed URL on the _Feed_ tab.
+      3. Copy the ``auth_token`` query parameter from the URL.
+      4. Enter it in the ``auth_token`` field in the ``youtube`` section of the
+         configuration file.
+
+    Invidious
+    ---------
+
+    Parameters:
+
+        - ``instance_url``: Base URL of the Invidious instance (default:
+          ``https://yewtu.be``).
+        - ``auth_token``: Optional authentication token from the Invidious
+          instance. This is required if you want to access your private feed
+          and playlists, but not for searching public videos.
+
+    In order to retrieve an authentication token:
+
+      1. Login to your configured Invidious instance.
+      2. Open the URL ``https://<instance_url>/authorize_token?scopes=:*`` in
+         your browser. Replace ``<instance_url>`` with the URL of your Invidious
+         instance, and ``:*`` with the scopes you want to assign to the token
+         (although an all-access token is recommended for full functionality).
+      3. Copy the generated token.
+
+    If both are provided, the Invidious backend will be used.
+
+    If none is provided, the plugin will fallback to the default Invidious
+    instance (``https://yewtu.be``), but authenticated actions will not be
+    available.
+
+    Google
+    ------
+
+    .. note:: The Google backend requires you to register a project on the
+        Google Cloud Platform and enable the YouTube Data API v3. This plugin
+        will use the OAuth2 authentication provided by the Google plugin, and
+        quota limits apply.
+
+    .. note:: The Google backend doesn't support :meth:`get_feed`. The `YouTube
+        Data API v3 <https://developers.google.com/youtube/v3/docs/>`_ does not
+        support an endpoint to retrieve the feed, and the alternative (searching
+        for all the recent videos of all the subscribed channels) would be too
+        slow, besides probably burning the whole YouTube API quota.
+
+    Follow the `same instructions as other Google plugins
+    <https://docs.platypush.tech/platypush/plugins/google.calendar.html>`_.
+    Create a project, enable the YouTube Data API v3, and download the
+    credentials file to ``<workdir>/credentials/google/client_secret.json``.
+
+    Authentication will be performed the first time you run the plugin.
+
+    It can be run:
+
+        - *Automatically*: when the plugin is started, it will open an
+          authentication page if the ``BROWSER`` environment variable is set.
+          Otherwise, it will log the URL that should be opened in a browser
+          to authenticate the plugin. You can also copy the authenticated
+          session to other machines by copying the
+          ``<workdir>/credentials/google`` folder.
+
+        - *Manually*: by running the ``platypush.plugins.google.credentials``
+          command (see documentation of other Google plugins). Note that if
+          you opt to generate the credentials manually, you will need a token
+          with the following scopes:
+
+              - ``https://www.googleapis.com/auth/youtube``
+              - ``https://www.googleapis.com/auth/youtube.force-ssl``
+
     """
 
     _timeout = 20
 
     def __init__(
         self,
-        piped_api_url: str = 'https://pipedapi.kavin.rocks',
-        auth_token: Optional[str] = None,
+        backends: Optional[Dict[str, dict]] = None,
         **kwargs,
     ):
         """
-        :param piped_api_url: Base API URL of the Piped instance (default:
-            ``https://pipedapi.kavin.rocks``).
-        :param auth_token: Optional authentication token from the Piped
-            instance. This is required if you want to access your private feed
-            and playlists, but not for searching public videos.
-
-            In order to retrieve an authentication token:
-
-              1. Login to your configured Piped instance.
-              2. Copy the RSS/Atom feed URL on the _Feed_ tab.
-              3. Copy the ``auth_token`` query parameter from the URL.
-              4. Enter it in the ``auth_token`` field in the ``youtube`` section
-                 of the configuration file.
-
+        :param backends: Configuration for the backends.
         """
         super().__init__(**kwargs)
-        self._piped_api_url = piped_api_url
-        self._auth_token = auth_token
+        backends = backends or {}
+        piped = backends.get('piped')
 
-    def _api_url(self, path: str = '') -> str:
-        return f"{self._piped_api_url}/{path}"
+        if kwargs.get('piped_api_url'):
+            piped = backends['piped'] = backends.get('piped') or {}
+            self.logger.warning(
+                'The "piped_api_url" parameter is deprecated. Use "piped.instance_url" instead.'
+            )
 
-    def _request(
-        self,
-        path: str,
-        method: str = 'get',
-        body: Optional[str] = None,
-        auth: bool = True,
-        **kwargs,
-    ):
-        timeout = kwargs.pop('timeout', self._timeout)
-        if auth:
-            kwargs['params'] = kwargs.get('params', {})
-            kwargs['params']['authToken'] = self._auth_token
-            kwargs['headers'] = kwargs.get('headers', {})
-            kwargs['headers']['Authorization'] = self._auth_token
+            if not piped.get('instance_url'):
+                piped['instance_url'] = kwargs['piped_api_url']
 
-        if body:
-            kwargs['data'] = body
+        if kwargs.get('auth_token'):
+            piped = backends['piped'] = backends.get('piped') or {}
+            self.logger.warning(
+                'The "auth_token" parameter is deprecated. Use "piped.auth_token" instead.'
+            )
 
-        func = getattr(requests, method.lower())
-        rs = func(self._api_url(path), timeout=timeout, **kwargs)
-        rs.raise_for_status()
+            if not piped.get('auth_token'):
+                piped['auth_token'] = kwargs['auth_token']
 
-        try:
-            return rs.json()
-        except (TypeError, ValueError):
-            return {}
+        self._backends: Dict[Type[BaseBackend], BaseBackend] = {}
 
-    @lru_cache(maxsize=10)  # noqa
-    def _get_channel(self, id: str) -> dict:  # pylint: disable=redefined-builtin
-        if (
-            id.startswith('http')
-            or id.startswith('https')
-            or id.startswith('/channel/')
-        ):
-            id = id.split('/')[-1]
+        if 'piped' in backends:
+            self._backends[PipedBackend] = PipedBackend(**(backends.get('piped') or {}))
+        if 'invidious' in backends:
+            self._backends[InvidiousBackend] = InvidiousBackend(
+                **(backends.get('invidious') or {})
+            )
+        if 'google' in backends:
+            self._backends[GoogleBackend] = GoogleBackend(
+                **(backends.get('google') or {})
+            )
 
-        return (
-            PipedChannelSchema().dump(self._request(f'channel/{id}')) or {}  # type: ignore
-        )
+        if len(self._backends) > 1:
+            self.logger.warning(
+                'Multiple backends provided. Defaulting to "invidious" as the primary backend.'
+            )
+        elif not self._backends:
+            # Fallback to the default Invidious instance
+            self.logger.warning(
+                'No backends provided. Defaulting to the Invidious instance (https://yewtu.be). '
+                'No authenticated actions will be available.'
+            )
+            self._backends[InvidiousBackend] = InvidiousBackend()
 
-    @staticmethod
-    def _get_video_id(id_or_url: str) -> str:
-        m = re.search(r'/watch\?v=([^&]+)', id_or_url)
-        if m:
-            return m.group(1)
+    def _default_backend(self) -> BaseBackend:
+        # Prefer Invidious over Piped/Google
+        if self._backends.get(InvidiousBackend):
+            return self._backends[InvidiousBackend]
 
-        return id_or_url
+        return next(iter(self._backends.values()))
 
-    @staticmethod
-    def _dump_item(item: dict) -> dict:
-        if item.get('type') == 'stream':
-            return dict(PipedVideoSchema().dump(item))
+    def _get_backend(self, backend: Optional[str]) -> BaseBackend:
+        if not backend:
+            return self._default_backend()
 
-        if item.get('type') == 'channel':
-            return dict(PipedChannelSchema().dump(item))
+        backend = backend.lower()
+        for backend_instance in self._backends.values():
+            if backend_instance.name == backend:
+                return backend_instance
 
-        if item.get('type') == 'playlist':
-            return dict(PipedPlaylistSchema().dump(item))
-
-        return item
+        raise ValueError(f'Unknown backend: {backend}')
 
     @action
-    def search(self, query: str, **_) -> List[dict]:
+    def search(self, query: str, backend: Optional[str] = None, **_) -> List[dict]:
         """
         Search for YouTube videos.
 
         :param query: Query string.
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
         :return: .. schema:: piped.PipedVideoSchema(many=True)
         """
-        self.logger.info('Searching YouTube for "%s"', query)
-        rs = self._request('search', auth=False, params={'q': query, 'filter': 'all'})
-        results = [self._dump_item(item) for item in rs.get('items', [])]
+        api = self._get_backend(backend)
+        self.logger.info(
+            'Searching YouTube through the %s backend for "%s"', api.name, query
+        )
+        results = [item.to_dict() for item in api.search(query)]
+
         self.logger.info(
             '%d YouTube results for the search query "%s"',
             len(results),
@@ -141,119 +234,133 @@ class YoutubePlugin(Plugin):
         return results
 
     @action
-    def get_feed(self) -> List[dict]:
+    def get_feed(
+        self, page: Optional[Any] = None, backend: Optional[str] = None
+    ) -> List[dict]:
         """
         Retrieve the YouTube feed.
 
-        Depending on your account settings on the configured Piped instance,
-        this may return either the latest videos uploaded by your subscribed
-        channels, or the trending videos in the configured area.
+        If you use the ``piped`` backend, depending on your account settings on
+        the configured Piped instance, this may return either the latest videos
+        uploaded by your subscribed channels (if you provided an authentication
+        token), or the trending videos in the configured area (if you didn't).
 
+        If you use the ``invidious`` backend, this requires the user to be
+        authenticated - it will return the latest videos uploaded by the
+        subscribed channels.
+
+        If you use the ``google`` backend, this method is not supported - the
+        native YouTube API doesn't provide an endpoint to retrieve the feed,
+        and the alternative (searching for all the recent videos of all the
+        subscribed channels) would be too slow, besides probably burning the
+        whole YouTube API quota.
+
+        :param page: (Optional) ID/index of the page to retrieve. This isn't
+            supported by the Piped backend (all the videos are returned at
+            once), and it's instead an integer >= 1 on the Invidious backend.
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
         :return: .. schema:: piped.PipedVideoSchema(many=True)
         """
-        return PipedVideoSchema(many=True).dump(self._request('feed')) or []
+        return [
+            item.to_dict() for item in self._get_backend(backend).get_feed(page=page)
+        ]
 
     @action
-    def get_playlists(self) -> List[dict]:
+    def get_playlists(
+        self, backend: Optional[str] = None, page: Optional[Any] = None
+    ) -> List[dict]:
         """
         Retrieve the playlists saved by the user logged in to the Piped
         instance.
 
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
+        :param page: (Optional) ID/index of the page to retrieve. This is only supported
+            by the YouTube backend. Both the Piped and Invidious backends will return
+            all the playlists at once.
         :return: .. schema:: piped.PipedPlaylistSchema(many=True)
         """
-        return (
-            PipedPlaylistSchema(many=True).dump(self._request('user/playlists')) or []
-        )
+        return [
+            item.to_dict()
+            for item in self._get_backend(backend).get_playlists(page=page)
+        ]
 
     @action
-    def get_playlist(self, id: str) -> List[dict]:  # pylint: disable=redefined-builtin
+    def get_playlist(
+        self, id: str, backend: Optional[str] = None, page: Optional[Any] = None
+    ) -> List[dict]:  # pylint: disable=redefined-builtin
         """
         Retrieve the videos in a playlist.
 
-        :param id: Piped playlist ID.
+        :param id: Playlist ID as returned by the backend.
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
+        :param page: (Optional) ID/index of the page to retrieve. This is only supported
+            by the YouTube backend. Both the Piped and Invidious backends will return
+            all the videos at once.
         :return: .. schema:: piped.PipedVideoSchema(many=True)
         """
-        return (
-            PipedVideoSchema(many=True).dump(
-                self._request(f'playlists/{id}').get('relatedStreams', [])
-            )
-            or []
-        )
+        return [
+            item.to_dict()
+            for item in self._get_backend(backend).get_playlist(id, page=page)
+        ]
 
     @action
-    def get_subscriptions(self) -> List[dict]:
+    def get_subscriptions(
+        self, backend: Optional[str] = None, page: Optional[Any] = None
+    ) -> List[dict]:
         """
         Retrieve the channels subscribed by the user logged in to the Piped
         instance.
 
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
+        :param page: (Optional) ID/index of the page to retrieve. This is only supported
+            by the YouTube backend. Both the Piped and Invidious backends will return
+            all the subscriptions at once.
         :return: .. schema:: piped.PipedChannelSchema(many=True)
         """
-        return PipedChannelSchema(many=True).dump(self._request('subscriptions')) or []
+        return [
+            item.to_dict()
+            for item in self._get_backend(backend).get_subscriptions(page=page)
+        ]
 
     @action
     def get_channel(
         self,
         id: str,  # pylint: disable=redefined-builtin
-        next_page_token: Optional[str] = None,
+        page: Optional[str] = None,
+        backend: Optional[str] = None,
     ) -> dict:
         """
         Retrieve the information and videos of a channel given its ID or URL.
 
         :param id: Channel ID or URL.
-        :param next_page_token: Optional token to retrieve the next page of
-            results.
+        :param page: (Optional) ID/index of the page to retrieve.
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
         :return: .. schema:: piped.PipedChannelSchema
         """
-        if (
-            id.startswith('http')
-            or id.startswith('https')
-            or id.startswith('/channel/')
-        ):
-            id = id.split('/')[-1]
-
-        info = {}
-        if next_page_token:
-            info = self._get_channel(id).copy()
-            info.pop('next_page_token', None)
-            info['items'] = []
-            next_page = base64.b64decode(next_page_token.encode()).decode()
-            response = {
-                **info,
-                **self._request(
-                    f'nextpage/channel/{id}', params={'nextpage': next_page}, auth=False
-                ),
-            }
-        else:
-            response = self._request(f'channel/{id}')
-
-        return PipedChannelSchema().dump(response) or {}  # type: ignore
+        return self._get_backend(backend).get_channel(id, page=page).to_dict()
 
     @action
     def add_to_playlist(
-        self, playlist_id: str, item_ids: Optional[Collection[str]] = None, **kwargs
+        self,
+        playlist_id: str,
+        item_ids: Optional[Collection[str]] = None,
+        backend: Optional[str] = None,
+        **kwargs,
     ):
         """
         Add a video to a playlist.
 
-        :param playlist_id: Piped playlist ID.
+        :param playlist_id: Playlist ID.
         :param item_ids: YouTube IDs or URLs to add to the playlist.
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
         """
-        items = item_ids
-        if kwargs.get('video_id'):
-            self.logger.warning(
-                'The "video_id" parameter is deprecated. Use "item_ids" instead.'
-            )
-            items = [kwargs['video_id']]
-
-        assert items, 'No items provided to add to the playlist'
-        self._request(
-            'user/playlists/add',
-            method='post',
-            json={
-                'videoIds': [self._get_video_id(item_id) for item_id in items],
-                'playlistId': playlist_id,
-            },
-        )
+        self._get_backend(backend).add_to_playlist(playlist_id, item_ids, **kwargs)
 
     @action
     def remove_from_playlist(
@@ -261,6 +368,7 @@ class YoutubePlugin(Plugin):
         playlist_id: str,
         item_ids: Optional[Collection[str]] = None,
         indices: Optional[Collection[int]] = None,
+        backend: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -268,163 +376,121 @@ class YoutubePlugin(Plugin):
 
         Note that either ``item_ids`` or ``indices`` must be provided.
 
+        ``piped`` and ``invidious`` backends support both ``item_ids`` and
+        ``indices``. ``google`` backend only supports ``item_ids``, and they
+        must match ``item_id`` fields returned by :meth:`get_playlist`.
+
         :param item_ids: YouTube video IDs or URLs to remove from the playlist.
         :param indices: (0-based) indices of the items in the playlist to remove.
-        :param playlist_id: Piped playlist ID.
+        :param playlist_id: Playlist ID.
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
         """
-        items = item_ids
-        if kwargs.get('video_id'):
-            self.logger.warning(
-                'The "video_id" parameter is deprecated. Use "item_ids" instead.'
-            )
-            items = [kwargs['video_id']]
-
-        if kwargs.get('index'):
-            self.logger.warning(
-                'The "index" parameter is deprecated. Use "indices" instead.'
-            )
-            indices = [kwargs['index']]
-
-        assert items or indices, 'Either item_ids or indices must be provided'
-
-        if not indices:
-            item_ids = {
-                video_id
-                for video_id in [
-                    self._get_video_id(item_id) for item_id in (items or [])
-                ]
-                if video_id
-            }
-
-            playlist_items = self._request(f'playlists/{playlist_id}').get(
-                'relatedStreams', []
-            )
-            indices = [
-                i
-                for i, v in enumerate(playlist_items)
-                if self._get_video_id(v.get('url')) in item_ids
-            ]
-
-        if not indices:
-            self.logger.warning(
-                'Items not found in the playlist %s: %s', playlist_id, items or []
-            )
-            return
-
-        for index in indices:
-            self._request(
-                'user/playlists/remove',
-                method='post',
-                json={
-                    'index': index,
-                    'playlistId': playlist_id,
-                },
-            )
+        self._get_backend(backend).remove_from_playlist(
+            playlist_id=playlist_id, item_ids=item_ids, indices=indices, **kwargs
+        )
 
     @action
-    def create_playlist(self, name: str) -> dict:
+    def create_playlist(
+        self,
+        name: str,
+        privacy: Optional[str] = 'private',
+        backend: Optional[str] = None,
+    ) -> dict:
         """
         Create a new playlist.
 
         :param name: Playlist name.
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
+        :param privacy: Privacy level of the playlist (only supported by
+            Invidious). Supported values are:
+
+                - ``private``: Only you can see the playlist.
+                - ``public``: Everyone can see the playlist.
+                - ``unlisted``: Everyone with the link can see the playlist.
+
         :return: Playlist information.
         """
-        name = name.strip()
-        assert name, 'Playlist name cannot be empty'
-
-        playlist_id = self._request(
-            'user/playlists/create',
-            method='post',
-            json={'name': name},
-        ).get('playlistId')
-
-        assert playlist_id, 'Failed to create the playlist'
-        playlists = self._request('user/playlists')
-        new_playlist = next((p for p in playlists if p.get('id') == playlist_id), None)
-
-        assert new_playlist, 'Failed to retrieve the new playlist'
-        return dict(PipedPlaylistSchema().dump(new_playlist) or {})
-
-    @action
-    def rename_playlist(
-        self, id: str, name: Optional[str] = None, description: Optional[str] = None
-    ):  # pylint: disable=redefined-builtin
-        """
-        Rename a playlist.
-
-        :param id: Piped playlist ID.
-        :param name: New playlist name.
-        :param description: New playlist description.
-        """
-        args = {}
-        if name:
-            args['newName'] = name
-        if description:
-            args['description'] = description
-        if not args:
-            self.logger.info('No new name or description provided')
-            return
-
-        self._request(
-            'user/playlists/rename',
-            method='post',
-            json={
-                'playlistId': id,
-                **args,
-            },
+        return (
+            self._get_backend(backend).create_playlist(name, privacy=privacy).to_dict()
         )
 
     @action
-    def delete_playlist(self, id: str):  # pylint: disable=redefined-builtin
+    def edit_playlist(
+        self,
+        id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        privacy: Optional[str] = None,
+        backend: Optional[str] = None,
+    ):  # pylint: disable=redefined-builtin
+        """
+        Edit a playlist.
+
+        :param id: Playlist ID.
+        :param name: New playlist name.
+        :param description: New playlist description.
+        :param privacy: New privacy level of the playlist (only supported by
+            Invidious). Supported values are:
+
+                - ``private``: Only you can see the playlist.
+                - ``public``: Everyone can see the playlist.
+                - ``unlisted``: Everyone with the link can see the playlist.
+
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
+        """
+        self._get_backend(backend).edit_playlist(
+            id, name=name, description=description, privacy=privacy
+        )
+
+    @action
+    def delete_playlist(
+        self, id: str, backend: Optional[str] = None
+    ):  # pylint: disable=redefined-builtin
         """
         Delete a playlist.
 
-        :param id: Piped playlist ID.
+        :param id: Playlist ID.
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
         """
-        self._request(
-            'user/playlists/delete',
-            method='post',
-            json={'playlistId': id},
-        )
+        self._get_backend(backend).delete_playlist(id)
 
     @action
-    def is_subscribed(self, channel_id: str) -> bool:
+    def is_subscribed(self, channel_id: str, backend: Optional[str] = None) -> bool:
         """
         Check if the user is subscribed to a channel.
 
         :param channel_id: YouTube channel ID.
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
         :return: True if the user is subscribed to the channel, False otherwise.
         """
-        return self._request(
-            'subscribed',
-            params={'channelId': channel_id},
-        ).get('subscribed', False)
+        return self._get_backend(backend).is_subscribed(channel_id)
 
     @action
-    def subscribe(self, channel_id: str):
+    def subscribe(self, channel_id: str, backend: Optional[str] = None):
         """
         Subscribe to a channel.
 
         :param channel_id: YouTube channel ID.
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
         """
-        self._request(
-            'subscribe',
-            method='post',
-            json={'channelId': channel_id},
-        )
+        self._get_backend(backend).subscribe(channel_id)
 
     @action
-    def unsubscribe(self, channel_id: str):
+    def unsubscribe(self, channel_id: str, backend: Optional[str] = None):
         """
         Unsubscribe from a channel.
 
         :param channel_id: YouTube channel ID.
+        :param backend: Optional backend to use. If not specified, the default
+            one will be used.
         """
-        self._request(
-            'unsubscribe',
-            method='post',
-            json={'channelId': channel_id},
-        )
+        self._get_backend(backend).unsubscribe(channel_id)
 
 
 # vim:sw=4:ts=4:et:

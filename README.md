@@ -5,19 +5,20 @@
 [![Github stars](https://img.shields.io/github/stars/blacklight/platypush?style=flat&logo=Github)](https://github.com/blacklight/platypush)
 [![Github forks](https://img.shields.io/github/forks/blacklight/platypush?style=flat&logo=Github)](https://github.com/blacklight/platypush)
 [![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/commits/branch/master)
-[![Ask on Lemmy](https://img.shields.io/lemmy/platypush%40lemmy.platypush.tech?style=flat&logo=lemmy&label=Ask%20on%20Lemmy)](https://lemmy.platypush.tech/c/platypush)
 [![Join chat on Matrix](https://img.shields.io/matrix/platypush:matrix.platypush.tech.svg?server_fqdn=matrix.platypush.tech&label=chat&logo=matrix)](https://matrix.to/#/#platypush:matrix.platypush.tech)
 
 [![pip version](https://img.shields.io/pypi/v/platypush.svg?style=flat)](https://pypi.python.org/pypi/platypush/)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/1ecffafe2b5d4f1db215bed2a95a8a7b)](https://app.codacy.com/gh/blacklight/platypush/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 [![CodeFactor](https://www.codefactor.io/repository/github/blacklight/platypush/badge)](https://www.codefactor.io/repository/github/blacklight/platypush)
 [![Contributions](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://git.platypush.tech/platypush/platypush/src/branch/master/CONTRIBUTING.md)
 [![License](https://img.shields.io/github/license/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/src/branch/master/LICENSE.txt)
 [![Sponsor](https://img.shields.io/github/sponsors/blacklight)](https://github.com/sponsors/blacklight)
+
 [![Blog](https://img.shields.io/badge/-Blog-9532CA?logo=LiveJournal)](https://blog.platypush.tech)
 [![Documentation](https://img.shields.io/badge/-Docs-022AC5?logo=GitBook)](https://docs.platypush.tech)
 [![Wiki](https://img.shields.io/badge/-Wiki-00AA40?logo=Docs.rs)](https://git.platypush.tech/platypush/platypush/wiki)
 [![Join chat on IRC](https://img.shields.io/badge/-IRC-4542CA?logo=LiveChat)](irc://platypush@irc.platypush.tech:6697)
-[![PayPal](https://img.shields.io/badge/-PayPal-CACA30?logo=PayPal)](https://paypal.me/fabiomanganiello)
+[![Support](https://img.shields.io/badge/-PayPal-CACA30?logo=PayPal)](https://paypal.me/fabiomanganiello)
 
 <!-- toc -->
 
