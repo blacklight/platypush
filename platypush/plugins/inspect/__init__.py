@@ -247,14 +247,14 @@ class InspectPlugin(Plugin):
         return meta
 
     @action
-    def get_all_plugins(self):
+    def get_all_plugins(self, *_, **__):
         """
         Get information about all the available plugins.
         """
         return json.dumps(self._cache.to_dict().get('plugins', {}), cls=Message.Encoder)
 
     @action
-    def get_all_backends(self):
+    def get_all_backends(self, *_, **__):
         """
         Get information about all the available backends.
         """
@@ -263,14 +263,14 @@ class InspectPlugin(Plugin):
         )
 
     @action
-    def get_all_events(self):
+    def get_all_events(self, *_, **__):
         """
         Get information about all the available events.
         """
         return json.dumps(self._cache.to_dict().get('events', {}), cls=Message.Encoder)
 
     @action
-    def get_all_responses(self):
+    def get_all_responses(self, *_, **__):
         """
         Get information about all the available responses.
         """
@@ -279,14 +279,14 @@ class InspectPlugin(Plugin):
         )
 
     @action
-    def get_procedures(self) -> dict:
+    def get_procedures(self, *_, **__) -> dict:
         """
         Get the list of procedures installed on the device.
         """
         return json.loads(json.dumps(Config.get_procedures(), cls=ProcedureEncoder))
 
     @action
-    def get_config(self, entry: Optional[str] = None) -> Optional[dict]:
+    def get_config(self, *_, entry: Optional[str] = None, **__) -> Optional[dict]:
         """
         Return the configuration of the application or of a section.
 
@@ -299,21 +299,21 @@ class InspectPlugin(Plugin):
         return Config.get()
 
     @action
-    def get_enabled_plugins(self) -> List[str]:
+    def get_enabled_plugins(self, *_, **__) -> List[str]:
         """
         Get the list of enabled plugins.
         """
         return list(get_enabled_plugins().keys())
 
     @action
-    def get_enabled_backends(self) -> List[str]:
+    def get_enabled_backends(self, *_, **__) -> List[str]:
         """
         Get the list of enabled backends.
         """
         return list(get_enabled_backends().keys())
 
     @action
-    def get_pkg_managers(self) -> dict:
+    def get_pkg_managers(self, *_, **__) -> dict:
         """
         Get the list of supported package managers. This is supposed to be an
         internal-only method, only used by the UI to populate the install
