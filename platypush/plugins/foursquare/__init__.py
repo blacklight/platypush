@@ -50,7 +50,7 @@ class FoursquarePlugin(RunnablePlugin):
         return (
             requests.get(
                 url,
-                json={'limit': limit, 'offset': offset},
+                params={'limit': limit, 'offset': offset},
                 timeout=self._http_timeout,
             )
             .json()
@@ -63,6 +63,9 @@ class FoursquarePlugin(RunnablePlugin):
     def get_checkins(self, limit: int = 20, offset: int = 0) -> List[Dict[str, Any]]:
         """
         Get the list of check-ins of the current user.
+
+        :param limit: Maximum number of check-ins to retrieve (default: 20).
+        :param offset: Offset to start retrieving check-ins from (default: 0).
         :return: A list of checkins, as returned by the Foursquare API.
         """
         return self._get_checkins(limit=limit, offset=offset)
