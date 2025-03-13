@@ -57,7 +57,6 @@ export default {
                 return
               }
 
-              console.log(error)
               if (showError)
                 this.notify({
                   text: error,

@@ -17,7 +17,7 @@ export default {
     setCookie(name, value, opts) {
       document.cookie = (
         `${name}=${value}; path=${opts?.path || '/'}` + (
-          opts?.expires ? `; expires=${opts?.expires.toISOString()}` : ''
+          opts?.expires ? `; expires=${new Date(opts.expires).toUTCString()}` : ''
         )
       )
     },

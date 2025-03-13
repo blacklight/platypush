@@ -127,7 +127,7 @@ export default {
         const authStatus = await axios.post(url, data)
         const sessionToken = authStatus?.data?.session_token
         if (sessionToken) {
-          const expiresAt = authStatus.expires_at ? Date.parse(authStatus.expires_at) : null
+          const expiresAt = authStatus?.data?.expires_at ? new Date(authStatus.data.expires_at) : null
           this.isAuthenticated = true
           this.setCookie('session_token', sessionToken, {
             expires: expiresAt,
@@ -137,18 +137,18 @@ export default {
           this.authError = "Invalid credentials"
         }
       } catch (e) {
-        if (e.response?.data?.error === 'MISSING_OTP_CODE') {
+        if (e?.response?.data?.error === 'MISSING_OTP_CODE') {
           this.requires2fa = true
           this.$nextTick(() => {
             this.$refs.code?.focus()
           })
         } else {
-          this.authError = e.response.data.message || e.response.data.error
-          if (e.response?.status === 401) {
+          this.authError = e?.response?.data?.message || e?.response?.data?.error || e?.message || e?.toString()
+          if (e?.response?.status === 401) {
             this.authError = this.authError || "Invalid credentials"
           } else {
             this.authError = this.authError || "An error occurred while processing the request"
-            if (e.response)
+            if (e?.response)
               console.error(e.response.status, e.response.data)
             else
               console.error(e)
