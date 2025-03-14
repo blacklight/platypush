@@ -52,37 +52,5 @@ class LatLongUpdateEvent(Event):
             **kwargs,
         )
 
-    @property
-    def latitude(self) -> float:
-        return self.args["latitude"]
-
-    @property
-    def longitude(self) -> float:
-        return self.args["longitude"]
-
-    @property
-    def altitude(self) -> Optional[float]:
-        return self.args.get("altitude")
-
-    @property
-    def address(self) -> Optional[str]:
-        return self.args.get("address")
-
-    @property
-    def locality(self) -> Optional[str]:
-        return self.args.get("locality")
-
-    @property
-    def country(self) -> Optional[str]:
-        return self.args.get("country")
-
-    @property
-    def description(self) -> Optional[str]:
-        return self.args.get("description")
-
-    @property
-    def timestamp(self) -> Optional[float]:
-        return self.args.get("timestamp")
-
 
 # vim:sw=4:ts=4:et:
