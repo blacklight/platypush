@@ -36,6 +36,8 @@ class FoursquarePlugin(RunnablePlugin):
 
     def __init__(self, access_token: str, poll_interval: float = 120, **kwargs):
         """
+        :param poll_interval: Poll interval in seconds to check for new check-ins (default: 120).
+            Set to 0 or ``None`` to disable polling of new check-ins.
         :param access_token: The access token to use to authenticate to the Foursquare API.
         """
         super().__init__(poll_interval=poll_interval, **kwargs)
@@ -270,20 +272,27 @@ class FoursquarePlugin(RunnablePlugin):
         )
 
     def main(self):
+        if not self.poll_interval:
+            # If no poll interval is set then we won't poll for new check-ins
+            self.wait_stop()
+            return
+
         while not self.should_stop():
-            checkins = self._get_checkins(limit=20, offset=0)
-            if not checkins:
-                return
+            try:
+                checkins = self._get_checkins(limit=20, offset=0)
+                if not checkins:
+                    continue
 
-            last_checkin = checkins[0]
-            last_checkin_created_at = last_checkin.get('createdAt', 0)
-            last_created_at = float(self._last_created_at.get() or 0)
-            if last_created_at and last_checkin_created_at <= last_created_at:
-                return
+                last_checkin = checkins[0]
+                last_checkin_created_at = last_checkin.get('createdAt', 0)
+                last_created_at = float(self._last_created_at.get() or 0)
+                if last_created_at and last_checkin_created_at <= last_created_at:
+                    continue
 
-            self._bus.post(FoursquareCheckinEvent(checkin=last_checkin))
-            self._last_created_at.set(last_checkin_created_at)
-            self.wait_stop(self.poll_interval)
+                self._bus.post(FoursquareCheckinEvent(checkin=last_checkin))
+                self._last_created_at.set(last_checkin_created_at)
+            finally:
+                self.wait_stop(self.poll_interval)
 
 
 # vim:sw=4:ts=4:et:
