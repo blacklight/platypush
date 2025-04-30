@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Any, Dict, Optional, Type
 from urllib.parse import quote
@@ -85,6 +86,10 @@ class MediaMpvPlugin(MediaPlugin):
 
         self.logger.debug('Initializing mpv with args: %s', mpv_args)
         self._player = mpv.MPV(**mpv_args)
+
+        if self.logger.isEnabledFor(logging.DEBUG):
+            self._player.set_loglevel('debug')
+
         self._player._event_callbacks += [self._event_callback()]
 
     def _post_event(self, evt_type: Type[MediaEvent], **evt):
@@ -137,8 +142,6 @@ class MediaMpvPlugin(MediaPlugin):
         def callback(event):
             from mpv import MpvEvent
 
-            self.logger.info('Received mpv event: %s', event)
-
             # For python-mpv >= 1.0.0
             if isinstance(event, MpvEvent):
                 event_id = event.event_id.value
@@ -147,6 +150,29 @@ class MediaMpvPlugin(MediaPlugin):
                 event_id = event.get('event_id')
             else:
                 return
+
+            if event_id == 2:  # LOG_MESSAGE
+                msg = ''
+                evt_dict = {}
+
+                # For python-mpv >= 1.0.0
+                if isinstance(event, MpvEvent):
+                    evt_dict: dict = event.as_dict()  # type: ignore
+                # For python-mpv < 1.0.0
+                elif isinstance(event, dict):
+                    evt_dict = event
+
+                if not evt_dict:
+                    return
+
+                if evt_dict.get('prefix'):
+                    msg += f'[{evt_dict.get("prefix", b"").decode("utf-8")}] '
+
+                msg += evt_dict.get('text', b'').decode('utf-8')
+                self.logger.info('[mpv] %s', msg.strip())
+                return
+
+            self.logger.info('Received mpv event: %s', event)
 
             if event_id == 6:  # START_FILE
                 self._post_event(NewPlayingMediaEvent)
