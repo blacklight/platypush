@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.3.6]
+
+- [[#445](https://git.platypush.tech/platypush/platypush/issues/445)]: fixed
+  schemas compatibility with Marshmallow >= 4.0.0.
+
+- [[#444](https://git.platypush.tech/platypush/platypush/issues/444)]: fixed
+  expiration of session cookies.
+
+- [`youtube`], [[`5ca39d08`](https://git.platypush.tech/platypush/platypush/commit/5ca39d086aeb93c3e262791535c82aec1d4ba033)]:
+  fixed support for YouTube URL on media plugins UI when using a proxy instance
+  such as Invidious or Piped.
+
+- [`media.mpv`], [[`06746c70`](https://git.platypush.tech/platypush/platypush/commit/06746c7032bd453862db81cdcec6f3c6330a9d7e)]:
+  enabled verbose logging of MPV player events when Platypush is launched in
+  `debug`/`-v` mode.
+
+- [`foursquare`], [[`a13b5e0c`](https://git.platypush.tech/platypush/platypush/commit/a13b5e0cb7c2a4ad6492a2d31fce18f3c5877a2f)]:
+  fixed `limit` and `offset` parameters for the `foursquare.get_checkins` action.
+
+- [`foursquare`], [[`ab64424a`](https://git.platypush.tech/platypush/platypush/commit/a13b5e0cb7c2a4ad6492a2d31fce18f3c5877a2f)]:
+  fixed polling logic.
+
+- Upgraded frontend dependencies.
+
 ## [1.3.5]
 
 - [[#440](https://git.platypush.tech/platypush/platypush/issues/440)]: the
