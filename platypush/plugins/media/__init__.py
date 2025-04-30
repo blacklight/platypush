@@ -31,7 +31,7 @@ from ._constants import audio_extensions, video_extensions
 from ._model import DownloadState, MediaDirectory, PlayerState
 from ._resource import MediaResource
 from ._resource.downloaders import DownloadThread, MediaResourceDownloader, downloaders
-from ._resource.parsers import MediaResourceParser, parsers
+from ._resource.parsers import MediaResourceParser, YoutubeResourceParser, parsers
 from ._search import MediaSearcher, searchers
 
 _MediaDirs = Union[str, Iterable[Union[str, dict]], Dict[str, Union[str, dict]]]
@@ -321,6 +321,12 @@ class MediaPlugin(RunnablePlugin, ABC):
             * Any URL that is supported by a yt_dlp extractor
 
         """
+
+        ytid = YoutubeResourceParser.extract_youtube_id(resource)
+        if ytid:
+            resource = f'https://www.youtube.com/watch?v={ytid}'
+            if metadata:
+                metadata['url'] = resource
 
         for parser in self._parsers.values():
             media_resource = parser.parse(resource, only_audio=only_audio)
