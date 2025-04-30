@@ -14,7 +14,7 @@ class ProcessSchema(SystemBaseSchema):
     """
 
     pid = fields.Int(
-        missing=-1,
+        load_default=-1,
         metadata={
             'description': 'The process ID.',
             'example': 1234,
@@ -87,7 +87,7 @@ class ProcessSchema(SystemBaseSchema):
     )
 
     cpu_percent = percent_field(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'The CPU usage percentage of the process, in the range [0, 1].',
             'example': 0.5,
@@ -95,7 +95,7 @@ class ProcessSchema(SystemBaseSchema):
     )
 
     memory_percent = percent_field(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'The memory usage percentage of the process, in the range [0, 1].',
             'example': 0.5,

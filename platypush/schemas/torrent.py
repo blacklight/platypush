@@ -68,7 +68,7 @@ class TorrentResultSchema(Schema):
     )
 
     size = fields.Integer(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'Size of the torrent in bytes',
             'example': 123456789,
@@ -90,7 +90,7 @@ class TorrentResultSchema(Schema):
     )
 
     seeds = fields.Integer(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'Number of seeders',
             'example': 123,
@@ -98,7 +98,7 @@ class TorrentResultSchema(Schema):
     )
 
     peers = fields.Integer(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'Number of peers',
             'example': 123,

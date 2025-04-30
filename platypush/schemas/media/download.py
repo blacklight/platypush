@@ -35,7 +35,7 @@ class MediaDownloadSchema(Schema):
     )
 
     size = fields.Integer(
-        nullable=True,
+        allow_none=True,
         metadata={
             "description": "Download size (bytes)",
             "example": 1024,
@@ -43,7 +43,7 @@ class MediaDownloadSchema(Schema):
     )
 
     timeout = fields.Integer(
-        nullable=True,
+        allow_none=True,
         metadata={
             "description": "Download timeout (seconds)",
             "example": 60,
@@ -51,14 +51,14 @@ class MediaDownloadSchema(Schema):
     )
 
     started_at = DateTime(
-        nullable=True,
+        allow_none=True,
         metadata={
             "description": "Download start time",
         },
     )
 
     ended_at = DateTime(
-        nullable=True,
+        allow_none=True,
         metadata={
             "description": "Download end time",
         },

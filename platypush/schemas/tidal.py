@@ -155,7 +155,7 @@ class TidalPlaylistSchema(TidalSchema):
 
     num_tracks = fields.Int(
         attribute='numberOfTracks',
-        default=0,
+        dump_default=0,
         metadata={
             'example': 42,
             'description': 'Number of tracks in the playlist',

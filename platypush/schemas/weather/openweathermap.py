@@ -149,7 +149,7 @@ class WeatherSchema(Schema):
     )
 
     units = fields.String(
-        missing='metric',
+        load_default='metric',
         validate=OneOf(['metric', 'imperial']),
         metadata={
             'description': 'Unit of measure',

@@ -83,7 +83,7 @@ class YoutubeVideoSchema(Schema):
     )
 
     title = StrippedString(
-        missing='[No Title]',
+        load_default='[No Title]',
         metadata={
             'description': 'Video title',
             'example': 'My Video Title',
@@ -105,7 +105,7 @@ class YoutubeVideoSchema(Schema):
     )
 
     duration = fields.Int(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'Video duration in seconds',
             'example': 120,
@@ -242,7 +242,7 @@ class YoutubePlaylistSchema(Schema):
     )
 
     name = fields.String(
-        missing='[No Name]',
+        load_default='[No Name]',
         metadata={
             'description': 'Playlist name',
             'example': 'My Playlist Name',
@@ -292,7 +292,7 @@ class YoutubePlaylistSchema(Schema):
     )
 
     videos = fields.Int(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'Number of videos in the playlist',
             'example': 10,
@@ -386,7 +386,7 @@ class YoutubeChannelSchema(Schema):
     )
 
     name = fields.String(
-        missing='[No Name]',
+        load_default='[No Name]',
         metadata={
             'description': 'Channel name',
             'example': 'My Channel Name',
@@ -415,7 +415,7 @@ class YoutubeChannelSchema(Schema):
     )
 
     subscribers = fields.Int(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'Number of subscribers',
             'example': 1000,
@@ -437,7 +437,7 @@ class YoutubeChannelSchema(Schema):
     )
 
     count = fields.Int(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'Total number of videos published by the channel',
             'example': 10,

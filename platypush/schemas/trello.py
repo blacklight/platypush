@@ -191,7 +191,7 @@ class TrelloListSchema(Schema):
     )
 
     closed = fields.Boolean(
-        missing=False,
+        load_default=False,
         metadata={
             "description": "Whether the list is closed.",
             "example": False,
@@ -199,7 +199,7 @@ class TrelloListSchema(Schema):
     )
 
     subscribed = fields.Boolean(
-        missing=False,
+        load_default=False,
         metadata={
             "description": "Whether the list is subscribed.",
             "example": False,
@@ -244,7 +244,7 @@ class TrelloBoardSchema(Schema):
     )
 
     closed = fields.Boolean(
-        missing=False,
+        load_default=False,
         metadata={
             "description": "Whether the board is closed.",
             "example": False,
@@ -508,7 +508,7 @@ class TrelloCardSchema(Schema):
     )
 
     closed = fields.Boolean(
-        missing=False,
+        load_default=False,
         metadata={
             "description": "Whether the card is closed.",
             "example": False,

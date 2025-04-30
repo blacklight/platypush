@@ -59,7 +59,7 @@ class NetworkInterfaceSchema(SystemBaseSchema):
     )
 
     bytes_sent = fields.Integer(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'The number of bytes sent.',
             'example': 123456,
@@ -67,7 +67,7 @@ class NetworkInterfaceSchema(SystemBaseSchema):
     )
 
     bytes_recv = fields.Integer(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'The number of bytes received.',
             'example': 654321,
@@ -75,7 +75,7 @@ class NetworkInterfaceSchema(SystemBaseSchema):
     )
 
     packets_sent = fields.Integer(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'The number of packets sent.',
             'example': 123,
@@ -83,7 +83,7 @@ class NetworkInterfaceSchema(SystemBaseSchema):
     )
 
     packets_recv = fields.Integer(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'The number of packets received.',
             'example': 321,
@@ -91,7 +91,7 @@ class NetworkInterfaceSchema(SystemBaseSchema):
     )
 
     errors_in = fields.Integer(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'The number of errors on the input side.',
             'example': 10,
@@ -99,7 +99,7 @@ class NetworkInterfaceSchema(SystemBaseSchema):
     )
 
     errors_out = fields.Integer(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'The number of errors on the output side.',
             'example': 5,
@@ -107,7 +107,7 @@ class NetworkInterfaceSchema(SystemBaseSchema):
     )
 
     drop_in = fields.Integer(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'The number of dropped packets on the input side.',
             'example': 1,
@@ -115,7 +115,7 @@ class NetworkInterfaceSchema(SystemBaseSchema):
     )
 
     drop_out = fields.Integer(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'The number of dropped packets on the output side.',
             'example': 2,
