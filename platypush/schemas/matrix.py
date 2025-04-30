@@ -137,7 +137,7 @@ class MatrixDeviceSchema(Schema):
     )
 
     blacklisted = fields.Boolean()
-    deleted = fields.Boolean(default=False)
+    deleted = fields.Boolean(dump_default=False)
     ignored = fields.Boolean()
     verified = fields.Boolean()
 
@@ -348,7 +348,7 @@ class MatrixMessagesResponseSchema(Schema):
 
     start = fields.String(
         required=True,
-        nullable=True,
+        allow_none=True,
         metadata={
             'description': 'Pointer to the first message. It can be used as a '
             '``start``/``end`` for another ``get_messages`` query.',
@@ -358,7 +358,7 @@ class MatrixMessagesResponseSchema(Schema):
 
     end = fields.String(
         required=True,
-        nullable=True,
+        allow_none=True,
         metadata={
             'description': 'Pointer to the last message. It can be used as a '
             '``start``/``end`` for another ``get_messages`` query.',
@@ -368,7 +368,7 @@ class MatrixMessagesResponseSchema(Schema):
 
     start_time = MillisecondsTimestamp(
         required=True,
-        nullable=True,
+        allow_none=True,
         metadata={
             'description': 'The oldest timestamp of the returned messages',
             'example': '2022-07-23T16:20:01.254223',
@@ -377,7 +377,7 @@ class MatrixMessagesResponseSchema(Schema):
 
     end_time = MillisecondsTimestamp(
         required=True,
-        nullable=True,
+        allow_none=True,
         metadata={
             'description': 'The newest timestamp of the returned messages',
             'example': '2022-07-23T18:20:01.254223',

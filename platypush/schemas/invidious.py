@@ -37,7 +37,7 @@ class InvidiousVideoSchema(Schema):
     )
 
     title = StrippedString(
-        missing='[No Title]',
+        load_default='[No Title]',
         metadata={
             'description': 'Video title',
             'example': 'My Video Title',
@@ -60,7 +60,7 @@ class InvidiousVideoSchema(Schema):
     )
 
     duration = fields.Int(
-        missing=0,
+        load_default=0,
         attribute='lengthSeconds',
         metadata={
             'description': 'Video duration in seconds',
@@ -171,7 +171,7 @@ class InvidiousPlaylistSchema(Schema):
 
     name = fields.String(
         attribute='title',
-        missing='[No Name]',
+        load_default='[No Name]',
         metadata={
             'description': 'Playlist name',
             'example': 'My Playlist Name',
@@ -188,7 +188,7 @@ class InvidiousPlaylistSchema(Schema):
 
     videos = fields.Int(
         attribute='videoCount',
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'Number of videos in the playlist',
             'example': 10,
@@ -290,7 +290,7 @@ class InvidiousChannelSchema(Schema):
 
     name = fields.String(
         attribute='author',
-        missing='[No Name]',
+        load_default='[No Name]',
         metadata={
             'description': 'Channel name',
             'example': 'My Channel Name',
@@ -320,7 +320,7 @@ class InvidiousChannelSchema(Schema):
 
     subscribers = fields.Int(
         attribute='subCount',
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'Number of subscribers',
             'example': 1000,

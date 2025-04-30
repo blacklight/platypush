@@ -14,30 +14,32 @@ class MopidyTrackSchema(Schema):
     file = fields.String(
         metadata={"description": "Track URI, for MPD compatibility purposes"}
     )
-    artist = fields.String(missing=None, metadata={"description": "Artist name"})
-    title = fields.String(missing=None, metadata={"description": "Track title"})
-    album = fields.String(missing=None, metadata={"description": "Album name"})
+    artist = fields.String(load_default=None, metadata={"description": "Artist name"})
+    title = fields.String(load_default=None, metadata={"description": "Track title"})
+    album = fields.String(load_default=None, metadata={"description": "Album name"})
     artist_uri = fields.String(
-        missing=None, metadata={"description": "Artist URI (if available)"}
+        load_default=None, metadata={"description": "Artist URI (if available)"}
     )
     album_uri = fields.String(
-        missing=None, metadata={"description": "Album URI (if available)"}
+        load_default=None, metadata={"description": "Album URI (if available)"}
     )
     time = fields.Float(
-        missing=None, metadata={"description": "Track length (in seconds)"}
+        load_default=None, metadata={"description": "Track length (in seconds)"}
     )
     playlist_pos = fields.Integer(
-        missing=None,
+        load_default=None,
         metadata={"description": "Track position in the tracklist/playlist"},
     )
     track_id = fields.Integer(
-        missing=None, metadata={"description": "Track ID in the current tracklist"}
+        load_default=None, metadata={"description": "Track ID in the current tracklist"}
     )
     track_no = fields.Integer(
-        missing=None, metadata={"description": "Track number in the album"}
+        load_default=None, metadata={"description": "Track number in the album"}
     )
-    date = fields.String(missing=None, metadata={"description": "Track release date"})
-    genre = fields.String(missing=None, metadata={"description": "Track genre"})
+    date = fields.String(
+        load_default=None, metadata={"description": "Track release date"}
+    )
+    genre = fields.String(load_default=None, metadata={"description": "Track genre"})
     type = fields.Constant("track", metadata={"description": "Item type"})
 
     @pre_load
@@ -108,7 +110,7 @@ class MopidyStatusSchema(Schema):
         metadata={"description": "Index of the currently playing track"}
     )
     track = fields.Nested(
-        MopidyTrackSchema, missing=None, metadata={"description": "Current track"}
+        MopidyTrackSchema, load_default=None, metadata={"description": "Current track"}
     )
 
     @post_dump
@@ -140,7 +142,7 @@ class MopidyPlaylistSchema(Schema):
     last_modified = DateTime(metadata={"description": "Last modified timestamp"})
     tracks = fields.List(
         fields.Nested(MopidyTrackSchema),
-        missing=None,
+        load_default=None,
         metadata={"description": "Playlist tracks"},
     )
     type = fields.Constant("playlist", metadata={"description": "Item type"})
@@ -175,9 +177,9 @@ class MopidyArtistSchema(Schema):
     file = fields.String(
         metadata={"description": "Artist URI, for MPD compatibility purposes"}
     )
-    name = fields.String(missing=None, metadata={"description": "Artist name"})
+    name = fields.String(load_default=None, metadata={"description": "Artist name"})
     artist = fields.String(
-        missing=None,
+        load_default=None,
         metadata={"description": "Same as name - for MPD compatibility purposes"},
     )
     type = fields.Constant("artist", metadata={"description": "Item type"})
@@ -203,15 +205,19 @@ class MopidyAlbumSchema(Schema):
     file = fields.String(
         metadata={"description": "Artist URI, for MPD compatibility purposes"}
     )
-    artist = fields.String(missing=None, metadata={"description": "Artist name"})
+    artist = fields.String(load_default=None, metadata={"description": "Artist name"})
     album = fields.String(
-        missing=None,
+        load_default=None,
         metadata={"description": "Same as name - for MPD compatibility purposes"},
     )
-    name = fields.String(missing=None, metadata={"description": "Album name"})
-    artist_uri = fields.String(missing=None, metadata={"description": "Artist URI"})
-    date = fields.String(missing=None, metadata={"description": "Album release date"})
-    genre = fields.String(missing=None, metadata={"description": "Album genre"})
+    name = fields.String(load_default=None, metadata={"description": "Album name"})
+    artist_uri = fields.String(
+        load_default=None, metadata={"description": "Artist URI"}
+    )
+    date = fields.String(
+        load_default=None, metadata={"description": "Album release date"}
+    )
+    genre = fields.String(load_default=None, metadata={"description": "Album genre"})
 
     def parse(self, data: dict, **_):
         assert data.get("uri"), "Album URI is required"

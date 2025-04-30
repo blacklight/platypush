@@ -38,7 +38,7 @@ class PipedVideoSchema(Schema):
     )
 
     title = StrippedString(
-        missing='[No Title]',
+        load_default='[No Title]',
         metadata={
             'description': 'Video title',
             'example': 'My Video Title',
@@ -62,7 +62,7 @@ class PipedVideoSchema(Schema):
     )
 
     duration = fields.Int(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'Video duration in seconds',
             'example': 120,
@@ -147,7 +147,7 @@ class PipedPlaylistSchema(Schema):
     )
 
     name = StrippedString(
-        missing='[No Name]',
+        load_default='[No Name]',
         metadata={
             'description': 'Playlist name',
             'example': 'My Playlist Name',
@@ -171,7 +171,7 @@ class PipedPlaylistSchema(Schema):
     )
 
     videos = fields.Int(
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'Number of videos in the playlist',
             'example': 10,
@@ -266,7 +266,7 @@ class PipedChannelSchema(Schema):
     )
 
     name = StrippedString(
-        missing='[No Name]',
+        load_default='[No Name]',
         metadata={
             'description': 'Channel name',
             'example': 'My Channel Name',
@@ -298,7 +298,7 @@ class PipedChannelSchema(Schema):
 
     subscribers = fields.Int(
         attribute='subscriberCount',
-        missing=0,
+        load_default=0,
         metadata={
             'description': 'Number of subscribers',
             'example': 1000,

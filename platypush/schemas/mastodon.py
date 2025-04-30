@@ -6,7 +6,14 @@ from marshmallow.validate import OneOf
 
 from platypush.schemas import DateTime, Date, StrippedString
 
-notification_types = ['follow', 'favourite', 'reblog', 'mention', 'poll', 'follow_request']
+notification_types = [
+    'follow',
+    'favourite',
+    'reblog',
+    'mention',
+    'poll',
+    'follow_request',
+]
 list_reply_policies = ['none', 'followed', 'list']
 
 
@@ -17,15 +24,15 @@ class MastodonSchema(Schema):
 class MastodonAccountSchema(MastodonSchema):
     id = fields.String(
         dump_only=True,
-        metadata=dict(
-            example=''.join([f'{randint(1, 9)}' for _ in range(18)]),
-        )
+        metadata={
+            'example': ''.join([f'{randint(1, 9)}' for _ in range(18)]),
+        },
     )
 
     username = fields.String(
-        metadata=dict(
-            example='admin',
-        )
+        metadata={
+            'example': 'admin',
+        }
     )
 
     url = fields.URL()
@@ -35,9 +42,9 @@ class MastodonAccountSchema(MastodonSchema):
     following_count = fields.Int(dump_only=True)
     note = fields.String()
     display_name = StrippedString(
-        metadata=dict(
-            example='Name Surname',
-        )
+        metadata={
+            'example': 'Name Surname',
+        }
     )
 
     locked = fields.Boolean()
@@ -62,10 +69,10 @@ class MastodonHashtagHistorySchema(MastodonSchema):
 
 
 class MastodonHashtagSchema(MastodonSchema):
-    name = fields.String(metadata=dict(example='hashtag'))
+    name = fields.String(metadata={'example': 'hashtag'})
     url = fields.URL()
     history = fields.Nested(
-        MastodonHashtagHistorySchema, many=True, default=missing
+        MastodonHashtagHistorySchema, many=True, dump_default=missing
     )
 
 
@@ -83,25 +90,25 @@ class MastodonMediaSchema(MastodonSchema):
 class MastodonStatusSchema(MastodonSchema):
     id = fields.String(
         dump_only=True,
-        metadata=dict(
-            example=''.join([f'{randint(1, 9)}' for _ in range(18)]),
-        )
+        metadata={
+            'example': ''.join([f'{randint(1, 9)}' for _ in range(18)]),
+        },
     )
 
     in_reply_to_id = fields.String(
         dump_only=True,
         allow_none=True,
-        metadata=dict(
-            example=''.join([f'{randint(1, 9)}' for _ in range(18)]),
-        )
+        metadata={
+            'example': ''.join([f'{randint(1, 9)}' for _ in range(18)]),
+        },
     )
 
     in_reply_to_account_id = fields.String(
         dump_only=True,
         allow_none=True,
-        metadata=dict(
-            example=''.join([f'{randint(1, 9)}' for _ in range(18)]),
-        )
+        metadata={
+            'example': ''.join([f'{randint(1, 9)}' for _ in range(18)]),
+        },
     )
 
     url = fields.URL(dump_only=True)
@@ -114,8 +121,7 @@ class MastodonStatusSchema(MastodonSchema):
         attribute='media_attachments',
     )
     hashtags = fields.Nested(
-        MastodonHashtagSchema, many=True,
-        attribute='tags', dump_only=True
+        MastodonHashtagSchema, many=True, attribute='tags', dump_only=True
     )
 
     replies_count = fields.Int(dump_only=True)
@@ -141,7 +147,9 @@ class MastodonSearchSchema(MastodonSchema):
 class MastodonAccountCreationSchema(MastodonSchema):
     access_token = fields.String(dump_only=True)
     token_type = fields.String(dump_only=True, metadata={'example': 'Bearer'})
-    scope = fields.String(dump_only=True, metadata={'example': 'read write follow push'})
+    scope = fields.String(
+        dump_only=True, metadata={'example': 'read write follow push'}
+    )
     created_at = DateTime(dump_only=True)
 
 
@@ -160,8 +168,8 @@ class MastodonFilterSchema(MastodonSchema):
         fields.String(validate=OneOf(['home', 'notifications', 'public', 'thread'])),
         metadata={
             'example': 'Which context(s) this filter applies to. '
-                       'Possible values: home, notifications, public, thread',
-        }
+            'Possible values: home, notifications, public, thread',
+        },
     )
 
 
@@ -180,8 +188,8 @@ class MastodonListSchema(MastodonSchema):
 
 class MastodonMentionSchema(MastodonSchema):
     id = fields.Int(dump_only=True)
-    username = StrippedString(metadata=dict(example='user'))
-    url = fields.URL(metadata=dict(example='https://mastodon.social/@user'))
+    username = StrippedString(metadata={'example': 'user'})
+    url = fields.URL(metadata={'example': 'https://mastodon.social/@user'})
 
 
 class MastodonNotificationSchema(MastodonSchema):
