@@ -8,12 +8,14 @@ import logging
 import inspect
 import json
 import time
+import traceback as tb
 from typing import Optional, Union
 from uuid import UUID
 
 _logger = logging.getLogger('platypush')
 
 
+# pylint: disable=too-few-public-methods
 class JSONAble(ABC):
     """
     Generic interface for JSON-able objects.
@@ -38,6 +40,7 @@ class Message:
         """
 
         @staticmethod
+        # pylint: disable=too-many-return-statements
         def parse_numpy(obj):
             try:
                 import numpy as np
@@ -57,13 +60,16 @@ class Message:
             except (AttributeError, ImportError, TypeError):
                 pass
 
-            return
+            return None
 
         @staticmethod
         def parse_datetime(obj):
             if isinstance(obj, (datetime.datetime, datetime.date, datetime.time)):
                 return obj.isoformat()
 
+            return None
+
+        # pylint: disable=too-many-return-statements
         def default(self, o):
             from platypush.procedure import Procedure
 
@@ -94,7 +100,7 @@ class Message:
                 return f'<{o.__class__.__name__}>' + (f' {o}' if o else '')
 
             if is_dataclass(o):
-                return asdict(o)
+                return asdict(o)  # type: ignore
 
             if isinstance(o, Message):
                 return o.to_dict(o)
@@ -106,9 +112,19 @@ class Message:
             try:
                 return super().default(o)
             except Exception as e:
+                _logger.debug(
+                    'Could not serialize object type %s: %s: %s\n%s',
+                    type(o),
+                    e,
+                    o,
+                    tb.format_exc(),
+                )
+
                 _logger.warning(
                     'Could not serialize object type %s: %s: %s', type(o), e, o
                 )
+
+            return None
 
     def __init__(self, *_, timestamp=None, logging_level=logging.INFO, **__):
         self.timestamp = timestamp or time.time()
@@ -211,6 +227,8 @@ class Message:
         msgtype = get_message_class_by_type(msg['type'])
         if msgtype != cls:
             return msgtype.build(msg)
+
+        return None
 
 
 # vim:sw=4:ts=4:et:
