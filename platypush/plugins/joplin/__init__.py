@@ -220,12 +220,14 @@ class JoplinPlugin(BaseNotePlugin):
 
         if parent_id:
             parent = self._collections.get(
-                parent_id, NoteCollection(id=parent_id, title='')
+                parent_id,
+                NoteCollection(id=parent_id, plugin=self._plugin_name, title=''),
             )
 
         return Note(
             **{
                 'id': data.get('id', ''),
+                'plugin': self._plugin_name,
                 'title': data.get('title', ''),
                 'description': data.get('description'),
                 'content': data.get('body'),
@@ -243,6 +245,7 @@ class JoplinPlugin(BaseNotePlugin):
         """
         return NoteCollection(
             id=data.get('id', ''),
+            plugin=self._plugin_name,
             title=data.get('title', ''),
             description=data.get('description'),
             created_at=self._parse_time(data.get('created_time')),
@@ -259,8 +262,8 @@ class JoplinPlugin(BaseNotePlugin):
                 f'notes/{note_id}',
                 params={
                     'fields': ','.join(
-                        *[
-                            self._default_note_fields,
+                        [
+                            *self._default_note_fields,
                             'body',  # Include body content
                         ]
                     )
