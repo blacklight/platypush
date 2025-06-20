@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -202,7 +203,10 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             items = [
                 item
                 for item in items
-                if all(getattr(item, k) == v for k, v in filter.items())
+                if all(
+                    re.search(v, str(getattr(item, k, '')), re.IGNORECASE)
+                    for k, v in filter.items()
+                )
             ]
 
         items = sorted(
@@ -565,7 +569,9 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
         :param sort: A dictionary specifying the fields to sort by and their order.
             Example: {'created_at': True} sorts by creation date in ascending
             order, while {'created_at': False} sorts in descending order.
-        :param filter: A dictionary specifying filters to apply to the collections.
+        :param filter: A dictionary specifying filters to apply to the notes, in the form
+            of a dictionary where the keys are field names and the values are regular expressions
+            to match against the field values.
         :param fetch: If True, always fetch the latest collections from the backend,
             regardless of the cache state (default: False).
         :param kwargs: Additional keyword arguments to pass to the fetch method.
@@ -769,7 +775,9 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
         :param sort: A dictionary specifying the fields to sort by and their order.
             Example: {'created_at': True} sorts by creation date in ascending
             order, while {'created_at': False} sorts in descending order.
-        :param filter: A dictionary specifying filters to apply to the collections.
+        :param filter: A dictionary specifying filters to apply to the collections, in the form
+            of a dictionary where the keys are field names and the values are regular expressions
+            to match against the field values.
         :param fetch: If True, always fetch the latest collections from the backend,
             regardless of the cache state (default: False).
         :param kwargs: Additional keyword arguments to pass to the fetch method.
