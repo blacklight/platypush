@@ -6,7 +6,7 @@ from typing import Collection, Generator, Optional, Dict, Any, List, Union
 from sqlalchemy.orm import Session
 
 from platypush.context import get_plugin
-from platypush.entities import EntityManager
+from platypush.entities import EntityManager, get_entities_engine
 from platypush.entities.alarm import Alarm as DbAlarm
 from platypush.message.event.entities import EntityDeleteEvent
 from platypush.plugins import RunnablePlugin, action
@@ -197,6 +197,9 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
                 alarm.stop()
 
     def _sync_alarms(self):
+        # Wait for the entities engine to start
+        get_entities_engine().wait_start()
+
         with self._get_session() as session:
             db_alarms = {
                 str(alarm.name): alarm for alarm in session.query(DbAlarm).all()
