@@ -1,14 +1,15 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
-from hashlib import sha256
+from hashlib import md5, sha256
 from typing import Any, Dict, List, Optional, Set
+from uuid import UUID
 
 from platypush.message import JSONAble
 from platypush.schemas.notes import NoteCollectionSchema, NoteItemSchema
 
 
-class Serializable(JSONAble):
+class Serializable(JSONAble, ABC):
     """
     Base class for serializable objects.
     """
@@ -23,7 +24,26 @@ class Serializable(JSONAble):
         return self.to_dict()
 
 
-@dataclass
+@dataclass(kw_only=True)
+class Storable(Serializable, ABC):
+    """
+    Base class for note objects that can be represented as databases entries.
+    """
+
+    id: Any
+    plugin: str
+
+    @property
+    def _db_id(self) -> UUID:
+        """
+        Generate a deterministic UUID based on the note's plugin and ID.
+        """
+        key = f'{self.plugin}:{self.id}'
+        digest = md5(key.encode()).digest()
+        return UUID(int=int.from_bytes(digest, 'little'))
+
+
+@dataclass(kw_only=True)
 class NoteSource(Serializable):
     """
     Represents a source for a note, such as a URL or file path.
@@ -37,13 +57,12 @@ class NoteSource(Serializable):
         return self.__dict__
 
 
-@dataclass
-class Note(Serializable):
+@dataclass(kw_only=True)
+class Note(Storable):
     """
     Represents a note with a title and content.
     """
 
-    id: Any
     title: str
     description: Optional[str] = None
     content: Optional[str] = None
@@ -89,13 +108,12 @@ class Note(Serializable):
         )
 
 
-@dataclass
-class NoteCollection(Serializable):
+@dataclass(kw_only=True)
+class NoteCollection(Storable):
     """
     Represents a collection of notes.
     """
 
-    id: Any
     title: str
     description: Optional[str] = None
     parent: Optional['NoteCollection'] = None

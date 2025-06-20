@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from threading import RLock
 from time import time
@@ -6,6 +7,7 @@ from typing import Any, Dict, Iterable, Optional, Type
 
 from platypush.common.notes import Note, NoteCollection, NoteSource
 from platypush.context import Variable
+from platypush.entities import get_entities_engine
 from platypush.message.event.notes import (
     BaseNoteEvent,
     NoteCreatedEvent,
@@ -16,10 +18,12 @@ from platypush.message.event.notes import (
     CollectionDeletedEvent,
 )
 from platypush.plugins import RunnablePlugin, action
-from platypush.utils import get_plugin_name_by_class
+
+from .db import DbMixin
+from ._model import CollectionsDelta, NotesDelta, StateDelta
 
 
-class BaseNotePlugin(RunnablePlugin, ABC):
+class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
     """
     Base class for note-taking plugins.
     """
@@ -30,11 +34,8 @@ class BaseNotePlugin(RunnablePlugin, ABC):
             If set to zero or null, the plugin will not poll for updates,
             and events will be generated only when you manually call :meth:`.sync`.
         """
-        super().__init__(*args, poll_interval=poll_interval, **kwargs)
-        self._notes: Dict[Any, Note] = {}
-        self._collections: Dict[Any, NoteCollection] = {}
-        self._notes_lock = RLock()
-        self._collections_lock = RLock()
+        RunnablePlugin.__init__(self, *args, poll_interval=poll_interval, **kwargs)
+        DbMixin.__init__(self, *args, **kwargs)
         self._sync_lock = RLock()
         self.__last_sync_time: Optional[datetime] = None
 
@@ -43,9 +44,7 @@ class BaseNotePlugin(RunnablePlugin, ABC):
         """
         Variable name for the last sync time.
         """
-        return Variable(
-            f'_LAST_ITEMS_SYNC_TIME[{get_plugin_name_by_class(self.__class__)}]'
-        )
+        return Variable(f'_LAST_ITEMS_SYNC_TIME[{self._plugin_name}]')
 
     @property
     def _last_sync_time(self) -> Optional[datetime]:
@@ -232,76 +231,34 @@ class BaseNotePlugin(RunnablePlugin, ABC):
         for event in events:
             self.bus.post(event)
 
-    def _process_events(
-        self,
-        notes: Iterable[Note],
-        prev_notes: Dict[Any, Note],
-        collections: Iterable[NoteCollection],
-        prev_collections: Dict[Any, NoteCollection],
-    ):
-        most_recent_note = list(notes)[0] if notes else None
-        most_recent_collection = list(collections)[0] if collections else None
-        max_updated_at = max(
-            (
-                most_recent_note.updated_at.timestamp()
-                if most_recent_note and most_recent_note.updated_at
-                else 0
-            ),
-            (
-                most_recent_collection.updated_at.timestamp()
-                if most_recent_collection and most_recent_collection.updated_at
-                else 0
-            ),
-        )
-
+    def _process_events(self, state_delta: StateDelta):
         with self._sync_lock:
-            self._process_collections_events(collections, prev_collections)
-            self._process_notes_events(notes, prev_notes)
-            self._last_sync_time = (
-                datetime.fromtimestamp(max_updated_at) if max_updated_at > 0 else None
-            )
+            self._process_collections_events(state_delta.collections)
+            self._process_notes_events(state_delta.notes)
 
-    @classmethod
     def _make_event(
-        cls, evt_type: Type[BaseNoteEvent], *args, **kwargs
+        self, evt_type: Type[BaseNoteEvent], *args, **kwargs
     ) -> BaseNoteEvent:
         """
         Create a note event of the specified type.
         """
-        return evt_type(*args, plugin=get_plugin_name_by_class(cls), **kwargs)
+        return evt_type(*args, plugin=self._plugin_name, **kwargs)
 
-    def _process_notes_events(
-        self,
-        notes: Iterable[Note],
-        prev_notes: Dict[Any, Note],
-    ):
-        last_sync_time = self._last_sync_time.timestamp() if self._last_sync_time else 0
-        new_notes_by_id = {note.id: note for note in notes}
-
+    def _process_notes_events(self, notes_delta: NotesDelta):
         removed_note_events = [
             self._make_event(NoteDeletedEvent, note=note)
-            for note_id, note in prev_notes.items()
-            if note_id not in new_notes_by_id
+            for note in notes_delta.deleted.values()
         ]
 
-        created_note_events = []
-        updated_note_events = []
+        created_note_events = [
+            self._make_event(NoteCreatedEvent, note=note)
+            for note in notes_delta.added.values()
+        ]
 
-        for note in notes:
-            created_at = note.created_at.timestamp() if note.created_at else 0
-            updated_at = note.updated_at.timestamp() if note.updated_at else 0
-
-            if created_at > last_sync_time:
-                created_note_events.append(
-                    self._make_event(NoteCreatedEvent, note=note)
-                )
-            elif updated_at > last_sync_time:
-                updated_note_events.append(
-                    self._make_event(NoteUpdatedEvent, note=note)
-                )
-            else:
-                # Assuming that the list of notes is sorted by updated_at
-                break
+        updated_note_events = [
+            self._make_event(NoteUpdatedEvent, note=note)
+            for note in notes_delta.updated.values()
+        ]
 
         self._dispatch_events(
             *removed_note_events,
@@ -309,44 +266,21 @@ class BaseNotePlugin(RunnablePlugin, ABC):
             *updated_note_events,
         )
 
-    def _process_collections_events(
-        self,
-        collections: Iterable[NoteCollection],
-        prev_collections: Dict[Any, NoteCollection],
-    ):
-        last_sync_time = self._last_sync_time.timestamp() if self._last_sync_time else 0
-        new_collections_by_id = {
-            collection.id: collection for collection in collections
-        }
-
+    def _process_collections_events(self, collections_delta: CollectionsDelta):
         removed_collection_events = [
             self._make_event(CollectionDeletedEvent, collection=collection)
-            for collection_id, collection in prev_collections.items()
-            if collection_id not in new_collections_by_id
+            for collection in collections_delta.deleted.values()
         ]
 
-        created_collection_events = []
-        updated_collection_events = []
+        created_collection_events = [
+            self._make_event(CollectionCreatedEvent, collection=collection)
+            for collection in collections_delta.added.values()
+        ]
 
-        for collection in collections:
-            created_at = (
-                collection.created_at.timestamp() if collection.created_at else 0
-            )
-            updated_at = (
-                collection.updated_at.timestamp() if collection.updated_at else 0
-            )
-
-            if created_at > last_sync_time:
-                created_collection_events.append(
-                    self._make_event(CollectionCreatedEvent, collection=collection)
-                )
-            elif updated_at > last_sync_time:
-                updated_collection_events.append(
-                    self._make_event(CollectionUpdatedEvent, collection=collection)
-                )
-            else:
-                # Assuming that the list of collections is sorted by updated_at
-                break
+        updated_collection_events = [
+            self._make_event(CollectionUpdatedEvent, collection=collection)
+            for collection in collections_delta.updated.values()
+        ]
 
         self._dispatch_events(
             *removed_collection_events,
@@ -357,7 +291,7 @@ class BaseNotePlugin(RunnablePlugin, ABC):
     def _get_note(self, note_id: Any, *args, **kwargs) -> Note:
         note = self._fetch_note(note_id, *args, **kwargs)
         assert note, f'Note with ID {note_id} not found'
-        with self._notes_lock:
+        with self._sync_lock:
             # Always overwrite the note in the cache,
             # as this is the most up-to-date complete version
             self._notes[note.id] = note
@@ -368,7 +302,33 @@ class BaseNotePlugin(RunnablePlugin, ABC):
                     note.id
                 ] = note
 
-        return self._notes[note.id]
+            return self._notes[note.id]
+
+    def _merge_note(self, note: Note, skip_content: bool = True) -> Note:
+        """
+        Merge the state of an incoming note with the existing one in the cache.
+        """
+
+        existing_note = self._notes.get(note.id)
+        if not existing_note:
+            # If the note doesn't exist, just return the new one
+            return note
+
+        for field in note.__dataclass_fields__:
+            existing_value = getattr(existing_note, field)
+            value = getattr(note, field)
+            # Don't overwrite content, digest and tags here unless they have been re-fetched
+            if (
+                skip_content
+                and field in ('content', 'digest', 'tags')
+                and existing_value
+                and not value
+            ):
+                continue
+
+            setattr(existing_note, field, value)
+
+        return existing_note
 
     def _get_notes(
         self,
@@ -383,9 +343,10 @@ class BaseNotePlugin(RunnablePlugin, ABC):
         # Always fetch if background polling is disabled
         fetch = fetch or not self.poll_interval
         if fetch:
-            with self._notes_lock:
+            with self._sync_lock:
                 self._notes = {
-                    note.id: note for note in self._fetch_notes(*args, **kwargs)
+                    note.id: self._merge_note(note)
+                    for note in self._fetch_notes(*args, **kwargs)
                 }
                 self._refresh_notes_cache()
 
@@ -400,7 +361,7 @@ class BaseNotePlugin(RunnablePlugin, ABC):
     def _get_collection(self, collection_id: Any, *args, **kwargs) -> NoteCollection:
         collection = self._fetch_collection(collection_id, *args, **kwargs)
         assert collection, f'Collection with ID {collection_id} not found'
-        with self._collections_lock:
+        with self._sync_lock:
             # Always overwrite the collection in the cache,
             # as this is the most up-to-date complete version
             self._collections[collection.id] = collection
@@ -426,7 +387,7 @@ class BaseNotePlugin(RunnablePlugin, ABC):
         # Always fetch if background polling is disabled
         fetch = fetch or not self.poll_interval
         if fetch:
-            with self._collections_lock:
+            with self._sync_lock:
                 self._collections = {
                     collection.id: collection
                     for collection in self._fetch_collections(*args, **kwargs)
@@ -485,6 +446,92 @@ class BaseNotePlugin(RunnablePlugin, ABC):
                 for key in ('latitude', 'longitude', 'altitude')
             }.items()
         }
+
+    def _get_state_delta(
+        self,
+        previous_notes: Dict[Any, Note],
+        previous_collections: Dict[Any, NoteCollection],
+        notes: Dict[Any, Note],
+        collections: Dict[Any, NoteCollection],
+    ) -> StateDelta:
+        """
+        Get the state delta between the previous and current state of notes and collections.
+
+        :param previous_notes: Previous notes state.
+        :param previous_collections: Previous collections state.
+        :param notes: Current notes state.
+        :param collections: Current collections state.
+        :return: A StateDelta object containing the changes.
+        """
+        state_delta = StateDelta()
+        latest_updated_at = new_latest_updated_at = (
+            self._last_sync_time.timestamp() if self._last_sync_time else 0
+        )
+
+        # Get new and updated notes
+        for note in notes.values():
+            updated_at = note.updated_at.timestamp() if note.updated_at else 0
+            if updated_at > latest_updated_at:
+                if note.id not in previous_notes:
+                    state_delta.notes.added[note.id] = note
+                else:
+                    state_delta.notes.updated[note.id] = note
+
+            new_latest_updated_at = max(new_latest_updated_at, updated_at)
+
+        # Get deleted notes
+        for note_id in previous_notes:
+            if note_id not in notes:
+                state_delta.notes.deleted[note_id] = previous_notes[note_id]
+
+        # Get new and updated collections
+        for collection in collections.values():
+            updated_at = (
+                collection.updated_at.timestamp() if collection.updated_at else 0
+            )
+            if updated_at > latest_updated_at:
+                if collection.id not in previous_collections:
+                    state_delta.collections.added[collection.id] = collection
+                else:
+                    state_delta.collections.updated[collection.id] = collection
+
+            new_latest_updated_at = max(new_latest_updated_at, updated_at)
+
+        # Get deleted collections
+        for collection_id in previous_collections:
+            if collection_id not in collections:
+                state_delta.collections.deleted[collection_id] = previous_collections[
+                    collection_id
+                ]
+
+        state_delta.latest_updated_at = new_latest_updated_at
+        return state_delta
+
+    def _refresh_notes(self, notes: Dict[Any, Note]):
+        """
+        Fetch the given notes from the backend and update the cache.
+        """
+        if not notes:
+            return
+
+        self.logger.info(
+            'Refreshing the state for %d notes from the backend', len(notes)
+        )
+
+        with ThreadPoolExecutor(max_workers=5) as pool:
+            # Fetch notes in parallel
+            futures = [
+                pool.submit(self._fetch_note, note.id) for note in notes.values()
+            ]
+
+            # Wait for all futures to complete and collect the results
+            results = pool.map(lambda f: f.result(), futures)
+
+        with self._sync_lock:
+            self._notes.update(
+                {note.id: self._merge_note(note) for note in results if note}
+            )
+            self._refresh_notes_cache()
 
     @action
     def get_note(self, note_id: Any, *args, **kwargs) -> dict:
@@ -592,7 +639,7 @@ class BaseNotePlugin(RunnablePlugin, ABC):
             **kwargs,
         )
 
-        with self._notes_lock:
+        with self._sync_lock:
             # Add the new note to the cache
             self._notes[note.id] = note
 
@@ -638,20 +685,20 @@ class BaseNotePlugin(RunnablePlugin, ABC):
 
             .. schema:: notes.NoteItemSchema
         """
-        with self._notes_lock:
-            note = self._edit_note(
-                note_id,
-                *args,
-                title=title,
-                content=content,
-                description=description,
-                collection=collection,
-                geo=self._parse_geo(geo) if geo else None,
-                author=author,
-                source=NoteSource(**source) if source else None,
-                **kwargs,
-            )
+        note = self._edit_note(
+            note_id,
+            *args,
+            title=title,
+            content=content,
+            description=description,
+            collection=collection,
+            geo=self._parse_geo(geo) if geo else None,
+            author=author,
+            source=NoteSource(**source) if source else None,
+            **kwargs,
+        )
 
+        with self._sync_lock:
             # Update the cache with the edited note
             self._notes[note.id] = note
 
@@ -675,11 +722,12 @@ class BaseNotePlugin(RunnablePlugin, ABC):
 
         :param note_id: The ID of the note to delete.
         """
-        with self._notes_lock:
-            self._delete_note(note_id, *args, **kwargs)
+        self._delete_note(note_id, *args, **kwargs)
+
+        with self._sync_lock:
             note = self._notes.pop(note_id, None)
             if not note:
-                note = Note(id=note_id, title='')
+                note = Note(id=note_id, plugin=self._plugin_name, title='')
 
             # Remove the note from its parent collection if it has one
             if note.parent and note.parent.id in self._collections:
@@ -767,7 +815,7 @@ class BaseNotePlugin(RunnablePlugin, ABC):
             title, *args, description=description, parent=parent, **kwargs
         )
 
-        with self._collections_lock:
+        with self._sync_lock:
             # Add the new collection to the cache
             self._collections[collection.id] = collection
 
@@ -776,10 +824,10 @@ class BaseNotePlugin(RunnablePlugin, ABC):
                 parent_collection = self._collections[collection.parent.id]
                 parent_collection.collections.append(collection)
 
-            # Trigger the collection created event
-            self._dispatch_events(
-                self._make_event(CollectionCreatedEvent, collection=collection)
-            )
+        # Trigger the collection created event
+        self._dispatch_events(
+            self._make_event(CollectionCreatedEvent, collection=collection)
+        )
 
         return collection.to_dict()
 
@@ -805,16 +853,16 @@ class BaseNotePlugin(RunnablePlugin, ABC):
             .. schema:: notes.NoteCollectionSchema
 
         """
-        with self._collections_lock:
-            collection = self._edit_collection(
-                collection_id,
-                *args,
-                title=title,
-                description=description,
-                parent=parent,
-                **kwargs,
-            )
+        collection = self._edit_collection(
+            collection_id,
+            *args,
+            title=title,
+            description=description,
+            parent=parent,
+            **kwargs,
+        )
 
+        with self._sync_lock:
             # Update the cache with the edited collection
             old_collection = self._collections.get(collection.id)
             self._collections[collection.id] = collection
@@ -842,10 +890,10 @@ class BaseNotePlugin(RunnablePlugin, ABC):
                 ):
                     parent_collection.collections.append(collection)
 
-            # Trigger the collection updated event
-            self._dispatch_events(
-                self._make_event(CollectionUpdatedEvent, collection=collection)
-            )
+        # Trigger the collection updated event
+        self._dispatch_events(
+            self._make_event(CollectionUpdatedEvent, collection=collection)
+        )
 
         return collection.to_dict()
 
@@ -856,11 +904,14 @@ class BaseNotePlugin(RunnablePlugin, ABC):
 
         :param collection_id: The ID of the collection to delete.
         """
-        with self._collections_lock:
-            self._delete_collection(collection_id, *args, **kwargs)
+        self._delete_collection(collection_id, *args, **kwargs)
+
+        with self._sync_lock:
             collection = self._collections.pop(collection_id, None)
             if not collection:
-                collection = NoteCollection(id=collection_id, title='')
+                collection = NoteCollection(
+                    id=collection_id, plugin=self._plugin_name, title=''
+                )
 
             # Remove the collection from its parent if it has one
             if collection.parent and collection.parent.id in self._collections:
@@ -880,25 +931,51 @@ class BaseNotePlugin(RunnablePlugin, ABC):
         If ``poll_interval`` is zero or null, you can manually call this method
         to synchronize the notes and collections.
         """
+        # Wait for the entities engine to start
+        get_entities_engine().wait_start()
+
         t_start = time()
         self.logger.info('Synchronizing notes and collections...')
 
         with self._sync_lock:
+            # Initialize the latest state from the database if not already done
+            self._db_init()
             prev_notes = self._notes.copy()
             prev_collections = self._collections.copy()
-            notes = self._get_notes(
-                *args, fetch=True, sort={'updated_at': False}, **kwargs
-            )
-            collections = self._get_collections(
-                *args, fetch=True, sort={'updated_at': False}, **kwargs
+
+            # Fetch the latest version of the notes from the backend
+            notes = {
+                note.id: note
+                for note in self._get_notes(
+                    *args, fetch=True, sort={'updated_at': False}, **kwargs
+                )
+            }
+
+            # Fetch the latest version of the collections from the backend
+            collections = {
+                collection.id: collection
+                for collection in self._get_collections(
+                    *args, fetch=True, sort={'updated_at': False}, **kwargs
+                )
+            }
+
+            # Get the state delta between the previous and current state
+            state_delta = self._get_state_delta(
+                previous_notes=prev_notes,
+                previous_collections=prev_collections,
+                notes=notes,
+                collections=collections,
             )
 
-            self._process_events(
-                notes=notes,
-                prev_notes=prev_notes,
-                collections=collections,
-                prev_collections=prev_collections,
+            # Re-fetch any notes that have been updated since the last sync
+            self._refresh_notes(
+                {**state_delta.notes.added, **state_delta.notes.updated}
             )
+
+            # Update the local cache with the latest notes and collections
+            self._db_sync(state_delta)
+            self._last_sync_time = datetime.fromtimestamp(state_delta.latest_updated_at)
+            self._process_events(state_delta)
 
         self.logger.info(
             'Synchronization completed in %.2f seconds',
@@ -908,11 +985,16 @@ class BaseNotePlugin(RunnablePlugin, ABC):
     @action
     def reset_sync(self):
         """
-        Reset the last sync time to None, forcing a full resync on the next call to
-        :meth:`.sync`, which in turn will re-trigger all notes and collections events.
+        Reset the sync state.
+
+            1. Reset the last sync time to None, forcing a full resync on the
+               next call to :meth:`.sync`, which in turn will re-trigger all
+               notes and collections events.
+            2. Clear the local notes and collections cache.
         """
         self.logger.info('Resetting last sync time')
         with self._sync_lock:
+            self._db_clear()
             self._last_sync_time = None
             self._notes.clear()
             self._collections.clear()
