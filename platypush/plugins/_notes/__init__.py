@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from threading import RLock
 from time import time
-from typing import Any, Dict, Iterable, Optional, Type
+from typing import Any, Dict, Iterable, List, Optional, Type
 
 from platypush.common.notes import Note, NoteCollection, NoteSource
 from platypush.context import Variable
@@ -19,9 +19,10 @@ from platypush.message.event.notes import (
     CollectionDeletedEvent,
 )
 from platypush.plugins import RunnablePlugin, action
+from platypush.utils import to_datetime
 
 from .db import DbMixin
-from ._model import CollectionsDelta, NotesDelta, StateDelta
+from ._model import CollectionsDelta, Item, ItemType, NotesDelta, StateDelta
 
 
 class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
@@ -536,6 +537,100 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
                 {note.id: self._merge_note(note) for note in results if note}
             )
             self._refresh_notes_cache()
+
+    @abstractmethod
+    def _search(
+        self,
+        query: str,
+        *args,
+        item_type: ItemType,
+        include_terms: Optional[Dict[str, Any]] = None,
+        exclude_terms: Optional[Dict[str, Any]] = None,
+        created_before: Optional[datetime] = None,
+        created_after: Optional[datetime] = None,
+        updated_before: Optional[datetime] = None,
+        updated_after: Optional[datetime] = None,
+        **kwargs,
+    ) -> List[Item]:
+        """
+        Search for notes or collections based on the provided query and filters.
+        """
+
+    @action
+    def search(
+        self,
+        *args,
+        query: str,
+        item_type: ItemType = ItemType.NOTE,
+        include_terms: Optional[Dict[str, Any]] = None,
+        exclude_terms: Optional[Dict[str, Any]] = None,
+        created_before: Optional[datetime] = None,
+        created_after: Optional[datetime] = None,
+        updated_before: Optional[datetime] = None,
+        updated_after: Optional[datetime] = None,
+        **kwargs,
+    ):
+        """
+        Search for notes or collections based on the provided query and filters.
+
+        In most of the cases (but it depends on the backend) double-quoted
+        search terms will match exact phrases, while unquoted queries will
+        match any of the words in the query.
+
+        Wildcards (again, depending on the backend) in the search terms are
+        also supported.
+
+        :param query: The search query string (it will be searched in all the
+            fields).
+        :param item_type: The type of items to search for - ``note``,
+            ``collection``, or ``tag`` (default: ``note``).
+        :param include_terms: Optional dictionary of terms to include in the search.
+            The keys are field names and the values are strings to match against.
+        :param exclude_terms: Optional dictionary of terms to exclude from the search.
+            The keys are field names and the values are strings to exclude from the results.
+        :param created_before: Optional datetime ISO string or UNIX timestamp
+            to filter items created before this date.
+        :param created_after: Optional datetime ISO string or UNIX timestamp
+            to filter items created after this date.
+        :param updated_before: Optional datetime ISO string or UNIX timestamp
+            to filter items updated before this date.
+        :param updated_after: Optional datetime ISO string or UNIX timestamp
+            to filter items updated after this date.
+        :return: An iterable of matching items, format:
+
+            .. code-block:: python
+
+                [
+                    {
+                        "type": "note",
+                        "item": {
+                            "id": "note-id",
+                            "title": "Note Title",
+                            "content": "Note content...",
+                            "created_at": "2023-10-01T12:00:00Z",
+                            "updated_at": "2023-10-01T12:00:00Z",
+                            ...
+                        }
+                    }
+                ]
+
+        """
+        print('==== include_terms ===', include_terms)
+        return [
+            item.to_dict()
+            for item in self._search(
+                query,
+                *args,
+                item_type=item_type,
+                include_terms=include_terms,
+                exclude_terms=exclude_terms,
+                created_before=to_datetime(created_before) if created_before else None,
+                created_after=to_datetime(created_after) if created_after else None,
+                updated_before=to_datetime(updated_before) if updated_before else None,
+                updated_after=to_datetime(updated_after) if updated_after else None,
+                **kwargs,
+            )
+        ]
 
     @action
     def get_note(self, note_id: Any, *args, **kwargs) -> dict:

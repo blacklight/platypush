@@ -700,7 +700,7 @@ def to_datetime(t: Union[str, int, float, datetime.datetime]) -> datetime.dateti
     if isinstance(t, (int, float)):
         return datetime.datetime.fromtimestamp(t, tz=tz.tzutc())
     if isinstance(t, str):
-        return parser.parse(t)
+        return parser.isoparse(t)
     return t
 
 

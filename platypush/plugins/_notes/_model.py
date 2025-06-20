@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, Dict
 
-from platypush.common.notes import Note, NoteCollection
+from platypush.common.notes import Note, NoteCollection, Serializable, Storable
 
 
 @dataclass
@@ -53,3 +54,39 @@ class StateDelta:
         Check if the state delta is empty (no changes in notes or collections).
         """
         return self.notes.is_empty() and self.collections.is_empty()
+
+
+class ItemType(Enum):
+    """
+    Enum representing the type of item.
+    """
+
+    NOTE = 'note'
+    COLLECTION = 'collection'
+    TAG = 'tag'
+
+
+@dataclass
+class Item(Serializable):
+    """
+    Represents a generic note item.
+    """
+
+    type: ItemType
+    item: Storable
+
+    def __post_init__(self):
+        """
+        Validate the item type after initialization.
+        """
+        if not isinstance(self.type, ItemType):
+            raise ValueError(f'Invalid item type: {self.type}')
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert the item to a dictionary representation.
+        """
+        return {
+            'type': self.type.value,
+            'item': self.item.to_dict(),
+        }
