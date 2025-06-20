@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict
+from typing import Any, Dict, Iterable
 
 from platypush.common.notes import Note, NoteCollection, Serializable, Storable
 
@@ -90,3 +90,32 @@ class Item(Serializable):
             'type': self.type.value,
             'item': self.item.to_dict(),
         }
+
+
+@dataclass
+class Results(Serializable):
+    """
+    Represents a collection of results, which can include notes, collections, and tags.
+    """
+
+    items: Iterable[Item] = field(default_factory=list)
+    has_more: bool = False
+
+    def to_dict(self) -> Dict[str, Any]:
+        """
+        Convert the results to a dictionary representation.
+        """
+        return {
+            'results': [item.to_dict() for item in self.items],
+            'has_more': self.has_more,
+        }
+
+
+@dataclass
+class ApiSettings:
+    """
+    Represents plugin-specific API settings.
+    """
+
+    supports_limit: bool = False
+    supports_offset: bool = False

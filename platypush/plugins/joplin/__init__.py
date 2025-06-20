@@ -5,7 +5,13 @@ from urllib.parse import urljoin
 import requests
 
 from platypush.common.notes import Note, NoteCollection, NoteSource
-from platypush.plugins._notes import BaseNotePlugin, Item, ItemType
+from platypush.plugins._notes import (
+    ApiSettings,
+    BaseNotePlugin,
+    Item,
+    ItemType,
+    Results,
+)
 
 
 class JoplinPlugin(BaseNotePlugin):
@@ -272,6 +278,17 @@ class JoplinPlugin(BaseNotePlugin):
             updated_at=self._parse_time(data.get('updated_time')),
         )
 
+    def _offset_to_page(
+        self, offset: Optional[int], limit: Optional[int]
+    ) -> Optional[int]:
+        """
+        Convert an offset to a page number for Joplin API requests.
+        """
+        limit = limit or 100  # Default limit if not provided
+        if offset is None:
+            return None
+        return (offset // limit) + 1 if limit > 0 else 1
+
     def _fetch_note(self, note_id: Any, *_, **__) -> Optional[Note]:
         note = None
         err = None
@@ -302,17 +319,27 @@ class JoplinPlugin(BaseNotePlugin):
 
         return self._to_note(note)  # type: ignore[return-value]
 
-    def _fetch_notes(self, *_, **__) -> List[Note]:
+    def _fetch_notes(
+        self, *_, limit: Optional[int] = None, offset: Optional[int] = None, **__
+    ) -> List[Note]:
         """
         Fetch notes from Joplin.
         """
-        notes_data = (
-            self._exec(
-                'GET', 'notes', params={'fields': ','.join(self._default_note_fields)}
-            )
-            or {}
-        ).get('items', [])
-        return [self._to_note(note) for note in notes_data]
+        return [
+            self._to_note(note)
+            for note in (
+                self._exec(
+                    'GET',
+                    'notes',
+                    params={
+                        'fields': ','.join(self._default_note_fields),
+                        'limit': limit,
+                        'page': self._offset_to_page(offset=offset, limit=limit),
+                    },
+                )
+                or {}
+            ).get('items', [])
+        ]
 
     def _create_note(
         self,
@@ -402,7 +429,9 @@ class JoplinPlugin(BaseNotePlugin):
 
         return self._to_collection(collection_data)
 
-    def _fetch_collections(self, *_, **__) -> List[NoteCollection]:
+    def _fetch_collections(
+        self, *_, limit: Optional[int] = None, offset: Optional[int] = None, **__
+    ) -> List[NoteCollection]:
         """
         Fetch collections (folders) from Joplin.
         """
@@ -410,7 +439,11 @@ class JoplinPlugin(BaseNotePlugin):
             self._exec(
                 'GET',
                 'folders',
-                params={'fields': ','.join(self._default_collection_fields)},
+                params={
+                    'fields': ','.join(self._default_collection_fields),
+                    'limit': limit,
+                    'page': self._offset_to_page(offset=offset, limit=limit),
+                },
             )
             or {}
         ).get('items', [])
@@ -496,6 +529,13 @@ class JoplinPlugin(BaseNotePlugin):
 
         return query.strip()
 
+    @property
+    def _api_settings(self) -> ApiSettings:
+        return ApiSettings(
+            supports_limit=True,
+            supports_offset=True,
+        )
+
     def _search(
         self,
         query: str,
@@ -507,8 +547,10 @@ class JoplinPlugin(BaseNotePlugin):
         created_after: Optional[datetime] = None,
         updated_before: Optional[datetime] = None,
         updated_after: Optional[datetime] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = 0,
         **__,
-    ) -> List[Item]:
+    ) -> Results:
         """
         Search for notes or collections based on the provided query and filters.
         """
@@ -517,39 +559,48 @@ class JoplinPlugin(BaseNotePlugin):
             api_item_type
         ), f'Invalid item type: {item_type}. Supported types: {list(self._joplin_item_types.keys())}'
 
-        results = self._exec(
-            'GET',
-            'search',
-            params={
-                'type': api_item_type,
-                'fields': ','.join(
-                    self._default_note_fields
-                    if item_type == ItemType.NOTE
-                    else self._default_collection_fields
-                ),
-                'query': self._build_search_query(
-                    query,
-                    include_terms=include_terms,
-                    exclude_terms=exclude_terms,
-                    created_before=created_before,
-                    created_after=created_after,
-                    updated_before=updated_before,
-                    updated_after=updated_after,
-                ),
-            },
+        limit = limit or 100
+        results = (
+            self._exec(
+                'GET',
+                'search',
+                params={
+                    'type': api_item_type,
+                    'limit': limit,
+                    'page': self._offset_to_page(offset=offset, limit=limit),
+                    'fields': ','.join(
+                        self._default_note_fields
+                        if item_type == ItemType.NOTE
+                        else self._default_collection_fields
+                    ),
+                    'query': self._build_search_query(
+                        query,
+                        include_terms=include_terms,
+                        exclude_terms=exclude_terms,
+                        created_before=created_before,
+                        created_after=created_after,
+                        updated_before=updated_before,
+                        updated_after=updated_after,
+                    ),
+                },
+            )
+            or {}
         )
 
-        return [
-            Item(
-                type=item_type,
-                item=(
-                    self._to_note(result)
-                    if item_type == ItemType.NOTE
-                    else self._to_collection(result)
-                ),
-            )
-            for result in (results or {}).get('items', [])
-        ]
+        return Results(
+            has_more=bool(results.get('has_more')),
+            items=[
+                Item(
+                    type=item_type,
+                    item=(
+                        self._to_note(result)
+                        if item_type == ItemType.NOTE
+                        else self._to_collection(result)
+                    ),
+                )
+                for result in results.get('items', [])
+            ],
+        )
 
 
 # vim:sw=4:ts=4:et:

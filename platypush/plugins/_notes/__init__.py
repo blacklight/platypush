@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from threading import RLock
 from time import time
-from typing import Any, Dict, Iterable, List, Optional, Type
+from typing import Any, Dict, Iterable, Optional, Type
 
 from platypush.common.notes import Note, NoteCollection, NoteSource
 from platypush.context import Variable
@@ -22,7 +22,15 @@ from platypush.plugins import RunnablePlugin, action
 from platypush.utils import to_datetime
 
 from .db import DbMixin
-from ._model import CollectionsDelta, Item, ItemType, NotesDelta, StateDelta
+from ._model import (
+    ApiSettings,
+    CollectionsDelta,
+    Item,
+    ItemType,
+    NotesDelta,
+    Results,
+    StateDelta,
+)
 
 
 class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
@@ -83,7 +91,15 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
         """
 
     @abstractmethod
-    def _fetch_notes(self, *args, **kwargs) -> Iterable[Note]:
+    def _fetch_notes(
+        self,
+        *args,
+        filter: Optional[Dict[str, Any]] = None,  # pylint: disable=redefined-builtin
+        sort: Optional[Dict[str, bool]] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        **kwargs,
+    ) -> Iterable[Note]:
         """
         Don't call this directly if possible.
         Instead, use :meth:`.get_notes` method to retrieve notes and update the cache
@@ -146,7 +162,15 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
         """
 
     @abstractmethod
-    def _fetch_collections(self, *args, **kwargs) -> Iterable[NoteCollection]:
+    def _fetch_collections(
+        self,
+        *args,
+        filter: Optional[Dict[str, Any]] = None,  # pylint: disable=redefined-builtin
+        sort: Optional[Dict[str, bool]] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        **kwargs,
+    ) -> Iterable[NoteCollection]:
         """
         Don't call this directly if possible.
         Instead, use :meth:`.get_collections` to retrieve collections and update the cache
@@ -216,12 +240,16 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             reverse=any(not ascending for ascending in sort.values()),
         )
 
-        if offset is not None:
+        if offset is not None and not self._api_settings.supports_offset:
             items = items[offset:]
-        if limit is not None:
+        if limit is not None and not self._api_settings.supports_limit:
             items = items[:limit]
 
         return items
+
+    @property
+    def _api_settings(self) -> ApiSettings:
+        return ApiSettings()
 
     def _dispatch_events(self, *events):
         """
@@ -351,7 +379,14 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             with self._sync_lock:
                 self._notes = {
                     note.id: self._merge_note(note)
-                    for note in self._fetch_notes(*args, **kwargs)
+                    for note in self._fetch_notes(
+                        *args,
+                        limit=limit,
+                        offset=offset,
+                        sort=sort,
+                        filter=filter,
+                        **kwargs,
+                    )
                 }
                 self._refresh_notes_cache()
 
@@ -395,7 +430,14 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             with self._sync_lock:
                 self._collections = {
                     collection.id: collection
-                    for collection in self._fetch_collections(*args, **kwargs)
+                    for collection in self._fetch_collections(
+                        *args,
+                        limit=limit,
+                        offset=offset,
+                        sort=sort,
+                        filter=filter,
+                        **kwargs,
+                    )
                 }
                 self._refresh_collections_cache()
 
@@ -550,8 +592,10 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
         created_after: Optional[datetime] = None,
         updated_before: Optional[datetime] = None,
         updated_after: Optional[datetime] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = 0,
         **kwargs,
-    ) -> List[Item]:
+    ) -> Results:
         """
         Search for notes or collections based on the provided query and filters.
         """
@@ -568,6 +612,8 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
         created_after: Optional[datetime] = None,
         updated_before: Optional[datetime] = None,
         updated_after: Optional[datetime] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = 0,
         **kwargs,
     ):
         """
@@ -596,41 +642,45 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             to filter items updated before this date.
         :param updated_after: Optional datetime ISO string or UNIX timestamp
             to filter items updated after this date.
+        :param limit: Maximum number of items to retrieve (default: None,
+            meaning no limit, or depending on the default limit of the backend).
+        :param offset: Offset to start retrieving items from (default: 0).
         :return: An iterable of matching items, format:
 
-            .. code-block:: python
+            .. code-block:: javascript
 
-                [
-                    {
-                        "type": "note",
-                        "item": {
-                            "id": "note-id",
-                            "title": "Note Title",
-                            "content": "Note content...",
-                            "created_at": "2023-10-01T12:00:00Z",
-                            "updated_at": "2023-10-01T12:00:00Z",
-                            ...
+                {
+                    "has_more": false
+                    "results" [
+                        {
+                            "type": "note",
+                            "item": {
+                                "id": "note-id",
+                                "title": "Note Title",
+                                "content": "Note content...",
+                                "created_at": "2023-10-01T12:00:00Z",
+                                "updated_at": "2023-10-01T12:00:00Z",
+                                // ...
+                            }
                         }
-                    }
-                ]
+                    ]
+                }
 
         """
-        print('==== include_terms ===', include_terms)
-        return [
-            item.to_dict()
-            for item in self._search(
-                query,
-                *args,
-                item_type=item_type,
-                include_terms=include_terms,
-                exclude_terms=exclude_terms,
-                created_before=to_datetime(created_before) if created_before else None,
-                created_after=to_datetime(created_after) if created_after else None,
-                updated_before=to_datetime(updated_before) if updated_before else None,
-                updated_after=to_datetime(updated_after) if updated_after else None,
-                **kwargs,
-            )
-        ]
+        return self._search(
+            query,
+            *args,
+            item_type=item_type,
+            include_terms=include_terms,
+            exclude_terms=exclude_terms,
+            created_before=to_datetime(created_before) if created_before else None,
+            created_after=to_datetime(created_after) if created_after else None,
+            updated_before=to_datetime(updated_before) if updated_before else None,
+            updated_after=to_datetime(updated_after) if updated_after else None,
+            limit=limit,
+            offset=offset,
+            **kwargs,
+        ).to_dict()
 
     @action
     def get_note(self, note_id: Any, *args, **kwargs) -> dict:
@@ -1115,3 +1165,14 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
                 self.logger.error('Error during sync: %s', e)
             finally:
                 self.wait_stop(self.poll_interval)
+
+
+__all__ = [
+    'ApiSettings',
+    'BaseNotePlugin',
+    'Item',
+    'ItemType',
+    'Note',
+    'NoteCollection',
+    'NoteSource',
+]
