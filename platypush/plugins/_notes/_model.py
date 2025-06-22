@@ -117,5 +117,20 @@ class ApiSettings:
     Represents plugin-specific API settings.
     """
 
-    supports_limit: bool = False
-    supports_offset: bool = False
+    supports_notes_limit: bool = False
+    supports_notes_offset: bool = False
+    supports_collections_limit: bool = False
+    supports_collections_offset: bool = False
+    supports_search_limit: bool = False
+    supports_search_offset: bool = False
+    supports_search: bool = False
+
+
+class ResultsType(Enum):
+    """
+    Enum representing the type of results.
+    """
+
+    NOTES = 'notes'
+    COLLECTIONS = 'collections'
+    SEARCH = 'search'

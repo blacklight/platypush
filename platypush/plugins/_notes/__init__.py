@@ -29,6 +29,7 @@ from ._model import (
     ItemType,
     NotesDelta,
     Results,
+    ResultsType,
     StateDelta,
 )
 
@@ -220,6 +221,7 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
     def _process_results(  # pylint: disable=too-many-positional-arguments
         self,
         items: Iterable[Any],
+        results_type: ResultsType,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
         sort: Optional[Dict[str, bool]] = None,
@@ -244,9 +246,22 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             reverse=any(not ascending for ascending in sort.values()),
         )
 
-        if offset is not None and not self._api_settings.supports_offset:
+        supports_limit = False
+        supports_offset = False
+
+        if results_type == ResultsType.NOTES:
+            supports_limit = self._api_settings.supports_notes_limit
+            supports_offset = self._api_settings.supports_notes_offset
+        elif results_type == ResultsType.COLLECTIONS:
+            supports_limit = self._api_settings.supports_collections_limit
+            supports_offset = self._api_settings.supports_collections_offset
+        elif results_type == ResultsType.SEARCH:
+            supports_limit = self._api_settings.supports_search_limit
+            supports_offset = self._api_settings.supports_search_offset
+
+        if offset is not None and not supports_offset:
             items = items[offset:]
-        if limit is not None and not self._api_settings.supports_limit:
+        if limit is not None and not supports_limit:
             items = items[:limit]
 
         return items
@@ -400,6 +415,7 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             offset=offset,
             sort=sort,
             filter=filter,
+            results_type=ResultsType.NOTES,
         )
 
     def _get_collection(self, collection_id: Any, *args, **kwargs) -> NoteCollection:
@@ -451,6 +467,7 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             offset=offset,
             sort=sort,
             filter=filter,
+            results_type=ResultsType.COLLECTIONS,
         )
 
     def _refresh_notes_cache(self):

@@ -534,8 +534,13 @@ class JoplinPlugin(BaseNotePlugin):
     @property
     def _api_settings(self) -> ApiSettings:
         return ApiSettings(
-            supports_limit=True,
-            supports_offset=True,
+            supports_notes_limit=True,
+            supports_notes_offset=True,
+            supports_collections_limit=True,
+            supports_collections_offset=True,
+            supports_search_limit=True,
+            supports_search_offset=True,
+            supports_search=True,
         )
 
     def _search(
