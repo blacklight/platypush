@@ -76,12 +76,35 @@ class Note(Storable):
     altitude: Optional[float] = None
     author: Optional[str] = None
     source: Optional[NoteSource] = None
+    _path: Optional[str] = None
 
     def __post_init__(self):
         """
         Post-initialization to update the digest if content is provided.
         """
         self.digest = self._update_digest()
+
+    @property
+    def path(self) -> str:
+        # If the path is already set, return it
+        if self._path:
+            return self._path
+
+        # Recursively build the path by expanding the parent collections
+        path = []
+        parent = self.parent
+        while parent:
+            path.append(parent.title)
+            parent = parent.parent
+
+        return '/'.join(reversed(path)) + f'/{self.title}.md'
+
+    @path.setter
+    def path(self, value: str):
+        """
+        Set the path for the note.
+        """
+        self._path = value
 
     def _update_digest(self) -> Optional[str]:
         if self.content and not self.digest:
@@ -96,6 +119,7 @@ class Note(Storable):
                     for field in self.__dataclass_fields__
                     if not field.startswith('_') and field != 'parent'
                 },
+                'path': self.path,
                 'parent': (
                     {
                         'id': self.parent.id if self.parent else None,

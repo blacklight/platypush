@@ -1,3 +1,4 @@
+import re
 from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -18,9 +19,19 @@ from platypush.message.event.notes import (
     CollectionDeletedEvent,
 )
 from platypush.plugins import RunnablePlugin, action
+from platypush.utils import to_datetime
 
 from .db import DbMixin
-from ._model import CollectionsDelta, NotesDelta, StateDelta
+from ._model import (
+    ApiSettings,
+    CollectionsDelta,
+    Item,
+    ItemType,
+    NotesDelta,
+    Results,
+    ResultsType,
+    StateDelta,
+)
 
 
 class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
@@ -28,15 +39,19 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
     Base class for note-taking plugins.
     """
 
-    def __init__(self, *args, poll_interval: float = 300, **kwargs):
+    def __init__(
+        self, *args, poll_interval: float = 300, timeout: Optional[int] = 60, **kwargs
+    ):
         """
         :param poll_interval: Poll interval in seconds to check for updates (default: 300).
             If set to zero or null, the plugin will not poll for updates,
             and events will be generated only when you manually call :meth:`.sync`.
+        :param timeout: Timeout in seconds for the plugin operations (default: 60).
         """
         RunnablePlugin.__init__(self, *args, poll_interval=poll_interval, **kwargs)
         DbMixin.__init__(self, *args, **kwargs)
         self._sync_lock = RLock()
+        self._timeout = timeout
         self.__last_sync_time: Optional[datetime] = None
 
     @property
@@ -81,7 +96,15 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
         """
 
     @abstractmethod
-    def _fetch_notes(self, *args, **kwargs) -> Iterable[Note]:
+    def _fetch_notes(
+        self,
+        *args,
+        filter: Optional[Dict[str, Any]] = None,  # pylint: disable=redefined-builtin
+        sort: Optional[Dict[str, bool]] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        **kwargs,
+    ) -> Iterable[Note]:
         """
         Don't call this directly if possible.
         Instead, use :meth:`.get_notes` method to retrieve notes and update the cache
@@ -144,7 +167,15 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
         """
 
     @abstractmethod
-    def _fetch_collections(self, *args, **kwargs) -> Iterable[NoteCollection]:
+    def _fetch_collections(
+        self,
+        *args,
+        filter: Optional[Dict[str, Any]] = None,  # pylint: disable=redefined-builtin
+        sort: Optional[Dict[str, bool]] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        **kwargs,
+    ) -> Iterable[NoteCollection]:
         """
         Don't call this directly if possible.
         Instead, use :meth:`.get_collections` to retrieve collections and update the cache
@@ -190,6 +221,7 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
     def _process_results(  # pylint: disable=too-many-positional-arguments
         self,
         items: Iterable[Any],
+        results_type: ResultsType,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
         sort: Optional[Dict[str, bool]] = None,
@@ -202,7 +234,10 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             items = [
                 item
                 for item in items
-                if all(getattr(item, k) == v for k, v in filter.items())
+                if all(
+                    re.search(v, str(getattr(item, k, '')), re.IGNORECASE)
+                    for k, v in filter.items()
+                )
             ]
 
         items = sorted(
@@ -211,12 +246,29 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             reverse=any(not ascending for ascending in sort.values()),
         )
 
-        if offset is not None:
+        supports_limit = False
+        supports_offset = False
+
+        if results_type == ResultsType.NOTES:
+            supports_limit = self._api_settings.supports_notes_limit
+            supports_offset = self._api_settings.supports_notes_offset
+        elif results_type == ResultsType.COLLECTIONS:
+            supports_limit = self._api_settings.supports_collections_limit
+            supports_offset = self._api_settings.supports_collections_offset
+        elif results_type == ResultsType.SEARCH:
+            supports_limit = self._api_settings.supports_search_limit
+            supports_offset = self._api_settings.supports_search_offset
+
+        if offset is not None and not supports_offset:
             items = items[offset:]
-        if limit is not None:
+        if limit is not None and not supports_limit:
             items = items[:limit]
 
         return items
+
+    @property
+    def _api_settings(self) -> ApiSettings:
+        return ApiSettings()
 
     def _dispatch_events(self, *events):
         """
@@ -346,7 +398,14 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             with self._sync_lock:
                 self._notes = {
                     note.id: self._merge_note(note)
-                    for note in self._fetch_notes(*args, **kwargs)
+                    for note in self._fetch_notes(
+                        *args,
+                        limit=limit,
+                        offset=offset,
+                        sort=sort,
+                        filter=filter,
+                        **kwargs,
+                    )
                 }
                 self._refresh_notes_cache()
 
@@ -356,6 +415,7 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             offset=offset,
             sort=sort,
             filter=filter,
+            results_type=ResultsType.NOTES,
         )
 
     def _get_collection(self, collection_id: Any, *args, **kwargs) -> NoteCollection:
@@ -390,7 +450,14 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             with self._sync_lock:
                 self._collections = {
                     collection.id: collection
-                    for collection in self._fetch_collections(*args, **kwargs)
+                    for collection in self._fetch_collections(
+                        *args,
+                        limit=limit,
+                        offset=offset,
+                        sort=sort,
+                        filter=filter,
+                        **kwargs,
+                    )
                 }
                 self._refresh_collections_cache()
 
@@ -400,6 +467,7 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             offset=offset,
             sort=sort,
             filter=filter,
+            results_type=ResultsType.COLLECTIONS,
         )
 
     def _refresh_notes_cache(self):
@@ -533,6 +601,108 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             )
             self._refresh_notes_cache()
 
+    @abstractmethod
+    def _search(
+        self,
+        query: str,
+        *args,
+        item_type: ItemType,
+        include_terms: Optional[Dict[str, Any]] = None,
+        exclude_terms: Optional[Dict[str, Any]] = None,
+        created_before: Optional[datetime] = None,
+        created_after: Optional[datetime] = None,
+        updated_before: Optional[datetime] = None,
+        updated_after: Optional[datetime] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = 0,
+        **kwargs,
+    ) -> Results:
+        """
+        Search for notes or collections based on the provided query and filters.
+        """
+
+    @action
+    def search(
+        self,
+        *args,
+        query: str,
+        item_type: ItemType = ItemType.NOTE,
+        include_terms: Optional[Dict[str, Any]] = None,
+        exclude_terms: Optional[Dict[str, Any]] = None,
+        created_before: Optional[datetime] = None,
+        created_after: Optional[datetime] = None,
+        updated_before: Optional[datetime] = None,
+        updated_after: Optional[datetime] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = 0,
+        **kwargs,
+    ):
+        """
+        Search for notes or collections based on the provided query and filters.
+
+        In most of the cases (but it depends on the backend) double-quoted
+        search terms will match exact phrases, while unquoted queries will
+        match any of the words in the query.
+
+        Wildcards (again, depending on the backend) in the search terms are
+        also supported.
+
+        :param query: The search query string (it will be searched in all the
+            fields).
+        :param item_type: The type of items to search for - ``note``,
+            ``collection``, or ``tag`` (default: ``note``).
+        :param include_terms: Optional dictionary of terms to include in the search.
+            The keys are field names and the values are strings to match against.
+        :param exclude_terms: Optional dictionary of terms to exclude from the search.
+            The keys are field names and the values are strings to exclude from the results.
+        :param created_before: Optional datetime ISO string or UNIX timestamp
+            to filter items created before this date.
+        :param created_after: Optional datetime ISO string or UNIX timestamp
+            to filter items created after this date.
+        :param updated_before: Optional datetime ISO string or UNIX timestamp
+            to filter items updated before this date.
+        :param updated_after: Optional datetime ISO string or UNIX timestamp
+            to filter items updated after this date.
+        :param limit: Maximum number of items to retrieve (default: None,
+            meaning no limit, or depending on the default limit of the backend).
+        :param offset: Offset to start retrieving items from (default: 0).
+        :return: An iterable of matching items, format:
+
+            .. code-block:: javascript
+
+                {
+                    "has_more": false
+                    "results" [
+                        {
+                            "type": "note",
+                            "item": {
+                                "id": "note-id",
+                                "title": "Note Title",
+                                "content": "Note content...",
+                                "created_at": "2023-10-01T12:00:00Z",
+                                "updated_at": "2023-10-01T12:00:00Z",
+                                // ...
+                            }
+                        }
+                    ]
+                }
+
+        """
+        return self._search(
+            query,
+            *args,
+            item_type=item_type,
+            include_terms=include_terms,
+            exclude_terms=exclude_terms,
+            created_before=to_datetime(created_before) if created_before else None,
+            created_after=to_datetime(created_after) if created_after else None,
+            updated_before=to_datetime(updated_before) if updated_before else None,
+            updated_after=to_datetime(updated_after) if updated_after else None,
+            limit=limit,
+            offset=offset,
+            **kwargs,
+        ).to_dict()
+
     @action
     def get_note(self, note_id: Any, *args, **kwargs) -> dict:
         """
@@ -565,7 +735,9 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
         :param sort: A dictionary specifying the fields to sort by and their order.
             Example: {'created_at': True} sorts by creation date in ascending
             order, while {'created_at': False} sorts in descending order.
-        :param filter: A dictionary specifying filters to apply to the collections.
+        :param filter: A dictionary specifying filters to apply to the notes, in the form
+            of a dictionary where the keys are field names and the values are regular expressions
+            to match against the field values.
         :param fetch: If True, always fetch the latest collections from the backend,
             regardless of the cache state (default: False).
         :param kwargs: Additional keyword arguments to pass to the fetch method.
@@ -769,7 +941,9 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
         :param sort: A dictionary specifying the fields to sort by and their order.
             Example: {'created_at': True} sorts by creation date in ascending
             order, while {'created_at': False} sorts in descending order.
-        :param filter: A dictionary specifying filters to apply to the collections.
+        :param filter: A dictionary specifying filters to apply to the collections, in the form
+            of a dictionary where the keys are field names and the values are regular expressions
+            to match against the field values.
         :param fetch: If True, always fetch the latest collections from the backend,
             regardless of the cache state (default: False).
         :param kwargs: Additional keyword arguments to pass to the fetch method.
@@ -973,6 +1147,9 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             )
 
             # Update the local cache with the latest notes and collections
+            if not state_delta.is_empty():
+                self.logger.info('Synchronizing changes: %s', state_delta)
+
             self._db_sync(state_delta)
             self._last_sync_time = datetime.fromtimestamp(state_delta.latest_updated_at)
             self._process_events(state_delta)
@@ -1012,3 +1189,14 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
                 self.logger.error('Error during sync: %s', e)
             finally:
                 self.wait_stop(self.poll_interval)
+
+
+__all__ = [
+    'ApiSettings',
+    'BaseNotePlugin',
+    'Item',
+    'ItemType',
+    'Note',
+    'NoteCollection',
+    'NoteSource',
+]

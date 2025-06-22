@@ -1,11 +1,17 @@
-import datetime
-from typing import Any, List, Optional
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
 
 import requests
 
 from platypush.common.notes import Note, NoteCollection, NoteSource
-from platypush.plugins._notes import BaseNotePlugin
+from platypush.plugins._notes import (
+    ApiSettings,
+    BaseNotePlugin,
+    Item,
+    ItemType,
+    Results,
+)
 
 
 class JoplinPlugin(BaseNotePlugin):
@@ -141,6 +147,26 @@ class JoplinPlugin(BaseNotePlugin):
         'updated_time',
     )
 
+    # Mapping of the internal note fields to the Joplin API fields.
+    _joplin_search_fields = {
+        'id': 'id',
+        'title': 'title',
+        'content': 'body',
+        'type': 'type',
+        'parent': 'notebook',
+        'latitude': 'latitude',
+        'longitude': 'longitude',
+        'altitude': 'altitude',
+        'source': 'sourceurl',
+    }
+
+    # Mapping of ItemType values to Joplin API item types.
+    _joplin_item_types = {
+        ItemType.NOTE: 'note',
+        ItemType.COLLECTION: 'folder',
+        ItemType.TAG: 'tag',
+    }
+
     def __init__(self, *args, host: str, port: int = 41184, token: str, **kwargs):
         """
         :param host: The hostname or IP address of your Joplin application.
@@ -172,7 +198,9 @@ class JoplinPlugin(BaseNotePlugin):
         )
 
         params['token'] = self.token
-        response = requests.request(method, url, params=params, timeout=10, **kwargs)
+        response = requests.request(
+            method, url, params=params, timeout=self._timeout, **kwargs
+        )
 
         if not response.ok:
             err = response.text
@@ -206,13 +234,13 @@ class JoplinPlugin(BaseNotePlugin):
         )
 
     @staticmethod
-    def _parse_time(t: Optional[int]) -> Optional[datetime.datetime]:
+    def _parse_time(t: Optional[int]) -> Optional[datetime]:
         """
         Parse a Joplin timestamp (in milliseconds) into a datetime object.
         """
         if t is None:
             return None
-        return datetime.datetime.fromtimestamp(t / 1000)
+        return datetime.fromtimestamp(t / 1000)
 
     def _to_note(self, data: dict) -> Note:
         parent_id = data.get('parent_id')
@@ -252,6 +280,17 @@ class JoplinPlugin(BaseNotePlugin):
             updated_at=self._parse_time(data.get('updated_time')),
         )
 
+    def _offset_to_page(
+        self, offset: Optional[int], limit: Optional[int]
+    ) -> Optional[int]:
+        """
+        Convert an offset to a page number for Joplin API requests.
+        """
+        limit = limit or 100  # Default limit if not provided
+        if offset is None:
+            return None
+        return (offset // limit) + 1 if limit > 0 else 1
+
     def _fetch_note(self, note_id: Any, *_, **__) -> Optional[Note]:
         note = None
         err = None
@@ -282,17 +321,27 @@ class JoplinPlugin(BaseNotePlugin):
 
         return self._to_note(note)  # type: ignore[return-value]
 
-    def _fetch_notes(self, *_, **__) -> List[Note]:
+    def _fetch_notes(
+        self, *_, limit: Optional[int] = None, offset: Optional[int] = None, **__
+    ) -> List[Note]:
         """
         Fetch notes from Joplin.
         """
-        notes_data = (
-            self._exec(
-                'GET', 'notes', params={'fields': ','.join(self._default_note_fields)}
-            )
-            or {}
-        ).get('items', [])
-        return [self._to_note(note) for note in notes_data]
+        return [
+            self._to_note(note)
+            for note in (
+                self._exec(
+                    'GET',
+                    'notes',
+                    params={
+                        'fields': ','.join(self._default_note_fields),
+                        'limit': limit,
+                        'page': self._offset_to_page(offset=offset, limit=limit),
+                    },
+                )
+                or {}
+            ).get('items', [])
+        ]
 
     def _create_note(
         self,
@@ -382,7 +431,9 @@ class JoplinPlugin(BaseNotePlugin):
 
         return self._to_collection(collection_data)
 
-    def _fetch_collections(self, *_, **__) -> List[NoteCollection]:
+    def _fetch_collections(
+        self, *_, limit: Optional[int] = None, offset: Optional[int] = None, **__
+    ) -> List[NoteCollection]:
         """
         Fetch collections (folders) from Joplin.
         """
@@ -390,7 +441,11 @@ class JoplinPlugin(BaseNotePlugin):
             self._exec(
                 'GET',
                 'folders',
-                params={'fields': ','.join(self._default_collection_fields)},
+                params={
+                    'fields': ','.join(self._default_collection_fields),
+                    'limit': limit,
+                    'page': self._offset_to_page(offset=offset, limit=limit),
+                },
             )
             or {}
         ).get('items', [])
@@ -439,6 +494,120 @@ class JoplinPlugin(BaseNotePlugin):
         Delete a collection (folder) by its ID.
         """
         self._exec('DELETE', f'folders/{collection_id}')
+
+    def _build_search_query(
+        self,
+        query: str,
+        *,
+        include_terms: Optional[Dict[str, Any]] = None,
+        exclude_terms: Optional[Dict[str, Any]] = None,
+        created_before: Optional[datetime] = None,
+        created_after: Optional[datetime] = None,
+        updated_before: Optional[datetime] = None,
+        updated_after: Optional[datetime] = None,
+    ) -> str:
+        query += ' ' + ' '.join(
+            [
+                f'{self._joplin_search_fields.get(k, k)}:"{v}"'
+                for k, v in (include_terms or {}).items()
+            ]
+        )
+
+        query += ' ' + ' '.join(
+            [
+                f'-{self._joplin_search_fields.get(k, k)}:"{v}"'
+                for k, v in (exclude_terms or {}).items()
+            ]
+        )
+
+        if created_before:
+            query += f' -created:{created_before.strftime("%Y%m%d")}'
+        if created_after:
+            query += f' created:{created_after.strftime("%Y%m%d")}'
+        if updated_before:
+            query += f' -updated:{updated_before.strftime("%Y%m%d")}'
+        if updated_after:
+            query += f' updated:{updated_after.strftime("%Y%m%d")}'
+
+        return query.strip()
+
+    @property
+    def _api_settings(self) -> ApiSettings:
+        return ApiSettings(
+            supports_notes_limit=True,
+            supports_notes_offset=True,
+            supports_collections_limit=True,
+            supports_collections_offset=True,
+            supports_search_limit=True,
+            supports_search_offset=True,
+            supports_search=True,
+        )
+
+    def _search(
+        self,
+        query: str,
+        *_,
+        item_type: ItemType,
+        include_terms: Optional[Dict[str, Any]] = None,
+        exclude_terms: Optional[Dict[str, Any]] = None,
+        created_before: Optional[datetime] = None,
+        created_after: Optional[datetime] = None,
+        updated_before: Optional[datetime] = None,
+        updated_after: Optional[datetime] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = 0,
+        **__,
+    ) -> Results:
+        """
+        Search for notes or collections based on the provided query and filters.
+        """
+        api_item_type = self._joplin_item_types.get(item_type)
+        assert (
+            api_item_type
+        ), f'Invalid item type: {item_type}. Supported types: {list(self._joplin_item_types.keys())}'
+
+        limit = limit or 100
+        results = (
+            self._exec(
+                'GET',
+                'search',
+                params={
+                    'type': api_item_type,
+                    'limit': limit,
+                    'page': self._offset_to_page(offset=offset, limit=limit),
+                    'fields': ','.join(
+                        self._default_note_fields
+                        if item_type == ItemType.NOTE
+                        else self._default_collection_fields
+                    ),
+                    'query': self._build_search_query(
+                        query,
+                        include_terms=include_terms,
+                        exclude_terms=exclude_terms,
+                        created_before=created_before,
+                        created_after=created_after,
+                        updated_before=updated_before,
+                        updated_after=updated_after,
+                    ),
+                },
+            )
+            or {}
+        )
+
+        return Results(
+            has_more=bool(results.get('has_more')),
+            items=[
+                Item(
+                    type=item_type,
+                    item=(
+                        self._to_note(result)
+                        if item_type == ItemType.NOTE
+                        else self._to_collection(result)
+                    ),
+                )
+                for result in results.get('items', [])
+            ],
+        )
 
 
 # vim:sw=4:ts=4:et:

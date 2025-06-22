@@ -2,6 +2,7 @@ from contextlib import contextmanager
 from threading import Event, RLock
 from typing import Any, Dict, Generator
 
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
 from platypush.common.notes import Note, NoteCollection
@@ -16,7 +17,7 @@ from ._model import (
 )
 
 
-class DbMixin:
+class DbMixin:  # pylint: disable=too-few-public-methods
     """
     Mixin class for the database synchronization layer.
     """
@@ -73,6 +74,7 @@ class DbMixin:
         Convert a Note object to a DbNote object.
         """
         return DbNote(
+            id=note._db_id,  # pylint:disable=protected-access
             external_id=note.id,
             plugin=self._plugin_name,
             title=note.title,
@@ -183,6 +185,7 @@ class DbMixin:
             return
 
         with self._get_db_session(autoflush=False) as session:
+            # Add new/updated collections
             for collection in [
                 *state.collections.added.values(),
                 *state.collections.updated.values(),
@@ -190,21 +193,36 @@ class DbMixin:
                 db_collection = self._to_db_collection(collection)
                 session.merge(db_collection)
 
-            for collection in state.collections.deleted.values():
-                session.query(DbNoteCollection).filter_by(
-                    id=collection._db_id  # pylint:disable=protected-access
-                ).delete()
+            # Delete removed collections
+            session.query(DbNoteCollection).filter(
+                and_(
+                    DbNoteCollection.plugin == self._plugin_name,
+                    DbNoteCollection.external_id.in_(
+                        [
+                            collection.id
+                            for collection in state.collections.deleted.values()
+                        ]
+                    ),
+                )
+            ).delete()
 
-            session.flush()  # Ensure collections are saved before notes
+            # Ensure that collections are saved before notes
+            session.flush()
 
+            # Add new/updated notes
             for note in [*state.notes.added.values(), *state.notes.updated.values()]:
                 db_note = self._to_db_note(note)
                 session.merge(db_note)
 
-            for note in state.notes.deleted.values():
-                session.query(DbNote).filter_by(
-                    id=note._db_id  # pylint:disable=protected-access
-                ).delete()
+            # Delete removed notes
+            session.query(DbNote).filter(
+                and_(
+                    DbNote.plugin == self._plugin_name,
+                    DbNote.external_id.in_(
+                        [note.id for note in state.notes.deleted.values()]
+                    ),
+                )
+            ).delete()
 
             session.commit()
 
