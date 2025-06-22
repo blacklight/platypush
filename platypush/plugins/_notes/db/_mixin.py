@@ -74,6 +74,7 @@ class DbMixin:
         Convert a Note object to a DbNote object.
         """
         return DbNote(
+            id=note._db_id,  # pylint:disable=protected-access
             external_id=note.id,
             plugin=self._plugin_name,
             title=note.title,
