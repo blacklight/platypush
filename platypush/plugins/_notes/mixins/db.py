@@ -11,7 +11,7 @@ from platypush.plugins.db import DbPlugin
 from platypush.utils import get_plugin_name_by_class, utcnow
 
 from .._model import StateDelta
-from ._model import (
+from ..db._model import (
     Note as DbNote,
     NoteCollection as DbNoteCollection,
 )
