@@ -40,7 +40,10 @@ def _create_note_collection_table(metadata: sa.MetaData) -> sa.Table:
         sa.Column('title', sa.String, nullable=False),
         sa.Column('description', sa.String, nullable=True),
         sa.Column(
-            'parent_id', sa.UUID, sa.ForeignKey(f'{table_name}.id'), nullable=True
+            'parent_id',
+            sa.UUID,
+            sa.ForeignKey(f'{table_name}.id', ondelete='CASCADE'),
+            nullable=True,
         ),
         sa.Column('created_at', sa.DateTime, nullable=False),
         sa.Column('updated_at', sa.DateTime, nullable=False),
@@ -104,7 +107,7 @@ def _create_note_table(metadata: sa.MetaData) -> sa.Table:
         sa.Column(
             'parent_id',
             sa.UUID,
-            sa.ForeignKey(f'{DbNoteCollection.__tablename__}.id'),
+            sa.ForeignKey(f'{DbNoteCollection.__tablename__}.id', ondelete='CASCADE'),
             nullable=True,
         ),
         sa.Column('digest', sa.String, nullable=True, index=True),
@@ -138,11 +141,15 @@ def _create_note_note_resource_table(metadata: sa.MetaData) -> sa.Table:
 
     return op.create_table(
         table_name,
-        sa.Column('note_id', sa.UUID, sa.ForeignKey(f'{DbNote.__tablename__}.id')),
+        sa.Column(
+            'note_id',
+            sa.UUID,
+            sa.ForeignKey(f'{DbNote.__tablename__}.id', ondelete='CASCADE'),
+        ),
         sa.Column(
             'resource_id',
             sa.String,
-            sa.ForeignKey(f'{DbNoteResource.__tablename__}.id'),
+            sa.ForeignKey(f'{DbNoteResource.__tablename__}.id', ondelete='CASCADE'),
         ),
         sa.PrimaryKeyConstraint('note_id', 'resource_id'),
     )

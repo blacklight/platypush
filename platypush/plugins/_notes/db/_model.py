@@ -30,7 +30,14 @@ class NoteCollection(Base):
     plugin = Column(String, nullable=False)
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
-    parent_id = Column(UUID, ForeignKey(f'{TABLE_PREFIX}collection.id'), nullable=True)
+    parent_id = Column(
+        UUID,
+        ForeignKey(
+            f'{TABLE_PREFIX}collection.id',
+            ondelete='CASCADE',
+        ),
+        nullable=True,
+    )
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
 
@@ -53,7 +60,14 @@ class Note(Base):
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
     content = Column(String, nullable=True)
-    parent_id = Column(UUID, ForeignKey(f'{TABLE_PREFIX}collection.id'), nullable=True)
+    parent_id = Column(
+        UUID,
+        ForeignKey(
+            f'{TABLE_PREFIX}collection.id',
+            ondelete='CASCADE',
+        ),
+        nullable=True,
+    )
     digest = Column(String, nullable=True, index=True)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
@@ -137,13 +151,13 @@ class NoteNoteResource(Base):
 
     note_id = Column(
         UUID,
-        ForeignKey(f'{TABLE_PREFIX}note.id'),
+        ForeignKey(f'{TABLE_PREFIX}note.id', ondelete='CASCADE'),
         primary_key=True,
         nullable=False,
     )
     resource_id = Column(
         UUID,
-        ForeignKey(f'{TABLE_PREFIX}resource.id'),
+        ForeignKey(f'{TABLE_PREFIX}resource.id', ondelete='CASCADE'),
         primary_key=True,
         nullable=False,
     )
