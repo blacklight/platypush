@@ -1147,6 +1147,9 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
             )
 
             # Update the local cache with the latest notes and collections
+            if not state_delta.is_empty():
+                self.logger.info('Synchronizing changes: %s', state_delta)
+
             self._db_sync(state_delta)
             self._last_sync_time = datetime.fromtimestamp(state_delta.latest_updated_at)
             self._process_events(state_delta)

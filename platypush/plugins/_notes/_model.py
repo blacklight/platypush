@@ -21,6 +21,16 @@ class NotesDelta:
         """
         return not (self.added or self.updated or self.deleted)
 
+    def __str__(self):
+        """
+        String representation of the NotesDelta.
+        """
+        return (
+            f'NotesDelta(added={len(self.added)}, '
+            f'updated={len(self.updated)}, '
+            f'deleted={len(self.deleted)})'
+        )
+
 
 @dataclass
 class CollectionsDelta:
@@ -38,6 +48,16 @@ class CollectionsDelta:
         """
         return not (self.added or self.updated or self.deleted)
 
+    def __str__(self):
+        """
+        String representation of the CollectionsDelta.
+        """
+        return (
+            f'CollectionsDelta(added={len(self.added)}, '
+            f'updated={len(self.updated)}, '
+            f'deleted={len(self.deleted)})'
+        )
+
 
 @dataclass
 class StateDelta:
@@ -54,6 +74,16 @@ class StateDelta:
         Check if the state delta is empty (no changes in notes or collections).
         """
         return self.notes.is_empty() and self.collections.is_empty()
+
+    def __str__(self):
+        """
+        String representation of the StateDelta.
+        """
+        return (
+            f'StateDelta(notes={self.notes}, '
+            f'collections={self.collections}, '
+            f'latest_updated_at={self.latest_updated_at})'
+        )
 
 
 class ItemType(Enum):

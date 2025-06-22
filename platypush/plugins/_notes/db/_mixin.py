@@ -17,7 +17,7 @@ from ._model import (
 )
 
 
-class DbMixin:
+class DbMixin:  # pylint: disable=too-few-public-methods
     """
     Mixin class for the database synchronization layer.
     """
