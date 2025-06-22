@@ -198,7 +198,9 @@ class JoplinPlugin(BaseNotePlugin):
         )
 
         params['token'] = self.token
-        response = requests.request(method, url, params=params, timeout=10, **kwargs)
+        response = requests.request(
+            method, url, params=params, timeout=self._timeout, **kwargs
+        )
 
         if not response.ok:
             err = response.text

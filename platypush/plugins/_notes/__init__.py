@@ -38,15 +38,19 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
     Base class for note-taking plugins.
     """
 
-    def __init__(self, *args, poll_interval: float = 300, **kwargs):
+    def __init__(
+        self, *args, poll_interval: float = 300, timeout: Optional[int] = 60, **kwargs
+    ):
         """
         :param poll_interval: Poll interval in seconds to check for updates (default: 300).
             If set to zero or null, the plugin will not poll for updates,
             and events will be generated only when you manually call :meth:`.sync`.
+        :param timeout: Timeout in seconds for the plugin operations (default: 60).
         """
         RunnablePlugin.__init__(self, *args, poll_interval=poll_interval, **kwargs)
         DbMixin.__init__(self, *args, **kwargs)
         self._sync_lock = RLock()
+        self._timeout = timeout
         self.__last_sync_time: Optional[datetime] = None
 
     @property
