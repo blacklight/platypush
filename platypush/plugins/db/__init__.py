@@ -25,24 +25,25 @@ class DbPlugin(Plugin):
     _db_error_wait_interval = 5.0
     _db_error_retries = 3
 
-    def __init__(self, engine=None, *args, **kwargs):
+    def __init__(self, *args, engine: Optional[str] = None, **kwargs):
         """
         :param engine: Default SQLAlchemy connection engine string (e.g.
             ``sqlite:///:memory:`` or ``mysql://user:pass@localhost/test``)
             that will be used. You can override the default engine in the db
             actions.
-        :type engine: str
         :param args: Extra arguments that will be passed to
             ``sqlalchemy.create_engine`` (see
             https://docs.sqlalchemy.org/en/latest/core/engines.html)
         :param kwargs: Extra kwargs that will be passed to
             ``sqlalchemy.create_engine``
-            (see https:///docs.sqlalchemy.org/en/latest/core/engines.html)
+            (see https:///docs.sqlalchemy.org/en/latest/core/engines.html).
+            For example, if you want to debug the SQL statements that are
+            executed, you can set ``echo=True`` in the kwargs.
         """
 
         from platypush.config import Config
 
-        kwargs.update(Config.get('_db', {}))
+        kwargs.update(Config.get('_db') or {})
         super().__init__(*args, **kwargs)
         self.engine_url = engine or kwargs.pop('engine', None)
         self.args = args
@@ -57,6 +58,7 @@ class DbPlugin(Plugin):
 
         if not args:
             args = self.args
+
         kwargs = {**self.kwargs, **kwargs}
 
         if engine or not self.engine:
