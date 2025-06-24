@@ -30,6 +30,16 @@ class NextcloudNotesPlugin(BaseNotePlugin):
     <https://apps.nextcloud.com/apps/notes>`_,
     """
 
+    _api_settings = ApiSettings(
+        supports_notes_limit=True,
+        supports_notes_offset=False,
+        supports_collections_limit=False,
+        supports_collections_offset=False,
+        supports_search_limit=False,
+        supports_search_offset=False,
+        supports_search=False,
+    )
+
     def __init__(
         self,
         *args,
@@ -249,7 +259,7 @@ class NextcloudNotesPlugin(BaseNotePlugin):
     def _delete_note(self, note_id: Any, *_, **__):
         self._api_exec('DELETE', f'notes/{note_id}')
 
-    def _fetch_collections(self, *_, **__):
+    def _fetch_collections(self, *_, **__) -> List[NoteCollection]:
         """
         Retrieve the collections in the Notes folder using WebDAV.
         """
@@ -438,18 +448,6 @@ class NextcloudNotesPlugin(BaseNotePlugin):
 
         response.raise_for_status()
         self.logger.info('Deleted collection: %s', collection_id)
-
-    @property
-    def _api_settings(self) -> ApiSettings:
-        return ApiSettings(
-            supports_notes_limit=True,
-            supports_notes_offset=True,
-            supports_collections_limit=False,
-            supports_collections_offset=False,
-            supports_search_limit=False,
-            supports_search_offset=False,
-            supports_search=False,
-        )
 
     def _search(self, *_, **__) -> Results:
         """

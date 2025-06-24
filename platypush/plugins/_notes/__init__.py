@@ -285,10 +285,6 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
 
         return items
 
-    @property
-    def _api_settings(self) -> ApiSettings:
-        return ApiSettings()
-
     def _dispatch_events(self, *events):
         """
         Dispatch the given events to the event bus.

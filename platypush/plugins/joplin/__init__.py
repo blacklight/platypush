@@ -124,6 +124,16 @@ class JoplinPlugin(BaseNotePlugin):
     the headless instance.
     """
 
+    _api_settings = ApiSettings(
+        supports_notes_limit=True,
+        supports_notes_offset=True,
+        supports_collections_limit=True,
+        supports_collections_offset=True,
+        supports_search_limit=True,
+        supports_search_offset=True,
+        supports_search=True,
+    )
+
     _default_note_fields = (
         'id',
         'parent_id',
@@ -530,18 +540,6 @@ class JoplinPlugin(BaseNotePlugin):
             query += f' updated:{updated_after.strftime("%Y%m%d")}'
 
         return query.strip()
-
-    @property
-    def _api_settings(self) -> ApiSettings:
-        return ApiSettings(
-            supports_notes_limit=True,
-            supports_notes_offset=True,
-            supports_collections_limit=True,
-            supports_collections_offset=True,
-            supports_search_limit=True,
-            supports_search_offset=True,
-            supports_search=True,
-        )
 
     def _search(
         self,
