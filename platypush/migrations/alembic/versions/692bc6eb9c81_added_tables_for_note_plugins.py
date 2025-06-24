@@ -37,8 +37,8 @@ def _create_note_collection_table(metadata: sa.MetaData) -> sa.Table:
         sa.Column('id', sa.UUID, primary_key=True),
         sa.Column('external_id', sa.String, nullable=False),
         sa.Column('plugin', sa.String, nullable=False),
-        sa.Column('title', sa.String, nullable=False),
-        sa.Column('description', sa.String, nullable=True),
+        sa.Column('title', sa.String, nullable=False, index=True),
+        sa.Column('description', sa.String, nullable=True, index=True),
         sa.Column(
             'parent_id',
             sa.UUID,
@@ -47,13 +47,9 @@ def _create_note_collection_table(metadata: sa.MetaData) -> sa.Table:
         ),
         sa.Column('created_at', sa.DateTime, nullable=False),
         sa.Column('updated_at', sa.DateTime, nullable=False),
-    )
-
-    sa.Index(
-        'note_collection_external_id_plugin_idx',
-        table.c.external_id,
-        table.c.plugin,
-        unique=True,
+        sa.UniqueConstraint(
+            'external_id', 'plugin', name='note_collection_external_id_plugin_idx'
+        ),
     )
 
     return table
@@ -71,19 +67,15 @@ def _create_note_resource_table(metadata: sa.MetaData) -> sa.Table:
         sa.Column('id', sa.UUID, primary_key=True),
         sa.Column('external_id', sa.String, nullable=False),
         sa.Column('plugin', sa.String, nullable=False),
-        sa.Column('title', sa.String, nullable=False),
+        sa.Column('title', sa.String, nullable=False, index=True),
         sa.Column('filename', sa.String, nullable=False),
         sa.Column('content_type', sa.String, nullable=True),
         sa.Column('size', sa.Integer, nullable=True),
         sa.Column('created_at', sa.DateTime, nullable=False),
         sa.Column('updated_at', sa.DateTime, nullable=True),
-    )
-
-    sa.Index(
-        'note_resource_external_id_plugin_idx',
-        table.c.external_id,
-        table.c.plugin,
-        unique=True,
+        sa.UniqueConstraint(
+            'external_id', 'plugin', name='note_resource_external_id_plugin_idx'
+        ),
     )
 
     return table
@@ -101,8 +93,8 @@ def _create_note_table(metadata: sa.MetaData) -> sa.Table:
         sa.Column('id', sa.UUID, primary_key=True),
         sa.Column('external_id', sa.String, nullable=False),
         sa.Column('plugin', sa.String, nullable=False),
-        sa.Column('title', sa.String, nullable=False),
-        sa.Column('description', sa.String, nullable=True),
+        sa.Column('title', sa.String, nullable=False, index=True),
+        sa.Column('description', sa.String, nullable=True, index=True),
         sa.Column('content', sa.String, nullable=True),
         sa.Column(
             'parent_id',
@@ -120,13 +112,9 @@ def _create_note_table(metadata: sa.MetaData) -> sa.Table:
         sa.Column('source_app', sa.String, nullable=True, index=True),
         sa.Column('created_at', sa.DateTime, nullable=False),
         sa.Column('updated_at', sa.DateTime, nullable=False),
-    )
-
-    sa.Index(
-        'note_external_id_plugin_idx',
-        table.c.external_id,
-        table.c.plugin,
-        unique=True,
+        sa.UniqueConstraint(
+            'external_id', 'plugin', name='note_external_id_plugin_idx'
+        ),
     )
 
     return table

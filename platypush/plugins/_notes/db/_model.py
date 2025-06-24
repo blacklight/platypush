@@ -6,9 +6,9 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Float,
-    Index,
     Integer,
     String,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import PrimaryKeyConstraint
@@ -24,11 +24,16 @@ class NoteCollection(Base):
     """
 
     __tablename__ = f'{TABLE_PREFIX}collection'
+    __table_args__ = (
+        UniqueConstraint(
+            'external_id', 'plugin', name='note_collection_external_id_plugin_idx'
+        ),
+    )
 
     id = Column(UUID, primary_key=True, nullable=False, default=uuid4)
     external_id = Column(String, nullable=False)
     plugin = Column(String, nullable=False)
-    title = Column(String, nullable=False)
+    title = Column(String, nullable=False, index=True)
     description = Column(String, nullable=True)
     parent_id = Column(
         UUID,
@@ -40,11 +45,9 @@ class NoteCollection(Base):
     )
     created_at = Column(DateTime, nullable=False)
     updated_at = Column(DateTime, nullable=False)
-
     parent = relationship(
         'NoteCollection', remote_side=[id], foreign_keys=[parent_id], backref='children'
     )
-    Index('note_collection_external_id_plugin_idx', external_id, plugin, unique=True)
 
 
 class Note(Base):
@@ -53,12 +56,15 @@ class Note(Base):
     """
 
     __tablename__ = f'{TABLE_PREFIX}note'
+    __table_args__ = (
+        UniqueConstraint('external_id', 'plugin', name='note_external_id_plugin_idx'),
+    )
 
     id = Column(UUID, primary_key=True, nullable=False, default=uuid4)
     external_id = Column(String, nullable=False)
     plugin = Column(String, nullable=False)
-    title = Column(String, nullable=False)
-    description = Column(String, nullable=True)
+    title = Column(String, nullable=False, index=True)
+    description = Column(String, nullable=True, index=True)
     content = Column(String, nullable=True)
     parent_id = Column(
         UUID,
@@ -93,8 +99,6 @@ class Note(Base):
         cascade='all, delete-orphan',
     )
 
-    Index('note_external_id_plugin_idx', external_id, plugin, unique=True)
-
 
 class NoteTag(Base):
     """
@@ -119,12 +123,17 @@ class NoteResource(Base):
     """
 
     __tablename__ = f'{TABLE_PREFIX}resource'
+    __table_args__ = (
+        UniqueConstraint(
+            'external_id', 'plugin', name='note_resource_external_id_plugin_idx'
+        ),
+    )
 
     id = Column(UUID, primary_key=True, nullable=False, default=uuid4)
     external_id = Column(String, nullable=False)
     plugin = Column(String, nullable=False)
-    title = Column(String, nullable=False)
-    filename = Column(String, nullable=False)
+    title = Column(String, nullable=False, index=True)
+    filename = Column(String, nullable=False, index=True)
     content_type = Column(String, nullable=True)
     size = Column(Integer, nullable=True)
     created_at = Column(DateTime)
@@ -135,8 +144,6 @@ class NoteResource(Base):
         backref='resource',
         cascade='all, delete-orphan',
     )
-
-    Index('note_resource_external_id_plugin_idx', external_id, plugin, unique=True)
 
 
 class NoteNoteResource(Base):
