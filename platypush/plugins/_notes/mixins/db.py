@@ -1,3 +1,4 @@
+from abc import ABC
 from contextlib import contextmanager
 from threading import Event, RLock
 from typing import Any, Dict, Generator
@@ -8,19 +9,22 @@ from sqlalchemy.orm import Session
 from platypush.common.notes import Note, NoteCollection
 from platypush.context import get_plugin
 from platypush.plugins.db import DbPlugin
-from platypush.utils import get_plugin_name_by_class, utcnow
+from platypush.utils import utcnow
 
 from .._model import StateDelta
 from ..db._model import (
     Note as DbNote,
     NoteCollection as DbNoteCollection,
 )
+from .index import NotesIndexMixin
 
 
-class DbMixin:  # pylint: disable=too-few-public-methods
+class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
     """
     Mixin class for the database synchronization layer.
     """
+
+    _plugin_name: str
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -46,13 +50,6 @@ class DbMixin:  # pylint: disable=too-few-public-methods
         """
         with self._db_lock, self._db.get_session(*args, **kwargs) as session:
             yield session
-
-    @property
-    def _plugin_name(self) -> str:
-        """
-        Get the plugin name for the current context.
-        """
-        return get_plugin_name_by_class(self.__class__)
 
     def _to_db_collection(self, collection: NoteCollection) -> DbNoteCollection:
         """
@@ -223,6 +220,12 @@ class DbMixin:  # pylint: disable=too-few-public-methods
                     ),
                 )
             ).delete()
+
+            # Refresh the content index for any new or updated notes
+            self._refresh_content_index(
+                notes=[*state.notes.added.values(), *state.notes.updated.values()],
+                session=session,
+            )
 
             session.commit()
 

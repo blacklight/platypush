@@ -19,9 +19,9 @@ from platypush.message.event.notes import (
     CollectionDeletedEvent,
 )
 from platypush.plugins import RunnablePlugin, action
-from platypush.utils import to_datetime
+from platypush.utils import get_plugin_name_by_class, to_datetime
 
-from .db import DbMixin
+from .mixins import DbMixin
 from ._model import (
     ApiSettings,
     CollectionsDelta,
@@ -34,25 +34,44 @@ from ._model import (
 )
 
 
-class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
+class BaseNotePlugin(  # pylint: disable=too-many-ancestors
+    RunnablePlugin, DbMixin, ABC
+):
     """
     Base class for note-taking plugins.
     """
 
     def __init__(
-        self, *args, poll_interval: float = 300, timeout: Optional[int] = 60, **kwargs
+        self,
+        *args,
+        poll_interval: float = 300,
+        timeout: Optional[int] = 60,
+        max_tokens_length: int = 4,
+        **kwargs,
     ):
         """
         :param poll_interval: Poll interval in seconds to check for updates (default: 300).
             If set to zero or null, the plugin will not poll for updates,
             and events will be generated only when you manually call :meth:`.sync`.
         :param timeout: Timeout in seconds for the plugin operations (default: 60).
+        :param max_tokens_length: If the API used by the plugin doesn't support
+            free-text search (that's currently the case for
+            :class:`platypush.plugins.nextcloud.notes.NextcloudNotesPlugin` and
+            for any notes plugins that use the local file system as a backend),
+            then the plugin will use a search index to perform searches. This
+            parameter specifies the maximum length of the search tokens that will
+            be indexed, where each token is composed of a sequence of
+            alphanumeric characters (including underscores). The longer the number,
+            the more tokens will be indexed and longer exact phrases will be stored,
+            but more disk space will be used for the search index (default: 4).
         """
         RunnablePlugin.__init__(self, *args, poll_interval=poll_interval, **kwargs)
-        DbMixin.__init__(self, *args, **kwargs)
+        DbMixin.__init__(self, *args, max_tokens_length=max_tokens_length, **kwargs)
+
         self._sync_lock = RLock()
         self._timeout = timeout
         self.__last_sync_time: Optional[datetime] = None
+        self._plugin_name = get_plugin_name_by_class(self.__class__)
 
     @property
     def _last_sync_time_var(self) -> Variable:
@@ -626,7 +645,7 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
         self,
         *args,
         query: str,
-        item_type: ItemType = ItemType.NOTE,
+        type: str = ItemType.NOTE.value,  # pylint: disable=redefined-builtin
         include_terms: Optional[Dict[str, Any]] = None,
         exclude_terms: Optional[Dict[str, Any]] = None,
         created_before: Optional[datetime] = None,
@@ -649,7 +668,7 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
 
         :param query: The search query string (it will be searched in all the
             fields).
-        :param item_type: The type of items to search for - ``note``,
+        :param type: The type of items to search for - ``note``,
             ``collection``, or ``tag`` (default: ``note``).
         :param include_terms: Optional dictionary of terms to include in the search.
             The keys are field names and the values are strings to match against.
@@ -688,10 +707,12 @@ class BaseNotePlugin(RunnablePlugin, DbMixin, ABC):
                 }
 
         """
-        return self._search(
+        method = self._search if self._api_settings.supports_search else self._db_search
+
+        return method(
             query,
             *args,
-            item_type=item_type,
+            item_type=ItemType(type),
             include_terms=include_terms,
             exclude_terms=exclude_terms,
             created_before=to_datetime(created_before) if created_before else None,

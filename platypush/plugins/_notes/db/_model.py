@@ -170,4 +170,26 @@ class NoteNoteResource(Base):
     )
 
 
+class NoteContentIndex(Base):
+    """
+    Models the notes_content_index table, which contains full-text search
+    indexes for note content.
+    """
+
+    __tablename__ = f'{TABLE_PREFIX}content_index'
+    __table_args__ = (
+        PrimaryKeyConstraint('note_id', 'token', name='note_content_index_pkey'),
+    )
+
+    note_id = Column(
+        UUID,
+        ForeignKey(f'{TABLE_PREFIX}note.id', ondelete='CASCADE'),
+        primary_key=True,
+        nullable=False,
+    )
+    token = Column(String, primary_key=True, nullable=False, index=True)
+    length = Column(Integer, nullable=False)
+    count = Column(Integer, nullable=False, default=1)
+
+
 # vim:sw=4:ts=4:et:
