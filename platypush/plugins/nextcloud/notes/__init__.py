@@ -10,7 +10,7 @@ import requests
 
 from platypush.common.notes import Note, NoteCollection
 from platypush.config import Config
-from platypush.plugins._notes import ApiSettings, BaseNotePlugin, Results
+from platypush.plugins.notes import ApiSettings, BaseNotePlugin, Results
 from platypush.utils import utcnow
 
 

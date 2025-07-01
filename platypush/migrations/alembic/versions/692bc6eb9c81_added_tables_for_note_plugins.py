@@ -9,7 +9,7 @@ Create Date: 2025-06-20 12:27:54.533624
 from alembic import op
 import sqlalchemy as sa
 
-from platypush.plugins._notes.db._model import (
+from platypush.plugins.notes.db._model import (
     Note as DbNote,
     NoteCollection as DbNoteCollection,
     NoteNoteResource as DbNoteNoteResource,

@@ -23,9 +23,7 @@ from platypush.utils import get_plugin_name_by_class, to_datetime
 
 from .mixins import DbMixin
 from ._model import (
-    ApiSettings,
     CollectionsDelta,
-    Item,
     ItemType,
     NotesDelta,
     Results,
@@ -1206,14 +1204,3 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
                 self.logger.error('Error during sync: %s', e)
             finally:
                 self.wait_stop(self.poll_interval)
-
-
-__all__ = [
-    'ApiSettings',
-    'BaseNotePlugin',
-    'Item',
-    'ItemType',
-    'Note',
-    'NoteCollection',
-    'NoteSource',
-]
