@@ -20,6 +20,7 @@ python3-rsa
 python3-sqlalchemy
 python3-tornado
 python3-tz
+python3-watchdog
 python3-websocket
 python3-websockets
 python3-yaml
