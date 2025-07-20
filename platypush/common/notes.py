@@ -24,7 +24,7 @@ class Serializable(JSONAble, ABC):
         return self.to_dict()
 
 
-@dataclass(kw_only=True)
+@dataclass
 class Storable(Serializable, ABC):
     """
     Base class for note objects that can be represented as databases entries.
@@ -43,7 +43,7 @@ class Storable(Serializable, ABC):
         return UUID(int=int.from_bytes(digest, 'little'))
 
 
-@dataclass(kw_only=True)
+@dataclass
 class NoteSource(Serializable):
     """
     Represents a source for a note, such as a URL or file path.
@@ -57,7 +57,7 @@ class NoteSource(Serializable):
         return self.__dict__
 
 
-@dataclass(kw_only=True)
+@dataclass
 class Note(Storable):
     """
     Represents a note with a title and content.
@@ -132,7 +132,7 @@ class Note(Storable):
         )
 
 
-@dataclass(kw_only=True)
+@dataclass
 class NoteCollection(Storable):
     """
     Represents a collection of notes.
