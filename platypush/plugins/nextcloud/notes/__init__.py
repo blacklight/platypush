@@ -14,7 +14,7 @@ from platypush.plugins.notes import ApiSettings, BaseNotePlugin, Results
 from platypush.utils import utcnow
 
 
-@dataclass(kw_only=True)
+@dataclass
 class Settings:
     """
     Plugin settings for Nextcloud Notes.
