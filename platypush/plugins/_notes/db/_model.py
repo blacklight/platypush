@@ -3,7 +3,6 @@ from uuid import uuid4
 from platypush.common.db import Base
 
 from sqlalchemy import (
-    UUID,
     Column,
     DateTime,
     ForeignKey,
@@ -14,6 +13,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.schema import PrimaryKeyConstraint
+
+from platypush.common.db import UUID
 
 TABLE_PREFIX = 'notes_'
 

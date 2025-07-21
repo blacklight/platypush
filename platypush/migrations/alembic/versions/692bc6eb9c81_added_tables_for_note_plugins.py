@@ -9,6 +9,7 @@ Create Date: 2025-06-20 12:27:54.533624
 from alembic import op
 import sqlalchemy as sa
 
+from platypush.common.db import UUID
 from platypush.plugins._notes.db._model import (
     Note as DbNote,
     NoteCollection as DbNoteCollection,
@@ -34,14 +35,14 @@ def _create_note_collection_table(metadata: sa.MetaData) -> sa.Table:
 
     table = op.create_table(
         table_name,
-        sa.Column('id', sa.UUID, primary_key=True),
+        sa.Column('id', UUID, primary_key=True),
         sa.Column('external_id', sa.String, nullable=False),
         sa.Column('plugin', sa.String, nullable=False),
         sa.Column('title', sa.String, nullable=False, index=True),
         sa.Column('description', sa.String, nullable=True, index=True),
         sa.Column(
             'parent_id',
-            sa.UUID,
+            UUID,
             sa.ForeignKey(f'{table_name}.id', ondelete='CASCADE'),
             nullable=True,
         ),
@@ -64,7 +65,7 @@ def _create_note_resource_table(metadata: sa.MetaData) -> sa.Table:
 
     table = op.create_table(
         table_name,
-        sa.Column('id', sa.UUID, primary_key=True),
+        sa.Column('id', UUID, primary_key=True),
         sa.Column('external_id', sa.String, nullable=False),
         sa.Column('plugin', sa.String, nullable=False),
         sa.Column('title', sa.String, nullable=False, index=True),
@@ -90,7 +91,7 @@ def _create_note_table(metadata: sa.MetaData) -> sa.Table:
 
     table = op.create_table(
         table_name,
-        sa.Column('id', sa.UUID, primary_key=True),
+        sa.Column('id', UUID, primary_key=True),
         sa.Column('external_id', sa.String, nullable=False),
         sa.Column('plugin', sa.String, nullable=False),
         sa.Column('title', sa.String, nullable=False, index=True),
@@ -98,7 +99,7 @@ def _create_note_table(metadata: sa.MetaData) -> sa.Table:
         sa.Column('content', sa.String, nullable=True),
         sa.Column(
             'parent_id',
-            sa.UUID,
+            UUID,
             sa.ForeignKey(f'{DbNoteCollection.__tablename__}.id', ondelete='CASCADE'),
             nullable=True,
         ),
@@ -131,7 +132,7 @@ def _create_note_note_resource_table(metadata: sa.MetaData) -> sa.Table:
         table_name,
         sa.Column(
             'note_id',
-            sa.UUID,
+            UUID,
             sa.ForeignKey(f'{DbNote.__tablename__}.id', ondelete='CASCADE'),
         ),
         sa.Column(
@@ -154,7 +155,7 @@ def _create_note_tag_table(metadata: sa.MetaData) -> sa.Table:
         table_name,
         sa.Column(
             'note_id',
-            sa.UUID,
+            UUID,
             sa.ForeignKey(f'{DbNote.__tablename__}.id'),
             nullable=False,
         ),
