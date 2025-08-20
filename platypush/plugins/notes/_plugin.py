@@ -48,17 +48,17 @@ class NotesPlugin(BaseNotePlugin):
         self,
         path: str,
         *args,
-        notes_ext: str = 'md',
+        file_extension: str = 'md',
         poll_interval: float = 10.0,
         **kwargs,
     ):
         """
         :param path: The directory where the notes are stored.
-        :param notes_ext: The file extension for the notes. Defaults to ``md``.
+        :param file_extension: The file extension for the notes. Defaults to ``md``.
         """
         super().__init__(*args, poll_interval=poll_interval, **kwargs)
         self.path = os.path.abspath(os.path.expanduser(path))
-        self.notes_ext = notes_ext
+        self.file_extension = file_extension
 
         self._pending_events: List[FileSystemEvent] = []
         self._event_processor: Optional[Timer] = None
@@ -115,7 +115,7 @@ class NotesPlugin(BaseNotePlugin):
         """
         note_id = str(note_id).strip()
         if not self._is_note(note_id):
-            note_id += f'.{self.notes_ext}'
+            note_id += f'.{self.file_extension}'
         return self._id_to_path(note_id)
 
     def _note_path_to_id(self, path: str) -> Any:
@@ -124,7 +124,7 @@ class NotesPlugin(BaseNotePlugin):
         """
         path = os.path.expanduser(path)
         if not self._is_note(path):
-            path += f'.{self.notes_ext}'
+            path += f'.{self.file_extension}'
         return self._path_to_id(path)
 
     def _to_note(self, path: str, with_content: bool = False) -> Note:
@@ -214,7 +214,7 @@ class NotesPlugin(BaseNotePlugin):
         Create a new note with the given title and content.
         """
         title = title.strip()
-        filename = title if self._is_note(title) else f'{title}.{self.notes_ext}'
+        filename = title if self._is_note(title) else f'{title}.{self.file_extension}'
         note_id = os.path.join(parent or '', filename)
         path = self._note_id_to_path(note_id)
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -246,7 +246,7 @@ class NotesPlugin(BaseNotePlugin):
             filename = (
                 new_title
                 if self._is_note(new_title)
-                else f'{new_title}.{self.notes_ext}'
+                else f'{new_title}.{self.file_extension}'
             )
             note_id = os.path.join(new_parent, filename)
             new_path = self._note_id_to_path(note_id)
