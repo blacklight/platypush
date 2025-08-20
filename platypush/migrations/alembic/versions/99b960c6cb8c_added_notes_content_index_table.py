@@ -9,6 +9,7 @@ Create Date: 2025-06-23 00:22:30.278210
 from alembic import op
 import sqlalchemy as sa
 
+from platypush.common.db import UUID
 from platypush.plugins.notes.db._model import (
     Note as DbNote,
     NoteContentIndex as DbNoteContentIndex,
@@ -33,7 +34,7 @@ def _create_note_content_index_table(metadata: sa.MetaData) -> sa.Table:
         table_name,
         sa.Column(
             'note_id',
-            sa.UUID,
+            UUID,
             sa.ForeignKey(f'{DbNote.__tablename__}.id', ondelete='CASCADE'),
             nullable=False,
         ),
