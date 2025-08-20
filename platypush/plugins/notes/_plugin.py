@@ -24,7 +24,7 @@ class NotesPlugin(BaseNotePlugin):
     """
     This plugin provides the ability to manage local notes on the filesystem.
 
-    Specify the directory where the notes are stored in the ``notes_dir``
+    Specify the directory where the notes are stored in the ``path``
     parameter.
 
     It can be synchronized with external notes plugins through the
@@ -46,18 +46,18 @@ class NotesPlugin(BaseNotePlugin):
 
     def __init__(
         self,
-        notes_dir: str,
+        path: str,
         *args,
         notes_ext: str = 'md',
         poll_interval: float = 10.0,
         **kwargs,
     ):
         """
-        :param notes_dir: The directory where the notes are stored.
+        :param path: The directory where the notes are stored.
         :param notes_ext: The file extension for the notes. Defaults to ``md``.
         """
         super().__init__(*args, poll_interval=poll_interval, **kwargs)
-        self.notes_dir = os.path.abspath(os.path.expanduser(notes_dir))
+        self.path = os.path.abspath(os.path.expanduser(path))
         self.notes_ext = notes_ext
 
         self._pending_events: List[FileSystemEvent] = []
@@ -65,13 +65,11 @@ class NotesPlugin(BaseNotePlugin):
         self._watchdog_bus = Bus()
         self._observer = Observer()
         evt_hndl = EventHandler(
-            resource=MonitoredResource(path=self.notes_dir, recursive=True),
+            resource=MonitoredResource(path=self.path, recursive=True),
             bus=self._watchdog_bus,
         )
-        self._observer.schedule(evt_hndl, self.notes_dir, recursive=True)
-        self.logger.info(
-            'Notes plugin initialized with notes directory: %s', self.notes_dir
-        )
+        self._observer.schedule(evt_hndl, self.path, recursive=True)
+        self.logger.info('Notes plugin initialized with notes directory: %s', self.path)
 
     @classmethod
     def _is_note(cls, path: str) -> bool:
@@ -83,14 +81,14 @@ class NotesPlugin(BaseNotePlugin):
         """
         item_id = os.path.expanduser(str(item_id).strip())
         candidate_path = os.path.abspath(
-            item_id if os.path.isabs(item_id) else os.path.join(self.notes_dir, item_id)
+            item_id if os.path.isabs(item_id) else os.path.join(self.path, item_id)
         )
 
-        # Security check: must be inside notes_dir (abspath, not realpath, so symlinks OK)
-        notes_dir_abs = os.path.abspath(self.notes_dir)
+        # Security check: must be inside path (abspath, not realpath, so symlinks OK)
+        notes_dir_abs = os.path.abspath(self.path)
         assert (
             os.path.commonpath([candidate_path, notes_dir_abs]) == notes_dir_abs
-        ), f'Item ID "{item_id}" is outside the notes directory "{self.notes_dir}"'
+        ), f'Item ID "{item_id}" is outside the notes directory "{self.path}"'
 
         return candidate_path
 
@@ -100,14 +98,14 @@ class NotesPlugin(BaseNotePlugin):
         """
         path = os.path.expanduser(path)
         path = os.path.abspath(
-            path if os.path.isabs(path) else os.path.join(self.notes_dir, path)
+            path if os.path.isabs(path) else os.path.join(self.path, path)
         )
 
         # Security check: must be inside notes_dir (abspath, not realpath, so symlinks OK)
-        notes_dir_abs = os.path.abspath(self.notes_dir)
+        notes_dir_abs = os.path.abspath(self.path)
         assert (
             os.path.commonpath([path, notes_dir_abs]) == notes_dir_abs
-        ), f'Item path "{path}" is outside the notes directory "{self.notes_dir}"'
+        ), f'Item path "{path}" is outside the notes directory "{self.path}"'
 
         return os.path.relpath(path, notes_dir_abs)
 
@@ -184,7 +182,7 @@ class NotesPlugin(BaseNotePlugin):
         self, *_, limit: Optional[int] = None, offset: Optional[int] = None, **__
     ) -> List[Note]:
         notes = []
-        for root, _, files in os.walk(self.notes_dir):
+        for root, _, files in os.walk(self.path):
             for file in files:
                 if self._is_note(file):
                     path = os.path.join(root, file)
@@ -299,11 +297,11 @@ class NotesPlugin(BaseNotePlugin):
         self, *_, limit: Optional[int] = None, offset: Optional[int] = None, **__
     ) -> List[NoteCollection]:
         collections = {}
-        for root, _, files in os.walk(self.notes_dir):
+        for root, _, files in os.walk(self.path):
             for file in files:
                 if self._is_note(file):
                     path = os.path.dirname(os.path.join(root, file))
-                    if path == self.notes_dir:
+                    if path == self.path:
                         continue
 
                     try:
