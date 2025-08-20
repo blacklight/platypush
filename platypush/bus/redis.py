@@ -1,6 +1,8 @@
 import logging
+import random
 import threading
 import time
+from typing import Callable
 
 from platypush.bus import Bus
 from platypush.message import Message
@@ -72,8 +74,8 @@ class RedisBus(Bus):
                             data = msg.get('data', b'').decode('utf-8')
                             logger.debug('Received message on the Redis bus: %r', data)
                             parsed_msg = Message.build(data)
-                            if parsed_msg and self.on_message:
-                                self.on_message(parsed_msg)
+                            if parsed_msg:
+                                self._on_message(parsed_msg)
                         except Exception as e:
                             logger.exception(e)
                 except RedisConnectionError as e:
@@ -90,6 +92,27 @@ class RedisBus(Bus):
                         pubsub.unsubscribe(self.redis_queue)
                     except RedisConnectionError:
                         pass
+
+    def _on_message(self, msg: Message):
+        if self.on_message:
+            self.on_message(msg)
+
+        def msg_handler(event: Message, handler: Callable[[Message], None]):
+            logger.info(
+                'Triggering event handler <%s.%s> from event %s',
+                handler.__module__,
+                handler.__name__,
+                type(event),
+            )
+            handler(event)
+
+        for hndl in self._get_matching_handlers(msg):
+            threading.Thread(
+                target=msg_handler,
+                args=(msg, hndl),
+                name=f'handler-{hndl.__name__}-{random.randint(0, 10000)}',
+                daemon=True,
+            ).start()
 
     def post(self, msg):
         """

@@ -64,9 +64,9 @@ class Bus:
         self, msg: Message
     ) -> Iterable[Callable[[Message], None]]:
         return [
-            hndl.callback
+            callback
             for cls in type(msg).__mro__
-            for hndl in self.handlers.get(cls, [])
+            for callback, hndl in self.handlers.get(cls, {}).items()
             if hndl.match(msg)
         ]
 
@@ -104,9 +104,7 @@ class Bus:
             if msg is None:
                 continue
 
-            timestamp = (
-                msg.timestamp if hasattr(msg, 'timestamp') else msg.get('timestamp')
-            )
+            timestamp = getattr(msg, 'timestamp', None)
             if timestamp and time.time() - timestamp > self._MSG_EXPIRY_TIMEOUT:
                 logger.debug(
                     '%f seconds old message on the bus expired, ignoring it: %s',
