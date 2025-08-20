@@ -5,7 +5,7 @@ import threading
 import time
 
 from queue import Queue, Empty
-from typing import Callable, Dict, Iterable, Type
+from typing import Callable, Dict, Iterable, Optional, Type
 
 from platypush.message import Message
 from platypush.message.event import Event
@@ -50,10 +50,10 @@ class Bus:
         """Sends a message to the bus"""
         self.bus.put(msg)
 
-    def get(self):
+    def get(self, timeout: Optional[float] = 0.1) -> Optional[Message]:
         """Reads one message from the bus"""
         try:
-            return self.bus.get(timeout=0.1)
+            return self.bus.get(timeout=timeout)
         except Empty:
             return None
 

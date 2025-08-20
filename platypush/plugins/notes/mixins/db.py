@@ -1,7 +1,7 @@
 from abc import ABC
 from contextlib import contextmanager
 from threading import Event, RLock
-from typing import Any, Dict, Generator
+from typing import Any, Collection, Dict, Generator, List, Optional, Set, Union
 
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
@@ -55,16 +55,24 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
         """
         Convert a NoteCollection object to a DbNoteCollection object.
         """
-        return DbNoteCollection(
+        db_record = DbNoteCollection(
             id=collection._db_id,  # pylint:disable=protected-access
             external_id=collection.id,
             plugin=self._plugin_name,
             title=collection.title,
             description=collection.description,
-            parent_id=collection.parent.id if collection.parent else None,
             created_at=collection.created_at or utcnow(),
             updated_at=collection.updated_at or utcnow(),
         )
+
+        parent = (
+            self._to_db_collection(collection.parent) if collection.parent else None
+        )
+
+        if parent and parent.id != db_record.id:  # type: ignore[union-attr]
+            db_record.parent_id = parent.id
+
+        return db_record
 
     def _to_db_note(self, note: Note) -> DbNote:
         """
@@ -77,7 +85,7 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
             title=note.title,
             description=note.description,
             content=note.content,
-            parent_id=note.parent._db_id if note.parent else None,
+            parent_id=self._to_db_collection(note.parent).id if note.parent else None,
             digest=note.digest,
             latitude=note.latitude,
             longitude=note.longitude,
@@ -177,18 +185,67 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
             self._notes = notes
             self._collections = collections
 
+    def _fold_records(
+        self,
+        records: Collection[Union[Note, NoteCollection]],
+        visited: Optional[Set[Any]] = None,
+    ) -> Generator[List[Union[Note, NoteCollection]], None, None]:
+        """
+        Fold records in a list of lists to ensure that parent records are
+        always synced before their children.
+        """
+        cur_records: Dict[Any, Union[Note, NoteCollection]] = {}
+        visited = visited or set()
+
+        for record in records:
+            while record:
+                if record.id in visited:
+                    break
+
+                if record.parent is None or record.parent.id in visited:
+                    cur_records[record.id] = record
+                    visited.add(record.id)
+                    break
+
+                record = record.parent
+
+        if cur_records:
+            yield list(cur_records.values())
+            next_records = {
+                record.id: record
+                for record in records
+                if record.id not in visited and record.id not in cur_records
+            }
+            yield from self._fold_records(next_records.values(), visited)
+
     def _db_sync(self, state: StateDelta):
         if state.is_empty():
             return
 
         with self._get_db_session(autoflush=False) as session:
+            updated_collections = {
+                collection.id: collection
+                for collection in [
+                    *state.collections.added.values(),
+                    *state.collections.updated.values(),
+                    *[
+                        note.parent
+                        for note in state.notes.added.values()
+                        if note.parent
+                    ],
+                    *[
+                        note.parent
+                        for note in state.notes.updated.values()
+                        if note.parent
+                    ],
+                ]
+            }
+
             # Add new/updated collections
-            for collection in [
-                *state.collections.added.values(),
-                *state.collections.updated.values(),
-            ]:
-                db_collection = self._to_db_collection(collection)
-                session.merge(db_collection)
+            for collections in self._fold_records(updated_collections.values()):
+                for collection in collections:
+                    db_collection = self._to_db_collection(collection)  # type: ignore[arg-type]
+                    session.merge(db_collection)
 
             # Delete removed collections
             session.query(DbNoteCollection).filter(
@@ -207,9 +264,18 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
             session.flush()
 
             # Add new/updated notes
-            for note in [*state.notes.added.values(), *state.notes.updated.values()]:
-                db_note = self._to_db_note(note)
-                session.merge(db_note)
+            for notes in self._fold_records(
+                [
+                    *state.notes.added.values(),
+                    *state.notes.updated.values(),
+                ]
+            ):
+                for note in notes:
+                    if isinstance(note, NoteCollection):
+                        continue
+
+                    db_note = self._to_db_note(note)  # type: ignore[arg-type]
+                    session.merge(db_note)
 
             # Delete removed notes
             session.query(DbNote).filter(

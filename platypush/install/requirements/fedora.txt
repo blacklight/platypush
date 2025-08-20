@@ -19,6 +19,7 @@ python-requests
 python-rsa
 python-sqlalchemy
 python-tornado
+python-watchdog
 python-websocket-client
 python-websockets
 python-yaml

@@ -1,0 +1,17 @@
+{
+  "manifest": {
+    "events": [
+      "platypush.message.event.notes.NoteCreatedEvent",
+      "platypush.message.event.notes.NoteUpdatedEvent",
+      "platypush.message.event.notes.NoteDeletedEvent",
+      "platypush.message.event.notes.CollectionCreatedEvent",
+      "platypush.message.event.notes.CollectionUpdatedEvent",
+      "platypush.message.event.notes.CollectionDeletedEvent"
+    ],
+    "install": {
+      "pip": []
+    },
+    "package": "platypush.plugins.notes",
+    "type": "plugin"
+  }
+}

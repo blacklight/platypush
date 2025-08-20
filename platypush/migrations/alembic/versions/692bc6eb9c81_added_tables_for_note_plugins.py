@@ -10,7 +10,7 @@ from alembic import op
 import sqlalchemy as sa
 
 from platypush.common.db import UUID
-from platypush.plugins._notes.db._model import (
+from platypush.plugins.notes.db._model import (
     Note as DbNote,
     NoteCollection as DbNoteCollection,
     NoteNoteResource as DbNoteNoteResource,

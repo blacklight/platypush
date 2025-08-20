@@ -5,6 +5,7 @@ class FileSystemEvent(Event):
     """
     Base class for file system events - namely, file/directory creation, deletion and modification.
     """
+
     def __init__(self, path: str, *, is_directory: bool, **kwargs):
         super().__init__(path=path, is_directory=is_directory, **kwargs)
 
@@ -25,3 +26,12 @@ class FileSystemModifyEvent(FileSystemEvent):
     """
     Event triggered when a monitored file or directory is modified.
     """
+
+
+class FileSystemMovedEvent(FileSystemEvent):
+    """
+    Event triggered when a monitored file or directory is moved.
+    """
+
+    def __init__(self, *args, new_path: str, **kwargs):
+        super().__init__(*args, new_path=new_path, **kwargs)

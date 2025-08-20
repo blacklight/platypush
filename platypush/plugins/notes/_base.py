@@ -23,9 +23,7 @@ from platypush.utils import get_plugin_name_by_class, to_datetime
 
 from .mixins import DbMixin
 from ._model import (
-    ApiSettings,
     CollectionsDelta,
-    Item,
     ItemType,
     NotesDelta,
     Results,
@@ -536,6 +534,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         previous_collections: Dict[Any, NoteCollection],
         notes: Dict[Any, Note],
         collections: Dict[Any, NoteCollection],
+        filter_by_latest_updated_at: bool = True,
     ) -> StateDelta:
         """
         Get the state delta between the previous and current state of notes and collections.
@@ -544,6 +543,8 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         :param previous_collections: Previous collections state.
         :param notes: Current notes state.
         :param collections: Current collections state.
+        :param filter_by_latest_updated_at: If True, select only the changes
+            more recent than the latest updated_at timestamp.
         :return: A StateDelta object containing the changes.
         """
         state_delta = StateDelta()
@@ -554,7 +555,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         # Get new and updated notes
         for note in notes.values():
             updated_at = note.updated_at.timestamp() if note.updated_at else 0
-            if updated_at > latest_updated_at:
+            if not filter_by_latest_updated_at or updated_at > latest_updated_at:
                 if note.id not in previous_notes:
                     state_delta.notes.added[note.id] = note
                 else:
@@ -572,7 +573,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             updated_at = (
                 collection.updated_at.timestamp() if collection.updated_at else 0
             )
-            if updated_at > latest_updated_at:
+            if not filter_by_latest_updated_at or updated_at > latest_updated_at:
                 if collection.id not in previous_collections:
                     state_delta.collections.added[collection.id] = collection
                 else:
@@ -1206,14 +1207,3 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
                 self.logger.error('Error during sync: %s', e)
             finally:
                 self.wait_stop(self.poll_interval)
-
-
-__all__ = [
-    'ApiSettings',
-    'BaseNotePlugin',
-    'Item',
-    'ItemType',
-    'Note',
-    'NoteCollection',
-    'NoteSource',
-]

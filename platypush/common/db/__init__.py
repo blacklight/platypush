@@ -1,9 +1,16 @@
 from contextlib import contextmanager
 from dataclasses import dataclass
 
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import __version__
 
-from .uuid import UUID
+sa_version = tuple(map(int, __version__.split('.')))
+
+if sa_version >= (1, 4, 0):
+    from sqlalchemy.orm import declarative_base
+else:
+    from sqlalchemy.ext.declarative import declarative_base
+
+from .uuid import UUID  # noqa: E402
 
 Base = declarative_base()
 

@@ -5,8 +5,8 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 try:
     # SQLAlchemy >= 2.0
-    from sqlalchemy import UUID
-except:
+    from sqlalchemy import UUID  # type:ignore[import-not-found]
+except Exception:
     # SQLAlchemy < 2.0
     class UUID(TypeDecorator):
         """
@@ -48,3 +48,6 @@ except:
                 return uuid.UUID(bytes=value)
             else:
                 return uuid.UUID(str(value))
+
+
+__all__ = ('UUID',)

@@ -3,25 +3,10 @@
     "events": [
       "platypush.message.event.file.FileSystemCreateEvent",
       "platypush.message.event.file.FileSystemDeleteEvent",
-      "platypush.message.event.file.FileSystemModifyEvent"
+      "platypush.message.event.file.FileSystemModifyEvent",
+      "platypush.message.event.file.FileSystemMovedEvent"
     ],
-    "install": {
-      "apk": [
-        "py3-watchdog"
-      ],
-      "apt": [
-        "python3-watchdog"
-      ],
-      "dnf": [
-        "python-watchdog"
-      ],
-      "pacman": [
-        "python-watchdog"
-      ],
-      "pip": [
-        "watchdog"
-      ]
-    },
+    "install": {},
     "package": "platypush.plugins.file.monitor",
     "type": "plugin"
   }

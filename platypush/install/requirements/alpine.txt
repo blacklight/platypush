@@ -19,6 +19,7 @@ py3-simplejson
 py3-sqlalchemy
 py3-tornado
 py3-tz
+py3-watchdog
 py3-websocket-client
 py3-websockets
 py3-wheel
