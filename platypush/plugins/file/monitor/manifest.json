@@ -3,7 +3,8 @@
     "events": [
       "platypush.message.event.file.FileSystemCreateEvent",
       "platypush.message.event.file.FileSystemDeleteEvent",
-      "platypush.message.event.file.FileSystemModifyEvent"
+      "platypush.message.event.file.FileSystemModifyEvent",
+      "platypush.message.event.file.FileSystemMovedEvent"
     ],
     "install": {},
     "package": "platypush.plugins.file.monitor",

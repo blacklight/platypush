@@ -14,6 +14,7 @@ from platypush.message.event.file import (
     FileSystemModifyEvent,
     FileSystemCreateEvent,
     FileSystemDeleteEvent,
+    FileSystemMovedEvent,
 )
 
 from .resources import (
@@ -67,11 +68,14 @@ class EventHandler(FileSystemEventHandler):
 
         return False
 
-    def _on_event(self, event, output_event_type):
+    def _on_event(self, event, output_event_type, **kwargs):
         if self._should_ignore_event(event):
             return
+
         self.bus.post(
-            output_event_type(path=event.src_path, is_directory=event.is_directory)
+            output_event_type(
+                path=event.src_path, is_directory=event.is_directory, **kwargs
+            )
         )
 
     def on_created(self, event):
@@ -83,8 +87,8 @@ class EventHandler(FileSystemEventHandler):
     def on_modified(self, event):
         self._on_event(event, FileSystemModifyEvent)
 
-    def on_moved(self, *_, **__):
-        pass
+    def on_moved(self, event):
+        self._on_event(event, FileSystemMovedEvent, new_path=event.dest_path)
 
     @classmethod
     def from_resource(cls, resource: MonitoredResource):
