@@ -99,6 +99,22 @@ class Note(Base):
         backref='note',
         cascade='all, delete-orphan',
     )
+    synced_from = relationship(
+        'NoteSyncState',
+        foreign_keys='NoteSyncState.local_note_id',
+        backref='local_note',
+    )
+    synced_to = relationship(
+        'NoteSyncState',
+        foreign_keys='NoteSyncState.remote_note_id',
+        backref='remote_note',
+    )
+    conflict_note = relationship(
+        'NoteSyncState',
+        foreign_keys='NoteSyncState.conflict_note_id',
+        backref='conflict_note',
+        uselist=False,
+    )
 
 
 class NoteTag(Base):
@@ -191,6 +207,38 @@ class NoteContentIndex(Base):
     token = Column(String, primary_key=True, nullable=False, index=True)
     length = Column(Integer, nullable=False)
     count = Column(Integer, nullable=False, default=1)
+
+
+class NoteSyncState(Base):
+    """
+    Models the notes_sync_state table, which contains the synchronization state
+    for notes and collections.
+    """
+
+    __tablename__ = f'{TABLE_PREFIX}sync_state'
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            'local_note_id', 'remote_note_id', name='note_sync_state_pkey'
+        ),
+    )
+
+    local_note_id = Column(
+        UUID,
+        ForeignKey(f'{TABLE_PREFIX}note.id', ondelete='CASCADE'),
+        primary_key=True,
+        nullable=False,
+    )
+    remote_note_id = Column(
+        UUID,
+        ForeignKey(f'{TABLE_PREFIX}note.id', ondelete='CASCADE'),
+        primary_key=True,
+        nullable=False,
+    )
+    conflict_note_id = Column(
+        UUID,
+        ForeignKey(f'{TABLE_PREFIX}note.id', ondelete='SET NULL'),
+        nullable=True,
+    )
 
 
 # vim:sw=4:ts=4:et:
