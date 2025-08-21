@@ -217,6 +217,7 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
             self._notes = notes
             self._collections = collections
 
+    # pylint: disable=protected-access
     def _fold_records(
         self,
         records: Collection[Union[Note, NoteCollection]],
@@ -231,22 +232,22 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
 
         for record in records:
             while record:
-                if record.id in visited:
+                if record._db_id in visited:
                     break
 
-                if record.parent is None or record.parent.id in visited:
-                    cur_records[record.id] = record
-                    visited.add(record.id)
+                if record.parent is None or record.parent._db_id in visited:
+                    cur_records[record._db_id] = record
+                    visited.add(record._db_id)
                     break
 
                 record = record.parent
 
             if isinstance(record, Note):
                 sync_notes = {
-                    **{note.id: note for note in record.synced_from},
-                    **{note.id: note for note in record.synced_to},
+                    **{note._db_id: note for note in record.synced_from},
+                    **{note._db_id: note for note in record.synced_to},
                     **(
-                        {record.conflict_note.id: record.conflict_note}
+                        {record.conflict_note._db_id: record.conflict_note}
                         if record.conflict_note
                         else {}
                     ),
@@ -258,9 +259,9 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
         if cur_records:
             yield list(cur_records.values())
             next_records = {
-                record.id: record
+                record._db_id: record
                 for record in records
-                if record.id not in visited and record.id not in cur_records
+                if record._db_id not in visited and record._db_id not in cur_records
             }
             yield from self._fold_records(next_records.values(), visited)
 
