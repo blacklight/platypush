@@ -137,6 +137,10 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
         assert entities, 'entities plugin not initialized'
         return entities
 
+    @property
+    def _plugin_name(self):
+        return get_plugin_name_by_class(self.__class__)
+
     def __str__(self):
         """
         :return: The qualified name of the plugin.
