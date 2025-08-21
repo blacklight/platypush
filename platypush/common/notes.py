@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from hashlib import md5, sha256
 from typing import Any, Dict, List, Optional, Set
 from uuid import UUID
@@ -43,6 +44,36 @@ class Storable(Serializable, ABC):
         return UUID(int=int.from_bytes(digest, 'little'))
 
 
+class NoteContentType(Enum):
+    """
+    Enum representing the content type of a note.
+    """
+
+    TEXT = 'txt'
+    MARKDOWN = 'md'
+    HTML = 'html'
+
+    @property
+    def mime_type(self) -> str:
+        if self.value == 'txt':
+            return 'text/plain'
+        if self.value == 'md':
+            return 'text/markdown'
+        return f'text/{self.value}'
+
+    @classmethod
+    def by_extension(cls, ext: str) -> 'NoteContentType':
+        """
+        Get the content type by file extension.
+        """
+        ext = ext.lower().strip('.')
+        for content_type in cls:
+            if content_type.value == ext:
+                return content_type
+
+        return cls.TEXT  # Default to TEXT if no match found
+
+
 @dataclass
 class NoteSource(Serializable):
     """
@@ -66,6 +97,7 @@ class Note(Storable):
     title: str
     description: Optional[str] = None
     content: Optional[str] = None
+    content_type: NoteContentType = NoteContentType.MARKDOWN
     parent: Optional['NoteCollection'] = None
     tags: Set[str] = field(default_factory=set)
     created_at: Optional[datetime] = None
@@ -90,14 +122,9 @@ class Note(Storable):
         if self._path:
             return self._path
 
-        # Recursively build the path by expanding the parent collections
-        path = []
-        parent = self.parent
-        while parent:
-            path.append(parent.title)
-            parent = parent.parent
-
-        return '/'.join(reversed(path)) + f'/{self.title}.md'
+        return (
+            self.parent.path if self.parent else '/'
+        ) + f'{self.title}.{self.content_type.value}'
 
     @path.setter
     def path(self, value: str):
@@ -153,6 +180,19 @@ class NoteCollection(Storable):
     @property
     def collections(self) -> List['NoteCollection']:
         return list(self._collections.values())
+
+    @property
+    def path(self) -> str:
+        """
+        Generate the path for the collection based on its hierarchy.
+        """
+        path = []
+        parent = self.parent
+        while parent:
+            path.append(parent.title)
+            parent = parent.parent
+
+        return ('/' + '/'.join(reversed([*path, self.title])) + '/').replace('//', '/')
 
     def to_dict(self) -> dict:
         return NoteCollectionSchema().dump(  # type: ignore

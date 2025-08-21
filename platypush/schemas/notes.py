@@ -63,9 +63,25 @@ class NoteItemSchema(BaseNoteSchema):
         },
     )
 
+    path = fields.String(
+        dump_only=True,
+        metadata={
+            'description': 'Path to the note file',
+            'example': '/notes/my_important_note.md',
+        },
+    )
+
     content = fields.String(
         metadata={
             'example': 'Note content goes here',
+        },
+    )
+
+    content_type = fields.Function(
+        lambda data: data.get('content_type'),
+        metadata={
+            'description': 'Content type of the note (e.g., txt, md, html)',
+            'example': 'md',
         },
     )
 
