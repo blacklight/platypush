@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from watchdog.observers import Observer
 
 from platypush.bus import Bus
-from platypush.common.notes import Note, NoteCollection
+from platypush.common.notes import Note, NoteCollection, NoteContentType
 from platypush.message.event.file import (
     FileSystemEvent,
     FileSystemDeleteEvent,
@@ -144,6 +144,7 @@ class NotesPlugin(BaseNotePlugin):
             plugin=self._plugin_name,
             title=os.path.splitext(os.path.basename(path))[0],
             content=content,
+            content_type=NoteContentType.by_extension(os.path.splitext(path)[1][1:]),
             parent=self._fetch_collection(
                 os.path.dirname(note_id) if os.path.dirname(note_id) else None
             ),
@@ -401,13 +402,13 @@ class NotesPlugin(BaseNotePlugin):
             with self._sync_lock:
                 if self._event_processor is None:
                     self._event_processor = Timer(
-                        self.poll_interval or 1.0, self._sync_events
+                        self.poll_interval or 1.0, self._process_sync_events
                     )
                     self._event_processor.start()
 
                 self._pending_events.append(evt)
 
-    def _sync_events(self):
+    def _process_sync_events(self):
         """
         Timed function to process pending file system events.
         """

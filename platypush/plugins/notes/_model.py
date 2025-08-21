@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any, Dict, Iterable
+from datetime import datetime
+from enum import Enum, IntEnum
+from typing import Any, Dict, Iterable, Optional
 
 from platypush.common.notes import Note, NoteCollection, Serializable, Storable
 
@@ -79,10 +80,16 @@ class StateDelta:
         """
         String representation of the StateDelta.
         """
+        last_updated_at_str = (
+            datetime.fromtimestamp(self.latest_updated_at).isoformat()
+            if self.latest_updated_at
+            else "None"
+        )
+
         return (
             f'StateDelta(notes={self.notes}, '
             f'collections={self.collections}, '
-            f'latest_updated_at={self.latest_updated_at})'
+            f'latest_updated_at={last_updated_at_str})'
         )
 
 
@@ -164,3 +171,62 @@ class ResultsType(Enum):
     NOTES = 'notes'
     COLLECTIONS = 'collections'
     SEARCH = 'search'
+
+
+class SyncState(IntEnum):
+    """
+    Enum for defining the state of synchronization.
+    """
+
+    UNINITIALIZED = 0
+    """The synchronization state has not been initialized."""
+    SYNCING_LOCAL = 1
+    """The local synchronization is being performed."""
+    SYNCED_LOCAL = 2
+    """The plugin has pulled local data and is ready to synchronize notes."""
+    SYNCING_REMOTE = 3
+    """The remote synchronization is being performed."""
+    SYNCED_REMOTE = 4
+    """The plugin has pulled remote data and is ready to synchronize notes."""
+    READY = 5
+    """The plugin has pulled both local and remote data."""
+
+
+class SyncConflictResolution(Enum):
+    """
+    Enum for defining how to resolve synchronization conflicts.
+    """
+
+    OVERWRITE = "overwrite"
+    """Overwrite the local version of the note with the remote version."""
+    MERGE = "merge"
+    """
+    Attempt a merge the local and remote versions of the note, and save both
+    the versions to temporary files following the naming template
+    ``__CONFLICT_{note_id}.{local|remote}.{ext}``.
+    """
+    IGNORE = "ignore"
+    """Ignore the conflict and do not update the note."""
+
+
+@dataclass
+class SyncConfig:
+    """
+    Configuration for synchronization settings.
+    """
+
+    plugin: str
+    """The name of the plugin to subscribe to for synchronization."""
+    conflict_resolution: SyncConflictResolution = SyncConflictResolution.MERGE
+    """The strategy to resolve conflicts during synchronization."""
+    pull_remote: bool = True
+    """
+    If set to True, the plugin will pull all the notes from the remote upon
+    initialization. If set to False, the plugin will only synchronize changes
+    processed while it is running.
+    """
+    timeout: Optional[float] = 30
+    """
+    The timeout in seconds for synchronization operations. If None, no
+    timeout is applied.
+    """
