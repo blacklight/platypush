@@ -241,6 +241,20 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
 
                 record = record.parent
 
+            if isinstance(record, Note):
+                sync_notes = {
+                    **{note.id: note for note in record.synced_from},
+                    **{note.id: note for note in record.synced_to},
+                    **(
+                        {record.conflict_note.id: record.conflict_note}
+                        if record.conflict_note
+                        else {}
+                    ),
+                }
+
+                cur_records.update(sync_notes)
+                visited.update(sync_notes.keys())
+
         if cur_records:
             yield list(cur_records.values())
             next_records = {
