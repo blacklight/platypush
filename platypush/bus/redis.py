@@ -98,7 +98,7 @@ class RedisBus(Bus):
             self.on_message(msg)
 
         def msg_handler(event: Message, handler: Callable[[Message], None]):
-            logger.info(
+            logger.debug(
                 'Triggering event handler <%s.%s> from event %s',
                 handler.__module__,
                 handler.__name__,
