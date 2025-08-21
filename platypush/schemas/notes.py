@@ -1,5 +1,5 @@
 from abc import ABC
-from marshmallow import INCLUDE, Schema, fields
+from marshmallow import INCLUDE, Schema, fields, post_dump
 
 from platypush.schemas import DateTime
 
@@ -161,6 +161,49 @@ class NoteItemSchema(BaseNoteSchema):
         },
     )
 
+    sync_from = fields.List(
+        fields.Nested('NoteItemSchema'),
+        dump_only=True,
+        metadata={
+            'description': 'List of notes this note was synced from',
+            'example': [
+                {
+                    'id': 1236,
+                    'title': 'Synced Note',
+                    'plugin': 'sync_plugin1',
+                },
+            ],
+        },
+    )
+
+    sync_to = fields.List(
+        fields.Nested('NoteItemSchema'),
+        dump_only=True,
+        metadata={
+            'description': 'List of notes this note was synced to',
+            'example': [
+                {
+                    'id': 1237,
+                    'title': 'Synced Note',
+                    'plugin': 'sync_plugin2',
+                },
+            ],
+        },
+    )
+
+    conflict_note = fields.Nested(
+        'NoteItemSchema',
+        dump_only=True,
+        metadata={
+            'description': 'Note that is in conflict with this note',
+            'example': {
+                'id': 1238,
+                'title': 'Conflict Note',
+                'plugin': 'sync_plugin3',
+            },
+        },
+    )
+
     created_at = DateTime(
         metadata={
             'description': 'When the note was created',
@@ -172,6 +215,26 @@ class NoteItemSchema(BaseNoteSchema):
             'description': 'When the note was last updated',
         },
     )
+
+    @post_dump
+    def compact_related_notes(self, data: dict, **_) -> dict:
+        """
+        Compact the related notes in the output to only include minimal information.
+        """
+        from platypush.common.notes import Note
+
+        if 'sync_from' in data:
+            data['sync_from'] = [
+                Note(**note).to_dict(minimal=True) for note in data['sync_from']
+            ]
+        if 'sync_to' in data:
+            data['sync_to'] = [
+                Note(**note).to_dict(minimal=True) for note in data['sync_to']
+            ]
+        if data.get('conflict_note'):
+            data['conflict_note'] = Note(**data['conflict_note']).to_dict(minimal=True)
+
+        return data
 
 
 class NoteCollectionSchema(BaseNoteSchema):

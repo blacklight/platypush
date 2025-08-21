@@ -19,7 +19,7 @@ from platypush.message.event.notes import (
     CollectionDeletedEvent,
 )
 from platypush.plugins import RunnablePlugin, action
-from platypush.utils import get_plugin_name_by_class, to_datetime
+from platypush.utils import to_datetime
 
 from .mixins import DbMixin
 from ._model import (
@@ -69,7 +69,6 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         self._sync_lock = RLock()
         self._timeout = timeout
         self.__last_sync_time: Optional[datetime] = None
-        self._plugin_name = get_plugin_name_by_class(self.__class__)
 
     @property
     def _last_sync_time_var(self) -> Variable:
@@ -79,7 +78,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         return Variable(f'_LAST_ITEMS_SYNC_TIME[{self._plugin_name}]')
 
     @property
-    def _last_sync_time(self) -> Optional[datetime]:
+    def _last_local_sync_time(self) -> Optional[datetime]:
         """
         Get the last sync time from the variable.
         """
@@ -89,8 +88,8 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
 
         return self.__last_sync_time
 
-    @_last_sync_time.setter
-    def _last_sync_time(self, value: Optional[datetime]):
+    @_last_local_sync_time.setter
+    def _last_local_sync_time(self, value: Optional[datetime]):
         """
         Set the last sync time to the variable.
         """
@@ -530,11 +529,13 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
 
     def _get_state_delta(
         self,
+        *,
         previous_notes: Dict[Any, Note],
         previous_collections: Dict[Any, NoteCollection],
         notes: Dict[Any, Note],
         collections: Dict[Any, NoteCollection],
         filter_by_latest_updated_at: bool = True,
+        **_,
     ) -> StateDelta:
         """
         Get the state delta between the previous and current state of notes and collections.
@@ -549,7 +550,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         """
         state_delta = StateDelta()
         latest_updated_at = new_latest_updated_at = (
-            self._last_sync_time.timestamp() if self._last_sync_time else 0
+            self._last_local_sync_time.timestamp() if self._last_local_sync_time else 0
         )
 
         # Get new and updated notes
@@ -567,6 +568,11 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         for note_id in previous_notes:
             if note_id not in notes:
                 state_delta.notes.deleted[note_id] = previous_notes[note_id]
+
+        collections = {
+            **{note.parent.id: note.parent for note in notes.values() if note.parent},
+            **collections,
+        }
 
         # Get new and updated collections
         for collection in collections.values():
@@ -1169,11 +1175,13 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
                 self.logger.info('Synchronizing changes: %s', state_delta)
 
             self._db_sync(state_delta)
-            self._last_sync_time = datetime.fromtimestamp(state_delta.latest_updated_at)
+            self._last_local_sync_time = datetime.fromtimestamp(
+                state_delta.latest_updated_at
+            )
             self._process_events(state_delta)
 
         self.logger.info(
-            'Synchronization completed in %.2f seconds',
+            'Local synchronization completed in %.2f seconds',
             time() - t_start,
         )
 
@@ -1190,7 +1198,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         self.logger.info('Resetting last sync time')
         with self._sync_lock:
             self._db_clear()
-            self._last_sync_time = None
+            self._last_local_sync_time = None
             self._notes.clear()
             self._collections.clear()
 
