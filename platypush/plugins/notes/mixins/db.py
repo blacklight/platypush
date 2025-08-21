@@ -24,8 +24,6 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
     Mixin class for the database synchronization layer.
     """
 
-    _plugin_name: str
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._notes: Dict[Any, Note] = {}
@@ -50,6 +48,26 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
         """
         with self._db_lock, self._db.get_session(*args, **kwargs) as session:
             yield session
+
+    @property
+    def _notes_by_path(self) -> Dict[str, Note]:
+        """
+        Get a dictionary of notes indexed by their path.
+        """
+        return {
+            note.path: note for note in self._notes.values() if note.path is not None
+        }
+
+    @property
+    def _collections_by_path(self) -> Dict[str, NoteCollection]:
+        """
+        Get a dictionary of collections indexed by their path.
+        """
+        return {
+            collection.path: collection
+            for collection in self._collections.values()
+            if collection.path is not None
+        }
 
     def _to_db_collection(self, collection: NoteCollection) -> DbNoteCollection:
         """
