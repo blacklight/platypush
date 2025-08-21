@@ -108,6 +108,9 @@ class Note(Storable):
     altitude: Optional[float] = None
     author: Optional[str] = None
     source: Optional[NoteSource] = None
+    synced_from: List['Note'] = field(default_factory=list)
+    synced_to: List['Note'] = field(default_factory=list)
+    conflict_note: Optional['Note'] = None
     _path: Optional[str] = None
 
     def __post_init__(self):
@@ -138,7 +141,18 @@ class Note(Storable):
             self.digest = sha256(self.content.encode('utf-8')).hexdigest()
         return self.digest
 
-    def to_dict(self) -> dict:
+    def to_dict(self, minimal: bool = False) -> dict:
+        if minimal:
+            return {
+                'id': self.id,
+                'title': self.title,
+                'description': self.description,
+                'plugin': self.plugin,
+                'path': self.path,
+                'content_type': self.content_type.value,
+                'digest': self.digest,
+            }
+
         return NoteItemSchema().dump(  # type: ignore
             {
                 **{
@@ -213,13 +227,6 @@ class NoteCollection(Storable):
                 'collections': [
                     collection.to_dict() for collection in self.collections
                 ],
-                'notes': [
-                    {
-                        field: getattr(note, field)
-                        for field in [*note.__dataclass_fields__, 'digest']
-                        if field not in ['parent', 'content']
-                    }
-                    for note in self.notes
-                ],
+                'notes': [note.to_dict(minimal=True) for note in self.notes],
             }
         )

@@ -112,6 +112,13 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
             source_name=note.source.name if note.source else None,
             source_url=note.source.url if note.source else None,
             source_app=note.source.app if note.source else None,
+            synced_from=[
+                self._to_db_note(synced_note) for synced_note in note.synced_from
+            ],
+            synced_to=[self._to_db_note(synced_note) for synced_note in note.synced_to],
+            conflict_note=(
+                self._to_db_note(note.conflict_note) if note.conflict_note else None
+            ),
             created_at=note.created_at or utcnow(),
             updated_at=note.updated_at or utcnow(),
         )
@@ -143,6 +150,13 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
                     'app': db_note.source_app,
                 }
                 if db_note.source_name  # type: ignore[arg-type]
+                else None
+            ),
+            synced_from=[self._from_db_note(note) for note in db_note.synced_from],
+            synced_to=[self._from_db_note(note) for note in db_note.synced_to],
+            conflict_note=(
+                self._from_db_note(db_note.conflict_note)  # type: ignore[arg-type]
+                if db_note.conflict_note
                 else None
             ),
             created_at=db_note.created_at,  # type: ignore[arg-type]
