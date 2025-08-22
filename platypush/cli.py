@@ -179,5 +179,12 @@ def parse_cmdline(args: Sequence[str]) -> argparse.Namespace:
         "RESTART) to its parent.",
     )
 
+    parser.add_argument(
+        '--debug-sql',
+        dest='debug_sql',
+        action='store_true',
+        help='Enable SQLAlchemy debug logging.',
+    )
+
     opts, _ = parser.parse_known_args(args)
     return opts

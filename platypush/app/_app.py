@@ -60,6 +60,7 @@ class Application:
         redis_port: Optional[int] = None,
         redis_bin: Optional[str] = None,
         ctrl_sock: Optional[str] = None,
+        debug_sql: bool = False,
     ):
         """
         :param config_file: Configuration file. The order of precedence is:
@@ -186,6 +187,7 @@ class Application:
         :param ctrl_sock: If set, it identifies a path to a UNIX domain socket
             that the application can use to send control messages (e.g. STOP
             and RESTART) to its parent.
+        :param debug_sql: Enable SQLAlchemy debug logging (default: False).
         """
 
         self.pidfile = pidfile or os.environ.get('PLATYPUSH_PIDFILE')
@@ -238,6 +240,7 @@ class Application:
 
         self._redis_proc: Optional[subprocess.Popen] = None
         self.cmd_stream = CommandStream(ctrl_sock)
+        self.debug_sql = debug_sql
 
         self._init_bus()
         self._init_logging()
@@ -271,6 +274,8 @@ class Application:
 
         Config.set('logging', logging_conf)
         logging.basicConfig(**logging_conf)
+        if self.debug_sql:
+            logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
     def _start_redis(self):
         if self._redis_proc and self._redis_proc.poll() is None:
@@ -336,6 +341,7 @@ class Application:
             redis_host=opts.redis_host,
             redis_port=opts.redis_port,
             ctrl_sock=opts.ctrl_sock,
+            debug_sql=opts.debug_sql,
         )
 
     def on_message(self):
