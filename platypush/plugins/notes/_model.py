@@ -201,9 +201,9 @@ class SyncConflictResolution(Enum):
     """Overwrite the local version of the note with the remote version."""
     MERGE = "merge"
     """
-    Attempt a merge the local and remote versions of the note, and save both
-    the versions to temporary files following the naming template
-    ``__CONFLICT_{note_id}.{local|remote}.{ext}``.
+    Attempt a merge the local and remote versions of the note, and save the
+    remote version to a temporary file following the naming template
+    ``__CONFLICT__[{remote_note_plugin}]{remote_note.title}.{ext}``.
     """
     IGNORE = "ignore"
     """Ignore the conflict and do not update the note."""
