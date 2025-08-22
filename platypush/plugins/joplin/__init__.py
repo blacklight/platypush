@@ -281,11 +281,17 @@ class JoplinPlugin(BaseNotePlugin):
         """
         Convert a Joplin collection (folder) to a NoteCollection.
         """
+        parent_id = data.get('parent_id')
+        parent = None
+        if parent_id:
+            parent = self._collections.get(parent_id, self._fetch_collection(parent_id))
+
         return NoteCollection(
             id=data.get('id', ''),
             plugin=self._plugin_name,
             title=data.get('title', ''),
             description=data.get('description'),
+            parent=parent,
             created_at=self._parse_time(data.get('created_time')),
             updated_at=self._parse_time(data.get('updated_time')),
         )
