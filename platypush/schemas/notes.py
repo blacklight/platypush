@@ -261,6 +261,14 @@ class NoteCollectionSchema(BaseNoteSchema):
         },
     )
 
+    path = fields.String(
+        dump_only=True,
+        metadata={
+            'description': 'Path to the note file',
+            'example': '/notes/subfolder',
+        },
+    )
+
     parent = fields.Nested(
         'NoteCollectionSchema',
         metadata={
