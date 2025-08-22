@@ -206,7 +206,7 @@ class NoteCollection(Storable):
             path.append(parent.title)
             parent = parent.parent
 
-        return ('/' + '/'.join(reversed([*path, self.title])) + '/').replace('//', '/')
+        return ('/' + '/'.join(reversed([self.title, *path])) + '/').replace('//', '/')
 
     def to_dict(self) -> dict:
         return NoteCollectionSchema().dump(  # type: ignore
@@ -216,6 +216,7 @@ class NoteCollection(Storable):
                     for field in self.__dataclass_fields__
                     if not field.startswith('_') and field != 'parent'
                 },
+                'path': self.path,
                 'parent': (
                     {
                         'id': self.parent.id,
