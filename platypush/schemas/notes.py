@@ -4,6 +4,28 @@ from marshmallow import INCLUDE, Schema, fields, post_dump
 from platypush.schemas import DateTime
 
 
+def _note_minimal(data, **_) -> dict:
+    """
+    Generate a minimal representation of the note for nested outputs.
+    """
+
+    def get_attr(obj, attr, default=None):
+        if not obj:
+            return default
+        if isinstance(obj, dict):
+            return obj.get(attr, default)
+        return getattr(obj, attr, default)
+
+    return {
+        'id': get_attr(data, 'id'),
+        'title': get_attr(data, 'title'),
+        'description': get_attr(data, 'description'),
+        'plugin': get_attr(data, 'plugin'),
+        'path': get_attr(data, 'path'),
+        'digest': get_attr(data, 'digest'),
+    }
+
+
 class BaseNoteSchema(Schema, ABC):
     """
     Base schema for note objects.
@@ -78,7 +100,11 @@ class NoteItemSchema(BaseNoteSchema):
     )
 
     content_type = fields.Function(
-        lambda data: data.get('content_type'),
+        lambda data: (
+            data.content_type.value
+            if hasattr(data, 'content_type')
+            else (data or {}).get('content_type')
+        ),
         metadata={
             'description': 'Content type of the note (e.g., txt, md, html)',
             'example': 'md',
@@ -161,8 +187,13 @@ class NoteItemSchema(BaseNoteSchema):
         },
     )
 
-    sync_from = fields.List(
-        fields.Nested('NoteItemSchema'),
+    synced_from = fields.Function(
+        lambda data: [
+            _note_minimal(note)
+            for note in (
+                getattr(data, 'synced_from', (data or {}).get('synced_from')) or []
+            )
+        ],
         dump_only=True,
         metadata={
             'description': 'List of notes this note was synced from',
@@ -176,8 +207,13 @@ class NoteItemSchema(BaseNoteSchema):
         },
     )
 
-    sync_to = fields.List(
-        fields.Nested('NoteItemSchema'),
+    synced_to = fields.Function(
+        lambda data: [
+            _note_minimal(note)
+            for note in (
+                getattr(data, 'synced_to', (data or {}).get('synced_to')) or []
+            )
+        ],
         dump_only=True,
         metadata={
             'description': 'List of notes this note was synced to',
@@ -191,16 +227,24 @@ class NoteItemSchema(BaseNoteSchema):
         },
     )
 
-    conflict_note = fields.Nested(
-        'NoteItemSchema',
+    conflict_notes = fields.Function(
+        lambda data: [
+            _note_minimal(note)
+            for note in (
+                getattr(data, 'conflict_notes', (data or {}).get('conflict_notes'))
+                or []
+            )
+        ],
         dump_only=True,
         metadata={
-            'description': 'Note that is in conflict with this note',
-            'example': {
-                'id': 1238,
-                'title': 'Conflict Note',
-                'plugin': 'sync_plugin3',
-            },
+            'description': 'List of notes that are in conflict with this note',
+            'example': [
+                {
+                    'id': 1238,
+                    'title': 'Conflict Note',
+                    'plugin': 'sync_plugin3',
+                },
+            ],
         },
     )
 
