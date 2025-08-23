@@ -21,7 +21,7 @@ from platypush.message.event.notes import (
 from platypush.plugins import RunnablePlugin, action
 from platypush.utils import to_datetime
 
-from .mixins import DbMixin
+from .mixins import SyncMixin
 from ._model import (
     CollectionsDelta,
     ItemType,
@@ -29,11 +29,12 @@ from ._model import (
     Results,
     ResultsType,
     StateDelta,
+    SyncState,
 )
 
 
 class BaseNotePlugin(  # pylint: disable=too-many-ancestors
-    RunnablePlugin, DbMixin, ABC
+    RunnablePlugin, SyncMixin, ABC
 ):
     """
     Base class for note-taking plugins.
@@ -64,7 +65,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             but more disk space will be used for the search index (default: 4).
         """
         RunnablePlugin.__init__(self, *args, poll_interval=poll_interval, **kwargs)
-        DbMixin.__init__(self, *args, max_tokens_length=max_tokens_length, **kwargs)
+        SyncMixin.__init__(self, *args, max_tokens_length=max_tokens_length, **kwargs)
 
         self._sync_lock = RLock()
         self._timeout = timeout
@@ -394,6 +395,49 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
 
         return existing_note
 
+    def _merge_remote_note_relations(
+        self,
+        new_notes: Dict[Any, Note],
+        existing_notes: Dict[Any, Note],
+    ) -> Dict[Any, Note]:
+        """
+        This merges the relations of the notes upon initial sync, to ensure
+        that any existing relationships are not lost when fetched again from
+        the remote API.
+
+        :param new_notes: The new notes fetched from the remote API.
+        :param existing_notes: The existing notes in the local cache.
+        :return: The updated notes with merged relations.
+        """
+        for note in new_notes.values():
+            existing_note = existing_notes.get(note.id)
+            if not existing_note:
+                continue
+
+            # Merge synced_from/synced_to/conflict_note relations
+            note.synced_from = existing_note.synced_from or note.synced_from
+            note.synced_to = existing_note.synced_to or note.synced_to
+            note.conflict_notes = existing_note.conflict_notes or note.conflict_notes
+
+        return new_notes
+
+    def _deduplicate_notes(self, notes: Iterable[Note]) -> Dict[Any, Note]:
+        """
+        Deduplicate notes based on their path, keeping the most recently updated one.
+        """
+        deduped_notes = {}
+        for note in notes:
+            if note.path not in deduped_notes or (
+                note.updated_at
+                and (
+                    not deduped_notes[note.path].updated_at
+                    or note.updated_at > deduped_notes[note.path].updated_at
+                )
+            ):
+                deduped_notes[note.path] = note
+
+        return {note.id: note for note in deduped_notes.values()}
+
     def _get_notes(
         self,
         *args,
@@ -408,7 +452,8 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         fetch = fetch or not self.poll_interval
         if fetch:
             with self._sync_lock:
-                self._notes = {
+                cached_notes = self._notes.copy()
+                new_notes = {
                     note.id: self._merge_note(note)
                     for note in self._fetch_notes(
                         *args,
@@ -419,6 +464,13 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
                         **kwargs,
                     )
                 }
+
+                self._notes = self._deduplicate_notes(
+                    self._merge_remote_note_relations(
+                        new_notes=new_notes, existing_notes=cached_notes
+                    ).values()
+                )
+
                 self._refresh_notes_cache()
 
         return self._process_results(
@@ -497,17 +549,15 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             # Link the notes to their parent collections
             for note in list(collection.notes):
                 if note.id in self._notes:
-                    collection._notes[note.id] = self._notes[
-                        note.id
-                    ]  # pylint: disable=protected-access
+                    # pylint: disable=protected-access
+                    collection._notes[note.id] = self._notes[note.id]
 
             # Link the child collections to their parent collections
             tmp_collections = list(collection.collections)
             for collection in tmp_collections:
                 if collection.id not in self._collections:
-                    collection._collections[
-                        collection.id
-                    ] = self._collections[  # pylint: disable=protected-access
+                    # pylint: disable=protected-access
+                    collection._collections[collection.id] = self._collections[
                         collection.id
                     ]
 
@@ -1129,6 +1179,8 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         If ``poll_interval`` is zero or null, you can manually call this method
         to synchronize the notes and collections.
         """
+        self.sync_state = SyncState.SYNCING_LOCAL
+
         # Wait for the entities engine to start
         get_entities_engine().wait_start()
 
@@ -1174,16 +1226,28 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             if not state_delta.is_empty():
                 self.logger.info('Synchronizing changes: %s', state_delta)
 
-            self._db_sync(state_delta)
+            try:
+                self._db_sync(state_delta)
+            except Exception as e:
+                self.logger.error(
+                    'Error during local sync: %s',
+                    e,
+                )
+                raise e
+
             self._last_local_sync_time = datetime.fromtimestamp(
                 state_delta.latest_updated_at
             )
-            self._process_events(state_delta)
+            self.sync_state = SyncState.SYNCED_LOCAL
 
+        self._process_events(state_delta)
         self.logger.info(
             'Local synchronization completed in %.2f seconds',
             time() - t_start,
         )
+
+        # Initialize remote sync if not already done
+        self.start_remote_sync()
 
     @action
     def reset_sync(self):
@@ -1201,6 +1265,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             self._last_local_sync_time = None
             self._notes.clear()
             self._collections.clear()
+            self.sync_state = SyncState.UNINITIALIZED
 
     def main(self):
         if not self.poll_interval:
