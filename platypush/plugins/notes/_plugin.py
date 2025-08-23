@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from watchdog.observers import Observer
 
 from platypush.bus import Bus
-from platypush.common.notes import Note, NoteCollection, NoteContentType
+from platypush.common.notes import Note, NoteCollection, NoteContentType, Storable
 from platypush.message.event.file import (
     FileSystemEvent,
     FileSystemDeleteEvent,
@@ -218,6 +218,7 @@ class NotesPlugin(BaseNotePlugin):
         filename = title if self._is_note(title) else f'{title}.{self.file_extension}'
         note_id = os.path.join(parent or '', filename)
         path = self._note_id_to_path(note_id)
+        content = content or ''
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
         with open(path, 'w') as f:
@@ -387,6 +388,13 @@ class NotesPlugin(BaseNotePlugin):
             'Fallback on the internal database search instead.'
         )
 
+    def _infer_id(self, item: Storable) -> Optional[Any]:
+        if isinstance(item, Note):
+            return self._note_path_to_id(item.path.lstrip("/"))
+        if isinstance(item, NoteCollection):
+            return self._path_to_id(item.path.lstrip("/"))
+        return item.id
+
     def _poll_events(self, timeout: Optional[float] = 1.0):
         """
         Poll for file system events in the notes directory.
@@ -420,7 +428,7 @@ class NotesPlugin(BaseNotePlugin):
 
                 self._apply_state_delta(state_delta)
                 self._db_sync(state_delta)
-                self._last_sync_time = datetime.fromtimestamp(
+                self._last_local_sync_time = datetime.fromtimestamp(
                     state_delta.latest_updated_at
                 )
                 self._pending_events.clear()
@@ -519,6 +527,7 @@ class NotesPlugin(BaseNotePlugin):
             self._observer.join()
             self._watchdog_bus.stop()
             self.logger.info('Notes plugin stopped')
+            self.stop_remote_sync()
             self.wait_stop(self.poll_interval)
 
 
