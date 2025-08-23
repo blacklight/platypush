@@ -110,7 +110,7 @@ class Note(Storable):
     source: Optional[NoteSource] = None
     synced_from: List['Note'] = field(default_factory=list)
     synced_to: List['Note'] = field(default_factory=list)
-    conflict_note: Optional['Note'] = None
+    conflict_notes: List['Note'] = field(default_factory=list)
     _path: Optional[str] = None
 
     def __post_init__(self):
@@ -151,6 +151,14 @@ class Note(Storable):
                 'path': self.path,
                 'content_type': self.content_type.value,
                 'digest': self.digest,
+                'latitude': self.latitude,
+                'longitude': self.longitude,
+                'altitude': self.altitude,
+                'author': self.author,
+                'source': self.source.to_dict() if self.source else None,
+                'created_at': self.created_at.isoformat() if self.created_at else None,
+                'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+                'tags': list(self.tags),
             }
 
         return NoteItemSchema().dump(  # type: ignore

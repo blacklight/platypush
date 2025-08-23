@@ -100,20 +100,28 @@ class Note(Base):
         cascade='all, delete-orphan',
     )
     synced_from = relationship(
-        'NoteSyncState',
-        foreign_keys='NoteSyncState.local_note_id',
-        backref='local_note',
+        'Note',
+        secondary=f"{TABLE_PREFIX}sync_state",
+        primaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.remote_note_id",
+        secondaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.local_note_id",
+        viewonly=True,
     )
     synced_to = relationship(
-        'NoteSyncState',
-        foreign_keys='NoteSyncState.remote_note_id',
-        backref='remote_note',
+        'Note',
+        secondary=f"{TABLE_PREFIX}sync_state",
+        primaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.remote_note_id",
+        secondaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.local_note_id",
+        viewonly=True,
     )
-    conflict_note = relationship(
-        'NoteSyncState',
-        foreign_keys='NoteSyncState.conflict_note_id',
-        backref='conflict_note',
-        uselist=False,
+    conflict_notes = relationship(
+        'Note',
+        secondary=f"{TABLE_PREFIX}sync_state",
+        primaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.conflict_note_id",
+        secondaryjoin=(
+            f"or_({TABLE_PREFIX}sync_state.c.local_note_id == Note.id, "
+            f"{TABLE_PREFIX}sync_state.c.remote_note_id == Note.id)"
+        ),
+        viewonly=True,
     )
 
 
@@ -238,6 +246,19 @@ class NoteSyncState(Base):
         UUID,
         ForeignKey(f'{TABLE_PREFIX}note.id', ondelete='SET NULL'),
         nullable=True,
+    )
+
+    local_note = relationship(
+        'Note',
+        foreign_keys=[local_note_id],
+    )
+    remote_note = relationship(
+        'Note',
+        foreign_keys=[remote_note_id],
+    )
+    conflict_note = relationship(
+        'Note',
+        foreign_keys=[conflict_note_id],
     )
 
 
