@@ -44,6 +44,50 @@ class LastSyncVars(dict[str, Variable]):
         )
         return self[key]
 
+    def get_time(self, key: str) -> float:
+        """
+        Get the timestamp value for the given key.
+
+        :param key: The key to look up in the dictionary.
+        :return: The value for the given key, as a float timestamp, or 0.
+        """
+        value = self[key].get()  # type: ignore
+        if not value:
+            return 0
+
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return 0
+
+    def set_time(
+        self,
+        key: str,
+        value: Optional[Union[int, float, str, datetime.datetime]] = None,
+    ):
+        """
+        Set the timestamp value for the given key.
+
+        :param key: The key to set in the dictionary.
+        :param value: The value to set, which can be an int, float, str, or
+            datetime. If none is passed, the current time will be used.
+        """
+        if not value:
+            value = time()
+        if isinstance(value, datetime.datetime):
+            value = value.timestamp()
+        elif isinstance(value, str):
+            try:
+                value = float(value)
+            except ValueError:
+                try:
+                    value = datetime.datetime.fromisoformat(value).timestamp()
+                except ValueError:
+                    self[key].set(None)
+                    return
+
+        self[key].set(value)  # type: ignore
+
 
 class SyncMixin(DbMixin, ABC):
     """
@@ -67,6 +111,7 @@ class SyncMixin(DbMixin, ABC):
         self._sync_state_lock = RLock()
         self._sync_events: Dict[SyncState, Event] = defaultdict(Event)
         self._unregister_sync_handlers: List[Callable[[], None]] = []
+        self._last_sync_vars = LastSyncVars(plugin=self._plugin_name)
         self.sync_state = SyncState.UNINITIALIZED
 
         if not sync_from:
@@ -288,6 +333,8 @@ class SyncMixin(DbMixin, ABC):
         self._persist_remote_state_delta(
             state_delta=state_delta, sync_config=sync_config
         )
+
+        self._last_sync_vars.set_time(sync_config.plugin)
 
     def _persist_remote_state_delta(
         self, state_delta: StateDelta, *, sync_config: SyncConfig
@@ -706,6 +753,8 @@ class SyncMixin(DbMixin, ABC):
         :param state_delta: The state delta to update with any changes.
         :return: The updated state delta.
         """
+        last_sync_time = self._last_sync_vars.get_time(sync_config.plugin)
+
         for note in notes.values():
             existing_note = self._notes_by_path.get(note.path)
 
@@ -716,6 +765,15 @@ class SyncMixin(DbMixin, ABC):
 
             # pylint:disable=protected-access
             if existing_note:
+                if note.updated_at and note.updated_at.timestamp() <= last_sync_time:
+                    # If the note hasn't been updated since the last sync, skip it
+                    self.logger.debug(
+                        'Skipping note %s from plugin %s, not updated since last sync',
+                        note.path,
+                        sync_config.plugin,
+                    )
+                    continue
+
                 # Add the note to the state delta
                 state_delta.notes.updated[existing_note.id] = local_note
             else:
@@ -844,10 +902,10 @@ class SyncMixin(DbMixin, ABC):
             except ValueError:
                 self.logger.warning('Invalid datetime string: %s', t)
                 return None
-        if isinstance(t, datetime.datetime):
-            if t.tzinfo is None:
-                return t.replace(tzinfo=tz.tzlocal()).astimezone(datetime.timezone.utc)
-            return t.astimezone(datetime.timezone.utc)
+
+        if t.tzinfo is None:
+            return t.replace(tzinfo=tz.tzlocal()).astimezone(datetime.timezone.utc)
+        return t.astimezone(datetime.timezone.utc)
 
     def start_remote_sync(self):
         """
