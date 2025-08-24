@@ -5,7 +5,7 @@ from threading import Event, RLock
 from typing import Any, Collection, Dict, Generator, List, Optional, Set, Union
 
 from sqlalchemy import and_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Mapped, Session
 
 from platypush.common.notes import Note, NoteCollection
 from platypush.context import get_plugin
@@ -82,11 +82,12 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
         Convert a NoteCollection object to a DbNoteCollection object.
         """
         _visited = _visited or {}
-        if collection._db_id in _visited:  # pylint:disable=protected-access
-            return _visited[collection._db_id]
+        db_id = collection._db_id
+        if db_id in _visited:
+            return _visited[db_id]
 
         db_record = DbNoteCollection(
-            id=collection._db_id,  # pylint:disable=protected-access
+            id=db_id,
             external_id=collection.id,
             plugin=collection.plugin or self._plugin_name,
             title=collection.title,
@@ -95,9 +96,11 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
             updated_at=collection.updated_at or utcnow(),
         )
 
-        _visited[collection._db_id] = db_record  # pylint:disable=protected-access
+        _visited[db_id] = db_record
         parent = (
-            self._to_db_collection(collection.parent) if collection.parent else None
+            self._to_db_collection(collection.parent, _visited=_visited)  # type: ignore[arg-type]
+            if collection.parent
+            else None
         )
 
         if parent and parent.id != db_record.id:  # type: ignore[union-attr]
@@ -116,23 +119,34 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
             return _visited[note._db_id]
 
         db_note = DbNote(
-            id=note._db_id,  # pylint:disable=protected-access
-            external_id=note.id,
-            plugin=note.plugin or self._plugin_name,
-            title=note.title,
-            description=note.description,
-            content=note.content,
-            parent_id=self._to_db_collection(note.parent).id if note.parent else None,
-            digest=note.digest,
-            latitude=note.latitude,
-            longitude=note.longitude,
-            altitude=note.altitude,
-            author=note.author,
-            source_name=note.source.name if note.source else None,
-            source_url=note.source.url if note.source else None,
-            source_app=note.source.app if note.source else None,
-            created_at=note.created_at or utcnow(),
-            updated_at=note.updated_at or utcnow(),
+            **{
+                **{
+                    k: getattr(note, k)
+                    for k, v in DbNote.__dict__.items()
+                    if isinstance(v, Mapped)
+                    and hasattr(note, k)
+                    and k
+                    not in {
+                        'id',
+                        'parent',
+                        'synced_from',
+                        'synced_to',
+                        'conflict_notes',
+                    }
+                },
+                'id': note._db_id,  # pylint:disable=protected-access
+                'external_id': note.id,
+                'plugin': note.plugin or self._plugin_name,
+                'tags': list(note.tags or []),
+                'parent_id': (
+                    self._to_db_collection(note.parent).id if note.parent else None
+                ),
+                'source_name': note.source.name if note.source else None,
+                'source_url': note.source.url if note.source else None,
+                'source_app': note.source.app if note.source else None,
+                'created_at': note.created_at or utcnow(),
+                'updated_at': note.updated_at or utcnow(),
+            },
         )
 
         _visited[note._db_id] = db_note  # pylint:disable=protected-access
@@ -177,32 +191,28 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
             return _visited[db_note.id]
 
         note = Note(
-            id=db_note.external_id,
-            plugin=db_note.plugin,  # type: ignore[arg-type]
-            title=db_note.title,  # type: ignore[arg-type]
-            description=db_note.description,  # type: ignore[arg-type]
-            content=db_note.content,  # type: ignore[arg-type]
-            parent=(
-                self._from_db_collection(db_note.parent)  # type: ignore[arg-type]
-                if db_note.parent
-                else None
-            ),
-            digest=db_note.digest,  # type: ignore[arg-type]
-            latitude=db_note.latitude,  # type: ignore[arg-type]
-            longitude=db_note.longitude,  # type: ignore[arg-type]
-            altitude=db_note.altitude,  # type: ignore[arg-type]
-            author=db_note.author,  # type: ignore[arg-type]
-            source=(
-                {  # type: ignore[arg-type]
-                    'name': db_note.source_name,
-                    'url': db_note.source_url,
-                    'app': db_note.source_app,
-                }
-                if db_note.source_name  # type: ignore[arg-type]
-                else None
-            ),
-            created_at=db_note.created_at,  # type: ignore[arg-type]
-            updated_at=db_note.updated_at,  # type: ignore[arg-type]
+            **{
+                **{
+                    k: getattr(db_note, k)
+                    for k in Note.__dataclass_fields__
+                    if not k.startswith('_') and hasattr(db_note, k)
+                },
+                'id': db_note.external_id,
+                'parent': (
+                    self._from_db_collection(db_note.parent)  # type: ignore[arg-type]
+                    if db_note.parent
+                    else None
+                ),
+                'source': (
+                    {  # type: ignore[arg-type]
+                        'name': db_note.source_name,
+                        'url': db_note.source_url,
+                        'app': db_note.source_app,
+                    }
+                    if bool(db_note.source_name)
+                    else None
+                ),
+            }
         )
 
         _visited[db_note.id] = note
@@ -228,17 +238,19 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
         Convert a DbNoteCollection object to a NoteCollection object.
         """
         return NoteCollection(
-            id=db_collection.external_id,
-            plugin=db_collection.plugin,  # type: ignore[arg-type]
-            title=db_collection.title,  # type: ignore[arg-type]
-            description=db_collection.description,  # type: ignore[arg-type]
-            parent=(
-                self._from_db_collection(db_collection.parent)  # type: ignore[arg-type]
-                if db_collection.parent
-                else None
-            ),
-            created_at=db_collection.created_at,  # type: ignore[arg-type]
-            updated_at=db_collection.updated_at,  # type: ignore[arg-type]
+            **{
+                **{
+                    k: getattr(db_collection, k)
+                    for k in NoteCollection.__dataclass_fields__
+                    if not k.startswith('_') and hasattr(db_collection, k)
+                },
+                'id': db_collection.external_id,
+                'parent': (
+                    self._from_db_collection(db_collection.parent)  # type: ignore[arg-type]
+                    if db_collection.parent
+                    else None
+                ),
+            },
         )
 
     def _db_fetch_notes(self, session: Session) -> Dict[Any, Note]:
