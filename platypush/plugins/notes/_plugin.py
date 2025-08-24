@@ -180,7 +180,12 @@ class NotesPlugin(BaseNotePlugin):
             return None
 
     def _fetch_notes(
-        self, *_, limit: Optional[int] = None, offset: Optional[int] = None, **__
+        self,
+        *_,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        with_content: bool = True,
+        **__,
     ) -> List[Note]:
         notes = []
         for root, _, files in os.walk(self.path):
@@ -188,7 +193,7 @@ class NotesPlugin(BaseNotePlugin):
                 if self._is_note(file):
                     path = os.path.join(root, file)
                     try:
-                        note = self._to_note(path, with_content=False)
+                        note = self._to_note(path, with_content=with_content)
                         notes.append(note)
                     except AssertionError:
                         continue

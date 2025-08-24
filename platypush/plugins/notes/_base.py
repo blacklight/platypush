@@ -120,6 +120,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         sort: Optional[Dict[str, bool]] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
+        with_content: bool = True,
         **kwargs,
     ) -> Iterable[Note]:
         """
@@ -369,7 +370,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
 
             return self._notes[note.id]
 
-    def _merge_note(self, note: Note, skip_content: bool = True) -> Note:
+    def _merge_note(self, note: Note) -> Note:
         """
         Merge the state of an incoming note with the existing one in the cache.
         """
@@ -382,13 +383,9 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         for field in note.__dataclass_fields__:
             existing_value = getattr(existing_note, field)
             value = getattr(note, field)
-            # Don't overwrite content, digest and tags here unless they have been re-fetched
-            if (
-                skip_content
-                and field in ('content', 'digest', 'tags')
-                and existing_value
-                and not value
-            ):
+
+            # Don't overwrite content and tags here unless they have been re-fetched
+            if field in ('content', 'tags') and existing_value and value is None:
                 continue
 
             setattr(existing_note, field, value)
@@ -446,6 +443,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         sort: Optional[Dict[str, bool]] = None,
         filter: Optional[Dict[str, Any]] = None,  # pylint: disable=redefined-builtin
         fetch: bool = False,
+        with_content: bool = True,
         **kwargs,
     ) -> Iterable[Note]:
         # Always fetch if background polling is disabled
@@ -461,6 +459,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
                         offset=offset,
                         sort=sort,
                         filter=filter,
+                        with_content=with_content,
                         **kwargs,
                     )
                 }
@@ -799,6 +798,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         sort: Optional[Dict[str, bool]] = None,
         filter: Optional[Dict[str, Any]] = None,  # pylint: disable=redefined-builtin
         fetch: bool = False,
+        with_content: bool = False,
         **kwargs,
     ) -> Iterable[dict]:
         """
@@ -814,6 +814,8 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             to match against the field values.
         :param fetch: If True, always fetch the latest collections from the backend,
             regardless of the cache state (default: False).
+        :param with_content: If True, fetch the full content of the notes
+            (default: False).
         :param kwargs: Additional keyword arguments to pass to the fetch method.
         :return: An iterable of notes, format:
 
@@ -829,6 +831,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
                 sort=sort,
                 filter=filter,
                 fetch=fetch,
+                with_content=with_content,
                 **kwargs,
             )
         ]
@@ -1193,18 +1196,18 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             prev_notes = self._notes.copy()
             prev_collections = self._collections.copy()
 
-            # Fetch the latest version of the notes from the backend
-            notes = {
-                note.id: note
-                for note in self._get_notes(
-                    *args, fetch=True, sort={'updated_at': False}, **kwargs
-                )
-            }
-
             # Fetch the latest version of the collections from the backend
             collections = {
                 collection.id: collection
                 for collection in self._get_collections(
+                    *args, fetch=True, sort={'updated_at': False}, **kwargs
+                )
+            }
+
+            # Fetch the latest version of the notes from the backend
+            notes = {
+                note.id: note
+                for note in self._get_notes(
                     *args, fetch=True, sort={'updated_at': False}, **kwargs
                 )
             }

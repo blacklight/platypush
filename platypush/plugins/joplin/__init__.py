@@ -338,11 +338,20 @@ class JoplinPlugin(BaseNotePlugin):
         return self._to_note(note)  # type: ignore[return-value]
 
     def _fetch_notes(
-        self, *_, limit: Optional[int] = None, offset: Optional[int] = None, **__
+        self,
+        *_,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        with_content: bool = True,
+        **__,
     ) -> List[Note]:
         """
         Fetch notes from Joplin.
         """
+        fields = [*self._default_note_fields]
+        if with_content:
+            fields.append('body')
+
         return [
             self._to_note(note)
             for note in (
@@ -350,7 +359,7 @@ class JoplinPlugin(BaseNotePlugin):
                     'GET',
                     'notes',
                     params={
-                        'fields': ','.join(self._default_note_fields),
+                        'fields': ','.join(fields),
                         'limit': limit,
                         'page': self._offset_to_page(offset=offset, limit=limit),
                     },

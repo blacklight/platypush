@@ -195,7 +195,9 @@ class NextcloudNotesPlugin(BaseNotePlugin):
         response = self._api_exec('GET', f'notes/{note_id}')
         return self._to_note(response.json())  # type: ignore[return-value]
 
-    def _fetch_notes(self, *_, limit: Optional[int] = None, **__) -> List[Note]:
+    def _fetch_notes(
+        self, *_, limit: Optional[int] = None, with_content: bool = True, **__
+    ) -> List[Note]:
         """
         Fetch notes from the Nextcloud Notes API.
         """
@@ -206,7 +208,7 @@ class NextcloudNotesPlugin(BaseNotePlugin):
                     'GET',
                     'notes',
                     params={
-                        'exclude': 'content',
+                        **({'exclude': 'content'} if not with_content else {}),
                         'chunkSize': limit or 10000,
                         # TODO Support chunkCursor
                     },
