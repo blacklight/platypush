@@ -451,6 +451,10 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             return note
 
         for field in note.__dataclass_fields__:
+            # Preserve synced_from/synced_to/conflict_notes relations
+            if field in ('synced_from', 'synced_to', 'conflict_notes'):
+                continue
+
             existing_value = getattr(existing_note, field)
             value = getattr(note, field)
 
