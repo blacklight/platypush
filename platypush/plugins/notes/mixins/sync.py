@@ -2,16 +2,22 @@ import datetime
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from logging import Logger
-from threading import Event, RLock
+from queue import Empty, Queue
+from threading import Event, RLock, Timer
 from time import time
-from typing import Callable, Dict, List, Optional, Union, Any
+from typing import Callable, Dict, List, Optional, Tuple, Union, Any
 
 from dateutil import tz
 
 from platypush.common.notes import Note, NoteCollection, Storable
 from platypush.context import Variable, get_bus
 from platypush.message import Message
-from platypush.message.event.notes import BaseNoteEvent
+from platypush.message.event.notes import (
+    BaseNoteEvent,
+    NoteCreatedEvent,
+    NoteDeletedEvent,
+    NoteUpdatedEvent,
+)
 from platypush.message.response import Response
 from platypush.plugins import PluginRegistry, action
 from platypush.plugins.notes._model import StateDelta
@@ -103,7 +109,6 @@ class SyncMixin(DbMixin, ABC):
         Initialize the SyncMixin with synchronization settings.
 
         :param sync_from: A list of dictionaries or SyncConfig instances
-            specifying the plugins to sync from.
         """
         super().__init__(*args, **kwargs)
         self.sync_from: List[SyncConfig] = []
@@ -112,6 +117,10 @@ class SyncMixin(DbMixin, ABC):
         self._sync_events: Dict[SyncState, Event] = defaultdict(Event)
         self._unregister_sync_handlers: List[Callable[[], None]] = []
         self._last_sync_vars = LastSyncVars(plugin=self._plugin_name)
+        self._remote_events_queue: Queue[BaseNoteEvent] = Queue()
+        self._remote_events_timer: Optional[Timer] = None
+        self._remote_events_flush_interval = 3.0
+        self._remote_events_lock = RLock()
         self.sync_state = SyncState.UNINITIALIZED
 
         if not sync_from:
@@ -216,8 +225,101 @@ class SyncMixin(DbMixin, ABC):
             self.logger.debug('Sync state is not READY, ignoring event: %s', event)
             return
 
-        self.logger.debug('Handling event: %s', event)
-        # TODO Handle events for real-time synchronization
+        if not isinstance(event, BaseNoteEvent):
+            self.logger.warning('Received non-note event: %s', event)
+            return
+
+        self.logger.debug(
+            'Handling event from plugin %s: %s', event.args.get("plugin"), event
+        )
+
+        with self._remote_events_lock:
+            self._remote_events_queue.put_nowait(event)
+            if not self._remote_events_timer:
+                self._remote_events_timer = Timer(
+                    self._remote_events_flush_interval, self._flush_remote_events
+                )
+                self._remote_events_timer.start()
+
+    def _flush_remote_events(self):
+        """
+        Process and flush remote events from the queue.
+        """
+        with self._remote_events_lock, self._sync_lock:
+            sync_config_by_plugin = {config.plugin: config for config in self.sync_from}
+
+            state_delta = StateDelta()
+
+            # plugin -> note_id -> Note
+            added_or_updated_notes: Dict[str, Dict[Any, Note]] = defaultdict(dict)
+            # plugin -> note_id -> Note
+            deleted_notes: Dict[str, Dict[Any, Note]] = defaultdict(dict)
+
+            # Drain the queue and group events by type, plugin and id
+            while True:
+                try:
+                    evt = self._remote_events_queue.get_nowait()
+                except Empty:
+                    break
+
+                plugin: str = evt.args.get('plugin')  # type:ignore
+                if isinstance(
+                    evt, (NoteCreatedEvent, NoteUpdatedEvent, NoteDeletedEvent)
+                ):
+                    note = Note.build(
+                        **{
+                            'plugin': plugin,
+                            **evt.args.get('note', {}),
+                        }
+                    )
+
+                    if isinstance(evt, (NoteCreatedEvent, NoteUpdatedEvent)):
+                        added_or_updated_notes[plugin][note.id] = note
+                        deleted_notes[plugin].pop(note.id, None)
+                    elif isinstance(evt, NoteDeletedEvent):
+                        added_or_updated_notes[plugin].pop(note.id, None)
+                        deleted_notes[plugin][note.id] = note
+
+            for plugin in {*added_or_updated_notes, *deleted_notes}:
+                sync_config = sync_config_by_plugin.get(plugin)
+                if not sync_config:
+                    self.logger.warning(
+                        'Received note events from unknown plugin %s', plugin
+                    )
+                    continue
+
+                # Calculate the local state delta for the added and updated notes
+                notes = added_or_updated_notes.get(plugin, {})
+                state_delta = self._calculate_added_and_updated_notes(
+                    notes=notes,
+                    sync_config=sync_config,
+                    state_delta=state_delta,
+                    filter_by_last_sync_time=False,
+                )
+
+                # Handle deletions
+                state_delta = self._calculate_deleted_notes(
+                    deleted_notes.get(plugin, {}),
+                    sync_config=sync_config,
+                    state_delta=state_delta,
+                )
+
+                # Handle new and updated collections
+                state_delta = self._calculate_added_and_updated_collections(state_delta)
+
+                # Apply the changes to this plugin
+                self._persist_remote_state_delta(
+                    state_delta=state_delta, sync_config=sync_config
+                )
+
+            self._remote_events_timer = None
+
+            # Restart the timer if the queue has been populated again in the meantime
+            if not self._remote_events_queue.empty():
+                self._remote_events_timer = Timer(
+                    self._remote_events_flush_interval, self._flush_remote_events
+                )
+                self._remote_events_timer.start()
 
     def _get_sync_dependencies(self):
         from platypush.plugins.notes import BaseNotePlugin
@@ -321,20 +423,9 @@ class SyncMixin(DbMixin, ABC):
             sync_config=sync_config,
         )
 
-        if state_delta.is_empty():
-            return
-
-        self.logger.info(
-            'Synchronizing changes from plugin %s: %s',
-            sync_config.plugin,
-            state_delta,
-        )
-
         self._persist_remote_state_delta(
             state_delta=state_delta, sync_config=sync_config
         )
-
-        self._last_sync_vars.set_time(sync_config.plugin)
 
     def _persist_remote_state_delta(
         self, state_delta: StateDelta, *, sync_config: SyncConfig
@@ -347,25 +438,34 @@ class SyncMixin(DbMixin, ABC):
         :param sync_config: The synchronization configuration for the source.
         """
 
-        def _execute_action(func: Callable[..., Response], *args, **kwargs):
+        def _execute_action(func: Callable[..., Response], *args, **kwargs) -> Any:
             errors = []
             try:
                 result = func(*args, **kwargs)
                 if result.errors:
                     errors = result.errors
                 else:
+                    if isinstance(result.output, dict):
+                        return result.output.get('id')
                     return result.output
             except Exception as e:
                 errors = [str(e)]
 
             if errors:
-                self.logger.error(
-                    'Failed to execute action %s with errors: %s',
-                    func.__name__,
-                    ', '.join(errors),
-                )
+                error = f'Failed to execute action {func.__name__} with errors:\n{", ".join(errors)}'
+                self.logger.error(error)
+                raise RuntimeError(error)
 
             return {}
+
+        if state_delta.is_empty():
+            return
+
+        self.logger.info(
+            'Synchronizing changes from plugin %s: %s',
+            sync_config.plugin,
+            state_delta,
+        )
 
         with self._sync_lock:
             # Handle new collections
@@ -376,10 +476,12 @@ class SyncMixin(DbMixin, ABC):
                     sync_config.plugin,
                 )
 
-                _execute_action(
+                data = collection.to_dict()
+                data.pop('id', None)
+                collection.id = _execute_action(
                     self.create_collection,
                     **{
-                        **collection.to_dict(),
+                        **data,
                         'parent': (
                             self._infer_id(collection.parent)
                             if collection.parent
@@ -415,10 +517,12 @@ class SyncMixin(DbMixin, ABC):
                     'Adding note %s from plugin %s', note.id, sync_config.plugin
                 )
 
-                _execute_action(
+                data = note.to_dict(minimal=True)
+                data.pop('id', None)
+                note.id = _execute_action(
                     self.create_note,
                     **{
-                        **note.to_dict(minimal=True),
+                        **data,
                         'content': note.content or '',
                         'parent': (
                             self._infer_id(note.parent) if note.parent else None
@@ -454,6 +558,9 @@ class SyncMixin(DbMixin, ABC):
             # Save changes to the database
             self._db_sync(state_delta)
 
+            # Set the last sync time for this plugin
+            self._last_sync_vars.set_time(sync_config.plugin)
+
     def _merge_notes(
         self,
         local_note: Note,
@@ -471,6 +578,25 @@ class SyncMixin(DbMixin, ABC):
         :param sync_config: The synchronization configuration.
         :param state_delta: The state delta to update with any changes.
         """
+
+        def merge_fields(local_note: Note, remote_note: Note):
+            for field in [
+                'content',
+                'content_type',
+                'title',
+                'description',
+                'tags',
+                'latitude',
+                'longitude',
+                'altitude',
+                'author',
+                'source',
+            ]:
+                local_value = getattr(local_note, field, None)
+                remote_value = getattr(remote_note, field, None)
+                if remote_value and (not local_value or local_value != remote_value):
+                    setattr(local_note, field, remote_value)
+
         existing_conflict_notes_by_remote_id = {
             remote_note.id: self._notes[conflict_note.id]
             for conflict_note in (local_note.conflict_notes or [])
@@ -509,17 +635,7 @@ class SyncMixin(DbMixin, ABC):
                 local_note.id,
                 remote_note.id,
             )
-            local_note.content = remote_note.content
-            local_note.content_type = remote_note.content_type
-            local_note.title = remote_note.title
-            local_note.description = remote_note.description
-            local_note.digest = remote_note.digest
-            local_note.tags = remote_note.tags
-            local_note.latitude = remote_note.latitude
-            local_note.longitude = remote_note.longitude
-            local_note.altitude = remote_note.altitude
-            local_note.author = remote_note.author
-            local_note.source = remote_note.source
+            merge_fields(local_note, remote_note)
             local_note.parent = (
                 self._convert_remote_collection_to_local(remote_note.parent)
                 if remote_note.parent
@@ -532,7 +648,7 @@ class SyncMixin(DbMixin, ABC):
                     if note.id != remote_note.id
                 }.values()
             )
-            local_note.updated_at = datetime.datetime.now()
+            local_note.updated_at = remote_note.updated_at or datetime.datetime.now()
 
         # Ignore the conflict and do not update the local note
         elif sync_config.conflict_resolution == SyncConflictResolution.IGNORE:
@@ -556,17 +672,10 @@ class SyncMixin(DbMixin, ABC):
                     existing_conflict_note.id,
                     remote_note.id,
                 )
-                existing_conflict_note.content = remote_note.content
-                existing_conflict_note.content_type = remote_note.content_type
-                existing_conflict_note.description = remote_note.description
-                existing_conflict_note.digest = remote_note.digest
-                existing_conflict_note.tags = remote_note.tags
-                existing_conflict_note.latitude = remote_note.latitude
-                existing_conflict_note.longitude = remote_note.longitude
-                existing_conflict_note.altitude = remote_note.altitude
-                existing_conflict_note.author = remote_note.author
-                existing_conflict_note.source = remote_note.source
-                existing_conflict_note.updated_at = datetime.datetime.now()
+                merge_fields(existing_conflict_note, remote_note)
+                existing_conflict_note.updated_at = (
+                    remote_note.updated_at or datetime.datetime.now()
+                )
                 conflict_note = existing_conflict_note
                 state_delta.notes.updated[
                     existing_conflict_note.id
@@ -580,14 +689,13 @@ class SyncMixin(DbMixin, ABC):
                     content_type=remote_note.content_type,
                     parent=local_note.parent,
                     tags=remote_note.tags,
-                    digest=remote_note.digest,
                     latitude=remote_note.latitude,
                     longitude=remote_note.longitude,
                     altitude=remote_note.altitude,
                     author=remote_note.author,
                     source=remote_note.source,
-                    created_at=datetime.datetime.now(),
-                    updated_at=datetime.datetime.now(),
+                    created_at=remote_note.created_at or datetime.datetime.now(),
+                    updated_at=remote_note.updated_at or datetime.datetime.now(),
                 )
 
                 conflict_note.id = self._infer_id(conflict_note)
@@ -641,7 +749,6 @@ class SyncMixin(DbMixin, ABC):
                     else None
                 ),
                 tags=remote_note.tags,
-                digest=remote_note.digest,
                 latitude=remote_note.latitude,
                 longitude=remote_note.longitude,
                 altitude=remote_note.altitude,
@@ -682,8 +789,8 @@ class SyncMixin(DbMixin, ABC):
         )
 
         if not existing_local_note:
-            local_note.created_at = datetime.datetime.now()
-            local_note.updated_at = datetime.datetime.now()
+            local_note.created_at = remote_note.created_at or datetime.datetime.now()
+            local_note.updated_at = remote_note.updated_at or datetime.datetime.now()
 
         local_note.id = self._infer_id(local_note)
         return local_note
@@ -730,7 +837,7 @@ class SyncMixin(DbMixin, ABC):
 
         # Handle deleted notes
         state_delta = self._calculate_deleted_notes(
-            notes=notes, sync_config=sync_config, state_delta=state_delta
+            remote_notes=notes, sync_config=sync_config, state_delta=state_delta
         )
 
         # Handle new and updated collections
@@ -743,6 +850,7 @@ class SyncMixin(DbMixin, ABC):
         *,
         sync_config: SyncConfig,
         state_delta: StateDelta,
+        filter_by_last_sync_time: bool = True,
     ) -> StateDelta:
         """
         Calculate added and updated notes from the remote source and update the
@@ -751,6 +859,8 @@ class SyncMixin(DbMixin, ABC):
         :param notes: A dictionary of remote notes, keyed by their IDs.
         :param sync_config: The synchronization configuration.
         :param state_delta: The state delta to update with any changes.
+        :param filter_by_last_sync_time: Whether to only filter notes that have
+            been updated since the last sync time (default: True).
         :return: The updated state delta.
         """
         last_sync_time = self._last_sync_vars.get_time(sync_config.plugin)
@@ -765,13 +875,21 @@ class SyncMixin(DbMixin, ABC):
 
             # pylint:disable=protected-access
             if existing_note:
-                if note.updated_at and note.updated_at.timestamp() <= last_sync_time:
+                if (
+                    filter_by_last_sync_time
+                    and note.updated_at
+                    and note.updated_at.timestamp() <= last_sync_time
+                ):
                     # If the note hasn't been updated since the last sync, skip it
                     self.logger.debug(
                         'Skipping note %s from plugin %s, not updated since last sync',
                         note.path,
                         sync_config.plugin,
                     )
+                    continue
+
+                # Skip if the note has no changes
+                if existing_note != local_note:
                     continue
 
                 # Add the note to the state delta
@@ -784,7 +902,8 @@ class SyncMixin(DbMixin, ABC):
 
     def _calculate_deleted_notes(
         self,
-        notes: Dict[Any, Note],
+        remote_notes: Optional[Dict[Any, Note]] = None,
+        deleted_notes: Optional[Dict[Any, Note]] = None,
         *,
         sync_config: SyncConfig,
         state_delta: StateDelta,
@@ -793,25 +912,94 @@ class SyncMixin(DbMixin, ABC):
         Calculate deleted notes from the remote source and update the state
         delta accordingly.
 
-        :param notes: A dictionary of remote notes, keyed by their IDs.
+        :param notes: A dictionary of the notes existing on the remote side,
+            keyed by their IDs.
         :param sync_config: The synchronization configuration.
         :param state_delta: The state delta to update with any changes.
         :return: The updated state delta.
         """
-        remote_notes = {note.path: note for note in notes.values()}
+
+        def refresh_deleted_note(note: Note) -> Tuple[Dict[Any, Note], Dict[Any, Note]]:
+            synced_plugins = {n.plugin for n in note.synced_from}
+            updated: Dict[Any, Note] = {}
+            deleted: Dict[Any, Note] = {}
+
+            # The note has been deleted remotely and it's not synchronized
+            # with any other plugins
+            if synced_plugins - {sync_config.plugin} == set():
+                self.logger.info(
+                    'Note %s has been deleted from remote source %s. Deleting locally.',
+                    note.path,
+                    sync_config.plugin,
+                )
+                deleted[note.id] = note
+            # Otherwise, remove the dropped sync reference
+            else:
+                self.logger.debug(
+                    'Note %s has been deleted from remote source %s. Removing sync reference.',
+                    note.path,
+                    sync_config.plugin,
+                )
+                note.synced_from = [
+                    note
+                    for note in (note.synced_from or [])
+                    if note.plugin != sync_config.plugin
+                ]
+                updated[note.id] = note
+
+            return updated, deleted
+
+        # Skip if the sync config is set to not delete locally
+        if not sync_config.sync_remote_deletions:
+            return state_delta
+
         locally_synced_notes = {
             note.path: note
             for note in self._get_locally_synced_notes(sync_config).values()
         }
 
-        for path, local_note in locally_synced_notes.items():
-            if path not in remote_notes:
-                self.logger.info(
-                    'Note %s has been deleted from remote source %s. Deleting locally.',
-                    local_note.path,
-                    sync_config.plugin,
-                )
-                state_delta.notes.deleted[local_note.id] = local_note
+        assert not (
+            remote_notes and deleted_notes
+        ), 'Only one of remote_notes or deleted_notes should be provided.'
+
+        remote_notes = {note.path: note for note in (remote_notes or {}).values()}
+        updated: Dict[Any, Note] = {}
+        deleted: Dict[Any, Note] = {}
+
+        # Case 1: Remote notes are provided, so any locally synced note not
+        # present in the remote notes has been deleted remotely
+        if remote_notes:
+            for path, local_note in locally_synced_notes.items():
+                if path not in remote_notes:
+                    upds, dels = refresh_deleted_note(local_note)
+                    updated.update(upds)
+                    deleted.update(dels)
+        # Case 2: Deleted remote notes are provided explicitly, so we just
+        # handle them
+        else:
+            for remote_note in (deleted or {}).values():
+                local_note = locally_synced_notes.get(remote_note.path)
+                if local_note:
+                    upds, dels = refresh_deleted_note(local_note)
+                    updated.update(upds)
+                    deleted.update(dels)
+
+        # Skip if more than a safety threshold of notes would be deleted
+        deleted_ratio = len(deleted) / max(1, len(self._notes))
+        if deleted_ratio > sync_config.failsafe_delete_threshold:
+            self.logger.error(
+                (
+                    'Aborting deletion of %d notes from remote source %s '
+                    'as it exceeds the failsafe threshold %.2f%% > %.2f%%'
+                ),
+                len(deleted),
+                sync_config.plugin,
+                deleted_ratio * 100,
+                sync_config.failsafe_delete_threshold * 100,
+            )
+        else:
+            state_delta.notes.updated.update(updated)
+            state_delta.notes.deleted.update(deleted)
 
         return state_delta
 
@@ -940,6 +1128,10 @@ class SyncMixin(DbMixin, ABC):
 
         for unregister in self._unregister_sync_handlers:
             unregister()
+
+        if self._remote_events_timer:
+            self._remote_events_timer.cancel()
+            self._remote_events_timer = None
 
         self._unregister_sync_handlers.clear()
         self._sync_events[SyncState.SYNCED_REMOTE].clear()
