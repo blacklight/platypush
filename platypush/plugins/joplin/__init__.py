@@ -229,7 +229,8 @@ class JoplinPlugin(BaseNotePlugin):
         except ValueError:
             return None
 
-    def _parse_source(self, data: dict) -> Optional[NoteSource]:
+    @staticmethod
+    def _parse_source(data: dict) -> Optional[NoteSource]:
         has_source = any(
             key in data for key in ('source', 'source_url', 'source_application')
         )
@@ -296,9 +297,8 @@ class JoplinPlugin(BaseNotePlugin):
             updated_at=self._parse_time(data.get('updated_time')),
         )
 
-    def _offset_to_page(
-        self, offset: Optional[int], limit: Optional[int]
-    ) -> Optional[int]:
+    @staticmethod
+    def _offset_to_page(offset: Optional[int], limit: Optional[int]) -> Optional[int]:
         """
         Convert an offset to a page number for Joplin API requests.
         """

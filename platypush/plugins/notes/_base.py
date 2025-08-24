@@ -466,8 +466,8 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
 
         return existing_note
 
+    @staticmethod
     def _merge_remote_note_relations(
-        self,
         new_notes: Dict[Any, Note],
         existing_notes: Dict[Any, Note],
     ) -> Dict[Any, Note]:
@@ -492,7 +492,8 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
 
         return new_notes
 
-    def _deduplicate_notes(self, notes: Iterable[Note]) -> Dict[Any, Note]:
+    @staticmethod
+    def _deduplicate_notes(notes: Iterable[Note]) -> Dict[Any, Note]:
         """
         Deduplicate notes based on their path, keeping the most recently updated one.
         """
@@ -627,18 +628,16 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
 
             # Link the child collections to their parent collections
             tmp_collections = list(collection.collections)
-            for collection in tmp_collections:
-                if collection.id not in self._collections:
+            for c in tmp_collections:
+                if c.id not in self._collections:
                     # pylint: disable=protected-access
-                    collection._collections[collection.id] = self._collections[
-                        collection.id
-                    ]
+                    c._collections[c.id] = self._collections[c.id]
 
             # Link the parent collections to their child collections
             tmp_collections = list(collection.collections)
-            for collection in tmp_collections:
-                if collection.parent and collection.parent.id in self._collections:
-                    collection.parent = self._collections[collection.parent.id]
+            for c in tmp_collections:
+                if c.parent and c.parent.id in self._collections:
+                    c.parent = self._collections[c.parent.id]
 
     @staticmethod
     def _parse_geo(data: dict) -> Dict[str, Optional[float]]:
