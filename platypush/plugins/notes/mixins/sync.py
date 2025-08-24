@@ -782,7 +782,9 @@ class SyncMixin(DbMixin, ABC):
             {
                 **{
                     # pylint:disable=protected-access
-                    note._db_id: note
+                    note._db_id: (
+                        Note.build(**note) if isinstance(note, dict) else note
+                    )
                     for note in local_note.synced_from
                 },
                 remote_note._db_id: remote_note,  # pylint:disable=protected-access
@@ -793,7 +795,9 @@ class SyncMixin(DbMixin, ABC):
             {
                 **{
                     # pylint:disable=protected-access
-                    note._db_id: note
+                    note._db_id: (
+                        Note.build(**note) if isinstance(note, dict) else note
+                    )
                     for note in remote_note.synced_to
                 },
                 local_note._db_id: local_note,  # pylint:disable=protected-access
