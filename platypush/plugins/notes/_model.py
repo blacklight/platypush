@@ -230,3 +230,21 @@ class SyncConfig:
     The timeout in seconds for synchronization operations. If None, no
     timeout is applied.
     """
+    sync_remote_deletions: bool = True
+    """
+    If set to True (default), deletions performed on the remote side will be
+    synchronized to the local side, when the local note isn't synced to any
+    other remotes. You may want to disable this if you use multiple mutually
+    connected plugins in order to minimize accidental data loss. It is
+    otherwise recommented in those cases to synchronize the notes also to a
+    source that has this flag set to False as a backup.
+    """
+    failsafe_delete_threshold: float = 0.75
+    """
+    The maximum fraction of notes that can be deleted during a single
+    synchronization operation, as a fraction between 0 and 1. This is a
+    failsafe mechanism to prevent accidental mass deletions. If the fraction of
+    notes that would be deleted exceeds this threshold, the synchronization
+    will be aborted. Set to 0 to disable this failsafe mechanism. The default
+    is 0.75 (75%).
+    """
