@@ -1,5 +1,6 @@
 import re
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from threading import RLock
@@ -716,7 +717,74 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
                     collection_id
                 ]
 
+        state_delta = self._deduplicate_state_delta(state_delta)
         state_delta.latest_updated_at = new_latest_updated_at
+        return state_delta
+
+    @staticmethod
+    def _deduplicate_state_delta(state_delta: StateDelta) -> StateDelta:
+        """
+        Deduplicate the state delta to remove any notes whose paths are
+        both in the added/updated and deleted lists. This method also
+        picks the most recent version of the note in case of duplicates.
+
+        :param state_delta: The state delta to deduplicate.
+        :return: The deduplicated state delta.
+        """
+        actions = ('added', 'updated', 'deleted')
+        all_notes_by_id = {
+            **(
+                {
+                    note_id: note
+                    for act in actions
+                    for note_id, note in getattr(state_delta.notes, act, {}).items()
+                }
+            )
+        }
+
+        all_notes_by_action_and_path: Dict[str, Dict[str, List[Note]]] = {
+            act: defaultdict(list) for act in actions
+        }
+
+        for act in actions:
+            state = getattr(state_delta.notes, act, {})
+            for note in state.values():
+                all_notes_by_action_and_path[act][note.path].append(note)
+
+        for note in all_notes_by_id.values():  # pylint: disable=too-many-nested-blocks
+            notes_by_action_and_path = {
+                act: all_notes_by_action_and_path[act].get(note.path) for act in actions
+            }
+
+            if sum(len(n or []) for n in notes_by_action_and_path.values()) > 1:
+                # Only keep the most recent occurrence of the note
+                most_recent_note = max(
+                    (
+                        n
+                        for notes in notes_by_action_and_path.values()
+                        if notes
+                        for n in notes
+                    ),
+                    key=lambda n: n.updated_at or datetime.fromtimestamp(0),
+                )
+
+                for act in actions:
+                    state = getattr(state_delta.notes, act, {})
+
+                    # If the most recent note is in this action, remove all other notes with the same path
+                    if most_recent_note.id in state:
+                        for note_id, n in list(state.items()):
+                            if (
+                                n.path == most_recent_note.path
+                                and note_id != most_recent_note.id
+                            ):
+                                del state[note_id]
+                    else:
+                        # If the most recent note is not in this action, remove all notes with the same path
+                        for note_id, n in list(state.items()):
+                            if n.path == most_recent_note.path:
+                                del state[note_id]
+
         return state_delta
 
     def _refresh_notes(self, notes: Dict[Any, Note]):
