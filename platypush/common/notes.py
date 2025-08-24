@@ -140,20 +140,20 @@ class Note(Storable):
     def to_dict(self, minimal: bool = False) -> dict:
         if minimal:
             return {
-                'id': self.id,
-                'title': self.title,
-                'description': self.description,
-                'plugin': self.plugin,
+                **{
+                    field: getattr(self, field)
+                    for field in self.__dataclass_fields__
+                    if not field.startswith('_')
+                    and field
+                    not in {
+                        'parent',
+                        'synced_from',
+                        'synced_to',
+                        'conflict_notes',
+                    }
+                },
                 'path': self.path,
-                'content_type': self.content_type.value,
-                'digest': self.digest,
-                'latitude': self.latitude,
-                'longitude': self.longitude,
-                'altitude': self.altitude,
-                'author': self.author,
                 'source': self.source.to_dict() if self.source else None,
-                'created_at': self.created_at.isoformat() if self.created_at else None,
-                'updated_at': self.updated_at.isoformat() if self.updated_at else None,
                 'tags': list(self.tags),
             }
 
@@ -175,6 +175,89 @@ class Note(Storable):
                 ),
             },
         )
+
+    @classmethod
+    def build(cls, _visited: Optional[Dict[Any, 'Note']] = None, **kwargs) -> 'Note':
+        note = cls(
+            **{
+                **{k: v for k, v in kwargs.items() if k in cls.__dataclass_fields__},
+                'content_type': (
+                    NoteContentType.by_extension(kwargs['content_type'])
+                    if isinstance(kwargs.get('content_type'), str)
+                    else kwargs.get('content_type', NoteContentType.MARKDOWN)
+                ),
+                'parent': (
+                    NoteCollection.build(
+                        **{'plugin': kwargs.get('plugin'), **kwargs['parent']}
+                    )
+                    if kwargs.get('parent')
+                    else None
+                ),
+                'source': (
+                    NoteSource(**kwargs['source'])
+                    if isinstance(kwargs.get('source'), dict)
+                    else kwargs.get('source')
+                ),
+                'created_at': (
+                    datetime.fromisoformat(kwargs['created_at'])
+                    if isinstance(kwargs.get('created_at'), str)
+                    else kwargs.get('created_at')
+                ),
+                'updated_at': (
+                    datetime.fromisoformat(kwargs['updated_at'])
+                    if isinstance(kwargs.get('updated_at'), str)
+                    else kwargs.get('updated_at')
+                ),
+            }
+        )
+
+        _visited = _visited or {}
+        if note.id in _visited:
+            return _visited[note.id]
+
+        _visited[note.id] = note
+        for key, notes_args in {
+            k: {
+                '_visited': _visited,
+                'plugin': note.plugin,
+                **n,
+            }
+            for k in ['synced_from', 'synced_to', 'conflict_notes']
+            for n in kwargs.get(k, [])
+        }.items():
+            if note not in getattr(note, key):
+                getattr(note, key).append(cls.build(**notes_args))
+
+        return note
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Note):
+            return False
+
+        for attr in [
+            'id',
+            'plugin',
+            'title',
+            'path',
+            'description',
+            'digest',
+            'tags',
+            'author',
+            'latitude',
+            'longitude',
+            'altitude',
+            'content_type',
+            'source',
+        ]:
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+
+        if (self.parent.id if self.parent else None) != (
+            other.parent.id if other.parent else None
+        ):
+            return False
+
+        return True
 
 
 @dataclass
@@ -236,3 +319,31 @@ class NoteCollection(Storable):
                 'notes': [note.to_dict(minimal=True) for note in self.notes],
             }
         )
+
+    @classmethod
+    def build(cls, **kwargs) -> 'NoteCollection':
+        parent = kwargs.pop('parent', None)
+        if parent:
+            if isinstance(parent, dict):
+                kwargs['parent'] = NoteCollection.build(**parent)
+            elif isinstance(parent, NoteCollection):
+                kwargs['parent'] = parent
+
+        return cls(
+            **{k: v for k, v in kwargs.items() if k in cls.__dataclass_fields__},
+        )
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, NoteCollection):
+            return False
+
+        for attr in ['id', 'plugin', 'title', 'path', 'description']:
+            if getattr(self, attr) != getattr(other, attr):
+                return False
+
+        if (self.parent.id if self.parent else None) != (
+            other.parent.id if other.parent else None
+        ):
+            return False
+
+        return True
