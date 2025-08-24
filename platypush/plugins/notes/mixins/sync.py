@@ -299,7 +299,7 @@ class SyncMixin(DbMixin, ABC):
 
                 # Handle deletions
                 state_delta = self._calculate_deleted_notes(
-                    deleted_notes.get(plugin, {}),
+                    deleted_notes=deleted_notes.get(plugin, {}),
                     sync_config=sync_config,
                     state_delta=state_delta,
                 )
@@ -439,7 +439,6 @@ class SyncMixin(DbMixin, ABC):
         """
 
         def _execute_action(func: Callable[..., Response], *args, **kwargs) -> Any:
-            errors = []
             try:
                 result = func(*args, **kwargs)
                 if result.errors:
@@ -641,6 +640,16 @@ class SyncMixin(DbMixin, ABC):
                 if remote_note.parent
                 else None
             )
+            local_note.synced_from = list(
+                {
+                    **{
+                        # pylint:disable=protected-access
+                        note._db_id: note
+                        for note in local_note.synced_from
+                    },
+                    remote_note._db_id: remote_note,  # pylint:disable=protected-access
+                }.values()
+            )
             local_note.conflict_notes = list(
                 {
                     note.id: note
@@ -672,7 +681,9 @@ class SyncMixin(DbMixin, ABC):
                     existing_conflict_note.id,
                     remote_note.id,
                 )
+                conflict_note_title = existing_conflict_note.title
                 merge_fields(existing_conflict_note, remote_note)
+                existing_conflict_note.title = conflict_note_title
                 existing_conflict_note.updated_at = (
                     remote_note.updated_at or datetime.datetime.now()
                 )
@@ -754,6 +765,7 @@ class SyncMixin(DbMixin, ABC):
                 altitude=remote_note.altitude,
                 author=remote_note.author,
                 source=remote_note.source,
+                synced_from=[remote_note],
                 created_at=remote_note.created_at,
                 updated_at=remote_note.updated_at,
             )
@@ -912,8 +924,12 @@ class SyncMixin(DbMixin, ABC):
         Calculate deleted notes from the remote source and update the state
         delta accordingly.
 
-        :param notes: A dictionary of the notes existing on the remote side,
-            keyed by their IDs.
+        :param remote_notes: A dictionary of the notes existing on the remote side,
+            keyed by their IDs. Only one of remote_notes or deleted_notes should be
+            provided.
+        :param deleted_notes: A dictionary of the notes that have been deleted
+            remotely, keyed by their IDs. Only one of remote_notes or deleted_notes
+            should be provided.
         :param sync_config: The synchronization configuration.
         :param state_delta: The state delta to update with any changes.
         :return: The updated state delta.
@@ -977,7 +993,7 @@ class SyncMixin(DbMixin, ABC):
         # Case 2: Deleted remote notes are provided explicitly, so we just
         # handle them
         else:
-            for remote_note in (deleted or {}).values():
+            for remote_note in (deleted_notes or {}).values():
                 local_note = locally_synced_notes.get(remote_note.path)
                 if local_note:
                     upds, dels = refresh_deleted_note(local_note)
