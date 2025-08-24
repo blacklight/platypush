@@ -111,7 +111,6 @@ class Note(Storable):
     synced_from: List['Note'] = field(default_factory=list)
     synced_to: List['Note'] = field(default_factory=list)
     conflict_notes: List['Note'] = field(default_factory=list)
-    _path: Optional[str] = None
 
     def __post_init__(self):
         """
@@ -121,20 +120,9 @@ class Note(Storable):
 
     @property
     def path(self) -> str:
-        # If the path is already set, return it
-        if self._path:
-            return self._path
-
         return (
             self.parent.path if self.parent else '/'
         ) + f'{self.title}.{self.content_type.value}'
-
-    @path.setter
-    def path(self, value: str):
-        """
-        Set the path for the note.
-        """
-        self._path = value
 
     def _update_digest(self) -> Optional[str]:
         if self.content and not self.digest:
@@ -229,6 +217,7 @@ class NoteCollection(Storable):
                     {
                         'id': self.parent.id,
                         'title': self.parent.title,
+                        'path': self.parent.path,
                     }
                     if self.parent
                     else None
