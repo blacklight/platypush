@@ -116,7 +116,7 @@ class Note(Storable):
         """
         Post-initialization to update the digest if content is provided.
         """
-        self.digest = self._update_digest()
+        self._update_digest()
 
     @property
     def path(self) -> str:
@@ -128,6 +128,14 @@ class Note(Storable):
         if self.content and not self.digest:
             self.digest = sha256(self.content.encode('utf-8')).hexdigest()
         return self.digest
+
+    def __setattr__(self, name: str, value: Any, /) -> None:
+        if name == 'content':
+            value = value or ''
+
+        super().__setattr__(name, value)
+        if name == 'content':
+            self._update_digest()
 
     def to_dict(self, minimal: bool = False) -> dict:
         if minimal:
