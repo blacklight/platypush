@@ -56,7 +56,7 @@ class DbPlugin(Plugin):
         from platypush.config import Config
 
         kwargs.update(Config.get('_db') or {})
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         self.engine_url = engine or kwargs.pop('engine', None)
         self.args = args
         self.kwargs = kwargs
@@ -361,6 +361,8 @@ class DbPlugin(Plugin):
         if returned_records:
             return returned_records
 
+        return None
+
     @staticmethod
     def _execute_try_returning(connection, stmt):
         ret = None
@@ -379,6 +381,8 @@ class DbPlugin(Plugin):
                 {col.name: getattr(row, col.name, None) for col in stmt.table.c}
                 for row in ret
             ]
+
+        return None
 
     def _get_new_and_existing_records(self, connection, table, records, key_columns):
         records_by_key = {
@@ -427,6 +431,8 @@ class DbPlugin(Plugin):
 
         if updated_records:
             return updated_records
+
+        return None
 
     @action
     def update(self, table, records, key_columns, engine=None, *args, **kwargs):
@@ -564,8 +570,13 @@ class DbPlugin(Plugin):
 
             yield session
 
-            session.flush()
-            session.commit()
+            try:
+                session.flush()
+                session.commit()
+            except Exception as e:
+                session.rollback()
+                self.logger.exception(e)
+                raise e
 
 
 # vim:sw=4:ts=4:et:
