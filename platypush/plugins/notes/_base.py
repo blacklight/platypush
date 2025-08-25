@@ -525,20 +525,23 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         # Always fetch if background polling is disabled
         fetch = fetch or not self.poll_interval
         if fetch:
+            cached_notes = self._notes.copy()
+            fetched_notes = self._fetch_notes(
+                *args,
+                limit=limit,
+                offset=offset,
+                sort=sort,
+                filter=filter,
+                with_content=with_content,
+                **kwargs,
+            )
+
             with self._sync_lock:
-                cached_notes = self._notes.copy()
-                new_notes = {
-                    note.id: self._merge_note(note)
-                    for note in self._fetch_notes(
-                        *args,
-                        limit=limit,
-                        offset=offset,
-                        sort=sort,
-                        filter=filter,
-                        with_content=with_content,
-                        **kwargs,
-                    )
-                }
+                if not (self.__last_sync_time or self._notes):
+                    with self._get_db_session() as session:
+                        self._notes = dict(self._db_fetch_notes(session=session))
+
+                new_notes = {note.id: self._merge_note(note) for note in fetched_notes}
 
                 self._notes = self._deduplicate_notes(
                     self._merge_remote_note_relations(
