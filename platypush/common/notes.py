@@ -153,7 +153,14 @@ class Note(Storable):
                     }
                 },
                 'path': self.path,
-                'source': self.source.to_dict() if self.source else None,
+                'parent': self.parent.to_dict(minimal=True) if self.parent else None,
+                'source': (
+                    self.source.to_dict()
+                    if isinstance(self.source, NoteSource)
+                    else self.source
+                )
+                if self.source
+                else None,
                 'tags': list(self.tags),
             }
 
@@ -165,14 +172,15 @@ class Note(Storable):
                     if not field.startswith('_') and field != 'parent'
                 },
                 'path': self.path,
-                'parent': (
-                    {
-                        'id': self.parent.id if self.parent else None,
-                        'title': self.parent.title if self.parent else None,
-                    }
-                    if self.parent
-                    else None
-                ),
+                'parent': self.parent.to_dict(minimal=True) if self.parent else None,
+                'tags': list(self.tags),
+                'synced_from': [
+                    note.to_dict(minimal=True) for note in self.synced_from
+                ],
+                'synced_to': [note.to_dict(minimal=True) for note in self.synced_to],
+                'conflict_notes': [
+                    note.to_dict(minimal=True) for note in self.conflict_notes
+                ],
             },
         )
 
@@ -295,7 +303,26 @@ class NoteCollection(Storable):
 
         return ('/' + '/'.join(reversed([self.title, *path])) + '/').replace('//', '/')
 
-    def to_dict(self) -> dict:
+    def to_dict(self, minimal: bool = False) -> dict:
+        if minimal:
+            return {
+                **{
+                    field: getattr(self, field)
+                    for field in self.__dataclass_fields__
+                    if not field.startswith('_') and field != 'parent'
+                },
+                'path': self.path,
+                'parent': (
+                    {
+                        'id': self.parent.id,
+                        'title': self.parent.title,
+                        'path': self.parent.path,
+                    }
+                    if self.parent
+                    else None
+                ),
+            }
+
         return NoteCollectionSchema().dump(  # type: ignore
             {
                 **{
