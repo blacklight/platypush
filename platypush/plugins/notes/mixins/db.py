@@ -7,7 +7,7 @@ from typing import Any, Collection, Dict, Generator, List, Optional, Set, Union
 from sqlalchemy import and_
 from sqlalchemy.orm import Mapped, Session
 
-from platypush.common.notes import Note, NoteCollection
+from platypush.common.notes import Note, NoteCollection, NoteSource
 from platypush.context import get_plugin
 from platypush.plugins.db import DbPlugin
 from platypush.utils import utcnow
@@ -204,11 +204,11 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
                     else None
                 ),
                 'source': (
-                    {  # type: ignore[arg-type]
-                        'name': db_note.source_name,
-                        'url': db_note.source_url,
-                        'app': db_note.source_app,
-                    }
+                    NoteSource(
+                        name=db_note.source_name,  # type: ignore[arg-type]
+                        url=db_note.source_url,  # type: ignore[arg-type]
+                        app=db_note.source_app,  # type: ignore[arg-type]
+                    )
                     if bool(db_note.source_name)
                     else None
                 ),
