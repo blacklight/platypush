@@ -102,9 +102,10 @@ class Note(Base):
     synced_from = relationship(
         'Note',
         secondary=f"{TABLE_PREFIX}sync_state",
-        primaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.remote_note_id",
-        secondaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.local_note_id",
+        primaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.local_note_id",
+        secondaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.remote_note_id",
         viewonly=True,
+        sync_backref=False,
     )
     synced_to = relationship(
         'Note',
@@ -112,6 +113,7 @@ class Note(Base):
         primaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.remote_note_id",
         secondaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.local_note_id",
         viewonly=True,
+        sync_backref=False,
     )
     conflict_notes = relationship(
         'Note',
@@ -122,6 +124,7 @@ class Note(Base):
             f"{TABLE_PREFIX}sync_state.c.remote_note_id == Note.id)"
         ),
         viewonly=True,
+        sync_backref=False,
     )
 
 
