@@ -968,7 +968,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             .. schema:: notes.NoteItemSchema(many=True)
 
         """
-        return [
+        notes = [
             note.to_dict()
             for note in self._get_notes(
                 *args,
@@ -981,6 +981,12 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
                 **kwargs,
             )
         ]
+
+        if not with_content:
+            for note in notes:
+                note.pop('content', None)
+
+        return notes
 
     @action
     def create_note(
