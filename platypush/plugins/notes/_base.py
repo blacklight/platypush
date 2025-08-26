@@ -537,6 +537,8 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             )
 
             with self._sync_lock:
+                # If there's not been an initial sync yet, merge the fetched notes
+                # with the existing ones in the cache to preserve their relations
                 if not (self.__last_sync_time or self._notes):
                     with self._get_db_session() as session:
                         self._notes = dict(self._db_fetch_notes(session=session))

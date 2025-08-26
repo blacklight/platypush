@@ -529,6 +529,8 @@ class SyncMixin(DbMixin, ABC):
                     },
                 )
 
+                self._notes[note.id] = note
+
             # Handle updated notes
             for note in state_delta.notes.updated.values():
                 self.logger.debug(
@@ -547,18 +549,34 @@ class SyncMixin(DbMixin, ABC):
                     },
                 )
 
+                self._notes[note.id] = note
+
             # Handle deleted notes
             for note in state_delta.notes.deleted.values():
                 self.logger.debug(
                     'Deleting note %s from plugin %s', note.id, sync_config.plugin
                 )
+
                 _execute_action(self.delete_note, note_id=note.id)
+                self._notes.pop(note.id, None)
 
             # Save changes to the database
             self._db_sync(state_delta)
 
+            # Refresh the caches
+            self._refresh_notes_cache()
+            self._refresh_collections_cache()
+
             # Set the last sync time for this plugin
             self._last_sync_vars.set_time(sync_config.plugin)
+
+    @abstractmethod
+    def _refresh_notes_cache(self):
+        ...
+
+    @abstractmethod
+    def _refresh_collections_cache(self):
+        ...
 
     def _merge_notes(
         self,
@@ -778,14 +796,22 @@ class SyncMixin(DbMixin, ABC):
                 state_delta=state_delta,
             )
 
+        # Rebuild synced_from and synced_to lists to avoid stale references
+        synced_from = [
+            Note.build(**note) if isinstance(note, dict) else note
+            for note in (local_note.synced_from or [])
+        ]
+
+        synced_to = [
+            Note.build(**note) if isinstance(note, dict) else note
+            for note in (remote_note.synced_to or [])
+        ]
+
         local_note.synced_from = list(
             {
                 **{
-                    # pylint:disable=protected-access
-                    note._db_id: (
-                        Note.build(**note) if isinstance(note, dict) else note
-                    )
-                    for note in local_note.synced_from
+                    note._db_id: note  # pylint:disable=protected-access
+                    for note in synced_from
                 },
                 remote_note._db_id: remote_note,  # pylint:disable=protected-access
             }.values()
@@ -794,11 +820,8 @@ class SyncMixin(DbMixin, ABC):
         remote_note.synced_to = list(
             {
                 **{
-                    # pylint:disable=protected-access
-                    note._db_id: (
-                        Note.build(**note) if isinstance(note, dict) else note
-                    )
-                    for note in remote_note.synced_to
+                    note._db_id: note  # pylint:disable=protected-access
+                    for note in synced_to
                 },
                 local_note._db_id: local_note,  # pylint:disable=protected-access
             }.values()
@@ -975,7 +998,7 @@ class SyncMixin(DbMixin, ABC):
 
         locally_synced_notes = {
             note.path: note
-            for note in self._get_locally_synced_notes(sync_config).values()
+            for note in self._get_locally_synced_notes(sync_config.plugin).values()
         }
 
         assert not (
@@ -1007,7 +1030,7 @@ class SyncMixin(DbMixin, ABC):
         # Skip if more than a safety threshold of notes would be deleted
         deleted_ratio = len(deleted) / max(1, len(self._notes))
         if deleted_ratio > sync_config.failsafe_delete_threshold:
-            self.logger.error(
+            self.logger.warning(
                 (
                     'Aborting deletion of %d notes from remote source %s '
                     'as it exceeds the failsafe threshold %.2f%% > %.2f%%'
@@ -1073,22 +1096,19 @@ class SyncMixin(DbMixin, ABC):
 
         return state_delta
 
-    def _get_locally_synced_notes(self, sync_config: SyncConfig) -> Dict[Any, Note]:
+    def _get_locally_synced_notes(self, plugin: str) -> Dict[Any, Note]:
         """
         Given a sync configuration, retrieves the notes that have been synced
         locally with the given plugin.
 
-        :param sync_config: The synchronization configuration.
+        :param plugin: The plugin name to filter notes by.
         :return: A dictionary of notes that have been synced locally, keyed by
             their IDs.
         """
         return {
             note_id: note
             for note_id, note in self._notes.items()
-            if any(
-                synced_note.plugin == sync_config.plugin
-                for synced_note in note.synced_from
-            )
+            if any(synced_note.plugin == plugin for synced_note in note.synced_from)
         }
 
     def _infer_id(self, item: Storable) -> Optional[Any]:
