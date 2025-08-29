@@ -23,6 +23,8 @@ def _note_minimal(data, **_) -> dict:
         'plugin': get_attr(data, 'plugin'),
         'path': get_attr(data, 'path'),
         'digest': get_attr(data, 'digest'),
+        'created_at': get_attr(data, 'created_at'),
+        'updated_at': get_attr(data, 'updated_at'),
     }
 
 
@@ -243,6 +245,27 @@ class NoteItemSchema(BaseNoteSchema):
                     'id': 1238,
                     'title': 'Conflict Note',
                     'plugin': 'sync_plugin3',
+                },
+            ],
+        },
+    )
+
+    conflicting_for = fields.Function(
+        lambda data: (
+            _note_minimal(
+                getattr(data, 'conflicting_for', (data or {}).get('conflicting_for'))
+            )
+            if getattr(data, 'conflicting_for', (data or {}).get('conflicting_for'))
+            else None
+        ),
+        dump_only=True,
+        metadata={
+            'description': 'Source note for which this note is a conflict',
+            'example': [
+                {
+                    'id': 1239,
+                    'title': 'A Local Note',
+                    'plugin': 'sync_plugin4',
                 },
             ],
         },

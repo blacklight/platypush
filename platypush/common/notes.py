@@ -111,6 +111,7 @@ class Note(Storable):
     synced_from: List['Note'] = field(default_factory=list)
     synced_to: List['Note'] = field(default_factory=list)
     conflict_notes: List['Note'] = field(default_factory=list)
+    conflicting_for: Optional['Note'] = None
 
     def __post_init__(self):
         """
@@ -150,18 +151,24 @@ class Note(Storable):
                         'synced_from',
                         'synced_to',
                         'conflict_notes',
+                        'conflicting_for',
                     }
                 },
                 'path': self.path,
+                'content_type': self.content_type.value,
                 'parent': self.parent.to_dict(minimal=True) if self.parent else None,
                 'source': (
-                    self.source.to_dict()
-                    if isinstance(self.source, NoteSource)
-                    else self.source
-                )
-                if self.source
-                else None,
+                    (
+                        self.source.to_dict()
+                        if isinstance(self.source, NoteSource)
+                        else self.source
+                    )
+                    if self.source
+                    else None
+                ),
                 'tags': list(self.tags),
+                'created_at': self.created_at.isoformat() if self.created_at else None,
+                'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             }
 
         return NoteItemSchema().dump(  # type: ignore
@@ -181,8 +188,23 @@ class Note(Storable):
                 'conflict_notes': [
                     note.to_dict(minimal=True) for note in self.conflict_notes
                 ],
+                'conflicting_for': (
+                    self.conflicting_for.to_dict(minimal=True)
+                    if self.conflicting_for
+                    else None
+                ),
             },
         )
+
+    @property
+    def is_conflict_note(self) -> bool:
+        """
+        :return: True if the note is a conflict note (i.e., it is a virtual copy
+            of a remote note that has conflicts with a local note). If this is
+            true, the ``conflicting_for`` field will point to the local note it
+            conflicts with.
+        """
+        return bool(self.conflicting_for)
 
     @classmethod
     def build(cls, _visited: Optional[Dict[Any, 'Note']] = None, **kwargs) -> 'Note':
@@ -230,7 +252,7 @@ class Note(Storable):
                 'plugin': note.plugin,
                 **n,
             }
-            for k in ['synced_from', 'synced_to', 'conflict_notes']
+            for k in ['synced_from', 'synced_to', 'conflict_notes', 'conflicting_for']
             for n in kwargs.get(k, [])
         }.items():
             if note not in getattr(note, key):

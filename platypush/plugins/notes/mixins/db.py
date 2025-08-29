@@ -132,6 +132,7 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
                         'synced_from',
                         'synced_to',
                         'conflict_notes',
+                        'conflicting_for',
                     }
                 },
                 'id': note._db_id,  # pylint:disable=protected-access
@@ -230,6 +231,12 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
             self._from_db_note(conflict_note, _visited=_visited)
             for conflict_note in getattr(db_note, 'conflict_notes', [])
         ]
+
+        note.conflicting_for = (
+            self._from_db_note(db_note.conflicting_for, _visited=_visited)
+            if db_note.conflicting_for
+            else None
+        )
 
         return note
 

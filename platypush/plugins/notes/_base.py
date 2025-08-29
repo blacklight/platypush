@@ -8,7 +8,6 @@ from time import time
 from typing import Any, Dict, Iterable, List, Optional, Type, Union
 
 from platypush.common.notes import Note, NoteCollection, NoteSource
-from platypush.context import Variable
 from platypush.entities import get_entities_engine
 from platypush.message.event.notes import (
     BaseNoteEvent,
@@ -140,37 +139,6 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
 
         self._sync_lock = RLock()
         self._timeout = timeout
-        self.__last_sync_time: Optional[datetime] = None
-
-    @property
-    def _last_sync_time_var(self) -> Variable:
-        """
-        Variable name for the last sync time.
-        """
-        return Variable(f'_LAST_ITEMS_SYNC_TIME[{self._plugin_name}]')
-
-    @property
-    def _last_local_sync_time(self) -> Optional[datetime]:
-        """
-        Get the last sync time from the variable.
-        """
-        if not self.__last_sync_time:
-            t = self._last_sync_time_var.get()
-            self.__last_sync_time = datetime.fromtimestamp(float(t)) if t else None
-
-        return self.__last_sync_time
-
-    @_last_local_sync_time.setter
-    def _last_local_sync_time(self, value: Optional[datetime]):
-        """
-        Set the last sync time to the variable.
-        """
-        with self._sync_lock:
-            self.__last_sync_time = value
-            if value is None:
-                self._last_sync_time_var.set(None)
-            else:
-                self._last_sync_time_var.set(value.timestamp())
 
     @abstractmethod
     def _fetch_note(self, note_id: Any, *args, **kwargs) -> Optional[Note]:
@@ -452,8 +420,14 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             return note
 
         for field in note.__dataclass_fields__:
-            # Preserve synced_from/synced_to/conflict_notes relations
-            if field in ('synced_from', 'synced_to', 'conflict_notes'):
+            # Preserve synced_from/synced_to/conflict_notes/conflicting_for
+            # relations
+            if field in (
+                'synced_from',
+                'synced_to',
+                'conflict_notes',
+                'conflicting_for',
+            ):
                 continue
 
             existing_value = getattr(existing_note, field)
@@ -486,10 +460,12 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             if not existing_note:
                 continue
 
-            # Merge synced_from/synced_to/conflict_note relations
+            # Merge synced_from/synced_to/conflict_note/conflicting_for
+            # relations
             note.synced_from = existing_note.synced_from or note.synced_from
             note.synced_to = existing_note.synced_to or note.synced_to
             note.conflict_notes = existing_note.conflict_notes or note.conflict_notes
+            note.conflicting_for = existing_note.conflicting_for or note.conflicting_for
 
         return new_notes
 
@@ -539,7 +515,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             with self._sync_lock:
                 # If there's not been an initial sync yet, merge the fetched notes
                 # with the existing ones in the cache to preserve their relations
-                if not (self.__last_sync_time or self._notes):
+                if not (self._last_sync_time or self._notes):
                     with self._get_db_session() as session:
                         self._notes = dict(self._db_fetch_notes(session=session))
 

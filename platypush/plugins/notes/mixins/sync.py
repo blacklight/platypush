@@ -112,6 +112,7 @@ class SyncMixin(DbMixin, ABC):
         """
         super().__init__(*args, **kwargs)
         self.sync_from: List[SyncConfig] = []
+        self._last_sync_time: Optional[datetime.datetime] = None
         self._sync_state = SyncState.UNINITIALIZED
         self._sync_state_lock = RLock()
         self._sync_events: Dict[SyncState, Event] = defaultdict(Event)
@@ -134,6 +135,38 @@ class SyncMixin(DbMixin, ABC):
                 self.sync_from.append(SyncConfig(**item))
             elif isinstance(item, SyncConfig):
                 self.sync_from.append(item)
+
+    @property
+    def _last_sync_time_var(self) -> Variable:
+        """
+        Variable name for the last sync time.
+        """
+        return Variable(f'_LAST_ITEMS_SYNC_TIME[{str(self)}]')
+
+    @property
+    def _last_local_sync_time(self) -> Optional[datetime.datetime]:
+        """
+        Get the last sync time from the variable.
+        """
+        if not self._last_sync_time:
+            t = self._last_sync_time_var.get()
+            self._last_sync_time = (
+                datetime.datetime.fromtimestamp(float(t)) if t else None
+            )
+
+        return self._last_sync_time
+
+    @_last_local_sync_time.setter
+    def _last_local_sync_time(self, value: Optional[datetime.datetime]):
+        """
+        Set the last sync time to the variable.
+        """
+        with self._sync_lock:
+            self._last_sync_time = value
+            if value is None:
+                self._last_sync_time_var.set(None)
+            else:
+                self._last_sync_time_var.set(value.timestamp())
 
     @property
     def sync_state(self) -> SyncState:
@@ -728,6 +761,7 @@ class SyncMixin(DbMixin, ABC):
                 )
 
                 conflict_note.id = self._infer_id(conflict_note)
+                conflict_note.conflicting_for = local_note
                 local_note.conflict_notes = list(
                     {
                         **{note.id: note for note in (local_note.conflict_notes or [])},
@@ -1062,7 +1096,12 @@ class SyncMixin(DbMixin, ABC):
             all_notes.update(
                 {
                     n.id: n
-                    for n in note.synced_from + note.synced_to + note.conflict_notes
+                    for n in (
+                        note.synced_from
+                        + note.synced_to
+                        + note.conflict_notes
+                        + [*([note.conflicting_for] if note.conflicting_for else [])]
+                    )
                     if n.id not in all_notes
                 }
             )

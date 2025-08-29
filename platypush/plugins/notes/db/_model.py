@@ -119,10 +119,15 @@ class Note(Base):
         'Note',
         secondary=f"{TABLE_PREFIX}sync_state",
         primaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.conflict_note_id",
-        secondaryjoin=(
-            f"or_({TABLE_PREFIX}sync_state.c.local_note_id == Note.id, "
-            f"{TABLE_PREFIX}sync_state.c.remote_note_id == Note.id)"
-        ),
+        secondaryjoin=f"{TABLE_PREFIX}sync_state.c.local_note_id == Note.id",
+        viewonly=True,
+        sync_backref=False,
+    )
+    conflicting_for = relationship(
+        'Note',
+        secondary=f"{TABLE_PREFIX}sync_state",
+        primaryjoin=f"{TABLE_PREFIX}sync_state.c.local_note_id == Note.id",
+        secondaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.conflict_note_id",
         viewonly=True,
         sync_backref=False,
     )
