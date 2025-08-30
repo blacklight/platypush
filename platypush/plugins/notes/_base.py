@@ -442,7 +442,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         return existing_note
 
     @staticmethod
-    def _merge_remote_note_relations(
+    def _merge_note_relations(
         new_notes: Dict[Any, Note],
         existing_notes: Dict[Any, Note],
     ) -> Dict[Any, Note]:
@@ -522,7 +522,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
                 new_notes = {note.id: self._merge_note(note) for note in fetched_notes}
 
                 self._notes = self._deduplicate_notes(
-                    self._merge_remote_note_relations(
+                    self._merge_note_relations(
                         new_notes=new_notes, existing_notes=cached_notes
                     ).values()
                 )
