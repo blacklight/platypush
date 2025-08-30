@@ -130,6 +130,7 @@ class Note(Base):
         secondaryjoin=f"Note.id == {TABLE_PREFIX}sync_state.c.conflict_note_id",
         viewonly=True,
         sync_backref=False,
+        uselist=False,
     )
 
 
