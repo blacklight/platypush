@@ -218,13 +218,13 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
 
         _visited[db_note.id] = note
         note.synced_from = [
-            self._from_db_note(note, _visited=_visited)
-            for note in getattr(db_note, 'synced_from', [])
+            self._from_db_note(n, _visited=_visited)
+            for n in getattr(db_note, 'synced_from', [])
         ]
 
         note.synced_to = [
-            self._from_db_note(note, _visited=_visited)
-            for note in getattr(db_note, 'synced_to', [])
+            self._from_db_note(n, _visited=_visited)
+            for n in getattr(db_note, 'synced_to', [])
         ]
 
         note.conflict_notes = [

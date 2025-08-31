@@ -661,7 +661,7 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         for note in notes.values():
             updated_at = note.updated_at.timestamp() if note.updated_at else 0
             if not filter_by_latest_updated_at or updated_at > latest_updated_at:
-                if note.id not in previous_notes:
+                if not previous_notes.get(note.id):
                     state_delta.notes.added[note.id] = note
                 else:
                     state_delta.notes.updated[note.id] = note
