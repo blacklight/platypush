@@ -101,6 +101,7 @@ class SyncMixin(DbMixin, ABC):
     """
 
     logger: Logger
+    _CONFLICT_NOTE_TITLE_PREFIX = '__CONFLICT__'
 
     def __init__(
         self, *args, sync_from: Optional[List[Union[dict, SyncConfig]]] = None, **kwargs
@@ -611,6 +612,144 @@ class SyncMixin(DbMixin, ABC):
     def _refresh_collections_cache(self):
         ...
 
+    def _update_existing_conflict_note(
+        self,
+        conflict_note: Note,
+        remote_note: Note,
+        state_delta: StateDelta,
+    ) -> Note:
+        """
+        Update an existing conflict note with the remote note's content.
+
+        :param conflict_note: The existing conflict note to update.
+        :param remote_note: The remote note to use as the source of truth.
+        :param state_delta: The state delta to update with the changes.
+        """
+        self.logger.debug(
+            'Merging conflict note %s with remote note %s',
+            conflict_note.id,
+            remote_note.id,
+        )
+        conflict_note_title = conflict_note.title
+        self.__merge_fields(conflict_note, remote_note)
+        conflict_note.title = conflict_note_title
+        conflict_note.updated_at = remote_note.updated_at or datetime.datetime.now()
+        state_delta.notes.updated[conflict_note.id] = conflict_note
+        return conflict_note
+
+    def _create_conflict_note(
+        self,
+        local_note: Note,
+        remote_note: Note,
+        state_delta: StateDelta,
+    ) -> Note:
+        """
+        Create a conflict note to store the remote version of a note that is in
+        conflict with the local version.
+
+        :param local_note: The local note that is in conflict.
+        :param remote_note: The remote note that is in conflict.
+        :param state_delta: The state delta to update with the new conflict note.
+        """
+        conflict_note = Note(
+            id=remote_note.id,
+            title=(
+                f'{self._CONFLICT_NOTE_TITLE_PREFIX}'
+                f'[{remote_note.plugin}]{remote_note.title}'
+            ),
+            plugin=self._plugin_name,
+            content=remote_note.content,
+            content_type=remote_note.content_type,
+            parent=local_note.parent,
+            tags=remote_note.tags,
+            latitude=remote_note.latitude,
+            longitude=remote_note.longitude,
+            altitude=remote_note.altitude,
+            author=remote_note.author,
+            source=remote_note.source,
+            created_at=remote_note.created_at or datetime.datetime.now(),
+            updated_at=remote_note.updated_at or datetime.datetime.now(),
+        )
+
+        conflict_note.id = self._infer_id(conflict_note)
+        conflict_note.conflicting_for = local_note
+        local_note.conflict_notes = list(
+            {
+                **{note.id: note for note in (local_note.conflict_notes or [])},
+                conflict_note.id: conflict_note,
+            }.values()
+        )
+
+        state_delta.notes.added[conflict_note.id] = conflict_note
+        self.logger.warning(
+            'Conflict detected for note %s between local and remote versions. Creating conflict note %s.',
+            local_note.path,
+            conflict_note.path,
+        )
+
+        return conflict_note
+
+    def _overwrite_note(
+        self,
+        local_note: Note,
+        remote_note: Note,
+    ) -> Note:
+        """
+        Overwrite the local note with the remote note.
+
+        :param local_note: The local note to overwrite.
+        :param remote_note: The remote note to use as the source of truth.
+        """
+        self.logger.debug(
+            'Overwriting local note %s with remote note %s',
+            local_note.id,
+            remote_note.id,
+        )
+        self.__merge_fields(local_note, remote_note)
+        local_note.parent = (
+            self._convert_remote_collection_to_local(remote_note.parent)
+            if remote_note.parent
+            else None
+        )
+        local_note.synced_from = list(
+            {
+                **{
+                    # pylint:disable=protected-access
+                    note._db_id: note
+                    for note in local_note.synced_from
+                },
+                remote_note._db_id: remote_note,  # pylint:disable=protected-access
+            }.values()
+        )
+        local_note.conflict_notes = list(
+            {
+                note.id: note
+                for note in (local_note.conflict_notes or [])
+                if note.id != remote_note.id
+            }.values()
+        )
+        local_note.updated_at = remote_note.updated_at or datetime.datetime.now()
+        return local_note
+
+    @staticmethod
+    def __merge_fields(local_note: Note, remote_note: Note):
+        for field in [
+            'content',
+            'content_type',
+            'title',
+            'description',
+            'tags',
+            'latitude',
+            'longitude',
+            'altitude',
+            'author',
+            'source',
+        ]:
+            local_value = getattr(local_note, field, None)
+            remote_value = getattr(remote_note, field, None)
+            if remote_value and (not local_value or local_value != remote_value):
+                setattr(local_note, field, remote_value)
+
     def _merge_notes(
         self,
         local_note: Note,
@@ -628,25 +767,6 @@ class SyncMixin(DbMixin, ABC):
         :param sync_config: The synchronization configuration.
         :param state_delta: The state delta to update with any changes.
         """
-
-        def merge_fields(local_note: Note, remote_note: Note):
-            for field in [
-                'content',
-                'content_type',
-                'title',
-                'description',
-                'tags',
-                'latitude',
-                'longitude',
-                'altitude',
-                'author',
-                'source',
-            ]:
-                local_value = getattr(local_note, field, None)
-                remote_value = getattr(remote_note, field, None)
-                if remote_value and (not local_value or local_value != remote_value):
-                    setattr(local_note, field, remote_value)
-
         existing_conflict_notes_by_remote_id = {
             remote_note.id: self._notes[conflict_note.id]
             for conflict_note in (local_note.conflict_notes or [])
@@ -669,7 +789,6 @@ class SyncMixin(DbMixin, ABC):
                     if note.id != remote_note.id
                 }.values()
             )
-
         # If the remote version is newer, or the integration is configured in
         # overwrite mode, update the local note
         elif (
@@ -680,36 +799,9 @@ class SyncMixin(DbMixin, ABC):
             )
             or sync_config.conflict_resolution == SyncConflictResolution.OVERWRITE
         ):
-            self.logger.debug(
-                'Overwriting local note %s with remote note %s',
-                local_note.id,
-                remote_note.id,
+            local_note = self._overwrite_note(
+                local_note=local_note, remote_note=remote_note
             )
-            merge_fields(local_note, remote_note)
-            local_note.parent = (
-                self._convert_remote_collection_to_local(remote_note.parent)
-                if remote_note.parent
-                else None
-            )
-            local_note.synced_from = list(
-                {
-                    **{
-                        # pylint:disable=protected-access
-                        note._db_id: note
-                        for note in local_note.synced_from
-                    },
-                    remote_note._db_id: remote_note,  # pylint:disable=protected-access
-                }.values()
-            )
-            local_note.conflict_notes = list(
-                {
-                    note.id: note
-                    for note in (local_note.conflict_notes or [])
-                    if note.id != remote_note.id
-                }.values()
-            )
-            local_note.updated_at = remote_note.updated_at or datetime.datetime.now()
-
         # Ignore the conflict and do not update the local note
         elif sync_config.conflict_resolution == SyncConflictResolution.IGNORE:
             self.logger.debug(
@@ -723,58 +815,21 @@ class SyncMixin(DbMixin, ABC):
                     if note.id != remote_note.id
                 }.values()
             )
-
         # Create or update the conflict note
         else:
-            if existing_conflict_note:
-                self.logger.debug(
-                    'Merging conflict note %s with remote note %s',
-                    existing_conflict_note.id,
-                    remote_note.id,
+            conflict_note = (
+                self._update_existing_conflict_note(
+                    conflict_note=existing_conflict_note,
+                    remote_note=remote_note,
+                    state_delta=state_delta,
                 )
-                conflict_note_title = existing_conflict_note.title
-                merge_fields(existing_conflict_note, remote_note)
-                existing_conflict_note.title = conflict_note_title
-                existing_conflict_note.updated_at = (
-                    remote_note.updated_at or datetime.datetime.now()
+                if existing_conflict_note
+                else self._create_conflict_note(
+                    local_note=local_note,
+                    remote_note=remote_note,
+                    state_delta=state_delta,
                 )
-                conflict_note = existing_conflict_note
-                state_delta.notes.updated[
-                    existing_conflict_note.id
-                ] = existing_conflict_note
-            else:
-                conflict_note = Note(
-                    id=remote_note.id,
-                    title=f'__CONFLICT__[{remote_note.plugin}]{remote_note.title}',
-                    plugin=self._plugin_name,
-                    content=remote_note.content,
-                    content_type=remote_note.content_type,
-                    parent=local_note.parent,
-                    tags=remote_note.tags,
-                    latitude=remote_note.latitude,
-                    longitude=remote_note.longitude,
-                    altitude=remote_note.altitude,
-                    author=remote_note.author,
-                    source=remote_note.source,
-                    created_at=remote_note.created_at or datetime.datetime.now(),
-                    updated_at=remote_note.updated_at or datetime.datetime.now(),
-                )
-
-                conflict_note.id = self._infer_id(conflict_note)
-                conflict_note.conflicting_for = local_note
-                local_note.conflict_notes = list(
-                    {
-                        **{note.id: note for note in (local_note.conflict_notes or [])},
-                        conflict_note.id: conflict_note,
-                    }.values()
-                )
-
-                state_delta.notes.added[conflict_note.id] = conflict_note
-                self.logger.warning(
-                    'Conflict detected for note %s between local and remote versions. Creating conflict note %s.',
-                    local_note.path,
-                    conflict_note.path,
-                )
+            )
 
         # Mark the conflict note for deletion if the conflict has been solved
         if existing_conflict_note and not conflict_note:
