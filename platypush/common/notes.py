@@ -252,21 +252,29 @@ class Note(Storable):
                 'plugin': note.plugin,
                 **n,
             }
-            for k in ['synced_from', 'synced_to', 'conflict_notes', 'conflicting_for']
+            for k in ['synced_from', 'synced_to', 'conflict_notes']
             for n in kwargs.get(k, [])
         }.items():
             if note not in getattr(note, key):
                 getattr(note, key).append(cls.build(**notes_args))
 
+        if 'conflicting_for' in kwargs and kwargs['conflicting_for']:
+            note.conflicting_for = cls.build(
+                _visited=_visited,
+                plugin=note.plugin,
+                **kwargs['conflicting_for'],
+            )
+
         return note
 
     def __eq__(self, other: object) -> bool:
+        """
+        Compare two notes for equality based on their attributes and content.
+        """
         if not isinstance(other, Note):
             return False
 
-        for attr in [
-            'id',
-            'plugin',
+        attrs = [
             'title',
             'path',
             'description',
@@ -277,8 +285,19 @@ class Note(Storable):
             'longitude',
             'altitude',
             'content_type',
-            'source',
-        ]:
+        ]
+
+        # When the notes belong to the same plugins, more fields are expected
+        # to match
+        if self.plugin == other.plugin:
+            attrs = [
+                'id',
+                'plugin',
+                'source',
+                *attrs,
+            ]
+
+        for attr in attrs:
             if getattr(self, attr) != getattr(other, attr):
                 return False
 
