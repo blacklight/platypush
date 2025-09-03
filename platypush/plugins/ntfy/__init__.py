@@ -192,7 +192,7 @@ class NtfyPlugin(AsyncRunnablePlugin):
 
         """
         method: Callable[..., requests.Response] = requests.post
-        url = server_url or self._server_url
+        server_url = server_url or self._server_url
         args: Dict[str, Any] = {}
         if username and password:
             args['auth'] = (username, password)
@@ -241,7 +241,7 @@ class NtfyPlugin(AsyncRunnablePlugin):
                 ),
             }
 
-        rs = method(url, **args)
+        rs = method(server_url, **args)
         assert rs.ok, f'Could not send message to {topic}: ' + rs.json().get(
             'error', f'HTTP error: {rs.status_code}'
         )
