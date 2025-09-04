@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.7]
 
 ### Fixed
 - `db`: Properly handle `on_duplicate_update` on MariaDB. Added error
