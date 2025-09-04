@@ -6,7 +6,7 @@ from typing import Optional, Generator, Union
 import sqlalchemy as sa
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import CompileError
+from sqlalchemy.exc import CompileError, ProgrammingError
 from sqlalchemy.orm import Session, sessionmaker, scoped_session
 from sqlalchemy.sql import and_, or_, text
 
@@ -368,8 +368,15 @@ class DbPlugin(Plugin):
 
         try:
             ret = connection.execute(stmt_with_ret)
-        except CompileError as e:
-            if str(e).startswith('RETURNING is not supported'):
+        except (CompileError, ProgrammingError) as e:
+            # Mega-hack to check if the RETURNING clause is supported by the engine
+            if (
+                # SQLite
+                str(e).startswith('RETURNING is not supported')
+                or
+                # MySQL/MariaDB
+                "syntax to use near 'RETURNING *'" in str(e)
+            ):
                 connection.execute(stmt)
             else:
                 raise e
