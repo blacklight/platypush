@@ -4,7 +4,7 @@ from marshmallow import INCLUDE, Schema, fields
 from platypush.schemas import DateTime
 
 
-class BaseNoteSchema(Schema, ABC):
+class BaseNoteSchema(Schema):
     """
     Base schema for note objects.
     """
