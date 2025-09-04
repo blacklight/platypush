@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 try:
     # SQLAlchemy >= 2.0
-    from sqlalchemy import UUID  # type:ignore[import-not-found]
+    from sqlalchemy import Uuid as UUID  # type:ignore[import-not-found]
 except Exception:
     # SQLAlchemy < 2.0
     class UUID(TypeDecorator):
