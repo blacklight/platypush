@@ -1,5 +1,27 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- `db`: Properly handle `on_duplicate_update` on MariaDB. Added error
+  handling for cases where MariaDB's lack of `RETURNING` clause causes
+  `db.insert` calls to fail. (commit f069693)
+- `db`: Replaced `sqlalchemy.UUID` with `sqlalchemy.Uuid` for better
+  compatibility. (commit b224a34)
+
+### Changed
+- `ntfy`: Resolved variable name clash in `ntfy.send_message` to prevent
+  user-specified `url` from being overwritten by the instance URL. (commit
+  bcffc3b1)
+
+### Added
+- **Core**: Introduced `--debug-sql` CLI option for enhanced SQL debugging.
+  (commit 436fb5a)
+- `notes`: Added `NotesPlugin` for managing notes on the filesystem with
+  support for synchronization. (commit ed022c1)
+- **File Events**: Added `FileSystemMovedEvent` for improved file monitoring
+  mechanisms. (commit 786359f)
+
 ## [1.3.6]
 
 - [[#445](https://git.platypush.tech/platypush/platypush/issues/445)]: fixed
