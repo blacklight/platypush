@@ -3,11 +3,16 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from hashlib import md5, sha256
+from logging import getLogger
 from typing import Any, Dict, List, Optional, Set
 from uuid import UUID
 
+from platypush.context import get_plugin
 from platypush.message import JSONAble
 from platypush.schemas.notes import NoteCollectionSchema, NoteItemSchema
+
+logger = getLogger('notes')
+_CONFLICT_NOTE_TITLE_PREFIX = '__CONFLICT__'
 
 
 class Serializable(JSONAble, ABC):
@@ -125,17 +130,35 @@ class Note(Storable):
             self.parent.path if self.parent else '/'
         ) + f'{self.title}.{self.content_type.value}'
 
+    @property
+    def _plugin(self):
+        from platypush.plugins.notes import BaseNotePlugin
+
+        plugin = get_plugin(self.plugin)
+        if not plugin:
+            return None
+
+        assert isinstance(plugin, BaseNotePlugin)
+        return plugin
+
+    def _infer_id(self) -> Any:
+        if not self._plugin:
+            return getattr(self, 'id', None)
+
+        return self._plugin._infer_id(self)  # pylint: disable=protected-access
+
     def _update_digest(self) -> Optional[str]:
         if self.content and not self.digest:
-            self.digest = sha256(self.content.encode('utf-8')).hexdigest()
+            self.digest = sha256(self.content.encode('utf-8').strip()).hexdigest()
         return self.digest
 
     def __setattr__(self, name: str, value: Any, /) -> None:
         if name == 'content':
             value = value or ''
 
+        cur_val = getattr(self, name, None)
         super().__setattr__(name, value)
-        if name == 'content':
+        if name == 'content' and value != cur_val:
             self._update_digest()
 
     def to_dict(self, minimal: bool = False) -> dict:

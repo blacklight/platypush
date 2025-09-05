@@ -705,12 +705,9 @@ class SyncMixin(DbMixin, ABC):
             local_note.id,
             remote_note.id,
         )
-        self.__merge_fields(local_note, remote_note)
-        local_note.parent = (
-            self._convert_remote_collection_to_local(remote_note.parent)
-            if remote_note.parent
-            else None
-        )
+
+        # Note: synced_from must be set before the content, so conflict detection
+        # can work properly when the note content is written
         local_note.synced_from = list(
             {
                 **{
@@ -721,12 +718,12 @@ class SyncMixin(DbMixin, ABC):
                 remote_note._db_id: remote_note,  # pylint:disable=protected-access
             }.values()
         )
-        local_note.conflict_notes = list(
-            {
-                note.id: note
-                for note in (local_note.conflict_notes or [])
-                if note.id != remote_note.id
-            }.values()
+
+        self.__merge_fields(local_note, remote_note)
+        local_note.parent = (
+            self._convert_remote_collection_to_local(remote_note.parent)
+            if remote_note.parent
+            else None
         )
         local_note.updated_at = remote_note.updated_at or datetime.datetime.now()
         return local_note
@@ -782,12 +779,9 @@ class SyncMixin(DbMixin, ABC):
 
         # No conflict, the notes are identical
         if local_note.digest == remote_note.digest:
-            local_note.conflict_notes = list(
-                {
-                    note.id: note
-                    for note in (local_note.conflict_notes or [])
-                    if note.id != remote_note.id
-                }.values()
+            self.logger.debug(
+                'No conflict for note %s between local and remote versions.',
+                local_note.id,
             )
         # If the remote version is newer, or the integration is configured in
         # overwrite mode, update the local note
@@ -1151,12 +1145,7 @@ class SyncMixin(DbMixin, ABC):
             all_notes.update(
                 {
                     n.id: n
-                    for n in (
-                        note.synced_from
-                        + note.synced_to
-                        + note.conflict_notes
-                        + [*([note.conflicting_for] if note.conflicting_for else [])]
-                    )
+                    for n in (note.synced_from + note.synced_to + note.conflict_notes)
                     if n.id not in all_notes
                 }
             )

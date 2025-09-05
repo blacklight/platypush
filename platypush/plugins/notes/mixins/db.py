@@ -196,7 +196,15 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
                 **{
                     k: getattr(db_note, k)
                     for k in Note.__dataclass_fields__
-                    if not k.startswith('_') and hasattr(db_note, k)
+                    if not k.startswith('_')
+                    and hasattr(db_note, k)
+                    and k
+                    not in {
+                        'synced_from',
+                        'synced_to',
+                        'conflict_notes',
+                        'conflicting_for',
+                    }
                 },
                 'id': db_note.external_id,
                 'parent': (
