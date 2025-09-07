@@ -101,7 +101,6 @@ class SyncMixin(DbMixin, ABC):
     """
 
     logger: Logger
-    _CONFLICT_NOTE_TITLE_PREFIX = '__CONFLICT__'
 
     def __init__(
         self, *args, sync_from: Optional[List[Union[dict, SyncConfig]]] = None, **kwargs
