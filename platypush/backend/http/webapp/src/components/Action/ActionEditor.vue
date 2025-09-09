@@ -494,19 +494,24 @@ export default {
         return
 
       const focusedElement = document.activeElement
+      const onDone = () => {
+        this.onDone()
+        this.$nextTick(() => focusedElement?.focus?.())
+      }
+
       this.running = true
       if (this.structuredInput) {
         this.request(this.action.name, this.requestArgs)
           .then(this.onResponse)
           .catch(this.onError)
-          .finally(this.onDone)
+          .finally(onDone)
       } else {
         try {
           const request = JSON.parse(this.rawRequest)
           this.execute(request)
             .then(this.onResponse)
             .catch(this.onError)
-            .finally(this.onDone)
+            .finally(onDone)
         } catch (e) {
           this.notify({
             error: true,
@@ -515,9 +520,6 @@ export default {
           })
         }
       }
-
-      if (focusedElement)
-        setTimeout(() => focusedElement.focus(), 100)
     },
 
     toRequest(action) {
