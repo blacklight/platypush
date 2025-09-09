@@ -21,6 +21,11 @@ export default {
       default: false,
     },
 
+    keepFocus: {
+      type: Boolean,
+      default: false,
+    },
+
     label: {
       type: String,
     },
