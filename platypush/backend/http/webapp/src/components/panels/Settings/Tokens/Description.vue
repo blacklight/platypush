@@ -1,5 +1,5 @@
 <template>
-  <p>
+  <div class="description">
     You can use your token to authenticate calls to the <code>/execute</code> endpoint or the Websocket routes.<br/><br/>
 
     You can include the token in your requests in any of the following ways:
@@ -21,5 +21,5 @@
         <code>{"type":"request", "action", "...", "token":"..."}</code>.
       </li>
     </ul>
-  </p>
+  </div>
 </template>

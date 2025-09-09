@@ -69,33 +69,37 @@
         When compared to the standard
         <a href="/#settings?page=tokens&type=api">API tokens</a>, JWT tokens
         have the following pros:
-
-        <ul>
-          <li>They are not stored on the server, so compromising the server
-            does not necessarily compromise the tokens too.</li>
-        </ul>
-
-        And the following cons:
-
-        <ul>
-          <li>They are not revocable - once generated, they can be used
-            indefinitely until they expire.</li>
-          <li>The only way to revoke a JWT token is to change the user's
-            password. However, if a user changes their password, all the
-            JWT tokens generated with the old password will be
-            invalidated.</li>
-          <li>Their payload is the encrypted representation of the user's
-            credentials, but without any OTP information, so an attacker
-            gains access to the user's credentials and the server's
-            encryption keys they can impersonate the user indefinitely
-            bypassing 2FA.</li>
-        </ul>
-
-        For these reasons, it is recommended to use generic API tokens over JWT
-        tokens for most use cases.<br/><br/>
-
-        <Description />
       </p>
+
+      <ul>
+        <li>They are not stored on the server, so compromising the server
+          does not necessarily compromise the tokens too.</li>
+      </ul>
+
+      <p>
+        And the following cons:
+      </p>
+
+      <ul>
+        <li>They are not revocable - once generated, they can be used
+          indefinitely until they expire.</li>
+        <li>The only way to revoke a JWT token is to change the user's
+          password. However, if a user changes their password, all the
+          JWT tokens generated with the old password will be
+          invalidated.</li>
+        <li>Their payload is the encrypted representation of the user's
+          credentials, but without any OTP information, so an attacker
+          gains access to the user's credentials and the server's
+          encryption keys they can impersonate the user indefinitely
+          bypassing 2FA.</li>
+      </ul>
+
+      <p>
+        For these reasons, it is recommended to use generic API tokens over JWT
+        tokens for most use cases.<br/>
+      </p>
+
+      <Description />
     </div>
   </div>
 </template>
