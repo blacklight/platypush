@@ -121,7 +121,9 @@ export default {
       }
 
       e.stopPropagation()
-      this.$nextTick(() => this.$refs.input.focus())
+
+      if (this.keepFocus)
+        this.$nextTick(() => this.$refs.input.focus())
 
       setTimeout(() => {
         if (this.selectItemTimer) {
@@ -186,13 +188,12 @@ export default {
       if (!this.showItems)
         return
 
-      e.stopPropagation()
-
       if (
         e.key === 'ArrowDown' ||
         (e.key === 'Tab' && !e.shiftKey && this.selectOnTab) ||
         (e.key === 'j' && e.ctrlKey)
       ) {
+        e.stopPropagation()
         this.curIndex = this.curIndex == null ? 0 : this.curIndex + 1
         e.preventDefault()
       } else if (
@@ -200,11 +201,14 @@ export default {
         (e.key === 'Tab' && e.shiftKey && this.selectOnTab) ||
         (e.key === 'k' && e.ctrlKey)
       ) {
+        e.stopPropagation()
         this.curIndex = this.curIndex == null ? this.visibleItems.length - 1 : this.curIndex - 1
         e.preventDefault()
       } else if (e.key === 'Enter') {
+        // Only intercept if we actually have a highlighted item to select.
         if (this.curIndex != null && this.curIndex >= 0 && this.visible) {
           e.preventDefault()
+          e.stopPropagation()
           this.onItemSelect(this.visibleItems[this.curIndex])
           this.$nextTick(() => this.$refs.input.focus())
         }

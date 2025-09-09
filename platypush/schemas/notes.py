@@ -1,4 +1,3 @@
-from abc import ABC
 from marshmallow import INCLUDE, Schema, fields, post_dump
 
 from platypush.schemas import DateTime
@@ -28,7 +27,7 @@ def _note_minimal(data, **_) -> dict:
     }
 
 
-class BaseNoteSchema(Schema, ABC):
+class BaseNoteSchema(Schema):
     """
     Base schema for note objects.
     """
