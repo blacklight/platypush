@@ -35,21 +35,26 @@ def matches_condition(event: WebhookEvent, hook):
 def hook_route(hook_name):
     """Endpoint for custom webhooks"""
 
+    if request.is_json:
+        try:
+            data = request.get_json() if request.is_json else None
+        except Exception:
+            logger().warning('Invalid JSON data in request')
+            data = None
+    else:
+        try:
+            data = request.data.decode()
+        except Exception:
+            logger().debug('Binary data in request')
+            data = request.data
+
     event_args = {
         'hook': hook_name,
         'method': request.method,
         'args': dict(request.args or {}),
-        'data': request.data.decode(),
+        'data': data,
         'headers': dict(request.headers or {}),
     }
-
-    if event_args['data']:
-        try:
-            event_args['data'] = json.loads(event_args['data'])
-        except Exception as e:
-            logger().warning(
-                'Not a valid JSON string: %s: %s', event_args['data'], str(e)
-            )
 
     event = WebhookEvent(**event_args)
     matching_hooks = [
