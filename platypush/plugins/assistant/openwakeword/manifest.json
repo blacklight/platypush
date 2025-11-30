@@ -7,15 +7,19 @@
     ],
     "install": {
       "apk": [
+        "swig",
         "speexdsp"
       ],
       "apt": [
+        "swig",
         "libspeexdsp-dev"
       ],
       "dnf": [
+        "swig",
         "speexdsp"
       ],
       "pacman": [
+        "swig",
         "speexdsp"
       ],
       "pip": [
