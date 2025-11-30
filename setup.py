@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 
 from setuptools import setup, find_packages
 
@@ -25,8 +26,11 @@ def scan_manifests():
 def parse_deps(deps):
     ret = []
     for dep in deps:
-        if dep.startswith('git+'):
-            continue  # Don't include git dependencies in pip, or Twine will complain
+        # Check if it's a git project
+        m = re.search(r'^git\+https://[^/]+/[^/]+/([\w\d\-_.]+)', dep)
+        if m:
+            project = m.group(1).rstrip('.git')
+            dep = f'{project} @ {dep}'
 
         ret.append(dep)
 
