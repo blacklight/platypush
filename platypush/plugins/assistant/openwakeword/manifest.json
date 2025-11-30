@@ -1,0 +1,27 @@
+{
+  "manifest": {
+    "package": "platypush.plugins.assistant.openwakeword",
+    "type": "plugin",
+    "events": [
+      "platypush.message.event.assistant.HotwordDetectedEvent"
+    ],
+    "install": {
+      "apk": [
+        "speexdsp"
+      ],
+      "apt": [
+        "libspeexdsp-dev"
+      ],
+      "dnf": [
+        "speexdsp"
+      ],
+      "pacman": [
+        "speexdsp"
+      ],
+      "pip": [
+        "sounddevice",
+        "git+https://github.com/blacklight/openwakeword"
+      ]
+    }
+  }
+}
