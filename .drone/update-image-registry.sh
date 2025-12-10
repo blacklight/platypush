@@ -13,6 +13,9 @@ docker login "$REGISTRY_ENDPOINT" -u "$DOCKER_USER" -p "$DOCKER_PASS"
 # Required for multi-platform builds
 docker buildx create --name=multiarch --driver=docker-container
 
+# Pull the latest Alpine image
+docker pull alpine:latest
+
 # Build and publish the images
 docker buildx build \
   -f Dockerfile.alpine \
