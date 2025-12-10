@@ -8,10 +8,3 @@ global-include components.json.gz
 
 global-exclude __pycache__/*
 global-exclude *.pyc
-
-# Exclude symlinks to avoid issues with setuptools
-exclude platypush/backend/http/webapp/public/icons/openweathermap/black
-exclude platypush/backend/http/webapp/public/icons/openweathermap/white
-exclude platypush/backend/http/webapp/src/**
-exclude platypush/events
-exclude platypush/install/scripts/ubuntu
