@@ -1,5 +1,32 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `music` frontend: Fixed handling of playlist actions in the playlists view
+  (commit
+  [`f1a8a8ab`](https://git.platypush.tech/platypush/platypush/commit/f1a8a8ab)).
+
+- `execute` frontend: Fixed handling of focus/blur events in the execute panel
+  (commit
+  [`a880dff2`](https://git.platypush.tech/platypush/platypush/commit/a880dff2)).
+
+### Changed
+
+- `music.tidal`: Removed decommissioned OAuth flow and replaced it with the new PKCE
+  flow (commit
+  [`74eb51a2`](https://git.platypush.tech/platypush/platypush/commit/74eb51a2)).
+
+### Added
+
+- `assistant.openwakeword`: New plugin for offline wake word detection using
+  OpenWakeWord (commit
+  [`3434a217`](https://git.platypush.tech/platypush/platypush/commit/3434a217)).
+
+- Support binary payloads in `WebhookEvent` (commit
+  [`073a940d`](https://git.platypush.tech/platypush/platypush/commit/073a940d)).
+
 ## [1.3.7]
 
 ### Fixed
