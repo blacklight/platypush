@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Fixed CI Docker image release process.
+
 ## [1.3.8]
 
 ### Fixed
