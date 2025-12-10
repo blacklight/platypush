@@ -35,7 +35,7 @@ platyvenv = 'platypush.platyvenv:main'
 
 [tool.flit.sdist]
 include = [
-	'platypush/backend/http/webapp/dist/*',
+  'platypush/backend/http/webapp/dist/*',
   'platypush/components.json.gz',
   'platypush/config/*.yaml',
   'platypush/install/**',

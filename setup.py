@@ -4,7 +4,7 @@ import json
 import os
 import re
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 
 def path(fname=''):
@@ -58,7 +58,7 @@ def parse_manifests():
 
 
 setup(
-    packages=find_packages(exclude=['tests']),
+    packages=find_namespace_packages(exclude=['tests']),
     include_package_data=True,
     extras_require=parse_manifests(),
     package_data={
