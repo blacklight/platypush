@@ -1,7 +1,6 @@
 [project]
 name = "platypush"
 description = "A general-purpose framework for automation"
-license = "MIT"
 dynamic = ["version", "dependencies", "optional-dependencies", "entry-points"]
 authors = [
   {name = "Fabio Manganiello", email = "fabio@manganiello.tech"},
