@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Removed `license` identifier from `pyproject.toml` because of a [known pypa
+  issue](https://github.com/pypa/packaging-problems/issues/870) (LICENSE.txt
+  will be used instead)
+
+### Changed
+
+- Upgraded CI/CD base Docker images from Python 3.11 to 3.13.
+
 ## [1.3.11]
 
 ### Fixed
