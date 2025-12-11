@@ -25,7 +25,7 @@
       "pip": [
         "sounddevice",
         "ai-edge-litert",
-        "git+https://github.com/blacklight/openwakeword"
+        "platypush-openwakeword"
       ]
     }
   }
