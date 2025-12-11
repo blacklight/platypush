@@ -150,7 +150,7 @@ steps:
 ###
 
 - name: update-arch-stable-package
-  image: python:3.11-alpine
+  image: python:3.13-alpine
   environment:
     WORKDIR: /tmp/workdir
     SSH_PUBKEY:
@@ -390,7 +390,7 @@ steps:
 ###
 
 - name: notify-release
-  image: python:3.11-alpine
+  image: python:3.13-alpine
   environment:
     WORKER_RPC_SECRET:
       from_secret: worker_rpc_secret
