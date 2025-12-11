@@ -39,6 +39,11 @@ cleanup_build_artifacts() {
     find "$BUILD_DIR" -name "*.pyc" -delete
     find "$BUILD_DIR" -name "*.pyo" -delete  
     find "$BUILD_DIR" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+    
+    # Remove directories that shouldn't be installed at the root of site-packages
+    rm -rf "$BUILD_DIR/usr/lib/python"*/site-packages/docs/ 2>/dev/null || true
+    rm -rf "$BUILD_DIR/usr/lib/python"*/site-packages/examples/ 2>/dev/null || true
+    rm -rf "$BUILD_DIR/usr/lib/python"*/site-packages/tests/ 2>/dev/null || true
     rm -rf "$BUILD_DIR/usr/lib/python"*/site-packages/build/ 2>/dev/null || true
 }
 
@@ -95,7 +100,18 @@ EOF
 echo "--- Building git package"
 mkdir -p "$BUILD_DIR"
 
-pip install --prefix="$BUILD_DIR/usr" --no-cache --no-deps .
+# Build a wheel first to avoid installing development files
+echo "--- Building wheel"
+python -m pip install --upgrade build
+python -m build --wheel --outdir /tmp/wheels
+
+# Install from the wheel instead of current directory
+echo "--- Installing from wheel"
+pip install --prefix="$BUILD_DIR/usr" --no-cache --no-deps --find-links /tmp/wheels platypush
+
+# Debug: List what was installed
+echo "--- Debug: Files installed in site-packages:"
+find "$BUILD_DIR/usr/lib/python"*/site-packages/ -maxdepth 2 -type d 2>/dev/null || true
 
 cleanup_build_artifacts
 
