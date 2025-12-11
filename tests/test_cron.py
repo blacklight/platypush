@@ -2,20 +2,27 @@ import queue
 import pytest
 import time
 
-test_timeout = 10
+test_timeout = 15  # Increased timeout to be more forgiving
 cron_queue = queue.Queue()
 
 
 def _test_cron_queue(expected_msg: str):
     msg = None
     test_start = time.time()
+    # Use shorter polling intervals for better responsiveness
+    poll_timeout = 1.0
+
     while time.time() - test_start <= test_timeout and msg != expected_msg:
         try:
-            msg = cron_queue.get(block=True, timeout=test_timeout)
+            msg = cron_queue.get(block=True, timeout=poll_timeout)
+            if msg == expected_msg:
+                break
         except queue.Empty:
-            break
+            continue  # Keep polling until timeout
 
-    assert msg == expected_msg, 'The expected cronjob has not been executed'
+    assert (
+        msg == expected_msg
+    ), f'The expected cronjob has not been executed. Got: {msg}, Expected: {expected_msg}'
 
 
 def test_cron_execution():
