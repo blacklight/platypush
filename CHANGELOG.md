@@ -1,5 +1,23 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Replaced optional git dependencies (for unmaintained packages) with
+  PyPI-hosted forks to improve installation reliability (commit
+  [`d1fa035d`](https://git.platypush.tech/platypush/platypush/commit/d1fa035d)).
+
+- Replaced deprecated `python setup.py` calls with `python -m build`
+  (commit
+  [`7ef92b91`](https://git.platypush.tech/platypush/platypush/commit/7ef92b91)).
+
+- Replaced deprecated license format in pyproject.toml (commit
+  [`c4b50016`](https://git.platypush.tech/platypush/platypush/commit/c4b50016)).
+
+- Replaced deprecated `find_packages` usage (commit
+  [`726ad5a1`](https://git.platypush.tech/platypush/platypush/commit/726ad5a1)).
+
 ## [1.3.10]
 
 ### Fixed
