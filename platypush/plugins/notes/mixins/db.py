@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from threading import Event, RLock
 from typing import Any, Collection, Dict, Generator, List, Optional, Set, Union
@@ -24,7 +24,10 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
     Mixin class for the database synchronization layer.
     """
 
-    _plugin_name: str
+    @property
+    @abstractmethod
+    def _plugin_name(self) -> str:
+        ...
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
