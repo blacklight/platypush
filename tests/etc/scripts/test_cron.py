@@ -17,7 +17,7 @@ def make_cron_expr(cron_time: datetime.datetime):
 
 # Use a cron expression that runs every 3 seconds to ensure it runs soon after scheduler starts
 # This is more reliable than calculating a specific time at import
-@cron('*/3 * * * * *')
+@cron('* * * * * */3')
 def cron_test(**_):
     cron_queue.put('cron_test')
 
