@@ -139,11 +139,12 @@ class Request(Message):
     @classmethod
     # pylint: disable=too-many-branches
     def expand_value_from_context(cls, _value, **context):
+        eval_locals = {}
         for k, v in context.items():
             if isinstance(v, Message):
                 v = json.loads(str(v))
 
-            locals()[k] = v
+            eval_locals[k] = v
 
         parsed_value = ''
         if not isinstance(_value, str):
@@ -158,7 +159,9 @@ class Request(Message):
                 _value = m.group(4)
 
                 try:
-                    context_value = eval(inner_expr)  # pylint: disable=eval-used
+                    context_value = eval(  # pylint: disable=eval-used
+                        inner_expr, {}, eval_locals
+                    )
 
                     if callable(context_value):
                         context_value = context_value()
