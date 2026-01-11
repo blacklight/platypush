@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.16]
 
 ### Fixed
 
