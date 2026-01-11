@@ -60,6 +60,11 @@ def parse_manifests():
 setup(
     packages=find_namespace_packages(exclude=['tests']),
     include_package_data=True,
+    exclude_package_data={
+        'platypush': [
+            'backend/http/webapp/src/**',
+        ],
+    },
     extras_require=parse_manifests(),
     package_data={
         'platypush': [
