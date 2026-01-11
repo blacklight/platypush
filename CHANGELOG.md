@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Added compatibility with Python >= 3.14.
+
+- Fixed variable expansion from procedure YAML templates on Pytohn >= 3.13.
+
 ## [1.3.15]
 
 ### Fixed
