@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "prebuild": "rm -rf src/assets/icons src/assets/img && mkdir -p src/assets && cp -a public/icons src/assets/icons && cp -a public/img/src/assets/img",
+    "prebuild": "rm -rf src/assets/icons src/assets/img && mkdir -p src/assets && cp -a public/icons src/assets/icons && cp -a public/img src/assets/img",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
