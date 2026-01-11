@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- More compatibility fixes with Python >= 3.14.
+
 ## [1.3.16]
 
 ### Fixed
