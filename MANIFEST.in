@@ -6,5 +6,8 @@ include platypush/config/systemd/*
 global-include manifest.json
 global-include components.json.gz
 
+recursive-exclude platypush/backend/http/webapp/src *
+recursive-exclude platypush/backend/http/webapp/public *
+
 global-exclude __pycache__/*
 global-exclude *.pyc
