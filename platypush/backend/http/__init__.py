@@ -4,6 +4,7 @@ import pathlib
 import secrets
 import signal
 import threading
+import multiprocessing
 
 from functools import partial
 from multiprocessing import Process
@@ -309,7 +310,8 @@ class HttpBackend(Backend):
 
         self.logger.info('HTTP server terminated')
 
-    def notify_web_clients(self, event):
+    @staticmethod
+    def notify_web_clients(event):
         """
         Notify all the connected web clients (over websocket) of a new event.
 
@@ -478,7 +480,12 @@ class HttpBackend(Backend):
                     pass
 
     def _start_web_server(self):
-        self._server_proc = Process(target=self._web_server_proc)
+        # Python 3.14: with the forkserver/spawn start methods, the process
+        # target (a bound method) requires pickling the backend instance.
+        # Backend threads carry a contextvars.Context which isn't picklable.
+        # Force fork for this process on POSIX to avoid the pickle requirement.
+        ctx = multiprocessing.get_context('fork')
+        self._server_proc = ctx.Process(target=self._web_server_proc)
         self._server_proc.start()
         self._server_proc.join()
 
