@@ -27,7 +27,7 @@ def parse_deps(deps):
     ret = []
     for dep in deps:
         # Check if it's a git project
-        m = re.search(r'^git\+https://[^/]+/[^/]+/([\w\d\-_.]+)', dep)
+        m = re.search(r'^git\+https://[^/]+/[^/]+/([\w\-_.]+)', dep)
         if m:
             project = m.group(1).rstrip('.git')
             dep = f'{project} @ {dep}'
@@ -63,6 +63,7 @@ setup(
     exclude_package_data={
         'platypush': [
             'backend/http/webapp/src/**',
+            'backend/http/webapp/public/**',
         ],
     },
     extras_require=parse_manifests(),
