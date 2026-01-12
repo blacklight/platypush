@@ -1,5 +1,88 @@
 # Changelog
 
+## [1.3.17]
+
+### Fixed
+
+- More compatibility fixes with Python >= 3.14.
+
+## [1.3.16]
+
+### Fixed
+
+- Added compatibility with Python >= 3.14.
+
+- Fixed variable expansion from procedure YAML templates on Pytohn >= 3.13.
+
+## [1.3.15]
+
+### Fixed
+
+- Minor CI/CD fixes.
+
+## [1.3.12]
+
+### Fixed
+
+- Removed `license` identifier from `pyproject.toml` because of a [known pypa
+  issue](https://github.com/pypa/packaging-problems/issues/870) (LICENSE.txt
+  will be used instead)
+
+### Changed
+
+- Upgraded CI/CD base Docker images from Python 3.11 to 3.13.
+
+## [1.3.11]
+
+### Fixed
+
+- Replaced optional git dependencies (for unmaintained packages) with
+  PyPI-hosted forks to improve installation reliability (commit
+  [`d1fa035d`](https://git.platypush.tech/platypush/platypush/commit/d1fa035d)).
+
+- Replaced deprecated `python setup.py` calls with `python -m build`
+  (commit
+  [`7ef92b91`](https://git.platypush.tech/platypush/platypush/commit/7ef92b91)).
+
+- Replaced deprecated license format in pyproject.toml (commit
+  [`c4b50016`](https://git.platypush.tech/platypush/platypush/commit/c4b50016)).
+
+- Replaced deprecated `find_packages` usage (commit
+  [`726ad5a1`](https://git.platypush.tech/platypush/platypush/commit/726ad5a1)).
+
+## [1.3.10]
+
+### Fixed
+
+- Fixed CI Docker image release process.
+
+## [1.3.8]
+
+### Fixed
+
+- `music` frontend: Fixed handling of playlist actions in the playlists view
+  (commit
+  [`f1a8a8ab`](https://git.platypush.tech/platypush/platypush/commit/f1a8a8ab)).
+
+- `execute` frontend: Fixed handling of focus/blur events in the execute panel
+  (commit
+  [`a880dff2`](https://git.platypush.tech/platypush/platypush/commit/a880dff2)).
+
+### Changed
+
+- `music.tidal`: Removed decommissioned OAuth flow and replaced it with the new PKCE
+  flow (commit
+  [`74eb51a2`](https://git.platypush.tech/platypush/platypush/commit/74eb51a2)).
+
+### Added
+
+- `assistant.openwakeword`: New plugin for offline wake word detection using
+  OpenWakeWord (commit
+  [`3434a217`](https://git.platypush.tech/platypush/platypush/commit/3434a217)).
+
+- Support binary payloads in `WebhookEvent` (commit
+  [`073a940d`](https://git.platypush.tech/platypush/platypush/commit/073a940d)).
+
 ## [1.3.7]
 
 ### Fixed

@@ -24,7 +24,7 @@
         "git"
       ],
       "pip": [
-        "git+https://github.com/rbrcsk/pushbullet.py"
+        "platypush_pushbullet"
       ]
     }
   }

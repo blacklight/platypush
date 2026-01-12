@@ -32,6 +32,26 @@ _available_package_manager = None
 logger = logging.getLogger(__name__)
 
 
+def _default_parse_list_line(s: str) -> str:
+    return s
+
+
+def _apk_parse_list_line(line: str) -> str:
+    return re.sub(r'.*\s*\{(.+?)}\s*.*', r'\1', line)
+
+
+def _apt_parse_list_line(line: str) -> str:
+    return line.split('/')[0]
+
+
+def _dnf_parse_list_line(line: str) -> str:
+    return re.split(r'\s+', line)[0].split('.')[0]
+
+
+def _pacman_parse_list_line(line: str) -> str:
+    return line.split(' ')[0]
+
+
 class BaseImage(Enum):
     """
     Supported base images for Dockerfiles.
@@ -92,7 +112,7 @@ class PackageManager:
     """ The uninstall command, as a sequence of strings. """
     list: Sequence[str] = field(default_factory=tuple)
     """ The command to list the installed packages. """
-    parse_list_line: Callable[[str], str] = field(default_factory=lambda: lambda s: s)
+    parse_list_line: Callable[[str], str] = _default_parse_list_line
     """
     Internal package-manager dependent function that parses the base package
     name from a line returned by the list command.
@@ -140,7 +160,7 @@ class PackageManagers(Enum):
         uninstall=('apk', 'del', '--no-interactive'),
         list=('apk', 'list', '--installed'),
         default_os=OS.ALPINE,
-        parse_list_line=lambda line: re.sub(r'.*\s*\{(.+?)}\s*.*', r'\1', line),
+        parse_list_line=_apk_parse_list_line,
     )
 
     APT = PackageManager(
@@ -150,7 +170,7 @@ class PackageManagers(Enum):
         uninstall=('apt', 'remove', '-y'),
         list=('apt', 'list', '--installed'),
         default_os=OS.DEBIAN,
-        parse_list_line=lambda line: line.split('/')[0],
+        parse_list_line=_apt_parse_list_line,
     )
 
     DNF = PackageManager(
@@ -160,7 +180,7 @@ class PackageManagers(Enum):
         uninstall=('dnf', 'remove', '-y'),
         list=('dnf', 'list', '--installed'),
         default_os=OS.FEDORA,
-        parse_list_line=lambda line: re.split(r'\s+', line)[0].split('.')[0],
+        parse_list_line=_dnf_parse_list_line,
     )
 
     PACMAN = PackageManager(
@@ -170,7 +190,7 @@ class PackageManagers(Enum):
         uninstall=('pacman', '-R', '--noconfirm'),
         list=('pacman', '-Q'),
         default_os=OS.ARCH,
-        parse_list_line=lambda line: line.split(' ')[0],
+        parse_list_line=_pacman_parse_list_line,
     )
 
     @classmethod

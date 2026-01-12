@@ -2,8 +2,9 @@
 
 import json
 import os
+import re
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 
 def path(fname=''):
@@ -25,8 +26,11 @@ def scan_manifests():
 def parse_deps(deps):
     ret = []
     for dep in deps:
-        if dep.startswith('git+'):
-            continue  # Don't include git dependencies in pip, or Twine will complain
+        # Check if it's a git project
+        m = re.search(r'^git\+https://[^/]+/[^/]+/([\w\-_.]+)', dep)
+        if m:
+            project = m.group(1).rstrip('.git')
+            dep = f'{project} @ {dep}'
 
         ret.append(dep)
 
@@ -54,8 +58,14 @@ def parse_manifests():
 
 
 setup(
-    packages=find_packages(exclude=['tests']),
+    packages=find_namespace_packages(exclude=['tests']),
     include_package_data=True,
+    exclude_package_data={
+        'platypush': [
+            'backend/http/webapp/src/**',
+            'backend/http/webapp/public/**',
+        ],
+    },
     extras_require=parse_manifests(),
     package_data={
         'platypush': [

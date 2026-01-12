@@ -1,0 +1,32 @@
+{
+  "manifest": {
+    "package": "platypush.plugins.assistant.openwakeword",
+    "type": "plugin",
+    "events": [
+      "platypush.message.event.assistant.HotwordDetectedEvent"
+    ],
+    "install": {
+      "apk": [
+        "swig",
+        "speexdsp"
+      ],
+      "apt": [
+        "swig",
+        "libspeexdsp-dev"
+      ],
+      "dnf": [
+        "swig",
+        "speexdsp"
+      ],
+      "pacman": [
+        "swig",
+        "speexdsp"
+      ],
+      "pip": [
+        "sounddevice",
+        "ai-edge-litert",
+        "platypush-openwakeword"
+      ]
+    }
+  }
+}

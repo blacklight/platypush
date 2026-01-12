@@ -37,6 +37,7 @@
       "pip": [
         "numpy",
         "pydub",
+        "audioop-lts",
         "sounddevice"
       ]
     }

@@ -1,12 +1,16 @@
-import json
 import os
 import pathlib
+from urllib.parse import quote_plus
 
 from datetime import datetime
+from threading import Event
 from typing import Iterable, Optional, Union
 
+from platypush.backend.http import HttpBackend
 from platypush.config import Config
-from platypush.context import Variable, get_bus
+from platypush.context import Variable, get_backend, get_bus
+from platypush.message import Message
+from platypush.message.event.custom import CustomEvent
 from platypush.message.event.music.tidal import TidalPlaylistUpdatedEvent
 from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.music.tidal.workers import get_items
@@ -52,6 +56,7 @@ class MusicTidalPlugin(RunnablePlugin):
         self._user_playlists = {}
         self._quality = self._get_quality(quality)
         self._session = None
+        self._login_event = Event()
 
     @staticmethod
     def _get_quality(quality: str):
@@ -68,38 +73,66 @@ class MusicTidalPlugin(RunnablePlugin):
                     f'{[q.value for q in Quality]}'
                 ) from e
 
-    def _oauth_open_saved_session(self):
+    def _open_saved_session(self):
         if not self._session:
             return
 
         try:
-            with open(self._credentials_file, 'r') as f:
-                data = json.load(f)
-                self._session.load_oauth_session(
-                    data['token_type'], data['access_token'], data['refresh_token']
-                )
+            # Attempt to reload an existing session from file
+            self._session.load_session_from_file(pathlib.Path(self._credentials_file))
         except Exception as e:
-            self.logger.warning('Could not load %s: %s', self._credentials_file, e)
+            self.logger.warning(
+                "Could not load PKCE session from %s: %s", self._credentials_file, e
+            )
 
-    def _oauth_create_new_session(self):
+    def _create_new_session(self):
         if not self._session:
             return
 
-        self._session.login_oauth_simple(function=self.logger.warning)  # type: ignore
-        if self._session.check_login():
-            data = {
-                'token_type': self._session.token_type,
-                'session_id': self._session.session_id,
-                'access_token': self._session.access_token,
-                'refresh_token': self._session.refresh_token,
-            }
+        http: HttpBackend = get_backend('http')  # type: ignore
+        assert http, 'The HTTP backend is required to perform the TIDAL PKCE login flow'
 
-            pathlib.Path(os.path.dirname(self._credentials_file)).mkdir(
-                parents=True, exist_ok=True
+        self._login_event.clear()
+        login_url = self._session.pkce_login_url()
+        self.logger.info(
+            '\n\nPlease open the following URL in your browser to login to TIDAL:\n%s\n\n',
+            http.local_base_url + f'/tidal/login?url={quote_plus(login_url)}',
+        )
+
+        assert self.bus, 'Event bus is not available'
+        self.bus.register_handler(
+            handler=self._custom_event_callback,
+            type=CustomEvent,
+        )
+
+        try:
+            self.logger.info('Waiting for TIDAL login callback...')
+            self._login_event.wait(timeout=300)
+        finally:
+            self.bus.unregister_handler(
+                handler=self._custom_event_callback,
+                type=CustomEvent,
             )
 
-            with open(self._credentials_file, 'w') as outfile:
-                json.dump(data, outfile)
+        assert self._session.check_login(), 'TIDAL PKCE login failed'
+        self.logger.info("PKCE login successful.")
+        pathlib.Path(self._credentials_file).parent.mkdir(parents=True, exist_ok=True)
+        self._session.save_session_to_file(pathlib.Path(self._credentials_file))
+
+    def _custom_event_callback(self, event: Message):
+        if not (
+            isinstance(event, CustomEvent)
+            and event.args.get('subtype') == 'tidal/login_callback'
+        ):
+            return
+
+        url = event.args.get('url')
+        assert url, 'Missing "url" in TIDAL login callback event'
+        assert self._session, 'TIDAL session is not initialized'
+        token_data = self._session.pkce_get_auth_token(url)
+
+        self._session.process_auth_token(token_data)
+        self._login_event.set()
 
     @staticmethod
     def _ensure_user_playlist(playlist):
@@ -119,10 +152,10 @@ class MusicTidalPlugin(RunnablePlugin):
 
         # Attempt to reload the existing session from file
         self._session = Session(config=Config(quality=self._quality))
-        self._oauth_open_saved_session()
+        self._open_saved_session()
         if not self._session.check_login():
             # Create a new session if we couldn't load an existing one
-            self._oauth_create_new_session()
+            self._create_new_session()
 
         assert (
             self._session.user and self._session.check_login()

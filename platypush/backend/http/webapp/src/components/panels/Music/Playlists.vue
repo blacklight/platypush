@@ -72,10 +72,10 @@
         <div class="col-2 right-side">
           <span class="actions">
             <Dropdown title="Actions" icon-class="fa fa-ellipsis-h">
-              <DropdownItem text="Play" icon-class="fa fa-play" @click.stop="$emit('play', i)" />
-              <DropdownItem text="Load" icon-class="fa fa-list-ul" @click.stop="$emit('load', i)" />
-              <DropdownItem text="Edit" icon-class="fa fa-edit" @click.stop="$emit('playlist-edit', i)" />
-              <DropdownItem text="Remove" icon-class="fa fa-trash" @click.stop="$emit('remove', i)" />
+              <DropdownItem text="Play" icon-class="fa fa-play" @input.stop="$emit('play', i)" />
+              <DropdownItem text="Load" icon-class="fa fa-list-ul" @input.stop="$emit('load', i)" />
+              <DropdownItem text="Edit" icon-class="fa fa-edit" @input.stop="$emit('playlist-edit', i)" />
+              <DropdownItem text="Remove" icon-class="fa fa-trash" @input.stop="$emit('remove', i)" />
             </Dropdown>
           </span>
         </div>
