@@ -70,6 +70,11 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         dcc_max_connections: Optional[int] = None,
     ):
         connection_factory = ConnectionFactory()
+        self._mp_ctx = (
+            multiprocessing.get_context('fork')
+            if os.name == 'posix'
+            else multiprocessing.get_context()
+        )
         self._ssl_ctx = None
 
         if ssl:
@@ -104,7 +109,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
         self.dcc_max_connections = dcc_max_connections
         self._dcc_send_procs: Dict[Tuple[str, int], multiprocessing.Process] = {}
         self._dcc_recv_procs: Dict[Tuple[str, int], multiprocessing.Process] = {}
-        self._dcc_proc_completion_queue = multiprocessing.Queue()
+        self._dcc_proc_completion_queue = self._mp_ctx.Queue()
         self._dcc_processor: Optional[multiprocessing.Process] = None
         self.logger = logging.getLogger(f'irc@{server}')
         # Maps <matching_event_type> -> <response_queue>
@@ -408,7 +413,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
 
         # Accept the file request
         # (if we're here then the peer is whitelisted/not blacklisted)
-        self._dcc_recv_procs[(address, port)] = multiprocessing.Process(
+        self._dcc_recv_procs[(address, port)] = self._mp_ctx.Process(
             target=self._process_dcc_recv,
             kwargs={
                 'connection': connection,
@@ -448,7 +453,8 @@ class IRCBot(irc.bot.SingleServerIRCBot):
     def on_dccmsg(self, connection: DCCConnection, event: _IRCEvent):
         ctcp_header = b'CTCP_MESSAGE'
         if event.arguments[0][: len(ctcp_header)] == ctcp_header:
-            return self._handle_ctcp_message(connection, event)
+            self._handle_ctcp_message(connection, event)
+            return
 
         self._post_event(
             connection,
@@ -515,14 +521,14 @@ class IRCBot(irc.bot.SingleServerIRCBot):
             f'\x01DCC CHAT chat {ip_quad_to_numstr(conn.localaddress)} {conn.localport}\x01',
         )
 
-        send_proc = self._dcc_send_procs[
-            (conn.localaddress, conn.localport)
-        ] = multiprocessing.Process(
-            target=self._process_dcc_send,
-            kwargs={
-                'connection': conn,
-                'filename': file,
-            },
+        send_proc = self._dcc_send_procs[(conn.localaddress, conn.localport)] = (
+            self._mp_ctx.Process(
+                target=self._process_dcc_send,
+                kwargs={
+                    'connection': conn,
+                    'filename': file,
+                },
+            )
         )
 
         send_proc.start()
@@ -532,7 +538,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
     def event_queue(
         self, event_type: str
     ) -> Generator[multiprocessing.Queue, None, None]:
-        q = self._pending_requests[event_type] = multiprocessing.Queue()
+        q = self._pending_requests[event_type] = self._mp_ctx.Queue()
         try:
             yield q
         finally:
@@ -540,9 +546,7 @@ class IRCBot(irc.bot.SingleServerIRCBot):
             self._pending_requests.pop(event_type, None)
 
     def start(self):
-        self._dcc_processor = multiprocessing.Process(
-            target=self._dcc_connect_processor
-        )
+        self._dcc_processor = self._mp_ctx.Process(target=self._dcc_connect_processor)
         self._dcc_processor.start()
 
         for event_code in irc_event_codes.keys():

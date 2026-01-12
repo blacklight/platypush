@@ -15,11 +15,9 @@ def make_cron_expr(cron_time: datetime.datetime):
     )
 
 
-# Prepare a cronjob that should start test_timeout/2 seconds from the application start
-cron_time = datetime.datetime.now() + datetime.timedelta(seconds=test_timeout / 2)
-
-
-@cron(make_cron_expr(cron_time))
+# Use a cron expression that runs every 3 seconds to ensure it runs soon after scheduler starts
+# This is more reliable than calculating a specific time at import
+@cron('* * * * * */3')
 def cron_test(**_):
     cron_queue.put('cron_test')
 

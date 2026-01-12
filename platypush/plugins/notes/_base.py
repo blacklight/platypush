@@ -69,7 +69,10 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
         self._sync_lock = RLock()
         self._timeout = timeout
         self.__last_sync_time: Optional[datetime] = None
-        self._plugin_name = get_plugin_name_by_class(self.__class__)
+
+    @property
+    def _plugin_name(self) -> str:
+        return get_plugin_name_by_class(self.__class__)
 
     @property
     def _last_sync_time_var(self) -> Variable:

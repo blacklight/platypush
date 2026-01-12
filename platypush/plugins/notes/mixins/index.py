@@ -24,7 +24,11 @@ class NotesIndexMixin(SearchMixin, ABC):  # pylint: disable=too-few-public-metho
     """
 
     _api_settings: ApiSettings
-    _plugin_name: str
+
+    @property
+    @abstractmethod
+    def _plugin_name(self) -> str:
+        ...
 
     @abstractmethod
     @contextmanager

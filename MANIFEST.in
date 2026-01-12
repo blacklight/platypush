@@ -6,12 +6,8 @@ include platypush/config/systemd/*
 global-include manifest.json
 global-include components.json.gz
 
+recursive-exclude platypush/backend/http/webapp/src *
+recursive-exclude platypush/backend/http/webapp/public *
+
 global-exclude __pycache__/*
 global-exclude *.pyc
-
-# Exclude symlinks to avoid issues with setuptools
-exclude platypush/backend/http/webapp/public/icons/openweathermap/black
-exclude platypush/backend/http/webapp/public/icons/openweathermap/white
-exclude platypush/backend/http/webapp/src/**
-exclude platypush/events
-exclude platypush/install/scripts/ubuntu

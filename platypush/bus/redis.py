@@ -46,7 +46,10 @@ class RedisBus(Bus):
         """
         Polls the Redis queue for new messages
         """
-        from redis.exceptions import ConnectionError as RedisConnectionError
+        from redis.exceptions import (
+            ConnectionError as RedisConnectionError,
+            TimeoutError as RedisTimeoutError,
+        )
 
         from platypush.message.event.application import ApplicationStartedEvent
         from platypush.utils import redis_pools
@@ -90,8 +93,12 @@ class RedisBus(Bus):
                 finally:
                     try:
                         pubsub.unsubscribe(self.redis_queue)
-                    except RedisConnectionError:
-                        pass
+                    except (RedisConnectionError, RedisTimeoutError) as e:
+                        logger.warning(
+                            'Could not unsubscribe from Redis queue %s: %s',
+                            self.redis_queue,
+                            e,
+                        )
 
     def _on_message(self, msg: Message):
         if self.on_message:

@@ -135,7 +135,7 @@ class Cronjob(threading.Thread):
         now = get_now()
         cron = croniter.croniter(self.cron_expression, now)
         next_run = cron.get_next(datetime.datetime)
-        return max(0, (next_run - now).total_seconds())
+        return int(max(0, (next_run - now).total_seconds()))
 
     def should_stop(self):
         return self._event_type == CronjobEvent.STOP
