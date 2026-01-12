@@ -38,8 +38,8 @@
         "bluetooth-numbers",
         "TheengsDecoder",
         "pydbus",
-        "git+https://github.com/pybluez/pybluez",
-        "git+https://github.com/BlackLight/PyOBEX"
+        "platypush-pybluez",
+        "platypush-pyobex"
       ]
     },
     "package": "platypush.plugins.bluetooth",

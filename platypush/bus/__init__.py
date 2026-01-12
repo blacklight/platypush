@@ -5,7 +5,7 @@ import threading
 import time
 
 from queue import Queue, Empty
-from typing import Callable, Dict, Iterable, Type
+from typing import Callable, Dict, Iterable, Optional, Type
 
 from platypush.message import Message
 from platypush.message.event import Event
@@ -50,10 +50,10 @@ class Bus:
         """Sends a message to the bus"""
         self.bus.put(msg)
 
-    def get(self):
+    def get(self, timeout: Optional[float] = 0.1) -> Optional[Message]:
         """Reads one message from the bus"""
         try:
-            return self.bus.get(timeout=0.1)
+            return self.bus.get(timeout=timeout)
         except Empty:
             return None
 
@@ -64,9 +64,9 @@ class Bus:
         self, msg: Message
     ) -> Iterable[Callable[[Message], None]]:
         return [
-            hndl.callback
+            callback
             for cls in type(msg).__mro__
-            for hndl in self.handlers.get(cls, [])
+            for callback, hndl in self.handlers.get(cls, {}).items()
             if hndl.match(msg)
         ]
 
@@ -104,9 +104,7 @@ class Bus:
             if msg is None:
                 continue
 
-            timestamp = (
-                msg.timestamp if hasattr(msg, 'timestamp') else msg.get('timestamp')
-            )
+            timestamp = getattr(msg, 'timestamp', None)
             if timestamp and time.time() - timestamp > self._MSG_EXPIRY_TIMEOUT:
                 logger.debug(
                     '%f seconds old message on the bus expired, ignoring it: %s',

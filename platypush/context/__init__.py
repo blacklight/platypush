@@ -255,5 +255,18 @@ class Variable:
         setter = getattr(plugin, 'set' if self._persisted else 'mset')
         setter(**{self.name: value})
 
+    def unset(self):
+        plugin = get_plugin('variable')
+        deleter = getattr(plugin, 'unset' if self._persisted else 'munset')
+        deleter(self.name)
+
+    def delete(self):
+        """
+        Alias for unset.
+        """
+        plugin = get_plugin('variable')
+        deleter = getattr(plugin, 'delete' if self._persisted else 'munset')
+        deleter(self.name)
+
 
 # vim:sw=4:ts=4:et:

@@ -1,5 +1,6 @@
 import os
 import re
+from typing import Optional
 
 from watchdog.events import (
     FileSystemEventHandler,
@@ -7,11 +8,13 @@ from watchdog.events import (
     RegexMatchingEventHandler,
 )
 
+from platypush.bus import Bus
 from platypush.context import get_bus
 from platypush.message.event.file import (
     FileSystemModifyEvent,
     FileSystemCreateEvent,
     FileSystemDeleteEvent,
+    FileSystemMovedEvent,
 )
 
 from .resources import (
@@ -26,10 +29,13 @@ class EventHandler(FileSystemEventHandler):
     Base class for Watchdog event handlers.
     """
 
-    def __init__(self, resource: MonitoredResource, **kwargs):
+    def __init__(
+        self, resource: MonitoredResource, bus: Optional[Bus] = None, **kwargs
+    ):
         super().__init__(**kwargs)
         resource.path = os.path.expanduser(resource.path)
         self.resource = resource
+        self.bus = bus or get_bus()
 
     def _should_ignore_event(self, event) -> bool:
         ignore_dirs = [
@@ -62,11 +68,14 @@ class EventHandler(FileSystemEventHandler):
 
         return False
 
-    def _on_event(self, event, output_event_type):
+    def _on_event(self, event, output_event_type, **kwargs):
         if self._should_ignore_event(event):
             return
-        get_bus().post(
-            output_event_type(path=event.src_path, is_directory=event.is_directory)
+
+        self.bus.post(
+            output_event_type(
+                path=event.src_path, is_directory=event.is_directory, **kwargs
+            )
         )
 
     def on_created(self, event):
@@ -78,8 +87,8 @@ class EventHandler(FileSystemEventHandler):
     def on_modified(self, event):
         self._on_event(event, FileSystemModifyEvent)
 
-    def on_moved(self, _):
-        pass
+    def on_moved(self, event):
+        self._on_event(event, FileSystemMovedEvent, new_path=event.dest_path)
 
     @classmethod
     def from_resource(cls, resource: MonitoredResource):

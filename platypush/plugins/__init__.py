@@ -4,7 +4,8 @@ import threading
 
 from abc import ABC, abstractmethod
 from functools import wraps
-from typing import Any, Callable, Optional
+from threading import RLock
+from typing import Any, Callable, Dict, Optional, Union
 
 from platypush.bus import Bus
 from platypush.common import ExtensionWithManifest
@@ -89,6 +90,8 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
             get_decorators(self.__class__, climb_class_hierarchy=True).get('action', [])
         )
 
+        PluginRegistry.get().register(self)
+
     @property
     def _db(self):
         """
@@ -133,6 +136,10 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
         entities: EntitiesPlugin = get_plugin('entities')  # type: ignore
         assert entities, 'entities plugin not initialized'
         return entities
+
+    @property
+    def _plugin_name(self):
+        return get_plugin_name_by_class(self.__class__)
 
     def __str__(self):
         """
@@ -354,6 +361,75 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
             self._loop = None
 
         super().stop()
+
+
+class PluginRegistry:
+    """
+    Registry for plugins, used to keep track of the loaded plugins and their
+    configurations.
+    """
+
+    _obj: Optional['PluginRegistry'] = None
+    """ Singleton instance of the plugin registry. """
+
+    _singleton_lock = RLock()
+    """ Lock for the singleton instance creation. """
+
+    def __init__(self):
+        self.plugins: Dict[str, Plugin] = {}
+        self._lock = RLock()
+
+    def register(self, plugin: Plugin):
+        """
+        Register a plugin in the registry.
+
+        :param plugin: The plugin to register.
+        """
+        with self._lock:
+            self.plugins[get_plugin_name_by_class(plugin.__class__)] = plugin
+
+    def unregister(self, plugin: Union[Plugin, str]):
+        """
+        Unregister a plugin from the registry.
+
+        :param plugin: The plugin to unregister.
+        """
+        with self._lock:
+            if isinstance(plugin, Plugin):
+                plugin_name = get_plugin_name_by_class(plugin.__class__)
+            else:
+                plugin_name = plugin
+
+            if plugin_name in self.plugins:
+                del self.plugins[plugin_name]
+            else:
+                _logger.warning('Plugin %s not found in the registry', plugin_name)
+
+    @classmethod
+    def get(cls) -> 'PluginRegistry':
+        """
+        Get the singleton instance of the plugin registry.
+
+        :return: The plugin registry instance.
+        """
+        with cls._singleton_lock:
+            if cls._obj is None:
+                cls._obj = PluginRegistry()
+            return cls._obj
+
+    @classmethod
+    def get_plugins_by_type(cls, plugin_type: type[Plugin]) -> list[Plugin]:
+        """
+        Get all the plugins of a specific type.
+
+        :param plugin_type: The type of the plugins to get.
+        :return: A list of plugins of the specified type.
+        """
+        return [
+            plugin
+            for plugin in cls.get().plugins.values()
+            if isinstance(plugin, plugin_type)
+        ]
 
 
 # vim:sw=4:ts=4:et:

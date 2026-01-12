@@ -3,6 +3,7 @@
 [ -f .skipci ] && exit 0
 
 apk add --update --no-cache curl pacman sudo
+pip install setuptools --break-system-packages
 
 . .drone/macros/configure-ssh.sh
 . .drone/macros/configure-git.sh

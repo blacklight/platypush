@@ -10,8 +10,14 @@ export IMAGE_NAME="$REGISTRY_ENDPOINT/$DOCKER_USER/platypush"
 # Log in to the registry
 docker login "$REGISTRY_ENDPOINT" -u "$DOCKER_USER" -p "$DOCKER_PASS"
 
+# Set up QEMU for multi-platform builds
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
 # Required for multi-platform builds
-docker buildx create --name=multiarch --driver=docker-container
+docker buildx create --name=multiarch --driver=docker-container --use
+
+# Pull the latest Alpine image
+docker pull alpine:latest
 
 # Build and publish the images
 docker buildx build \

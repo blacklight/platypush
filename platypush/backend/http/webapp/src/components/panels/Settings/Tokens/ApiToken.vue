@@ -87,20 +87,20 @@
         When compared to the
         <a href="/#settings?page=tokens&type=jwt">JWT tokens</a>, API tokens
         have the following advantages:
-
-        <ul>
-          <li>They can be revoked at any time by the user who generated
-            them, while JWT tokens can only be revoked by changing the
-            user's password.</li>
-          <li>Their payload is random and not generated from the user's
-            password, so even if an attacker gains access to the server's
-            encryption keys, they cannot impersonate the user.</li>
-          <li>They can be generated with a friendly name that can be used
-            to identify the token.</li>
-        </ul>
-
-        <Description />
       </p>
+
+      <ul>
+        <li>They can be revoked at any time by the user who generated
+          them, while JWT tokens can only be revoked by changing the
+          user's password.</li>
+        <li>Their payload is random and not generated from the user's
+          password, so even if an attacker gains access to the server's
+          encryption keys, they cannot impersonate the user.</li>
+        <li>They can be generated with a friendly name that can be used
+          to identify the token.</li>
+      </ul>
+
+      <Description />
     </div>
   </div>
 </template>

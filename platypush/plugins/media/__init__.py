@@ -224,7 +224,7 @@ class MediaPlugin(RunnablePlugin, ABC):
 
         pathlib.Path(self.cache_dir).mkdir(parents=True, exist_ok=True)
         pathlib.Path(self.download_dir).mkdir(parents=True, exist_ok=True)
-        self._ytdl = youtube_dl
+        self._ytdl = os.path.expanduser(youtube_dl)
         self.volume = volume
         self._videos_queue = []
         self._youtube_proc = None

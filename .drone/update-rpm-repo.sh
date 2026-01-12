@@ -33,6 +33,20 @@ export BUILD_DIR="$WORKDIR/build"
 export TMP_RPM_ROOT="$WORKDIR/repo"
 export SRC_URL="https://git.platypush.tech/platypush/platypush/archive/master.tar.gz"
 
+# Function to clean up .pyc files and build artifacts
+cleanup_build_artifacts() {
+    echo "--- Cleaning up .pyc files and build artifacts"
+    find "$BUILD_DIR" -name "*.pyc" -delete
+    find "$BUILD_DIR" -name "*.pyo" -delete  
+    find "$BUILD_DIR" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+    
+    # Remove directories that shouldn't be installed at the root of site-packages
+    rm -rf "$BUILD_DIR/usr/lib/python"*/site-packages/docs/ 2>/dev/null || true
+    rm -rf "$BUILD_DIR/usr/lib/python"*/site-packages/examples/ 2>/dev/null || true
+    rm -rf "$BUILD_DIR/usr/lib/python"*/site-packages/tests/ 2>/dev/null || true
+    rm -rf "$BUILD_DIR/usr/lib/python"*/site-packages/build/ 2>/dev/null || true
+}
+
 echo "--- Creating git package spec"
 
 cat <<EOF > $SPECFILE
@@ -86,7 +100,20 @@ EOF
 echo "--- Building git package"
 mkdir -p "$BUILD_DIR"
 
-pip install --prefix="$BUILD_DIR/usr" --no-cache --no-deps .
+# Build a wheel first to avoid installing development files
+echo "--- Building wheel"
+python -m pip install --upgrade build
+python -m build --wheel --outdir /tmp/wheels
+
+# Install from the wheel instead of current directory
+echo "--- Installing from wheel"
+pip install --prefix="$BUILD_DIR/usr" --no-cache --no-deps --find-links /tmp/wheels platypush
+
+# Debug: List what was installed
+echo "--- Debug: Files installed in site-packages:"
+find "$BUILD_DIR/usr/lib/python"*/site-packages/ -maxdepth 2 -type d 2>/dev/null || true
+
+cleanup_build_artifacts
 
 install -m755 -d "${BUILD_DIR}/usr/lib/systemd/system"
 install -m755 -d "${BUILD_DIR}/usr/lib/systemd/user"
@@ -106,6 +133,9 @@ Group=platypush\
 WorkingDirectory=\/var\/lib\/platypush\
 Environment="PLATYPUSH_CONFIG=\/etc\/platypush\/config.yaml"\
 Environment="PLATYPUSH_WORKDIR=\/var\/lib\/platypush"/'
+
+# Final cleanup before building RPM to ensure no unwanted files are packaged
+cleanup_build_artifacts
 
 rpmbuild --target "noarch" -bb "$SPECFILE"
 
@@ -187,6 +217,9 @@ install -p -Dm0644 "${BUILD_DIR}/usr/lib/sysusers.d/platypush.conf" %{buildroot}
 EOF
 
   echo "--- Building package for stable release $VERSION"
+  # Final cleanup before building stable RPM to ensure no unwanted files are packaged
+  cleanup_build_artifacts
+  
   rpmbuild --target "noarch" -bb "$SPECFILE"
   cp "$HOME/rpmbuild/RPMS/noarch/$PKG_NAME-$VERSION-$RELNUM.noarch.rpm" "$TMP_RPM_ROOT"
 fi

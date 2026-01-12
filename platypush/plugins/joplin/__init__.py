@@ -5,7 +5,7 @@ from urllib.parse import urljoin
 import requests
 
 from platypush.common.notes import Note, NoteCollection, NoteSource
-from platypush.plugins._notes import (
+from platypush.plugins.notes import (
     ApiSettings,
     BaseNotePlugin,
     Item,

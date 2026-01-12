@@ -493,13 +493,25 @@ export default {
       if (!this.action.name && !this.rawRequest || this.running)
         return
 
+      const focusedElement = document.activeElement
+      const onDone = () => {
+        this.onDone()
+        this.$nextTick(() => focusedElement?.focus?.())
+      }
+
       this.running = true
       if (this.structuredInput) {
-        this.request(this.action.name, this.requestArgs).then(this.onResponse).catch(this.onError).finally(this.onDone)
+        this.request(this.action.name, this.requestArgs)
+          .then(this.onResponse)
+          .catch(this.onError)
+          .finally(onDone)
       } else {
         try {
           const request = JSON.parse(this.rawRequest)
-          this.execute(request).then(this.onResponse).catch(this.onError).finally(this.onDone)
+          this.execute(request)
+            .then(this.onResponse)
+            .catch(this.onError)
+            .finally(onDone)
         } catch (e) {
           this.notify({
             error: true,

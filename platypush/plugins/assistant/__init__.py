@@ -98,7 +98,6 @@ class AssistantPlugin(Plugin, AssistantEntityManager, ABC):
         self._last_query: Optional[str] = None
         self._last_response: Optional[str] = None
         self._cur_alert_type: Optional[AlertType] = None
-        self._plugin_name = get_plugin_name_by_class(type(self))
 
     @property
     def _state(self) -> AssistantState:

@@ -3,13 +3,25 @@ from contextlib import contextmanager
 from multiprocessing import RLock
 from typing import Optional, Generator, Union
 
+import sqlalchemy as sa
 from sqlalchemy import create_engine, Table, MetaData
 from sqlalchemy.engine import Engine
-from sqlalchemy.exc import CompileError
+from sqlalchemy.exc import CompileError, ProgrammingError
 from sqlalchemy.orm import Session, sessionmaker, scoped_session
 from sqlalchemy.sql import and_, or_, text
 
 from platypush.plugins import Plugin, action
+
+try:
+    # SQLAlchemy >= 2.0
+    from sqlalchemy import UUID
+except ImportError:
+    # Fallback for SQLAlchemy < 2.0
+    from platypush.common.db.uuid import UUID
+
+# Monkey patch for SQLAlchemy UUID type
+if not hasattr(sa.types, 'UUID'):
+    sa.types.UUID = UUID
 
 session_locks = {}
 
@@ -356,8 +368,15 @@ class DbPlugin(Plugin):
 
         try:
             ret = connection.execute(stmt_with_ret)
-        except CompileError as e:
-            if str(e).startswith('RETURNING is not supported'):
+        except (CompileError, ProgrammingError) as e:
+            # Mega-hack to check if the RETURNING clause is supported by the engine
+            if (
+                # SQLite
+                str(e).startswith('RETURNING is not supported')
+                or
+                # MySQL/MariaDB
+                "syntax to use near 'RETURNING *'" in str(e)
+            ):
                 connection.execute(stmt)
             else:
                 raise e

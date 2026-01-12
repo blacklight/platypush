@@ -356,29 +356,20 @@ class Config:
             return
 
         prefix = modname + '.' if prefix is None else prefix
-        self.procedures.update(
-            **{
-                (getattr(obj, 'procedure_name', None) or f'{prefix}{name}'): obj
-                for name, obj in inspect.getmembers(module)
-                if is_functional_procedure(obj)
-            }
-        )
 
-        self.event_hooks.update(
-            **{
-                prefix + name: obj
-                for name, obj in inspect.getmembers(module)
-                if is_functional_hook(obj)
-            }
-        )
-
-        self.cronjobs.update(
-            **{
-                prefix + name: obj
-                for name, obj in inspect.getmembers(module)
-                if is_functional_cron(obj)
-            }
-        )
+        for name, obj in inspect.getmembers(module):
+            if is_functional_procedure(obj):
+                proc_name = getattr(obj, "procedure_name", None) or f"{prefix}{name}"
+                if isinstance(proc_name, str):
+                    self.procedures[proc_name] = obj
+            elif is_functional_hook(obj):
+                hook_name = getattr(obj, "hook_name", None) or f"{prefix}{name}"
+                if isinstance(hook_name, str):
+                    self.event_hooks[hook_name] = obj
+            elif is_functional_cron(obj):
+                cron_name = getattr(obj, "cron_name", None) or f"{prefix}{name}"
+                if isinstance(cron_name, str):
+                    self.cronjobs[cron_name] = obj
 
     def _load_scripts(self):
         scripts_dir = self._config['scripts_dir']

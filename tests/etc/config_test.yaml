@@ -11,3 +11,5 @@ backend.http:
 
 redis:
   port: 16379
+  socket_timeout: 15
+  socket_connect_timeout: 15
