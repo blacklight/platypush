@@ -20,7 +20,7 @@
     "sass": "^1.77.6",
     "sass-loader": "^10.5.2",
     "vue": "^3.5.14",
-    "vue-router": "^4.6.0",
+    "vue-router": "^4.6.4",
     "vue-skycons": "^4.3.4",
     "w3css": "^2.7.0"
   },
