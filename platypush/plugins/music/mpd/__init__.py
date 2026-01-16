@@ -143,6 +143,10 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
 
         return item
 
+    def _get_state(self):
+        status = self._status() or {}
+        return status.get('state')
+
     @action
     def play(self, resource: Optional[str] = None, **__):
         """
@@ -172,25 +176,25 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
     def pause(self, *_, **__):
         """Pause playback"""
 
-        status = self._status()['state']
+        status = self._get_state()
         return self._exec('pause') if status == 'play' else self._exec('play')
 
     @action
     def pause_if_playing(self):
         """Pause playback only if it's playing"""
-        status = self._status()['state']
+        status = self._get_state()
         return self._exec('pause') if status == 'play' else None
 
     @action
     def play_if_paused(self):
         """Play only if it's paused (resume)"""
-        status = self._status()['state']
+        status = self._get_state()
         return self._exec('play') if status == 'pause' else None
 
     @action
     def play_if_paused_or_stopped(self):
         """Play only if it's paused or stopped"""
-        status = self._status()['state']
+        status = self._get_state()
         return self._exec('play') if status in ('pause', 'stop') else None
 
     @action
@@ -210,7 +214,7 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
     @action
     def play_or_stop(self):
         """Play or stop (play state toggle)"""
-        status = self._status()['state']
+        status = self._get_state()
         if status == 'play':
             return self._exec('stop')
         return self._exec('play')
