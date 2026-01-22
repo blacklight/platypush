@@ -371,12 +371,22 @@ class Application:
             elif isinstance(msg, Response):
                 msg.log()
             elif isinstance(msg, Event):
-                log.info(
+                logging_level = msg.logging_level
+                method = {
+                    logging.DEBUG: log.debug,
+                    logging.INFO: log.info,
+                    logging.WARNING: log.warning,
+                    logging.ERROR: log.error,
+                    logging.CRITICAL: log.critical,
+                }.get(logging_level, log.info)
+
+                method(
                     'Received event: %s.%s[id=%s]',
                     msg.__class__.__module__,
                     msg.__class__.__name__,
                     msg.id,
                 )
+
                 msg.log(level=logging.DEBUG)
                 self.event_processor.process_event(msg)
 

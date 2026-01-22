@@ -1,3 +1,4 @@
+import logging
 from typing import Union
 
 from platypush.entities import Entity
@@ -6,6 +7,9 @@ from platypush.message.event import Event
 
 class EntityEvent(Event):
     def __init__(self, entity: Union[Entity, dict], *args, **kwargs):
+        # EntityEvents can be quite verbose, so we only report them if debug
+        # logging is enabled
+        kwargs['logging_level'] = logging.DEBUG
         if isinstance(entity, Entity):
             entity = entity.to_dict()
         super().__init__(entity=entity, *args, **kwargs)
