@@ -37,9 +37,9 @@ export SRC_URL="https://git.platypush.tech/platypush/platypush/archive/master.ta
 cleanup_build_artifacts() {
     echo "--- Cleaning up .pyc files and build artifacts"
     find "$BUILD_DIR" -name "*.pyc" -delete
-    find "$BUILD_DIR" -name "*.pyo" -delete  
+    find "$BUILD_DIR" -name "*.pyo" -delete
     find "$BUILD_DIR" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
-    
+
     # Remove directories that shouldn't be installed at the root of site-packages
     rm -rf "$BUILD_DIR/usr/lib/python"*/site-packages/docs/ 2>/dev/null || true
     rm -rf "$BUILD_DIR/usr/lib/python"*/site-packages/examples/ 2>/dev/null || true

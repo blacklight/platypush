@@ -104,15 +104,15 @@ Steps:
 1. Add this repository's PGP key to your apt keyring
 ====================================================
 
-# wget -q -O \\\
-    /etc/apt/trusted.gpg.d/platypush.asc \\\
+# wget -q -O \\
+    /etc/apt/trusted.gpg.d/platypush.asc \\
     https://apt.platypush.tech/pubkey.txt
 
 2. Add the repository to your sources
 =====================================
 
-# wget -q -O \\\
-    /etc/apt/sources.list.d/platypush.list \\\
+# wget -q -O \\
+    /etc/apt/sources.list.d/platypush.list \\
     https://apt.platypush.tech/lists/platypush-<deb_version>-<branch>.list
 
 Where:
@@ -128,8 +128,8 @@ Where:
 
 For example, to install the latest stable tags on Debian stable:
 
-# wget -q -O \\\
-    /etc/apt/sources.list.d/platypush.list \\\
+# wget -q -O \\
+    /etc/apt/sources.list.d/platypush.list \\
     https://apt.platypush.tech/lists/platypush-stable-main.list
 
 3. Update your repos
