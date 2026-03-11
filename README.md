@@ -5,7 +5,6 @@
 [![Github stars](https://img.shields.io/github/stars/blacklight/platypush?style=flat&logo=Github)](https://github.com/blacklight/platypush)
 [![Github forks](https://img.shields.io/github/forks/blacklight/platypush?style=flat&logo=Github)](https://github.com/blacklight/platypush)
 [![Last Commit](https://img.shields.io/github/last-commit/BlackLight/platypush.svg)](https://git.platypush.tech/platypush/platypush/commits/branch/master)
-[![Join chat on Matrix](https://img.shields.io/matrix/platypush:matrix.platypush.tech.svg?server_fqdn=matrix.platypush.tech&label=chat&logo=matrix)](https://matrix.to/#/#platypush:matrix.platypush.tech)
 
 [![pip version](https://img.shields.io/pypi/v/platypush.svg?style=flat)](https://pypi.python.org/pypi/platypush/)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/1ecffafe2b5d4f1db215bed2a95a8a7b)](https://app.codacy.com/gh/blacklight/platypush/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
