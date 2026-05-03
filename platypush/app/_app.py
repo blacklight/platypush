@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 import logging
+import multiprocessing
 import pathlib
 import os
 import signal
@@ -524,12 +525,26 @@ class Application:
 app: Optional[Application] = None
 
 
+def _ensure_fork_start_method():
+    """
+    Python >= 3.14 defaults to ``forkserver`` on Linux, which requires
+    picklable process targets and is incompatible with several debuggers
+    (e.g. PyCharm's pydevd).  Platypush is POSIX-only and expects ``fork``
+    semantics, so we restore it here before any process is created.
+    """
+    try:
+        multiprocessing.set_start_method('fork')
+    except RuntimeError:
+        pass
+
+
 def main(*args: str):
     """
     Application entry point.
     """
     global app
 
+    _ensure_fork_start_method()
     app = Application.from_cmdline(args)
 
     try:
