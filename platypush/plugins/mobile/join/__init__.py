@@ -86,8 +86,11 @@ class MobileJoinPlugin(Plugin):
                 self._devices_by_name = {dev['name']: dev for dev in self._devices}
 
     def _get_device_ids(self, device):
-        devices = [dev.strip() for dev in device.split(',')] \
-            if isinstance(device, str) else device
+        devices = (
+            [dev.strip() for dev in device.split(',')]
+            if isinstance(device, str)
+            else device
+        )
         assert isinstance(devices, list)
 
         has_unknown_devices = True
@@ -148,7 +151,9 @@ class MobileJoinPlugin(Plugin):
         :param device: Device ID or name, or list of device IDs/names, or group name(s)
         :param text: Text to be set
         """
-        return self._send_request(self._push_url, device=device, params={'clipboard': text})
+        return self._send_request(
+            self._push_url, device=device, params={'clipboard': text}
+        )
 
     @action
     def send_sms(self, device, text: str, number: str = None, contact_name: str = None):
@@ -172,8 +177,16 @@ class MobileJoinPlugin(Plugin):
         return self._send_request(self._push_url, device=device, params=params)
 
     @action
-    def send_mms(self, device, file: str = None, text: str = None, subject: str = '',
-                 number: str = None, contact_name: str = None, urgent: bool = False):
+    def send_mms(
+        self,
+        device,
+        file: str = None,
+        text: str = None,
+        subject: str = '',
+        number: str = None,
+        contact_name: str = None,
+        urgent: bool = False,
+    ):
         """
         Send an MMS through a mobile device connected to Join
 
@@ -211,7 +224,9 @@ class MobileJoinPlugin(Plugin):
         :param device: Device ID or name, or list of device IDs/names, or group name(s)
         :param number: Phone number
         """
-        return self._send_request(self._push_url, device=device, params={'callnumber': number})
+        return self._send_request(
+            self._push_url, device=device, params={'callnumber': number}
+        )
 
     @action
     def set_wallpaper(self, device, wallpaper: str):
@@ -221,7 +236,9 @@ class MobileJoinPlugin(Plugin):
         :param device: Device ID or name, or list of device IDs/names, or group name(s)
         :param wallpaper: A publicly accessible URL of an image file. Will set the wallpaper on the receiving device
         """
-        return self._send_request(self._push_url, device=device, params={'wallpaper': wallpaper})
+        return self._send_request(
+            self._push_url, device=device, params={'wallpaper': wallpaper}
+        )
 
     @action
     def set_lock_wallpaper(self, device, wallpaper: str):
@@ -232,7 +249,9 @@ class MobileJoinPlugin(Plugin):
         :param wallpaper: A publicly accessible URL of an image file. Will set the lockscreen wallpaper on the receiving
             device if the device has Android 7 or above
         """
-        return self._send_request(self._push_url, device=device, params={'wallpaper': wallpaper})
+        return self._send_request(
+            self._push_url, device=device, params={'wallpaper': wallpaper}
+        )
 
     @action
     def find(self, device):
@@ -250,7 +269,9 @@ class MobileJoinPlugin(Plugin):
         :param device: Device ID or name, or list of device IDs/names, or group name(s)
         :param volume: Volume
         """
-        return self._send_request(self._push_url, device=device, params={'mediaVolume': volume})
+        return self._send_request(
+            self._push_url, device=device, params={'mediaVolume': volume}
+        )
 
     @action
     def set_ring_volume(self, device, volume: float):
@@ -260,7 +281,9 @@ class MobileJoinPlugin(Plugin):
         :param device: Device ID or name, or list of device IDs/names, or group name(s)
         :param volume: Volume
         """
-        return self._send_request(self._push_url, device=device, params={'ringVolume': volume})
+        return self._send_request(
+            self._push_url, device=device, params={'ringVolume': volume}
+        )
 
     @action
     def set_alarm_volume(self, device, volume: float):
@@ -270,7 +293,9 @@ class MobileJoinPlugin(Plugin):
         :param device: Device ID or name, or list of device IDs/names, or group name(s)
         :param volume: Volume
         """
-        return self._send_request(self._push_url, device=device, params={'alarmVolume': volume})
+        return self._send_request(
+            self._push_url, device=device, params={'alarmVolume': volume}
+        )
 
     @action
     def set_interruption_filter(self, device, policy: str):
@@ -290,11 +315,15 @@ class MobileJoinPlugin(Plugin):
         try:
             policy = getattr(InterruptionFilterPolicy, policy.upper())
         except AttributeError:
-            raise AttributeError('Invalid policy: {}. Supported values: {}'.format(
-                policy, [i.name for i in InterruptionFilterPolicy]
-            ))
+            raise AttributeError(
+                'Invalid policy: {}. Supported values: {}'.format(
+                    policy, [i.name for i in InterruptionFilterPolicy]
+                )
+            )
 
-        return self._send_request(self._push_url, device=device, params={'interruptionFilter': policy})
+        return self._send_request(
+            self._push_url, device=device, params={'interruptionFilter': policy}
+        )
 
     @action
     def say(self, device, text: str, language: str = None):
@@ -336,10 +365,23 @@ class MobileJoinPlugin(Plugin):
         return self._send_request(self._push_url, device=device, params=params)
 
     @action
-    def send_notification(self, device, title: str = None, text: str = None, url: str = None, file: str = None,
-                          icon: str = None, small_icon: str = None, priority: int = 2, vibration_pattern=None,
-                          dismiss_on_touch: bool = False, image: str = None, group: str = None,
-                          sound: str = None, actions=None):
+    def send_notification(
+        self,
+        device,
+        title: str = None,
+        text: str = None,
+        url: str = None,
+        file: str = None,
+        icon: str = None,
+        small_icon: str = None,
+        priority: int = 2,
+        vibration_pattern=None,
+        dismiss_on_touch: bool = False,
+        image: str = None,
+        group: str = None,
+        sound: str = None,
+        actions=None,
+    ):
         """
         Send a notification to a device
 
@@ -388,8 +430,11 @@ class MobileJoinPlugin(Plugin):
         if priority:
             params['priority'] = priority
         if vibration_pattern:
-            params['vibrationPattern'] = [i for i in vibration_pattern.split(',') if len(i)] \
-                if isinstance(vibration_pattern, str) else vibration_pattern
+            params['vibrationPattern'] = (
+                [i for i in vibration_pattern.split(',') if len(i)]
+                if isinstance(vibration_pattern, str)
+                else vibration_pattern
+            )
             assert isinstance(params['vibrationPattern'], list)
         if image:
             params['image'] = image
@@ -398,8 +443,15 @@ class MobileJoinPlugin(Plugin):
         if sound:
             params['sound'] = sound
         if actions:
-            actions = [a.strip() for a in actions.split('|||' if '|||' in actions else ',') if len(a.strip())] \
-                if isinstance(actions, str) else actions
+            actions = (
+                [
+                    a.strip()
+                    for a in actions.split('|||' if '|||' in actions else ',')
+                    if len(a.strip())
+                ]
+                if isinstance(actions, str)
+                else actions
+            )
             assert isinstance(actions, list) and len(actions) > 0
             params['actions'] = '|||'.join(actions)
 

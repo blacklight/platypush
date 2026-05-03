@@ -22,7 +22,7 @@ class NotificationEvent(Event):
         actions: Optional[Collection[Mapping]] = None,
         tags: Optional[Collection[str]] = None,
         url: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param id: Message ID.
@@ -90,5 +90,5 @@ class NotificationEvent(Event):
             attachment=attachment,
             actions=actions,
             url=url,
-            **kwargs
+            **kwargs,
         )

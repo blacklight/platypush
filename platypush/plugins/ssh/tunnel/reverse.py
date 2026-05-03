@@ -18,8 +18,11 @@ def handler(chan, local_port, host, port):
         logger.warning('Forwarding request to {}:{} failed: {}'.format(host, port, e))
         return
 
-    logger.info('Connected! Tunnel open {} -> {} -> {}'.format(
-        chan.origin_addr, chan.getpeername(), (host, port)))
+    logger.info(
+        'Connected! Tunnel open {} -> {} -> {}'.format(
+            chan.origin_addr, chan.getpeername(), (host, port)
+        )
+    )
 
     while should_run.get(key):
         r, w, x = select.select([sock, chan], [], [])
@@ -40,7 +43,9 @@ def handler(chan, local_port, host, port):
     logger.info('Tunnel closed from {}'.format(chan.origin_addr))
 
 
-def reverse_tunnel(server_port, remote_host, remote_port, transport, bind_addr='') -> Callable:
+def reverse_tunnel(
+    server_port, remote_host, remote_port, transport, bind_addr=''
+) -> Callable:
     def server():
         transport.request_port_forward(bind_addr, server_port)
         key = server_port, remote_host, remote_port
@@ -55,7 +60,8 @@ def reverse_tunnel(server_port, remote_host, remote_port, transport, bind_addr='
                 continue
 
             thr = threading.Thread(
-                target=handler, args=(chan, server_port, remote_host, remote_port))
+                target=handler, args=(chan, server_port, remote_host, remote_port)
+            )
 
             thr.setDaemon(True)
             thr.start()
@@ -66,7 +72,11 @@ def reverse_tunnel(server_port, remote_host, remote_port, transport, bind_addr='
 def close_tunnel(server_port, remote_host, remote_port):
     key = server_port, remote_host, remote_port
     if key not in should_run:
-        logger.info('No such active tunnel: {}:{}:{}'.format(server_port, remote_host, remote_port))
+        logger.info(
+            'No such active tunnel: {}:{}:{}'.format(
+                server_port, remote_host, remote_port
+            )
+        )
 
     del should_run[key]
 

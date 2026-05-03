@@ -20,8 +20,9 @@ class DashboardIframeUpdateEvent(Event):
         :type timeout: float
         """
 
-        super().__init__(url=url, width=width, height=height, timeout=timeout, *args, **kwargs)
+        super().__init__(
+            *args, url=url, width=width, height=height, timeout=timeout, **kwargs
+        )
 
 
 # vim:sw=4:ts=4:et:
-

@@ -7,6 +7,7 @@ class LightEvent(Event):
     """
     Base class for light plugins events.
     """
+
     def __init__(self, *args, plugin_name: Optional[str] = None, **kwargs):
         """
         :param plugin_name: Name of the :class:`platypush.plugins.light.LightPlugin` instance that triggered the event.
@@ -18,8 +19,20 @@ class LightStatusChangeEvent(LightEvent):
     """
     Event triggered when the state of a lightbulb changes
     """
-    def __init__(self, light_id=None, light_name=None, on=None, bri=None,
-                 sat=None, hue=None, ct=None, xy=None, *args, **kwargs):
+
+    def __init__(
+        self,
+        light_id=None,
+        light_name=None,
+        on=None,
+        bri=None,
+        sat=None,
+        hue=None,
+        ct=None,
+        xy=None,
+        *args,
+        **kwargs,
+    ):
         """
         :param light_id: Light ID that triggered the event
         :type light_id: int
@@ -72,16 +85,36 @@ class LightAnimationStartedEvent(LightEvent):
     """
     Event triggered when a light animation is started.
     """
-    def __init__(self, *args, animation, lights: Optional[list] = None, groups: Optional[list] = None, **kwargs):
-        super().__init__(*args, animation=animation, lights=lights, groups=groups, **kwargs)
+
+    def __init__(
+        self,
+        *args,
+        animation,
+        lights: Optional[list] = None,
+        groups: Optional[list] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            *args, animation=animation, lights=lights, groups=groups, **kwargs
+        )
 
 
 class LightAnimationStoppedEvent(LightEvent):
     """
     Event triggered when a light animation is stopped.
     """
-    def __init__(self, *args, animation=None, lights: Optional[list] = None, groups: Optional[list] = None, **kwargs):
-        super().__init__(*args, animation=animation, lights=lights, groups=groups, **kwargs)
+
+    def __init__(
+        self,
+        *args,
+        animation=None,
+        lights: Optional[list] = None,
+        groups: Optional[list] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            *args, animation=animation, lights=lights, groups=groups, **kwargs
+        )
 
 
 # vim:sw=4:ts=4:et:

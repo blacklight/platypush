@@ -24,7 +24,7 @@ class LcdGpioPlugin(LcdPlugin):
         charmap: str = 'A02',
         auto_linebreaks: bool = True,
         compat_mode: bool = False,
-        **kwargs
+        **kwargs,
     ):
         """
         :param pin_rs: Pin for register select (RS).

@@ -57,14 +57,22 @@ COMMAND_GET_D = 14  # Get motor 4 direction and PWM rate
 COMMAND_ALL_OFF = 15  # Switch everything off
 COMMAND_SET_ALL_FWD = 16  # Set all motors PWM rate in a forwards direction
 COMMAND_SET_ALL_REV = 17  # Set all motors PWM rate in a reverse direction
-COMMAND_SET_FAILSAFE = 18  # Set the failsafe flag, turns the motors off if communication is interrupted
+COMMAND_SET_FAILSAFE = (
+    18  # Set the failsafe flag, turns the motors off if communication is interrupted
+)
 COMMAND_GET_FAILSAFE = 19  # Get the failsafe flag
-COMMAND_RESET_EPO = 20  # Resets the EPO flag, use after EPO has been tripped and switch is now clear
+COMMAND_RESET_EPO = (
+    20  # Resets the EPO flag, use after EPO has been tripped and switch is now clear
+)
 COMMAND_GET_EPO = 21  # Get the EPO latched flag
-COMMAND_SET_EPO_IGNORE = 22  # Set the EPO ignored flag, allows the system to run without an EPO
+COMMAND_SET_EPO_IGNORE = (
+    22  # Set the EPO ignored flag, allows the system to run without an EPO
+)
 COMMAND_GET_EPO_IGNORE = 23  # Get the EPO ignored flag
 COMMAND_GET_NEW_IR = 24  # Get the new IR message received flag
-COMMAND_GET_LAST_IR = 25  # Get the last IR message received (long message, resets new IR flag)
+COMMAND_GET_LAST_IR = (
+    25  # Get the last IR message received (long message, resets new IR flag)
+)
 COMMAND_SET_LED_IR = 26  # Set the LED for indicating IR messages
 COMMAND_GET_LED_IR = 27  # Get if the LED is being used to indicate IR messages
 COMMAND_GET_ANALOG_1 = 28  # Get the analog reading from port #1, pin 2
@@ -86,11 +94,11 @@ IR_MAX_BYTES = I2C_LONG_LEN - 2
 # noinspection PyPep8Naming
 def ScanForZeroBorg(busNumber=1):
     """
-ScanForZeroBorg([busNumber])
+    ScanForZeroBorg([busNumber])
 
-Scans the I?C bus for a ZeroBorg boards and returns a list of all usable addresses
-The busNumber if supplied is which I?C bus to scan, 0 for Rev 1 boards, 1 for Rev 2 boards, if not supplied
-the default is 1
+    Scans the I?C bus for a ZeroBorg boards and returns a list of all usable addresses
+    The busNumber if supplied is which I?C bus to scan, 0 for Rev 1 boards, 1 for Rev 2 boards, if not supplied
+    the default is 1
     """
     found = []
     print('Scanning I?C bus #%d' % busNumber)
@@ -113,7 +121,10 @@ the default is 1
             print('Error on ZeroBorg scan: {}: {}'.format(type(e), str(e)))
 
     if len(found) == 0:
-        print('No ZeroBorg boards found, is bus #%d correct (should be 0 for Rev 1, 1 for Rev 2)' % busNumber)
+        print(
+            'No ZeroBorg boards found, is bus #%d correct (should be 0 for Rev 1, 1 for Rev 2)'
+            % busNumber
+        )
     elif len(found) == 1:
         print('1 ZeroBorg board found')
     else:
@@ -124,19 +135,23 @@ the default is 1
 # noinspection PyPep8Naming
 def SetNewAddress(newAddress, oldAddress=-1, busNumber=1):
     """
-SetNewAddress(newAddress, [oldAddress], [busNumber])
+    SetNewAddress(newAddress, [oldAddress], [busNumber])
 
-Scans the I?C bus for the first ZeroBorg and sets it to a new I2C address
-If oldAddress is supplied it will change the address of the board at that address rather than scanning the bus
-The busNumber if supplied is which I?C bus to scan, 0 for Rev 1 boards, 1 for Rev 2 boards, if not supplied
-the default is 1.
-Warning, this new I?C address will still be used after resetting the power on the device
+    Scans the I?C bus for the first ZeroBorg and sets it to a new I2C address
+    If oldAddress is supplied it will change the address of the board at that address rather than scanning the bus
+    The busNumber if supplied is which I?C bus to scan, 0 for Rev 1 boards, 1 for Rev 2 boards, if not supplied
+    the default is 1.
+    Warning, this new I?C address will still be used after resetting the power on the device
     """
     if newAddress < 0x03:
-        print('Error, I?C addresses below 3 (0x03) are reserved, use an address between 3 (0x03) and 119 (0x77)')
+        print(
+            'Error, I?C addresses below 3 (0x03) are reserved, use an address between 3 (0x03) and 119 (0x77)'
+        )
         return
     elif newAddress > 0x77:
-        print('Error, I?C addresses above 119 (0x77) are reserved, use an address between 3 (0x03) and 119 (0x77)')
+        print(
+            'Error, I?C addresses above 119 (0x77) are reserved, use an address between 3 (0x03) and 119 (0x77)'
+        )
         return
     if oldAddress < 0x0:
         found = ScanForZeroBorg(busNumber)
@@ -145,7 +160,10 @@ Warning, this new I?C address will still be used after resetting the power on th
             return
         else:
             oldAddress = found[0]
-    print('Changing I2C address from %02X to %02X (bus #%d)' % (oldAddress, newAddress, busNumber))
+    print(
+        'Changing I2C address from %02X to %02X (bus #%d)'
+        % (oldAddress, newAddress, busNumber)
+    )
     bus = ZeroBorg()
     bus.InitBusOnly(busNumber, oldAddress)
     # noinspection PyBroadException
@@ -157,8 +175,10 @@ Warning, this new I?C address will still be used after resetting the power on th
                 print('Found ZeroBorg at %02X' % oldAddress)
             else:
                 foundChip = False
-                print('Found a device at %02X, but it is not a ZeroBorg (ID %02X instead of %02X)' % (
-                    oldAddress, i2cRecv[1], I2C_ID_ZEROBORG))
+                print(
+                    'Found a device at %02X, but it is not a ZeroBorg (ID %02X instead of %02X)'
+                    % (oldAddress, i2cRecv[1], I2C_ID_ZEROBORG)
+                )
         else:
             foundChip = False
             print('Missing ZeroBorg at %02X' % oldAddress)
@@ -171,7 +191,10 @@ Warning, this new I?C address will still be used after resetting the power on th
     if foundChip:
         bus.RawWrite(COMMAND_SET_I2C_ADD, [newAddress])
         time.sleep(0.1)
-        print('Address changed to %02X, attempting to talk with the new address' % newAddress)
+        print(
+            'Address changed to %02X, attempting to talk with the new address'
+            % newAddress
+        )
         # noinspection PyBroadException
         try:
             bus.InitBusOnly(busNumber, newAddress)
@@ -182,8 +205,10 @@ Warning, this new I?C address will still be used after resetting the power on th
                     print('Found ZeroBorg at %02X' % newAddress)
                 else:
                     foundChip = False
-                    print('Found a device at %02X, but it is not a ZeroBorg (ID %02X instead of %02X)' % (
-                        newAddress, i2cRecv[1], I2C_ID_ZEROBORG))
+                    print(
+                        'Found a device at %02X, but it is not a ZeroBorg (ID %02X instead of %02X)'
+                        % (newAddress, i2cRecv[1], I2C_ID_ZEROBORG)
+                    )
             else:
                 foundChip = False
                 print('Missing ZeroBorg at %02X' % newAddress)
@@ -203,13 +228,13 @@ Warning, this new I?C address will still be used after resetting the power on th
 # noinspection PyPep8Naming
 class ZeroBorg:
     """
-This module is designed to communicate with the ZeroBorg
+    This module is designed to communicate with the ZeroBorg
 
-busNumber               I?C bus on which the ZeroBorg is attached (Rev 1 is bus 0, Rev 2 is bus 1)
-bus                     the smbus object used to talk to the I?C bus
-i2cAddress              The I?C address of the ZeroBorg chip to control
-foundChip               True if the ZeroBorg chip can be seen, False otherwise
-printFunction           Function reference to call when printing text, if None "print" is used
+    busNumber               I?C bus on which the ZeroBorg is attached (Rev 1 is bus 0, Rev 2 is bus 1)
+    bus                     the smbus object used to talk to the I?C bus
+    i2cAddress              The I?C address of the ZeroBorg chip to control
+    foundChip               True if the ZeroBorg chip can be seen, False otherwise
+    printFunction           Function reference to call when printing text, if None "print" is used
     """
 
     # Shared values used by this class
@@ -222,12 +247,12 @@ printFunction           Function reference to call when printing text, if None "
 
     def RawWrite(self, command, data):
         """
-RawWrite(command, data)
+        RawWrite(command, data)
 
-Sends a raw command on the I2C bus to the ZeroBorg
-Command codes can be found at the top of ZeroBorg.py, data is a list of 0 or more byte values
+        Sends a raw command on the I2C bus to the ZeroBorg
+        Command codes can be found at the top of ZeroBorg.py, data is a list of 0 or more byte values
 
-Under most circumstances you should use the appropriate function instead of RawWrite
+        Under most circumstances you should use the appropriate function instead of RawWrite
         """
         rawOutput = bytes([command])
         if data:
@@ -236,15 +261,15 @@ Under most circumstances you should use the appropriate function instead of RawW
 
     def RawRead(self, command, length, retryCount=3):
         """
-RawRead(command, length, [retryCount])
+        RawRead(command, length, [retryCount])
 
-Reads data back from the ZeroBorg after sending a GET command
-Command codes can be found at the top of ZeroBorg.py, length is the number of bytes to read back
+        Reads data back from the ZeroBorg after sending a GET command
+        Command codes can be found at the top of ZeroBorg.py, length is the number of bytes to read back
 
-The function checks that the first byte read back matches the requested command
-If it does not it will retry the request until retryCount is exhausted (default is 3 times)
+        The function checks that the first byte read back matches the requested command
+        If it does not it will retry the request until retryCount is exhausted (default is 3 times)
 
-Under most circumstances you should use the appropriate function instead of RawRead
+        Under most circumstances you should use the appropriate function instead of RawRead
         """
         reply = []
 
@@ -265,10 +290,10 @@ Under most circumstances you should use the appropriate function instead of RawR
 
     def InitBusOnly(self, busNumber, address):
         """
-InitBusOnly(busNumber, address)
+        InitBusOnly(busNumber, address)
 
-Prepare the I2C driver for talking to a ZeroBorg on the specified bus and I2C address
-This call does not check the board is present or working, under most circumstances use Init() instead
+        Prepare the I2C driver for talking to a ZeroBorg on the specified bus and I2C address
+        This call does not check the board is present or working, under most circumstances use Init() instead
         """
         self.busNumber = busNumber
         self.i2cAddress = address
@@ -279,9 +304,9 @@ This call does not check the board is present or working, under most circumstanc
 
     def Print(self, message):
         """
-Print(message)
+        Print(message)
 
-Wrapper used by the ZeroBorg instance to print messages, will call printFunction if set, print otherwise
+        Wrapper used by the ZeroBorg instance to print messages, will call printFunction if set, print otherwise
         """
         if self.printFunction is None:
             print(message)
@@ -290,26 +315,29 @@ Wrapper used by the ZeroBorg instance to print messages, will call printFunction
 
     def NoPrint(self, message):
         """
-NoPrint(message)
+        NoPrint(message)
 
-Does nothing, intended for disabling diagnostic printout by using:
-ZB = ZeroBorg.ZeroBorg()
-ZB.printFunction = ZB.NoPrint
+        Does nothing, intended for disabling diagnostic printout by using:
+        ZB = ZeroBorg.ZeroBorg()
+        ZB.printFunction = ZB.NoPrint
         """
         pass
 
     def Init(self, tryOtherBus=False):
         """
-Init([tryOtherBus])
+        Init([tryOtherBus])
 
-Prepare the I2C driver for talking to the ZeroBorg
+        Prepare the I2C driver for talking to the ZeroBorg
 
-If tryOtherBus is True, this function will attempt to use the other bus if the ThunderBorg devices can not be found on
-the current busNumber.
+        If tryOtherBus is True, this function will attempt to use the other bus
+        if the ThunderBorg devices can not be found on the current busNumber.
 
-    This is only really useful for early Raspberry Pi models!
+            This is only really useful for early Raspberry Pi models!
         """
-        self.Print('Loading ZeroBorg on bus %d, address %02X' % (self.busNumber, self.i2cAddress))
+        self.Print(
+            'Loading ZeroBorg on bus %d, address %02X'
+            % (self.busNumber, self.i2cAddress)
+        )
 
         # Open the bus
         self.i2cRead = io.open("/dev/i2c-" + str(self.busNumber), "rb", buffering=0)
@@ -327,8 +355,10 @@ the current busNumber.
                     self.Print('Found ZeroBorg at %02X' % self.i2cAddress)
                 else:
                     self.foundChip = False
-                    self.Print('Found a device at %02X, but it is not a ZeroBorg (ID %02X instead of %02X)' % (
-                        self.i2cAddress, i2cRecv[1], I2C_ID_ZEROBORG))
+                    self.Print(
+                        'Found a device at %02X, but it is not a ZeroBorg (ID %02X instead of %02X)'
+                        % (self.i2cAddress, i2cRecv[1], I2C_ID_ZEROBORG)
+                    )
             else:
                 self.foundChip = False
                 self.Print('Missing ZeroBorg at %02X' % self.i2cAddress)
@@ -350,22 +380,23 @@ the current busNumber.
                 self.Init(False)
             else:
                 self.Print(
-                    'Are you sure your ZeroBorg is properly attached, the correct address is used, and the I2C ' +
-                    'drivers are running?')
+                    'Are you sure your ZeroBorg is properly attached, the correct address is used, and the I2C '
+                    + 'drivers are running?'
+                )
                 self.bus = None
         else:
             self.Print('ZeroBorg loaded on bus %d' % self.busNumber)
 
     def SetMotor1(self, power):
         """
-SetMotor1(power)
+        SetMotor1(power)
 
-Sets the drive level for motor 1, from +1 to -1.
-e.g.
-SetMotor1(0)     -> motor 1 is stopped
-SetMotor1(0.75)  -> motor 1 moving forward at 75% power
-SetMotor1(-0.5)  -> motor 1 moving reverse at 50% power
-SetMotor1(1)     -> motor 1 moving forward at 100% power
+        Sets the drive level for motor 1, from +1 to -1.
+        e.g.
+        SetMotor1(0)     -> motor 1 is stopped
+        SetMotor1(0.75)  -> motor 1 moving forward at 75% power
+        SetMotor1(-0.5)  -> motor 1 moving reverse at 50% power
+        SetMotor1(1)     -> motor 1 moving forward at 100% power
         """
         if power < 0:
             # Reverse
@@ -390,14 +421,14 @@ SetMotor1(1)     -> motor 1 moving forward at 100% power
 
     def GetMotor1(self):
         """
-power = GetMotor1()
+        power = GetMotor1()
 
-Gets the drive level for motor 1, from +1 to -1.
-e.g.
-0     -> motor 1 is stopped
-0.75  -> motor 1 moving forward at 75% power
--0.5  -> motor 1 moving reverse at 50% power
-1     -> motor 1 moving forward at 100% power
+        Gets the drive level for motor 1, from +1 to -1.
+        e.g.
+        0     -> motor 1 is stopped
+        0.75  -> motor 1 moving forward at 75% power
+        -0.5  -> motor 1 moving reverse at 50% power
+        1     -> motor 1 moving forward at 100% power
         """
         # noinspection PyBroadException
         try:
@@ -419,14 +450,14 @@ e.g.
 
     def SetMotor2(self, power):
         """
-SetMotor1(power)
+        SetMotor1(power)
 
-Sets the drive level for motor 2, from +1 to -1.
-e.g.
-SetMotor2(0)     -> motor 2 is stopped
-SetMotor2(0.75)  -> motor 2 moving forward at 75% power
-SetMotor2(-0.5)  -> motor 2 moving reverse at 50% power
-SetMotor2(1)     -> motor 2 moving forward at 100% power
+        Sets the drive level for motor 2, from +1 to -1.
+        e.g.
+        SetMotor2(0)     -> motor 2 is stopped
+        SetMotor2(0.75)  -> motor 2 moving forward at 75% power
+        SetMotor2(-0.5)  -> motor 2 moving reverse at 50% power
+        SetMotor2(1)     -> motor 2 moving forward at 100% power
         """
         if power < 0:
             # Reverse
@@ -451,14 +482,14 @@ SetMotor2(1)     -> motor 2 moving forward at 100% power
 
     def GetMotor2(self):
         """
-power = GetMotor2()
+        power = GetMotor2()
 
-Gets the drive level for motor 2, from +1 to -1.
-e.g.
-0     -> motor 2 is stopped
-0.75  -> motor 2 moving forward at 75% power
--0.5  -> motor 2 moving reverse at 50% power
-1     -> motor 2 moving forward at 100% power
+        Gets the drive level for motor 2, from +1 to -1.
+        e.g.
+        0     -> motor 2 is stopped
+        0.75  -> motor 2 moving forward at 75% power
+        -0.5  -> motor 2 moving reverse at 50% power
+        1     -> motor 2 moving forward at 100% power
         """
         # noinspection PyBroadException
         try:
@@ -480,14 +511,14 @@ e.g.
 
     def SetMotor3(self, power):
         """
-SetMotor3(power)
+        SetMotor3(power)
 
-Sets the drive level for motor 3, from +1 to -1.
-e.g.
-SetMotor3(0)     -> motor 3 is stopped
-SetMotor3(0.75)  -> motor 3 moving forward at 75% power
-SetMotor3(-0.5)  -> motor 3 moving reverse at 50% power
-SetMotor3(1)     -> motor 3 moving forward at 100% power
+        Sets the drive level for motor 3, from +1 to -1.
+        e.g.
+        SetMotor3(0)     -> motor 3 is stopped
+        SetMotor3(0.75)  -> motor 3 moving forward at 75% power
+        SetMotor3(-0.5)  -> motor 3 moving reverse at 50% power
+        SetMotor3(1)     -> motor 3 moving forward at 100% power
         """
         if power < 0:
             # Reverse
@@ -512,14 +543,14 @@ SetMotor3(1)     -> motor 3 moving forward at 100% power
 
     def GetMotor3(self):
         """
-power = GetMotor3()
+        power = GetMotor3()
 
-Gets the drive level for motor 3, from +1 to -1.
-e.g.
-0     -> motor 3 is stopped
-0.75  -> motor 3 moving forward at 75% power
--0.5  -> motor 3 moving reverse at 50% power
-1     -> motor 3 moving forward at 100% power
+        Gets the drive level for motor 3, from +1 to -1.
+        e.g.
+        0     -> motor 3 is stopped
+        0.75  -> motor 3 moving forward at 75% power
+        -0.5  -> motor 3 moving reverse at 50% power
+        1     -> motor 3 moving forward at 100% power
         """
         # noinspection PyBroadException
         try:
@@ -541,14 +572,14 @@ e.g.
 
     def SetMotor4(self, power):
         """
-SetMotor4(power)
+        SetMotor4(power)
 
-Sets the drive level for motor 4, from +1 to -1.
-e.g.
-SetMotor4(0)     -> motor 4 is stopped
-SetMotor4(0.75)  -> motor 4 moving forward at 75% power
-SetMotor4(-0.5)  -> motor 4 moving reverse at 50% power
-SetMotor4(1)     -> motor 4 moving forward at 100% power
+        Sets the drive level for motor 4, from +1 to -1.
+        e.g.
+        SetMotor4(0)     -> motor 4 is stopped
+        SetMotor4(0.75)  -> motor 4 moving forward at 75% power
+        SetMotor4(-0.5)  -> motor 4 moving reverse at 50% power
+        SetMotor4(1)     -> motor 4 moving forward at 100% power
         """
         if power < 0:
             # Reverse
@@ -573,14 +604,14 @@ SetMotor4(1)     -> motor 4 moving forward at 100% power
 
     def GetMotor4(self):
         """
-power = GetMotor4()
+        power = GetMotor4()
 
-Gets the drive level for motor 4, from +1 to -1.
-e.g.
-0     -> motor 4 is stopped
-0.75  -> motor 4 moving forward at 75% power
--0.5  -> motor 4 moving reverse at 50% power
-1     -> motor 4 moving forward at 100% power
+        Gets the drive level for motor 4, from +1 to -1.
+        e.g.
+        0     -> motor 4 is stopped
+        0.75  -> motor 4 moving forward at 75% power
+        -0.5  -> motor 4 moving reverse at 50% power
+        1     -> motor 4 moving forward at 100% power
         """
         # noinspection PyBroadException
         try:
@@ -602,14 +633,14 @@ e.g.
 
     def SetMotors(self, power):
         """
-SetMotors(power)
+        SetMotors(power)
 
-Sets the drive level for all motors, from +1 to -1.
-e.g.
-SetMotors(0)     -> all motors are stopped
-SetMotors(0.75)  -> all motors are moving forward at 75% power
-SetMotors(-0.5)  -> all motors are moving reverse at 50% power
-SetMotors(1)     -> all motors are moving forward at 100% power
+        Sets the drive level for all motors, from +1 to -1.
+        e.g.
+        SetMotors(0)     -> all motors are stopped
+        SetMotors(0.75)  -> all motors are moving forward at 75% power
+        SetMotors(-0.5)  -> all motors are moving reverse at 50% power
+        SetMotors(1)     -> all motors are moving forward at 100% power
         """
         if power < 0:
             # Reverse
@@ -634,9 +665,9 @@ SetMotors(1)     -> all motors are moving forward at 100% power
 
     def MotorsOff(self):
         """
-MotorsOff()
+        MotorsOff()
 
-Sets all motors to stopped, useful when ending a program
+        Sets all motors to stopped, useful when ending a program
         """
         # noinspection PyBroadException
         try:
@@ -648,9 +679,9 @@ Sets all motors to stopped, useful when ending a program
 
     def SetLed(self, state):
         """
-SetLed(state)
+        SetLed(state)
 
-Sets the current state of the LED, False for off, True for on
+        Sets the current state of the LED, False for off, True for on
         """
         if state:
             level = COMMAND_VALUE_ON
@@ -667,9 +698,9 @@ Sets the current state of the LED, False for off, True for on
 
     def GetLed(self):
         """
-state = GetLed()
+        state = GetLed()
 
-Reads the current state of the LED, False for off, True for on
+        Reads the current state of the LED, False for off, True for on
         """
         # noinspection PyBroadException
         try:
@@ -680,16 +711,13 @@ Reads the current state of the LED, False for off, True for on
             self.Print('Failed reading LED state! {}'.format(str(e)))
             return
 
-        if i2cRecv[1] == COMMAND_VALUE_OFF:
-            return False
-        else:
-            return True
+        return i2cRecv[1] != COMMAND_VALUE_OFF
 
     def ResetEpo(self):
         """
-ResetEpo()
+        ResetEpo()
 
-Resets the EPO latch state, use to allow movement again after the EPO has been tripped
+        Resets the EPO latch state, use to allow movement again after the EPO has been tripped
         """
         # noinspection PyBroadException
         try:
@@ -701,12 +729,12 @@ Resets the EPO latch state, use to allow movement again after the EPO has been t
 
     def GetEpo(self):
         """
-state = GetEpo()
+        state = GetEpo()
 
-Reads the system EPO latch state.
-If False the EPO has not been tripped, and movement is allowed.
-If True the EPO has been tripped, movement is disabled if the EPO is not ignored (see SetEpoIgnore)
-    Movement can be re-enabled by calling ResetEpo.
+        Reads the system EPO latch state.
+        If False the EPO has not been tripped, and movement is allowed.
+        If True the EPO has been tripped, movement is disabled if the EPO is not ignored (see SetEpoIgnore)
+            Movement can be re-enabled by calling ResetEpo.
         """
         # noinspection PyBroadException
         try:
@@ -717,16 +745,13 @@ If True the EPO has been tripped, movement is disabled if the EPO is not ignored
             self.Print('Failed reading EPO ignore state! {}'.format(str(e)))
             return
 
-        if i2cRecv[1] == COMMAND_VALUE_OFF:
-            return False
-        else:
-            return True
+        return i2cRecv[1] != COMMAND_VALUE_OFF
 
     def SetEpoIgnore(self, state):
         """
-SetEpoIgnore(state)
+        SetEpoIgnore(state)
 
-Sets the system to ignore or use the EPO latch, set to False if you have an EPO switch, True if you do not
+        Sets the system to ignore or use the EPO latch, set to False if you have an EPO switch, True if you do not
         """
         if state:
             level = COMMAND_VALUE_ON
@@ -743,9 +768,9 @@ Sets the system to ignore or use the EPO latch, set to False if you have an EPO 
 
     def GetEpoIgnore(self):
         """
-state = GetEpoIgnore()
+        state = GetEpoIgnore()
 
-Reads the system EPO ignore state, False for using the EPO latch, True for ignoring the EPO latch
+        Reads the system EPO ignore state, False for using the EPO latch, True for ignoring the EPO latch
         """
         # noinspection PyBroadException
         try:
@@ -756,18 +781,15 @@ Reads the system EPO ignore state, False for using the EPO latch, True for ignor
             self.Print('Failed reading EPO ignore state! {}'.format(str(e)))
             return
 
-        if i2cRecv[1] == COMMAND_VALUE_OFF:
-            return False
-        else:
-            return True
+        return i2cRecv[1] != COMMAND_VALUE_OFF
 
     def HasNewIrMessage(self):
         """
-state = HasNewIrMessage()
+        state = HasNewIrMessage()
 
-Reads the new IR message received flag.
-If False there has been no messages to the IR sensor since the last read.
-If True there has been a new IR message which can be read using GetIrMessage().
+        Reads the new IR message received flag.
+        If False there has been no messages to the IR sensor since the last read.
+        If True there has been a new IR message which can be read using GetIrMessage().
         """
         try:
             i2cRecv = self.RawRead(COMMAND_GET_NEW_IR, I2C_NORM_LEN)
@@ -777,18 +799,15 @@ If True there has been a new IR message which can be read using GetIrMessage().
             self.Print('Failed reading new IR message received flag!')
             raise e
 
-        if i2cRecv[1] == COMMAND_VALUE_OFF:
-            return False
-        else:
-            return True
+        return i2cRecv[1] != COMMAND_VALUE_OFF
 
     def GetIrMessage(self):
         """
-message = GetIrMessage()
+        message = GetIrMessage()
 
-Reads the last IR message which has been received and clears the new IR message received flag.
-Returns the bytes from the remote control as a hexadecimal string, e.g. 'F75AD5AA8000'
-Use HasNewIrMessage() to see if there has been a new IR message since the last call.
+        Reads the last IR message which has been received and clears the new IR message received flag.
+        Returns the bytes from the remote control as a hexadecimal string, e.g. 'F75AD5AA8000'
+        Use HasNewIrMessage() to see if there has been a new IR message since the last call.
         """
         # noinspection PyBroadException
         try:
@@ -806,9 +825,9 @@ Use HasNewIrMessage() to see if there has been a new IR message since the last c
 
     def SetLedIr(self, state):
         """
-SetLedIr(state)
+        SetLedIr(state)
 
-Sets if IR messages control the state of the LED, False for no effect, True for incoming messages blink the LED
+        Sets if IR messages control the state of the LED, False for no effect, True for incoming messages blink the LED
         """
         if state:
             level = COMMAND_VALUE_ON
@@ -825,9 +844,9 @@ Sets if IR messages control the state of the LED, False for no effect, True for 
 
     def GetLedIr(self):
         """
-state = GetLedIr()
+        state = GetLedIr()
 
-Reads if IR messages control the state of the LED, False for no effect, True for incoming messages blink the LED
+        Reads if IR messages control the state of the LED, False for no effect, True for incoming messages blink the LED
         """
         # noinspection PyBroadException
         try:
@@ -838,17 +857,14 @@ Reads if IR messages control the state of the LED, False for no effect, True for
             self.Print('Failed reading LED state! {}'.format(str(e)))
             return
 
-        if i2cRecv[1] == COMMAND_VALUE_OFF:
-            return False
-        else:
-            return True
+        return i2cRecv[1] != COMMAND_VALUE_OFF
 
     def GetAnalog1(self):
         """
-voltage = GetAnalog1()
+        voltage = GetAnalog1()
 
-Reads the current analog level from port #1 (pin 2).
-Returns the value as a voltage based on the 3.3 V reference pin (pin 1).
+        Reads the current analog level from port #1 (pin 2).
+        Returns the value as a voltage based on the 3.3 V reference pin (pin 1).
         """
         # noinspection PyBroadException
         try:
@@ -865,10 +881,10 @@ Returns the value as a voltage based on the 3.3 V reference pin (pin 1).
 
     def GetAnalog2(self):
         """
-voltage = GetAnalog2()
+        voltage = GetAnalog2()
 
-Reads the current analog level from port #2 (pin 4).
-Returns the value as a voltage based on the 3.3 V reference pin (pin 1).
+        Reads the current analog level from port #2 (pin 4).
+        Returns the value as a voltage based on the 3.3 V reference pin (pin 1).
         """
         # noinspection PyBroadException
         try:
@@ -885,12 +901,12 @@ Returns the value as a voltage based on the 3.3 V reference pin (pin 1).
 
     def SetCommsFailsafe(self, state):
         """
-SetCommsFailsafe(state)
+        SetCommsFailsafe(state)
 
-Sets the system to enable or disable the communications failsafe
-The failsafe will turn the motors off unless it is commanded at least once every 1/4 of a second
-Set to True to enable this failsafe, set to False to disable this failsafe
-The failsafe is disabled at power on
+        Sets the system to enable or disable the communications failsafe
+        The failsafe will turn the motors off unless it is commanded at least once every 1/4 of a second
+        Set to True to enable this failsafe, set to False to disable this failsafe
+        The failsafe is disabled at power on
         """
         if state:
             level = COMMAND_VALUE_ON
@@ -903,14 +919,16 @@ The failsafe is disabled at power on
         except KeyboardInterrupt:
             raise
         except Exception as e:
-            self.Print('Failed sending communications failsafe state! {}'.format(str(e)))
+            self.Print(
+                'Failed sending communications failsafe state! {}'.format(str(e))
+            )
 
     def GetCommsFailsafe(self):
         """
-state = GetCommsFailsafe()
+        state = GetCommsFailsafe()
 
-Read the current system state of the communications failsafe, True for enabled, False for disabled
-The failsafe will turn the motors off unless it is commanded at least once every 1/4 of a second
+        Read the current system state of the communications failsafe, True for enabled, False for disabled
+        The failsafe will turn the motors off unless it is commanded at least once every 1/4 of a second
         """
         # noinspection PyBroadException
         try:
@@ -918,23 +936,25 @@ The failsafe will turn the motors off unless it is commanded at least once every
         except KeyboardInterrupt:
             raise
         except Exception as e:
-            self.Print('Failed reading communications failsafe state! {}'.format(str(e)))
+            self.Print(
+                'Failed reading communications failsafe state! {}'.format(str(e))
+            )
             return
 
-        if i2cRecv[1] == COMMAND_VALUE_OFF:
-            return False
-        else:
-            return True
+        return i2cRecv[1] != COMMAND_VALUE_OFF
 
     def Help(self):
         """
-Help()
+        Help()
 
-Displays the names and descriptions of the various functions and settings provided
+        Displays the names and descriptions of the various functions and settings provided
         """
         # noinspection PyTypeChecker
-        funcList = [ZeroBorg.__dict__.get(a) for a in dir(ZeroBorg) if
-                    isinstance(ZeroBorg.__dict__.get(a), types.FunctionType)]
+        funcList = [
+            ZeroBorg.__dict__.get(a)
+            for a in dir(ZeroBorg)
+            if isinstance(ZeroBorg.__dict__.get(a), types.FunctionType)
+        ]
         funcListSorted = sorted(funcList, key=lambda x: x.func_code.co_firstlineno)
 
         print(self.__doc__)

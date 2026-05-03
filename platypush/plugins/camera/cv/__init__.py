@@ -14,7 +14,7 @@ class CameraCvPlugin(CameraPlugin):
         color_transform: Optional[str] = 'COLOR_BGR2RGB',
         video_type: str = 'XVID',
         video_writer: str = 'ffmpeg',
-        **kwargs
+        **kwargs,
     ):
         """
         :param device: Device ID (0 for the first camera, 1 for the second etc.) or path (e.g. ``/dev/video0``).

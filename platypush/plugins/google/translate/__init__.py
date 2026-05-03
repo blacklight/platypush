@@ -36,7 +36,7 @@ class GoogleTranslatePlugin(Plugin):
         self,
         target_language: str = 'en',
         credentials_file: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param target_language: Default target language (default: 'en').

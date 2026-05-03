@@ -92,8 +92,10 @@ class Workers:
         self.request_queue = Queue()
         self.response_queue = Queue()
         # noinspection PyArgumentList
-        self._workers = [worker_type(self.request_queue, self.response_queue, id=i, *args, **kwargs)
-                         for i in range(n_workers)]
+        self._workers = [
+            worker_type(self.request_queue, self.response_queue, *args, id=i, **kwargs)
+            for i in range(n_workers)
+        ]
         self.responses = []
 
     def start(self):

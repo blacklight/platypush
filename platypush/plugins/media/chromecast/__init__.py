@@ -161,9 +161,9 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
                 resource.close()
 
         self._chromecasts_by_uuid[cast.uuid] = cast
-        self._chromecasts_by_name[
-            self._get_device_property(cast, 'friendly_name')
-        ] = cast
+        self._chromecasts_by_name[self._get_device_property(cast, 'friendly_name')] = (
+            cast
+        )
 
     def get_chromecast(self, chromecast=None) -> Chromecast:
         if isinstance(chromecast, Chromecast):
@@ -225,9 +225,9 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
         post_event(MediaPlayRequestEvent, resource=resource, device=chromecast)
         cast = self.get_chromecast(chromecast)
         mc = cast.media_controller
-        media = self._latest_resource = self._latest_resources_by_device[
-            cast.uuid
-        ] = self._get_resource(resource, **kwargs)
+        media = self._latest_resource = self._latest_resources_by_device[cast.uuid] = (
+            self._get_resource(resource, **kwargs)
+        )
 
         youtube_format = youtube_format or self.youtube_format
         use_ytdl = use_ytdl if use_ytdl is not None else self._use_ytdl

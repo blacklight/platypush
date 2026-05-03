@@ -80,9 +80,9 @@ class MailOutPlugin(BaseMailPlugin, ABC):
                 attachment = os.path.abspath(os.path.expanduser(attachment))
                 assert os.path.isfile(attachment), f'No such file: {attachment}'
                 part = cls._file_to_part(attachment)
-                part[
-                    'Content-Disposition'
-                ] = f'attachment; filename="{os.path.basename(attachment)}"'
+                part['Content-Disposition'] = (
+                    f'attachment; filename="{os.path.basename(attachment)}"'
+                )
                 msg.attach(part)
         else:
             msg = content

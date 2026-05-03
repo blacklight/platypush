@@ -12,8 +12,7 @@ class WidgetUpdateEvent(Event):
         :type widget: str
         """
 
-        super().__init__(widget=widget, *args, **kwargs)
+        super().__init__(*args, widget=widget, **kwargs)
 
 
 # vim:sw=4:ts=4:et:
-

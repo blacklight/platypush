@@ -40,35 +40,64 @@ class SpotifySchema(Schema):
 
 
 class SpotifyDeviceSchema(SpotifySchema):
-    id = fields.String(required=True, dump_only=True, metadata=dict(description='Device unique ID'))
-    name = fields.String(required=True, metadata=dict(description='Device name'))
-    type = fields.String(attribute='deviceType', required=True, validate=OneOf(device_types),
-                         metadata=dict(description=f'Supported types: [{", ".join(device_types)}]'))
-    volume = fields.Int(attribute='volume_percent', validate=Range(min=0, max=100),
-                        metadata=dict(description='Player volume in percentage [0-100]'))
-    is_active = fields.Boolean(required=True, dump_only=True,
-                               metadata=dict(description='True if the device is currently active'))
-    is_restricted = fields.Boolean(required=True, metadata=dict(description='True if the device has restricted access'))
-    is_private_session = fields.Boolean(required=False,
-                                        metadata=dict(description='True if the device is currently playing a private '
-                                                                  'session'))
+    id = fields.String(
+        required=True, dump_only=True, metadata={'description': 'Device unique ID'}
+    )
+    name = fields.String(required=True, metadata={'description': 'Device name'})
+    type = fields.String(
+        attribute='deviceType',
+        required=True,
+        validate=OneOf(device_types),
+        metadata={'description': f'Supported types: [{", ".join(device_types)}]'},
+    )
+    volume = fields.Int(
+        attribute='volume_percent',
+        validate=Range(min=0, max=100),
+        metadata={'description': 'Player volume in percentage [0-100]'},
+    )
+    is_active = fields.Boolean(
+        required=True,
+        dump_only=True,
+        metadata={'description': 'True if the device is currently active'},
+    )
+    is_restricted = fields.Boolean(
+        required=True,
+        metadata={'description': 'True if the device has restricted access'},
+    )
+    is_private_session = fields.Boolean(
+        required=False,
+        metadata={
+            'description': 'True if the device is currently playing a private session'
+        },
+    )
 
 
 class SpotifyTrackSchema(SpotifySchema):
-    id = fields.String(required=True, dump_only=True, metadata=dict(description='Spotify ID'))
-    uri = fields.String(required=True, dump_only=True, metadata=dict(description='Spotify URI'))
-    url = fields.String(dump_only=True, metadata=dict(description='Spotify URL'))
-    file = fields.String(required=True, dump_only=True,
-                         metadata=dict(description='Cross-compatibility file ID (same as uri)'))
-    title = fields.String(attribute='name', required=True, metadata=dict(description='Track title'))
-    artist = fields.String(metadata=dict(description='Track artist'))
-    album = fields.String(metadata=dict(description='Track album'))
-    image_url = fields.String(metadata=dict(description='Album image URL'))
-    date = fields.Int(metadata=dict(description='Track year release date'))
-    track = fields.Int(attribute='track_number', metadata=dict(description='Album track number'))
-    duration = fields.Float(metadata=dict(description='Track duration in seconds'))
-    popularity = fields.Int(metadata=dict(description='Popularity between 0 and 100'))
-    type = fields.Constant('track', metadata=dict(description='track'))
+    id = fields.String(
+        required=True, dump_only=True, metadata={'description': 'Spotify ID'}
+    )
+    uri = fields.String(
+        required=True, dump_only=True, metadata={'description': 'Spotify URI'}
+    )
+    url = fields.String(dump_only=True, metadata={'description': 'Spotify URL'})
+    file = fields.String(
+        required=True,
+        dump_only=True,
+        metadata={'description': 'Cross-compatibility file ID (same as uri)'},
+    )
+    title = fields.String(
+        attribute='name', required=True, metadata={'description': 'Track title'}
+    )
+    artist = fields.String(metadata={'description': 'Track artist'})
+    album = fields.String(metadata={'description': 'Track album'})
+    image_url = fields.String(metadata={'description': 'Album image URL'})
+    date = fields.Int(metadata={'description': 'Track year release date'})
+    track = fields.Int(
+        attribute='track_number', metadata={'description': 'Album track number'}
+    )
+    duration = fields.Float(metadata={'description': 'Track duration in seconds'})
+    popularity = fields.Int(metadata={'description': 'Popularity between 0 and 100'})
+    type = fields.Constant('track', metadata={'description': 'track'})
 
     @pre_dump
     def normalize_fields(self, data, **_):
@@ -82,28 +111,34 @@ class SpotifyTrackSchema(SpotifySchema):
 
         artists = data.pop('artists', [])
         if artists:
-            data['artist'] = '; '.join([
-                artist['name'] for artist in artists
-            ])
+            data['artist'] = '; '.join([artist['name'] for artist in artists])
 
         duration_ms = data.pop('duration_ms', None)
         if duration_ms:
-            data['duration'] = duration_ms/1000.
+            data['duration'] = duration_ms / 1000.0
 
         return data
 
 
 class SpotifyAlbumSchema(SpotifySchema):
-    id = fields.String(required=True, dump_only=True, metadata=dict(description='Spotify ID'))
-    uri = fields.String(required=True, dump_only=True, metadata=dict(description='Spotify URI'))
-    url = fields.String(dump_only=True, metadata=dict(description='Spotify URL'))
-    name = fields.String(required=True, metadata=dict(description='Name/title'))
-    artist = fields.String(metadata=dict(description='Artist'))
-    image_url = fields.String(metadata=dict(description='Image URL'))
-    date = fields.Int(metadata=dict(description='Release date'))
-    tracks = fields.Nested(SpotifyTrackSchema, many=True, metadata=dict(description='List of tracks on the album'))
-    popularity = fields.Int(metadata=dict(description='Popularity between 0 and 100'))
-    type = fields.Constant('album', metadata=dict(description='album'))
+    id = fields.String(
+        required=True, dump_only=True, metadata={'description': 'Spotify ID'}
+    )
+    uri = fields.String(
+        required=True, dump_only=True, metadata={'description': 'Spotify URI'}
+    )
+    url = fields.String(dump_only=True, metadata={'description': 'Spotify URL'})
+    name = fields.String(required=True, metadata={'description': 'Name/title'})
+    artist = fields.String(metadata={'description': 'Artist'})
+    image_url = fields.String(metadata={'description': 'Image URL'})
+    date = fields.Int(metadata={'description': 'Release date'})
+    tracks = fields.Nested(
+        SpotifyTrackSchema,
+        many=True,
+        metadata={'description': 'List of tracks on the album'},
+    )
+    popularity = fields.Int(metadata={'description': 'Popularity between 0 and 100'})
+    type = fields.Constant('album', metadata={'description': 'album'})
 
     @pre_dump
     def normalize(self, data, **_):
@@ -134,25 +169,57 @@ class SpotifyUserSchema(SpotifySchema):
 
 
 class SpotifyPlaylistTrackSchema(SpotifyTrackSchema):
-    position = fields.Int(validate=Range(min=1), metadata=dict(description='Position of the track in the playlist'))
-    added_at = fields.DateTime(metadata=dict(description='When the track was added to the playlist'))
-    added_by = fields.Nested(SpotifyUserSchema, metadata=dict(description='User that added the track'))
-    type = fields.Constant('playlist', metadata=dict(description='playlist'))
+    position = fields.Int(
+        validate=Range(min=1),
+        metadata={'description': 'Position of the track in the playlist'},
+    )
+    added_at = fields.DateTime(
+        metadata={'description': 'When the track was added to the playlist'}
+    )
+    added_by = fields.Nested(
+        SpotifyUserSchema, metadata={'description': 'User that added the track'}
+    )
+    type = fields.Constant('playlist', metadata={'description': 'playlist'})
 
 
 class SpotifyStatusSchema(SpotifySchema):
-    device_id = fields.String(required=True, dump_only=True, metadata=dict(description='Playing device unique ID'))
-    device_name = fields.String(required=True, metadata=dict(description='Playing device name'))
-    state = fields.String(required=True, validate=OneOf([s.value for s in PlayerState]),
-                          metadata=dict(description=f'Supported types: [{", ".join([s.value for s in PlayerState])}]'))
-    volume = fields.Int(validate=Range(min=0, max=100), required=False,
-                        metadata=dict(description='Player volume in percentage [0-100]'))
-    elapsed = fields.Float(required=False, metadata=dict(description='Time elapsed into the current track'))
-    time = fields.Float(required=False, metadata=dict(description='Duration of the current track'))
-    repeat = fields.Boolean(metadata=dict(description='True if the device is in repeat mode'))
-    random = fields.Boolean(attribute='shuffle_state',
-                            metadata=dict(description='True if the device is in shuffle mode'))
-    track = fields.Nested(SpotifyTrackSchema, metadata=dict(description='Information about the current track'))
+    device_id = fields.String(
+        required=True,
+        dump_only=True,
+        metadata={'description': 'Playing device unique ID'},
+    )
+    device_name = fields.String(
+        required=True, metadata={'description': 'Playing device name'}
+    )
+    state = fields.String(
+        required=True,
+        validate=OneOf([s.value for s in PlayerState]),
+        metadata={
+            'description': f'Supported types: [{", ".join([s.value for s in PlayerState])}]'
+        },
+    )
+    volume = fields.Int(
+        validate=Range(min=0, max=100),
+        required=False,
+        metadata={'description': 'Player volume in percentage [0-100]'},
+    )
+    elapsed = fields.Float(
+        required=False, metadata={'description': 'Time elapsed into the current track'}
+    )
+    time = fields.Float(
+        required=False, metadata={'description': 'Duration of the current track'}
+    )
+    repeat = fields.Boolean(
+        metadata={'description': 'True if the device is in repeat mode'}
+    )
+    random = fields.Boolean(
+        attribute='shuffle_state',
+        metadata={'description': 'True if the device is in shuffle mode'},
+    )
+    track = fields.Nested(
+        SpotifyTrackSchema,
+        metadata={'description': 'Information about the current track'},
+    )
 
     @pre_dump
     def normalize_fields(self, data, **_):
@@ -165,14 +232,14 @@ class SpotifyStatusSchema(SpotifySchema):
 
         elapsed = data.pop('progress_ms', None)
         if elapsed is not None:
-            data['elapsed'] = int(elapsed)/1000.
+            data['elapsed'] = int(elapsed) / 1000.0
 
         track = data.pop('item', {})
         if track:
             data['track'] = track
             duration = track.get('duration_ms')
             if duration is not None:
-                data['time'] = int(duration)/1000.
+                data['time'] = int(duration) / 1000.0
 
         is_playing = data.pop('is_playing', None)
         if is_playing is True:
@@ -181,12 +248,12 @@ class SpotifyStatusSchema(SpotifySchema):
             data['state'] = PlayerState.PAUSE.value
 
         repeat = data.pop('repeat_state', None)
-        data['repeat'] = False if (not repeat or repeat == 'off') else True
+        data['repeat'] = not (not repeat or repeat == 'off')
         return data
 
 
 class SpotifyHistoryItemSchema(SpotifyTrackSchema):
-    played_at = fields.DateTime(metadata=dict(description='Item play datetime'))
+    played_at = fields.DateTime(metadata={'description': 'Item play datetime'})
 
     @pre_dump
     def _normalize_timestamps(self, data, **_):
@@ -199,23 +266,30 @@ class SpotifyHistoryItemSchema(SpotifyTrackSchema):
 
 class SpotifyPlaylistSchema(SpotifySchema):
     id = fields.String(required=True, dump_only=True)
-    uri = fields.String(required=True, dump_only=True, metadata=dict(
-        description='Playlist unique Spotify URI'
-    ))
-    url = fields.String(dump_only=True, metadata=dict(description='Spotify URL'))
+    uri = fields.String(
+        required=True,
+        dump_only=True,
+        metadata={'description': 'Playlist unique Spotify URI'},
+    )
+    url = fields.String(dump_only=True, metadata={'description': 'Spotify URL'})
     name = fields.String(required=True)
     description = fields.String()
-    owner = fields.Nested(SpotifyUserSchema, metadata=dict(
-        description='Playlist owner data'
-    ))
+    owner = fields.Nested(
+        SpotifyUserSchema, metadata={'description': 'Playlist owner data'}
+    )
     collaborative = fields.Boolean()
     public = fields.Boolean()
-    snapshot_id = fields.String(dump_only=True, metadata=dict(
-        description='Playlist snapshot ID - it changes when the playlist is modified'
-    ))
-    tracks = fields.Nested(SpotifyPlaylistTrackSchema, many=True, metadata=dict(
-        description='List of tracks in the playlist'
-    ))
+    snapshot_id = fields.String(
+        dump_only=True,
+        metadata={
+            'description': 'Playlist snapshot ID - it changes when the playlist is modified'
+        },
+    )
+    tracks = fields.Nested(
+        SpotifyPlaylistTrackSchema,
+        many=True,
+        metadata={'description': 'List of tracks in the playlist'},
+    )
 
     @pre_dump
     def _normalize_tracks(self, data, **_):
@@ -224,12 +298,15 @@ class SpotifyPlaylistSchema(SpotifySchema):
                 data.pop('tracks')
             else:
                 data['tracks'] = [
-                    {
-                        **track['track'],
-                        'added_at': normalize_datetime(track.get('added_at')),
-                        'added_by': track.get('added_by'),
-                    }
-                    if isinstance(track.get('track'), dict) else track
+                    (
+                        {
+                            **track['track'],
+                            'added_at': normalize_datetime(track.get('added_at')),
+                            'added_by': track.get('added_by'),
+                        }
+                        if isinstance(track.get('track'), dict)
+                        else track
+                    )
                     for track in data['tracks']
                 ]
 
@@ -237,9 +314,9 @@ class SpotifyPlaylistSchema(SpotifySchema):
 
 
 class SpotifyEpisodeSchema(SpotifyTrackSchema):
-    description = fields.String(metadata=dict(description='Episode description'))
-    show = fields.String(metadata=dict(description='Episode show name'))
-    type = fields.Constant('episode', metadata=dict(description='episode'))
+    description = fields.String(metadata={'description': 'Episode description'})
+    show = fields.String(metadata={'description': 'Episode show name'})
+    type = fields.Constant('episode', metadata={'description': 'episode'})
 
     @pre_dump
     def normalize_fields(self, data, **_):
@@ -257,9 +334,9 @@ class SpotifyEpisodeSchema(SpotifyTrackSchema):
 
 
 class SpotifyShowSchema(SpotifyAlbumSchema):
-    description = fields.String(metadata=dict(description='Show description'))
-    publisher = fields.String(metadata=dict(description='Show publisher name'))
-    type = fields.Constant('show', metadata=dict(description='show'))
+    description = fields.String(metadata={'description': 'Show description'})
+    publisher = fields.String(metadata={'description': 'Show publisher name'})
+    type = fields.Constant('show', metadata={'description': 'show'})
 
     @pre_dump
     def normalize_fields(self, data, **_):
@@ -275,14 +352,14 @@ class SpotifyShowSchema(SpotifyAlbumSchema):
 
 
 class SpotifyArtistSchema(SpotifySchema):
-    id = fields.String(metadata=dict(description='Spotify ID'))
-    uri = fields.String(metadata=dict(description='Spotify URI'))
-    url = fields.String(dump_only=True, metadata=dict(description='Spotify URL'))
-    name = fields.String(metadata=dict(description='Artist name'))
-    genres = fields.List(fields.String, metadata=dict(description='Artist genres'))
-    popularity = fields.Int(metadata=dict(description='Popularity between 0 and 100'))
-    image_url = fields.String(metadata=dict(description='Image URL'))
-    type = fields.Constant('artist', metadata=dict(description='artist'))
+    id = fields.String(metadata={'description': 'Spotify ID'})
+    uri = fields.String(metadata={'description': 'Spotify URI'})
+    url = fields.String(dump_only=True, metadata={'description': 'Spotify URL'})
+    name = fields.String(metadata={'description': 'Artist name'})
+    genres = fields.List(fields.String, metadata={'description': 'Artist genres'})
+    popularity = fields.Int(metadata={'description': 'Popularity between 0 and 100'})
+    image_url = fields.String(metadata={'description': 'Image URL'})
+    type = fields.Constant('artist', metadata={'description': 'artist'})
 
     @pre_dump
     def normalize_fields(self, data, **_):

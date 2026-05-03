@@ -582,7 +582,7 @@ class Manifest(ABC):
 
     @staticmethod
     def _init_events(
-        events: Union[Iterable[str], Mapping[str, Optional[str]]]
+        events: Union[Iterable[str], Mapping[str, Optional[str]]],
     ) -> Dict[Type, str]:
         evt_dict = (
             events if isinstance(events, Mapping) else dict.fromkeys(events, None)

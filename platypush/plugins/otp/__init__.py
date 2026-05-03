@@ -19,7 +19,7 @@ class OtpPlugin(Plugin):
         secret_path: Optional[str] = None,
         provisioning_name: Optional[str] = None,
         issuer: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param secret: Base32-encoded secret to be used for password generation.

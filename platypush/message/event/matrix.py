@@ -20,7 +20,7 @@ class MatrixEvent(Event):
         room_name: Optional[str] = None,
         room_topic: Optional[str] = None,
         server_timestamp: Optional[datetime] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param server_url: Base server URL.
@@ -75,7 +75,7 @@ class MatrixMessageEvent(MatrixEvent):
         mimetype: Optional[str] = None,
         formatted_body: Optional[str] = None,
         format: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param body: The body of the message.
@@ -93,7 +93,7 @@ class MatrixMessageEvent(MatrixEvent):
             mimetype=mimetype,
             formatted_body=formatted_body,
             format=format,
-            **kwargs
+            **kwargs,
         )
 
 

@@ -65,7 +65,7 @@ class GooglePlugin(Plugin):
         self,
         scopes: Optional[Collection[str]] = None,
         secrets_path: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param scopes: List of scopes required by the API.

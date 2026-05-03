@@ -36,7 +36,7 @@ class PwmPca9685Plugin(Plugin):
         min_duty_cycle: int = 0,
         max_duty_cycle: int = 0xFFFF,
         channels: Optional[Iterable[int]] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param frequency: Default PWM frequency to use for the driver, in Hz.
@@ -129,7 +129,7 @@ class PwmPca9685Plugin(Plugin):
             channel, as a percentage value between 0 and 1.
         """
         if not self._pca:
-            return {i: 0 for i in self.channels}
+            return dict.fromkeys(self.channels, 0)
 
         return {i: channel.duty_cycle for i, channel in enumerate(self._pca.channels)}
 

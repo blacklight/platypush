@@ -15,7 +15,7 @@ class DistanceSensorEvent(Event):
             unit=unit,
             logging_level=logging.DEBUG,
             disable_web_clients_notification=True,
-            **kwargs
+            **kwargs,
         )
 
 

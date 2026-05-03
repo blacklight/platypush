@@ -2,10 +2,12 @@ from platypush.message.event import Event
 
 
 class MusicEvent(Event):
-    """ Base class for music events """
+    """Base class for music events"""
 
     def __init__(self, status, track, plugin_name=None, *args, **kwargs):
-        super().__init__(*args, status=status, track=track, plugin_name=plugin_name, **kwargs)
+        super().__init__(
+            *args, status=status, track=track, plugin_name=plugin_name, **kwargs
+        )
 
 
 class MusicPlayEvent(MusicEvent):
@@ -49,7 +51,7 @@ class SeekChangeEvent(MusicEvent):
     """
 
     def __init__(self, position, status=None, track=None, *args, **kwargs):
-        super().__init__(position=position, status=status, track=track, *args, **kwargs)
+        super().__init__(*args, position=position, status=status, track=track, **kwargs)
 
 
 class VolumeChangeEvent(MusicEvent):
@@ -58,7 +60,7 @@ class VolumeChangeEvent(MusicEvent):
     """
 
     def __init__(self, volume, status=None, track=None, *args, **kwargs):
-        super().__init__(volume=volume, status=status, track=track, *args, **kwargs)
+        super().__init__(*args, volume=volume, status=status, track=track, **kwargs)
 
 
 class MuteChangeEvent(MusicEvent):
@@ -67,7 +69,7 @@ class MuteChangeEvent(MusicEvent):
     """
 
     def __init__(self, mute, status=None, track=None, *args, **kwargs):
-        super().__init__(mute=mute, status=status, track=track, *args, **kwargs)
+        super().__init__(*args, mute=mute, status=status, track=track, **kwargs)
 
 
 class PlaybackRepeatModeChangeEvent(MusicEvent):
@@ -76,7 +78,7 @@ class PlaybackRepeatModeChangeEvent(MusicEvent):
     """
 
     def __init__(self, state, status=None, track=None, *args, **kwargs):
-        super().__init__(state=state, status=status, track=track, *args, **kwargs)
+        super().__init__(*args, state=state, status=status, track=track, **kwargs)
 
 
 class PlaybackRandomModeChangeEvent(MusicEvent):
@@ -85,7 +87,7 @@ class PlaybackRandomModeChangeEvent(MusicEvent):
     """
 
     def __init__(self, state, status=None, track=None, *args, **kwargs):
-        super().__init__(state=state, status=status, track=track, *args, **kwargs)
+        super().__init__(*args, state=state, status=status, track=track, **kwargs)
 
 
 class PlaybackConsumeModeChangeEvent(MusicEvent):
@@ -94,7 +96,7 @@ class PlaybackConsumeModeChangeEvent(MusicEvent):
     """
 
     def __init__(self, state, status=None, track=None, *args, **kwargs):
-        super().__init__(state=state, status=status, track=track, *args, **kwargs)
+        super().__init__(*args, state=state, status=status, track=track, **kwargs)
 
 
 class PlaybackSingleModeChangeEvent(MusicEvent):
@@ -103,7 +105,7 @@ class PlaybackSingleModeChangeEvent(MusicEvent):
     """
 
     def __init__(self, state, status=None, track=None, *args, **kwargs):
-        super().__init__(state=state, status=status, track=track, *args, **kwargs)
+        super().__init__(*args, state=state, status=status, track=track, **kwargs)
 
 
 class PlaylistChangeEvent(MusicEvent):
@@ -123,7 +125,7 @@ class PlaylistChangeEvent(MusicEvent):
         :type track: dict
         """
 
-        super().__init__(changes=changes, status=status, track=track, *args, **kwargs)
+        super().__init__(*args, changes=changes, status=status, track=track, **kwargs)
 
 
 class NewPlayingTrackEvent(MusicEvent):
@@ -144,4 +146,3 @@ class NewPlayingTrackEvent(MusicEvent):
 
 
 # vim:sw=4:ts=4:et:
-

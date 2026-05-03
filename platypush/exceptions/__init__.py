@@ -5,6 +5,7 @@ class PlatypushException(Exception):
     """
     Base class for all Platypush exceptions.
     """
+
     def __init__(self, error: Optional[Union[str, Exception]] = None, *args):
         super().__init__(*args)
         self._inner_exception = None

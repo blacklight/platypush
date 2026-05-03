@@ -14,4 +14,3 @@ class GPIOEvent(Event):
         :param value: Current value of the PIN.
         """
         super().__init__(*args, pin=pin, value=value, **kwargs)
-

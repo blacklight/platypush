@@ -190,9 +190,9 @@ class YoutubeVideoSchema(Schema):
             data['channel'] = snippet.get(
                 'videoOwnerChannelTitle', snippet.get('channelTitle', '[No Channel]')
             )
-            data[
-                'channel_url'
-            ] = f'https://youtube.com/channel/{snippet["videoOwnerChannelId"]}'
+            data['channel_url'] = (
+                f'https://youtube.com/channel/{snippet["videoOwnerChannelId"]}'
+            )
         else:
             data['channel'] = snippet.get('channelTitle', '[No Channel]')
             data['channel_url'] = 'https://youtube.com/channel/' + snippet.get(
@@ -330,9 +330,9 @@ class YoutubePlaylistSchema(Schema):
             data['url'] = f'https://youtube.com/playlist?list={data["id"]}'
 
         if data.get('snippet', {}).get('channelId'):
-            data[
-                'channel_url'
-            ] = f'https://youtube.com/channel/{data["snippet"]["channelId"]}'
+            data['channel_url'] = (
+                f'https://youtube.com/channel/{data["snippet"]["channelId"]}'
+            )
 
         return data
 
@@ -496,9 +496,9 @@ class YoutubeChannelSchema(Schema):
     def fill_url(self, data: dict, **_):
         snippet = data.get('snippet', {})
         if snippet.get('resourceId', {}).get('channelId'):
-            data[
-                'url'
-            ] = f'https://youtube.com/channel/{snippet["resourceId"]["channelId"]}'
+            data['url'] = (
+                f'https://youtube.com/channel/{snippet["resourceId"]["channelId"]}'
+            )
         elif snippet.get('channelId'):
             data['url'] = f'https://youtube.com/channel/{snippet["channelId"]}'
         elif data.get('id'):

@@ -7,9 +7,16 @@ class DbusSignalEvent(Event):
     """
     Event triggered when a signal is received on the D-Bus.
     """
+
     def __init__(
-        self, bus: str, interface: str, sender: str, path: str, signal: str,
-        params: Optional[Iterable[Any]] = None, **kwargs
+        self,
+        bus: str,
+        interface: str,
+        sender: str,
+        path: str,
+        signal: str,
+        params: Optional[Iterable[Any]] = None,
+        **kwargs,
     ):
         """
         :param bus: Bus type (``session`` or ``system``).
@@ -19,5 +26,12 @@ class DbusSignalEvent(Event):
         :param signal: Signal name.
         :param params: Signal payload.
         """
-        super().__init__(bus=bus, interface=interface, sender=sender,
-                         path=path, signal=signal, params=params, **kwargs)
+        super().__init__(
+            bus=bus,
+            interface=interface,
+            sender=sender,
+            path=path,
+            signal=signal,
+            params=params,
+            **kwargs,
+        )

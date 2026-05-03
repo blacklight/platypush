@@ -498,9 +498,11 @@ class AudioThread(Thread, ABC):
             'audio_pass_through': self.audio_pass_through,
             'state': self._state.value,
             'volume': self.volume,
-            'started_time': datetime.fromtimestamp(self._started_time)
-            if self._started_time
-            else None,
+            'started_time': (
+                datetime.fromtimestamp(self._started_time)
+                if self._started_time
+                else None
+            ),
             'stream_index': self.stream_index,
             'stream_name': self.stream_name,
         }

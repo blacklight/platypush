@@ -21,7 +21,7 @@ class KafkaMessageEvent(Event):
         timestamp: float,
         key: Optional[str] = None,
         headers: Optional[Iterable] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param msg: Received message. If the message is a JSON string, it will

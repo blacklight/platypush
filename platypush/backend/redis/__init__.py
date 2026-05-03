@@ -22,7 +22,7 @@ class RedisBackend(Backend):
         *args,
         queue: str = 'platypush/backend/redis',
         redis_args: Optional[Dict[str, Any]] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param queue: Name of the Redis queue to listen to (default:

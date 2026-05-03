@@ -15,8 +15,7 @@ class HttpEvent(Event):
         :type response: dict or list
         """
 
-        super().__init__(request=request, response=response, *args, **kwargs)
+        super().__init__(*args, request=request, response=response, **kwargs)
 
 
 # vim:sw=4:ts=4:et:
-

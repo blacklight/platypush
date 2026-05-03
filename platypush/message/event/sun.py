@@ -8,14 +8,23 @@ class SunEvent(Event):
     """
     Base class for sun related events (sunrise and sunset).
     """
-    def __init__(self, latitude: Optional[float] = None, longitude: Optional[float] = None,
-                 time: Optional[datetime] = None, *args, **kwargs):
+
+    def __init__(
+        self,
+        latitude: Optional[float] = None,
+        longitude: Optional[float] = None,
+        time: Optional[datetime] = None,
+        *args,
+        **kwargs,
+    ):
         """
         :param latitude: Latitude for the sun event.
         :param longitude: Longitude for the sun event.
         :param time: Event timestamp.
         """
-        super().__init__(*args, latitude=latitude, longitude=longitude, time=time, **kwargs)
+        super().__init__(
+            *args, latitude=latitude, longitude=longitude, time=time, **kwargs
+        )
         self.latitude = latitude
         self.longitude = longitude
         self.time = time

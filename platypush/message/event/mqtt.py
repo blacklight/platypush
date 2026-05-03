@@ -8,8 +8,7 @@ class MQTTMessageEvent(Event):
     """
 
     def __init__(self, msg, host=None, port=None, topic=None, *args, **kwargs):
-        super().__init__(msg=msg, host=host, port=port, topic=topic,
-                         *args, **kwargs)
+        super().__init__(*args, msg=msg, host=host, port=port, topic=topic, **kwargs)
 
 
 # vim:sw=4:ts=4:et:

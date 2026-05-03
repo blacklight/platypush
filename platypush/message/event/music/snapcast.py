@@ -2,10 +2,10 @@ from platypush.message.event import Event
 
 
 class SnapcastEvent(Event):
-    """ Base class for Snapcast events """
+    """Base class for Snapcast events"""
 
     def __init__(self, host='localhost', *args, **kwargs):
-        super().__init__(host=host, *args, **kwargs)
+        super().__init__(*args, host=host, **kwargs)
 
 
 class ClientConnectedEvent(SnapcastEvent):
@@ -14,7 +14,7 @@ class ClientConnectedEvent(SnapcastEvent):
     """
 
     def __init__(self, client, host='localhost', *args, **kwargs):
-        super().__init__(client=client, host=host, *args, **kwargs)
+        super().__init__(*args, client=client, host=host, **kwargs)
 
 
 class ClientDisconnectedEvent(SnapcastEvent):
@@ -23,7 +23,7 @@ class ClientDisconnectedEvent(SnapcastEvent):
     """
 
     def __init__(self, client, host='localhost', *args, **kwargs):
-        super().__init__(client=client, host=host, *args, **kwargs)
+        super().__init__(*args, client=client, host=host, **kwargs)
 
 
 class ClientVolumeChangeEvent(SnapcastEvent):
@@ -32,8 +32,9 @@ class ClientVolumeChangeEvent(SnapcastEvent):
     """
 
     def __init__(self, client, volume, muted, host='localhost', *args, **kwargs):
-        super().__init__(client=client, host=host, volume=volume,
-                         muted=muted, *args, **kwargs)
+        super().__init__(
+            *args, client=client, host=host, volume=volume, muted=muted, **kwargs
+        )
 
 
 class ClientLatencyChangeEvent(SnapcastEvent):
@@ -42,8 +43,7 @@ class ClientLatencyChangeEvent(SnapcastEvent):
     """
 
     def __init__(self, client, latency, host='localhost', *args, **kwargs):
-        super().__init__(client=client, host=host, latency=latency,
-                         *args, **kwargs)
+        super().__init__(*args, client=client, host=host, latency=latency, **kwargs)
 
 
 class ClientNameChangeEvent(SnapcastEvent):
@@ -52,8 +52,7 @@ class ClientNameChangeEvent(SnapcastEvent):
     """
 
     def __init__(self, client, name, host='localhost', *args, **kwargs):
-        super().__init__(client=client, host=host, name=name,
-                         *args, **kwargs)
+        super().__init__(*args, client=client, host=host, name=name, **kwargs)
 
 
 class GroupMuteChangeEvent(SnapcastEvent):
@@ -62,7 +61,7 @@ class GroupMuteChangeEvent(SnapcastEvent):
     """
 
     def __init__(self, group, muted, host='localhost', *args, **kwargs):
-        super().__init__(group=group, host=host, muted=muted, *args, **kwargs)
+        super().__init__(*args, group=group, host=host, muted=muted, **kwargs)
 
 
 class GroupStreamChangeEvent(SnapcastEvent):
@@ -71,7 +70,7 @@ class GroupStreamChangeEvent(SnapcastEvent):
     """
 
     def __init__(self, group, stream, host='localhost', *args, **kwargs):
-        super().__init__(group=group, host=host, stream=stream, *args, **kwargs)
+        super().__init__(*args, group=group, host=host, stream=stream, **kwargs)
 
 
 class StreamUpdateEvent(SnapcastEvent):
@@ -80,7 +79,7 @@ class StreamUpdateEvent(SnapcastEvent):
     """
 
     def __init__(self, stream_id, stream, host='localhost', *args, **kwargs):
-        super().__init__(stream_id=stream_id, stream=stream, host=host, *args, **kwargs)
+        super().__init__(*args, stream_id=stream_id, stream=stream, host=host, **kwargs)
 
 
 class ServerUpdateEvent(SnapcastEvent):
@@ -89,7 +88,7 @@ class ServerUpdateEvent(SnapcastEvent):
     """
 
     def __init__(self, server, host='localhost', *args, **kwargs):
-        super().__init__(server=server, host=host, *args, **kwargs)
+        super().__init__(*args, server=server, host=host, **kwargs)
 
 
 # vim:sw=4:ts=4:et:

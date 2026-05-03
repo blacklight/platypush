@@ -28,6 +28,7 @@ class ServiceClass(Enum):
         :return: The parsed :class:`ServiceClass` instance, or
             ``ServiceClass.UNKNOWN``.
         """
+
     @classmethod
     def by_name(cls, name: str) -> "ServiceClass":
         """

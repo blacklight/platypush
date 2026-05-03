@@ -16,11 +16,19 @@ class SchemaDirective(Directive):
     Support for response/message schemas in the docs. Format: ``.. schema:: rel_path.SchemaClass(arg1=value1, ...)``,
     where ``rel_path`` is the path of the schema relative to ``platypush/schemas``.
     """
+
     has_content = True
     _schema_regex = re.compile(r'^\s*(.+?)\s*(\((.+?)\))?\s*$')
     _schemas_path = os.path.abspath(
         os.path.join(
-            os.path.dirname(os.path.relpath(__file__)), '..', '..', '..', 'platypush', 'schemas'))
+            os.path.dirname(os.path.relpath(__file__)),
+            '..',
+            '..',
+            '..',
+            'platypush',
+            'schemas',
+        )
+    )
 
     sys.path.insert(0, _schemas_path)
 
@@ -42,8 +50,11 @@ class SchemaDirective(Directive):
             return [cls._get_field_value(field.inner)]
         if isinstance(field, fields.Dict):
             return {
-                cls._get_field_value(field.key_field) if field.key_field else 'key':
-                    cls._get_field_value(field.value_field) if field.value_field else 'value'
+                cls._get_field_value(field.key_field) if field.key_field else 'key': (
+                    cls._get_field_value(field.value_field)
+                    if field.value_field
+                    else 'value'
+                )
             }
         if isinstance(field, fields.Nested):
             ret = {
@@ -57,7 +68,9 @@ class SchemaDirective(Directive):
 
     def _parse_schema(self) -> Union[dict, List[dict]]:
         m = self._schema_regex.match('\n'.join(self.content))
-        schema_module_name = '.'.join(['platypush.schemas', *(m.group(1).split('.')[:-1])])
+        schema_module_name = '.'.join(
+            ['platypush.schemas', *(m.group(1).split('.')[:-1])]
+        )
         schema_module = importlib.import_module(schema_module_name)
         schema_class = getattr(schema_module, m.group(1).split('.')[-1])
         schema_args = eval(f'dict({m.group(3)})') if m.group(3) else {}

@@ -2,7 +2,7 @@ from platypush.message.event.media import MediaEvent
 
 
 class VideoEvent(MediaEvent):
-    """ Base class for video events """
+    """Base class for video events"""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

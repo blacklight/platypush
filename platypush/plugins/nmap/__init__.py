@@ -12,7 +12,9 @@ class NmapPlugin(Plugin):
         super().__init__(**kwargs)
 
     @action
-    def scan(self, hosts: str, ports: str, args: str, sudo: bool = False) -> Dict[str, Any]:
+    def scan(
+        self, hosts: str, ports: str, args: str, sudo: bool = False
+    ) -> Dict[str, Any]:
         """
         Perform a port scan towards a certain host or network.
 
@@ -23,6 +25,7 @@ class NmapPlugin(Plugin):
         :return: Scan results, as an ip -> host map.
         """
         import nmap
+
         nm = nmap.PortScanner()
         return nm.scan(hosts=hosts, ports=ports, arguments=args, sudo=sudo).get('scan')
 

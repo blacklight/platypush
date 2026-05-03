@@ -107,7 +107,7 @@ class FileMonitorPlugin(RunnablePlugin):
 
     @staticmethod
     def event_handler_from_resource(
-        resource: Union[str, Dict[str, Any], MonitoredResource]
+        resource: Union[str, Dict[str, Any], MonitoredResource],
     ) -> Optional[EventHandler]:
         """
         Create a file system event handler from a string, dictionary or

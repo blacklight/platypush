@@ -54,7 +54,7 @@ def post_event(
     evt_type,
     callback: Optional[MediaCallback] = None,
     chromecast: Optional[pychromecast.Chromecast] = None,
-    **evt
+    **evt,
 ):
     evt['plugin'] = 'media.chromecast'
     event = evt_type(player=evt.get('device'), **evt)

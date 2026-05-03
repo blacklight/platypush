@@ -21,7 +21,7 @@ class PushbulletEvent(Event):
         icon: Optional[str] = None,
         created: float,
         modified: float,
-        **kwargs
+        **kwargs,
     ):
         """
         :param notification_id: Notification ID.
@@ -48,7 +48,7 @@ class PushbulletEvent(Event):
             icon=icon,
             created=created,
             modified=modified,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -66,7 +66,7 @@ class PushbulletMessageEvent(PushbulletEvent):
         receiver_id: Optional[str] = None,
         receiver_email: Optional[str] = None,
         receiver_name: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             *args,
@@ -76,7 +76,7 @@ class PushbulletMessageEvent(PushbulletEvent):
             receiver_id=receiver_id,
             receiver_email=receiver_email,
             receiver_name=receiver_name,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -94,7 +94,7 @@ class PushbulletNotificationEvent(PushbulletEvent):
         application_name: Optional[str] = None,
         package_name: Optional[str] = None,
         actions: Optional[dict] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param title: Mirror notification title.
@@ -134,7 +134,7 @@ class PushbulletNotificationEvent(PushbulletEvent):
             application_name=application_name,
             package_name=package_name,
             actions=actions,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -167,7 +167,7 @@ class PushbulletFileEvent(PushbulletMessageEvent):
         image_width: Optional[int] = None,
         image_height: Optional[int] = None,
         image_url: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             *args,
@@ -177,7 +177,7 @@ class PushbulletFileEvent(PushbulletMessageEvent):
             image_width=image_width,
             image_height=image_height,
             image_url=image_url,
-            **kwargs
+            **kwargs,
         )
 
 

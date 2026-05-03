@@ -37,4 +37,3 @@ class IrKeyDownEvent(IrSensorEvent):
 
 
 # vim:sw=4:ts=4:et:
-

@@ -24,7 +24,7 @@ class SwitchWemoPlugin(RunnablePlugin, SwitchEntityManager):
         devices: Optional[Union[Collection[str], Mapping[str, str]]] = None,
         netmask: Optional[str] = None,
         port: int = _default_port,
-        **kwargs
+        **kwargs,
     ):
         """
         This plugin previously used ``ouimeaux`` for auto-discovery, but it's
@@ -88,7 +88,7 @@ class SwitchWemoPlugin(RunnablePlugin, SwitchEntityManager):
         self,
         device: Optional[Union[str, Collection[str]]] = None,
         publish_entities: bool = True,
-        **__
+        **__,
     ) -> List[dict]:
         if device:
             if isinstance(device, str):

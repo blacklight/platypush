@@ -26,7 +26,7 @@ class TorrentsCsvSearchProvider(TorrentsCsvBaseProvider):
         csv_path: Optional[str] = None,
         db_path: Optional[str] = None,
         csv_url_check_interval: int = TORRENTS_CSV_DEFAULT_CHECK_INTERVAL,
-        **kwargs
+        **kwargs,
     ):
         """
         :param api_url: Torrents.csv API URL.

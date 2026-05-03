@@ -18,19 +18,20 @@ def initialize_logger():
         logger.exception(e)
 
 
-## Webapp initialization
+# Webapp initialization
 
 initialize_logger()
 
-base_folder = os.path.abspath(os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), '..'))
+base_folder = os.path.abspath(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+)
 
 template_folder = os.path.join(base_folder, 'webapp/dist')
 static_folder = os.path.join(base_folder, 'webapp/dist/static')
 
-application = Flask('platypush',
-                    template_folder=template_folder,
-                    static_folder=static_folder)
+application = Flask(
+    'platypush', template_folder=template_folder, static_folder=static_folder
+)
 
 for route in get_routes():
     application.register_blueprint(route)

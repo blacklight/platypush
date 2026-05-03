@@ -13,15 +13,19 @@ class GotifyMessageEvent(GotifyEvent):
     """
     Event triggered when a message is received on the Gotify instance.
     """
-    def __init__(self, *args,
-                 message: str,
-                 title: Optional[str] = None,
-                 priority: Optional[int] = None,
-                 extras: Optional[dict] = None,
-                 date: Optional[str] = None,
-                 id: Optional[int] = None,
-                 appid: Optional[int] = None,
-                 **kwargs):
+
+    def __init__(
+        self,
+        *args,
+        message: str,
+        title: Optional[str] = None,
+        priority: Optional[int] = None,
+        extras: Optional[dict] = None,
+        date: Optional[str] = None,
+        id: Optional[int] = None,
+        appid: Optional[int] = None,
+        **kwargs,
+    ):
         """
         :param message: Message body.
         :param title: Message title.
@@ -40,5 +44,5 @@ class GotifyMessageEvent(GotifyEvent):
             date=date,
             id=id,
             appid=appid,
-            **kwargs
+            **kwargs,
         )

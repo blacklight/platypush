@@ -5,6 +5,7 @@ class CustomEvent(Event):
     """
     This type can be used to fire custom events upon which the user can implement custom hooks.
     """
+
     def __init__(self, subtype: str, *args, **kwargs):
         """
         :param subtype: This is the only mandatory attribute for this event type. It should be a string that

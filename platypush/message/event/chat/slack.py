@@ -11,7 +11,10 @@ class SlackEvent(Event, ABCMeta):
     """
     Base class for Slack events.
     """
-    def __init__(self, *args, timestamp: Optional[Union[int, float, datetime]] = None, **kwargs):
+
+    def __init__(
+        self, *args, timestamp: Optional[Union[int, float, datetime]] = None, **kwargs
+    ):
         """
         :param timestamp: Event timestamp.
         """
@@ -19,19 +22,33 @@ class SlackEvent(Event, ABCMeta):
         super().__init__(*args, **kwargs)
 
     @staticmethod
-    def _convert_timestamp(timestamp: Optional[Union[int, float, datetime]] = None) -> Optional[datetime]:
-        if not (isinstance(timestamp, int) or isinstance(timestamp, float)):
+    def _convert_timestamp(
+        timestamp: Optional[Union[int, float, datetime]] = None,
+    ) -> Optional[datetime]:
+        if not isinstance(timestamp, (int, float)):
             return timestamp
 
-        return datetime.fromtimestamp(timestamp, tz=gettz())   # lgtm [py/call-to-non-callable]
+        return datetime.fromtimestamp(
+            timestamp, tz=gettz()
+        )  # lgtm [py/call-to-non-callable]
 
 
 class SlackMessageEvent(SlackEvent, ABCMeta):  # lgtm [py/conflicting-attributes]
     """
     Base class for message-related events.
     """
-    def __init__(self, *args, text: str, user: str, channel: Optional[str] = None, team: Optional[str] = None,
-                 icons: dict = None, blocks: Iterable[dict] = None, **kwargs):
+
+    def __init__(
+        self,
+        *args,
+        text: str,
+        user: str,
+        channel: Optional[str] = None,
+        team: Optional[str] = None,
+        icons: dict = None,
+        blocks: Iterable[dict] = None,
+        **kwargs,
+    ):
         """
         :param text: Message text.
         :param user: ID of the sender.
@@ -40,7 +57,16 @@ class SlackMessageEvent(SlackEvent, ABCMeta):  # lgtm [py/conflicting-attributes
         :param icons: Mapping of the icons for this message.
         :param blocks: Extra blocks in the message.
         """
-        super().__init__(*args, text=text, user=user, channel=channel, team=team, icons=icons, blocks=blocks, **kwargs)
+        super().__init__(
+            *args,
+            text=text,
+            user=user,
+            channel=channel,
+            team=team,
+            icons=icons,
+            blocks=blocks,
+            **kwargs,
+        )
 
 
 class SlackMessageReceivedEvent(SlackMessageEvent):

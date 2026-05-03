@@ -26,8 +26,7 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
 
     @property
     @abstractmethod
-    def _plugin_name(self) -> str:
-        ...
+    def _plugin_name(self) -> str: ...
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

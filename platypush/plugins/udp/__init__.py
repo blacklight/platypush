@@ -13,8 +13,16 @@ class UdpPlugin(Plugin):
     """
 
     @action
-    def send(self, data: Union[bytes, str], host: str, port: int, binary: bool = False,
-             timeout: Optional[float] = None, recv_response: bool = False, **recv_opts):
+    def send(
+        self,
+        data: Union[bytes, str],
+        host: str,
+        port: int,
+        binary: bool = False,
+        timeout: Optional[float] = None,
+        recv_response: bool = False,
+        **recv_opts,
+    ):
         """
         Send data over a UDP connection.
 
@@ -26,7 +34,7 @@ class UdpPlugin(Plugin):
         :param recv_response: If True then the action will wait for a response from the server before closing the
             connection. Note that ``recv_opts`` must be specified in this case - at least ``length``.
         """
-        if isinstance(data, list) or isinstance(data, dict):
+        if isinstance(data, (list, dict)):
             data = json.dumps(data)
         if isinstance(data, str):
             data = data.encode()
@@ -41,12 +49,14 @@ class UdpPlugin(Plugin):
         if not recv_response:
             return
 
-        recv_opts.update({
-            'host': host,
-            'port': port,
-            'timeout': timeout,
-            'binary': binary,
-        })
+        recv_opts.update(
+            {
+                'host': host,
+                'port': port,
+                'timeout': timeout,
+                'binary': binary,
+            }
+        )
 
         data = sd.recvfrom(**recv_opts)
         if binary:

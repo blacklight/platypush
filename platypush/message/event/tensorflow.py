@@ -4,7 +4,9 @@ from platypush.message.event import Event
 
 
 class TensorflowEvent(Event):
-    def __init__(self, model: str, logs: Optional[Dict[str, Union[int, float]]], *args, **kwargs):
+    def __init__(
+        self, model: str, logs: Optional[Dict[str, Union[int, float]]], *args, **kwargs
+    ):
         """
         :param model: Name of the Tensorflow model.
         :param logs: Logs and metrics.
@@ -16,6 +18,7 @@ class TensorflowEpochStartedEvent(TensorflowEvent):
     """
     Triggered when a Tensorflow model training/evaluation epoch begins.
     """
+
     def __init__(self, epoch: int, *args, **kwargs):
         """
         :param epoch: Epoch index.
@@ -27,6 +30,7 @@ class TensorflowEpochEndedEvent(TensorflowEvent):
     """
     Triggered when a Tensorflow model training/evaluation epoch ends.
     """
+
     def __init__(self, epoch: int, *args, **kwargs):
         """
         :param epoch: Epoch index.
@@ -38,6 +42,7 @@ class TensorflowBatchStartedEvent(TensorflowEvent):
     """
     Triggered when a Tensorflow model training/evaluation batch starts being processed.
     """
+
     def __init__(self, batch: int, *args, **kwargs):
         """
         :param batch: Batch index.
@@ -49,6 +54,7 @@ class TensorflowBatchEndedEvent(TensorflowEvent):
     """
     Triggered when a the processing of a Tensorflow model training/evaluation batch ends.
     """
+
     def __init__(self, batch: int, *args, **kwargs):
         """
         :param batch: Batch index.

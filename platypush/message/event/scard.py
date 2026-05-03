@@ -15,7 +15,7 @@ class SmartCardDetectedEvent(Event):
         :type reader: str
         """
 
-        super().__init__(atr=atr, reader=reader, *args, **kwargs)
+        super().__init__(*args, atr=atr, reader=reader, **kwargs)
 
 
 class SmartCardRemovedEvent(Event):
@@ -32,8 +32,7 @@ class SmartCardRemovedEvent(Event):
         :type reader: str
         """
 
-        super().__init__(atr=atr, reader=reader, *args, **kwargs)
+        super().__init__(*args, atr=atr, reader=reader, **kwargs)
 
 
 # vim:sw=4:ts=4:et:
-

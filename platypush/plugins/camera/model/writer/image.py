@@ -22,6 +22,7 @@ class JPEGStreamWriter(ImageStreamWriter):
     """
     Write camera frames to a stream as single JPEG items.
     """
+
     mimetype = 'image/jpeg'
 
     def __init__(self, *args, quality: int = 90, **kwargs):
@@ -37,6 +38,7 @@ class PNGStreamWriter(ImageStreamWriter):
     """
     Write camera frames to a stream as single PNG items.
     """
+
     mimetype = 'image/png'
 
     def encode(self, image: Image) -> bytes:
@@ -47,6 +49,7 @@ class BMPStreamWriter(ImageStreamWriter):
     """
     Write camera frames to a stream as single BMP items.
     """
+
     mimetype = 'image/bmp'
 
     def encode(self, image: Image) -> bytes:
@@ -57,11 +60,14 @@ class MJPEGStreamWriter(JPEGStreamWriter):
     """
     Write camera frames to a stream as an MJPEG feed.
     """
+
     mimetype = 'multipart/x-mixed-replace; boundary=frame'
 
     def encode(self, image: Image) -> bytes:
-        return (b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + super().encode(image) + b'\r\n')
+        return (
+            b'--frame\r\n'
+            b'Content-Type: image/jpeg\r\n\r\n' + super().encode(image) + b'\r\n'
+        )
 
 
 # vim:sw=4:ts=4:et:

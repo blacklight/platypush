@@ -17,7 +17,7 @@ class GpioPlugin(RunnablePlugin):
         pins: Optional[Dict[str, int]] = None,
         monitored_pins: Optional[Collection[Union[str, int]]] = None,
         mode: str = 'board',
-        **kwargs
+        **kwargs,
     ):
         """
         :param mode: Specify ``board`` if you want to use the board PIN numbers,

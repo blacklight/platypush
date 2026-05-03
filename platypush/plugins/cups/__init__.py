@@ -16,7 +16,7 @@ class CupsPlugin(Plugin):
         host: str = 'localhost',
         port: int = 631,
         printer: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param host: CUPS host IP/name (default: localhost).

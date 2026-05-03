@@ -17,14 +17,21 @@ class PreviewWriterFactory:
     @staticmethod
     def get(*args, **kwargs) -> PreviewWriter:
         try:
-            import wx
+            import wx  # noqa: F401
+
             # noinspection PyUnresolvedReferences
             from platypush.plugins.camera.model.writer.preview.wx import WxPreviewWriter
+
             return WxPreviewWriter(*args, **kwargs)
         except ImportError:
-            logger.warning('wxPython not available, using ffplay as a fallback for camera previews')
+            logger.warning(
+                'wxPython not available, using ffplay as a fallback for camera previews'
+            )
 
-        from platypush.plugins.camera.model.writer.preview.ffplay import FFplayPreviewWriter
+        from platypush.plugins.camera.model.writer.preview.ffplay import (
+            FFplayPreviewWriter,
+        )
+
         return FFplayPreviewWriter(*args, **kwargs)
 
 

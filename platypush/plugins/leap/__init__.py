@@ -44,7 +44,7 @@ class LeapPlugin(RunnablePlugin):
         position_ranges: Optional[Iterable[Iterable[float]]] = None,
         position_tolerance: float = 0.0,
         poll_interval: Optional[float] = 0.1,
-        **kwargs
+        **kwargs,
     ):
         """
         :param position_ranges: It specifies how wide the hand space (x, y and

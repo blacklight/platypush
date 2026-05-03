@@ -22,7 +22,7 @@ class NewFeedEntryEvent(Event):
         content: Optional[str] = None,
         author: Optional[str] = None,
         tags: Optional[Iterable[str]] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             feed_url=feed_url,
@@ -35,5 +35,5 @@ class NewFeedEntryEvent(Event):
             content=content,
             author=author,
             tags=tags or [],
-            **kwargs
+            **kwargs,
         )

@@ -86,7 +86,7 @@ class EnumField(Function):
 
 
 def normalize_datetime(
-    dt: Optional[Union[str, date, datetime]]
+    dt: Optional[Union[str, date, datetime]],
 ) -> Optional[Union[date, datetime]]:
     if not dt:
         return

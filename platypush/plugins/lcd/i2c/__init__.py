@@ -44,7 +44,7 @@ class LcdI2cPlugin(LcdPlugin):
         dotsize: int = 8,
         charmap: str = 'A02',
         auto_linebreaks: bool = True,
-        **kwargs
+        **kwargs,
     ):
         """
         :param i2c_expander: Set your I²C chip type. Supported: "PCF8574",

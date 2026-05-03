@@ -29,7 +29,7 @@ class MediaPlayRequestEvent(MediaEvent):
             plugin=plugin,
             resource=resource,
             title=title,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -52,7 +52,7 @@ class MediaPlayEvent(MediaEvent):
             plugin=plugin,
             resource=resource,
             title=title,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -146,7 +146,7 @@ class MediaDownloadEvent(MediaEvent, ABC):
         progress: Optional[float] = None,
         started_at: Optional[float] = None,
         ended_at: Optional[float] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param resource: File name or URI of the downloaded resource

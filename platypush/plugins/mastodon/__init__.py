@@ -3,10 +3,20 @@ import requests
 from typing import Optional, Union, Iterable, Mapping, Sequence
 
 from platypush.plugins import Plugin, action
-from platypush.schemas.mastodon import MastodonSchema, MastodonSearchSchema, MastodonAccountCreationSchema, \
-    MastodonAccountSchema, MastodonStatusSchema, MastodonFeaturedHashtagSchema, MastodonAccountListSchema, \
-    MastodonFilterSchema, MastodonMediaSchema, MastodonConversationSchema, MastodonListSchema, \
-    MastodonNotificationSchema
+from platypush.schemas.mastodon import (
+    MastodonSchema,
+    MastodonSearchSchema,
+    MastodonAccountCreationSchema,
+    MastodonAccountSchema,
+    MastodonStatusSchema,
+    MastodonFeaturedHashtagSchema,
+    MastodonAccountListSchema,
+    MastodonFilterSchema,
+    MastodonMediaSchema,
+    MastodonConversationSchema,
+    MastodonListSchema,
+    MastodonNotificationSchema,
+)
 from platypush.utils import get_mime_type
 
 
@@ -49,9 +59,15 @@ class MastodonPlugin(Plugin):
         return f'{base_url or self._base_url}/api/{version}'
 
     def _run(
-            self, path: str, method: str = 'get', version: str = 'v2', headers: Optional[dict] = None,
-            base_url: Optional[str] = None, access_token: Optional[str] = None,
-            schema: Optional[MastodonSchema] = None, **kwargs
+        self,
+        path: str,
+        method: str = 'get',
+        version: str = 'v2',
+        headers: Optional[dict] = None,
+        base_url: Optional[str] = None,
+        access_token: Optional[str] = None,
+        schema: Optional[MastodonSchema] = None,
+        **kwargs,
     ) -> Optional[Union[dict, list]]:
         headers = {
             'Authorization': f'Bearer {access_token or self._access_token}',
@@ -60,7 +76,11 @@ class MastodonPlugin(Plugin):
         }
 
         method = getattr(requests, method.lower())
-        rs = method(self.base_url(base_url=base_url, version=version) + '/' + path, headers=headers, **kwargs)
+        rs = method(
+            self.base_url(base_url=base_url, version=version) + '/' + path,
+            headers=headers,
+            **kwargs,
+        )
         rs.raise_for_status()
         rs = rs.json()
         if schema:
@@ -70,9 +90,15 @@ class MastodonPlugin(Plugin):
     # noinspection PyShadowingBuiltins
     @action
     def search(
-            self, query: str, type: Optional[str] = None, min_id: Optional[str] = None,
-            max_id: Optional[str] = None, limit: int = 20, offset: int = 0, following: bool = False,
-            **kwargs
+        self,
+        query: str,
+        type: Optional[str] = None,
+        min_id: Optional[str] = None,
+        max_id: Optional[str] = None,
+        limit: int = 20,
+        offset: int = 0,
+        following: bool = False,
+        **kwargs,
     ) -> Mapping[str, Iterable[dict]]:
         """
         Perform a search.
@@ -104,13 +130,19 @@ class MastodonPlugin(Plugin):
                 **({'limit': limit} if limit else {}),
                 **({'offset': offset} if offset else {}),
                 **({'following': following} if following else {}),
-            }, **kwargs
+            },
+            **kwargs,
         )
 
     @action
     def register_account(
-            self, username: str, email: str, password: str, locale: str = 'en',
-            reason: Optional[str] = None, **kwargs
+        self,
+        username: str,
+        email: str,
+        password: str,
+        locale: str = 'en',
+        reason: Optional[str] = None,
+        **kwargs,
     ) -> dict:
         """
         Register a new account.
@@ -137,17 +169,25 @@ class MastodonPlugin(Plugin):
                 'locale': locale,
                 'reason': reason,
                 'agreement': True,
-            }, **kwargs
+            },
+            **kwargs,
         )
 
     @action
     def update_account(
-            self, discoverable: Optional[bool] = None, bot: Optional[bool] = None,
-            display_name: Optional[str] = None, note: Optional[str] = None,
-            avatar: Optional[str] = None, header: Optional[str] = None,
-            locked: Optional[bool] = None, privacy: Optional[str] = None,
-            sensitive: Optional[bool] = None, language: Optional[str] = None,
-            metadata: Optional[Iterable[Mapping]] = None, **kwargs
+        self,
+        discoverable: Optional[bool] = None,
+        bot: Optional[bool] = None,
+        display_name: Optional[str] = None,
+        note: Optional[str] = None,
+        avatar: Optional[str] = None,
+        header: Optional[str] = None,
+        locked: Optional[bool] = None,
+        privacy: Optional[str] = None,
+        sensitive: Optional[bool] = None,
+        language: Optional[str] = None,
+        metadata: Optional[Iterable[Mapping]] = None,
+        **kwargs,
     ) -> dict:
         """
         Updates the properties of the account associated to the access token.
@@ -187,14 +227,30 @@ class MastodonPlugin(Plugin):
                 **({'fields_attributes': metadata} if metadata is not None else {}),
             },
             files={
-                **({'avatar': (
-                    os.path.basename(avatar), open(avatar, 'rb'), get_mime_type(avatar)
-                )} if avatar is not None else {}),
-                **({'header': (
-                    os.path.basename(header), open(header, 'rb'), get_mime_type(header)
-                )} if header is not None else {}),
+                **(
+                    {
+                        'avatar': (
+                            os.path.basename(avatar),
+                            open(avatar, 'rb'),
+                            get_mime_type(avatar),
+                        )
+                    }
+                    if avatar is not None
+                    else {}
+                ),
+                **(
+                    {
+                        'header': (
+                            os.path.basename(header),
+                            open(header, 'rb'),
+                            get_mime_type(header),
+                        )
+                    }
+                    if header is not None
+                    else {}
+                ),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
@@ -212,12 +268,19 @@ class MastodonPlugin(Plugin):
             f'accounts/{account_id}',
             version='v1',
             schema=MastodonAccountSchema(),
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def get_statuses(self, account_id: str, min_id: Optional[str] = None, max_id: Optional[str] = None,
-                     limit: int = 20, offset: int = 0, **kwargs) -> Iterable[dict]:
+    def get_statuses(
+        self,
+        account_id: str,
+        min_id: Optional[str] = None,
+        max_id: Optional[str] = None,
+        limit: int = 20,
+        offset: int = 0,
+        **kwargs,
+    ) -> Iterable[dict]:
         """
         Retrieve statuses by account ID.
 
@@ -241,13 +304,19 @@ class MastodonPlugin(Plugin):
                 **({'limit': limit} if limit else {}),
                 **({'offset': offset} if offset else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def get_followers(self, account_id: str, max_id: Optional[str] = None,
-                      since_id: Optional[str] = None, limit: int = 20, offset: int = 0,
-                      **kwargs) -> Iterable[dict]:
+    def get_followers(
+        self,
+        account_id: str,
+        max_id: Optional[str] = None,
+        since_id: Optional[str] = None,
+        limit: int = 20,
+        offset: int = 0,
+        **kwargs,
+    ) -> Iterable[dict]:
         """
         Retrieve the list of followers of an account.
 
@@ -271,13 +340,19 @@ class MastodonPlugin(Plugin):
                 **({'limit': limit} if limit else {}),
                 **({'offset': offset} if offset else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def get_following(self, account_id: str, max_id: Optional[str] = None,
-                      since_id: Optional[str] = None, limit: int = 20, offset: int = 0,
-                      **kwargs) -> Iterable[dict]:
+    def get_following(
+        self,
+        account_id: str,
+        max_id: Optional[str] = None,
+        since_id: Optional[str] = None,
+        limit: int = 20,
+        offset: int = 0,
+        **kwargs,
+    ) -> Iterable[dict]:
         """
         Retrieve the list of accounts followed by a specified account.
 
@@ -301,13 +376,19 @@ class MastodonPlugin(Plugin):
                 **({'limit': limit} if limit else {}),
                 **({'offset': offset} if offset else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def get_featured_tags(self, account_id: Optional[str] = None, max_id: Optional[str] = None,
-                          since_id: Optional[str] = None, limit: int = 20, offset: int = 0,
-                          **kwargs) -> Iterable[dict]:
+    def get_featured_tags(
+        self,
+        account_id: Optional[str] = None,
+        max_id: Optional[str] = None,
+        since_id: Optional[str] = None,
+        limit: int = 20,
+        offset: int = 0,
+        **kwargs,
+    ) -> Iterable[dict]:
         """
         Retrieve the list of featured hashtags of an account.
 
@@ -331,13 +412,19 @@ class MastodonPlugin(Plugin):
                 **({'limit': limit} if limit else {}),
                 **({'offset': offset} if offset else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def get_featured_lists(self, account_id: str, max_id: Optional[str] = None,
-                           since_id: Optional[str] = None, limit: int = 20, offset: int = 0,
-                           **kwargs) -> Iterable[dict]:
+    def get_featured_lists(
+        self,
+        account_id: str,
+        max_id: Optional[str] = None,
+        since_id: Optional[str] = None,
+        limit: int = 20,
+        offset: int = 0,
+        **kwargs,
+    ) -> Iterable[dict]:
         """
         Retrieve the list that you have added a certain account to.
 
@@ -361,11 +448,13 @@ class MastodonPlugin(Plugin):
                 **({'limit': limit} if limit else {}),
                 **({'offset': offset} if offset else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def follow_account(self, account_id: str, notify: bool = False, reblogs: bool = True, **kwargs):
+    def follow_account(
+        self, account_id: str, notify: bool = False, reblogs: bool = True, **kwargs
+    ):
         """
         Follow a given account ID.
 
@@ -381,7 +470,7 @@ class MastodonPlugin(Plugin):
             version='v1',
             method='post',
             json={'notify': notify, 'reblogs': reblogs},
-            **kwargs
+            **kwargs,
         )
 
     @action
@@ -395,10 +484,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         self._run(
-            f'accounts/{account_id}/unfollow',
-            version='v1',
-            method='post',
-            **kwargs
+            f'accounts/{account_id}/unfollow', version='v1', method='post', **kwargs
         )
 
     @action
@@ -411,12 +497,7 @@ class MastodonPlugin(Plugin):
         :param account_id: Account ID.
         :param kwargs: ``base_url``/``access_token`` override.
         """
-        self._run(
-            f'accounts/{account_id}/block',
-            version='v1',
-            method='post',
-            **kwargs
-        )
+        self._run(f'accounts/{account_id}/block', version='v1', method='post', **kwargs)
 
     @action
     def unblock_account(self, account_id: str, **kwargs):
@@ -429,10 +510,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         self._run(
-            f'accounts/{account_id}/unblock',
-            version='v1',
-            method='post',
-            **kwargs
+            f'accounts/{account_id}/unblock', version='v1', method='post', **kwargs
         )
 
     @action
@@ -445,12 +523,7 @@ class MastodonPlugin(Plugin):
         :param account_id: Account ID.
         :param kwargs: ``base_url``/``access_token`` override.
         """
-        self._run(
-            f'accounts/{account_id}/mute',
-            version='v1',
-            method='post',
-            **kwargs
-        )
+        self._run(f'accounts/{account_id}/mute', version='v1', method='post', **kwargs)
 
     @action
     def unmute_account(self, account_id: str, **kwargs):
@@ -463,10 +536,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         self._run(
-            f'accounts/{account_id}/unmute',
-            version='v1',
-            method='post',
-            **kwargs
+            f'accounts/{account_id}/unmute', version='v1', method='post', **kwargs
         )
 
     @action
@@ -479,12 +549,7 @@ class MastodonPlugin(Plugin):
         :param account_id: Account ID.
         :param kwargs: ``base_url``/``access_token`` override.
         """
-        self._run(
-            f'accounts/{account_id}/pin',
-            version='v1',
-            method='post',
-            **kwargs
-        )
+        self._run(f'accounts/{account_id}/pin', version='v1', method='post', **kwargs)
 
     @action
     def unpin_account(self, account_id: str, **kwargs):
@@ -496,12 +561,7 @@ class MastodonPlugin(Plugin):
         :param account_id: Account ID.
         :param kwargs: ``base_url``/``access_token`` override.
         """
-        self._run(
-            f'accounts/{account_id}/unpin',
-            version='v1',
-            method='post',
-            **kwargs
-        )
+        self._run(f'accounts/{account_id}/unpin', version='v1', method='post', **kwargs)
 
     @action
     def set_account_note(self, account_id: str, note: str, **kwargs):
@@ -519,12 +579,17 @@ class MastodonPlugin(Plugin):
             version='v1',
             method='post',
             json={'comment': note},
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def get_bookmarked_statuses(self, min_id: Optional[str] = None,
-                                max_id: Optional[str] = None, limit: int = 20, **kwargs) -> Iterable[dict]:
+    def get_bookmarked_statuses(
+        self,
+        min_id: Optional[str] = None,
+        max_id: Optional[str] = None,
+        limit: int = 20,
+        **kwargs,
+    ) -> Iterable[dict]:
         """
         Retrieve the list of statuses bookmarked by the user.
 
@@ -545,12 +610,17 @@ class MastodonPlugin(Plugin):
                 **({'max_id': max_id} if max_id else {}),
                 **({'limit': limit} if limit else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def get_favourited_statuses(self, min_id: Optional[str] = None,
-                                max_id: Optional[str] = None, limit: int = 20, **kwargs) -> Iterable[dict]:
+    def get_favourited_statuses(
+        self,
+        min_id: Optional[str] = None,
+        max_id: Optional[str] = None,
+        limit: int = 20,
+        **kwargs,
+    ) -> Iterable[dict]:
         """
         Retrieve the list of statuses favourited by the account.
 
@@ -571,13 +641,17 @@ class MastodonPlugin(Plugin):
                 **({'max_id': max_id} if max_id else {}),
                 **({'limit': limit} if limit else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def get_muted_accounts(self, max_id: Optional[str] = None,
-                           since_id: Optional[str] = None, limit: int = 20,
-                           **kwargs) -> Iterable[dict]:
+    def get_muted_accounts(
+        self,
+        max_id: Optional[str] = None,
+        since_id: Optional[str] = None,
+        limit: int = 20,
+        **kwargs,
+    ) -> Iterable[dict]:
         """
         Retrieve the list of muted accounts.
 
@@ -598,13 +672,17 @@ class MastodonPlugin(Plugin):
                 **({'max_id': max_id} if max_id else {}),
                 **({'limit': limit} if limit else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def get_blocked_accounts(self, max_id: Optional[str] = None,
-                             since_id: Optional[str] = None, limit: int = 20,
-                             **kwargs) -> Iterable[dict]:
+    def get_blocked_accounts(
+        self,
+        max_id: Optional[str] = None,
+        since_id: Optional[str] = None,
+        limit: int = 20,
+        **kwargs,
+    ) -> Iterable[dict]:
         """
         Retrieve the list of blocked accounts.
 
@@ -625,7 +703,7 @@ class MastodonPlugin(Plugin):
                 **({'max_id': max_id} if max_id else {}),
                 **({'limit': limit} if limit else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
@@ -639,18 +717,19 @@ class MastodonPlugin(Plugin):
         :return: .. schema:: mastodon.MastodonFilterSchema(many=True)
         """
         return self._run(
-            'filters',
-            version='v1',
-            schema=MastodonFilterSchema(many=True),
-            **kwargs
+            'filters', version='v1', schema=MastodonFilterSchema(many=True), **kwargs
         )
 
     @action
-    def create_filter(self, phrase: str, context: Iterable[str],
-                      irreversible: Optional[bool] = None,
-                      whole_word: Optional[bool] = None,
-                      expires_in: Optional[int] = None,
-                      **kwargs) -> dict:
+    def create_filter(
+        self,
+        phrase: str,
+        context: Iterable[str],
+        irreversible: Optional[bool] = None,
+        whole_word: Optional[bool] = None,
+        expires_in: Optional[int] = None,
+        **kwargs,
+    ) -> dict:
         """
         Create a new filter.
 
@@ -677,17 +756,20 @@ class MastodonPlugin(Plugin):
                 **({'whole_word': whole_word} if whole_word is not None else {}),
                 **({'expires_in': expires_in} if expires_in is not None else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def update_filter(self, filter_id: int,
-                      phrase: Optional[str] = None,
-                      context: Optional[Iterable[str]] = None,
-                      irreversible: Optional[bool] = None,
-                      whole_word: Optional[bool] = None,
-                      expires_in: Optional[int] = None,
-                      **kwargs) -> dict:
+    def update_filter(
+        self,
+        filter_id: int,
+        phrase: Optional[str] = None,
+        context: Optional[Iterable[str]] = None,
+        irreversible: Optional[bool] = None,
+        whole_word: Optional[bool] = None,
+        expires_in: Optional[int] = None,
+        **kwargs,
+    ) -> dict:
         """
         Update a filter.
 
@@ -715,7 +797,7 @@ class MastodonPlugin(Plugin):
                 **({'whole_word': whole_word} if whole_word is not None else {}),
                 **({'expires_in': expires_in} if expires_in is not None else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
@@ -729,10 +811,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'filters/{filter_id}',
-            version='v1',
-            method='delete',
-            **kwargs
+            f'filters/{filter_id}', version='v1', method='delete', **kwargs
         )
 
     @action
@@ -752,7 +831,7 @@ class MastodonPlugin(Plugin):
             method='post',
             schema=MastodonFeaturedHashtagSchema(),
             json={'name': name},
-            **kwargs
+            **kwargs,
         )
 
     @action
@@ -766,17 +845,20 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'featured_tags/{tag_id}',
-            version='v1',
-            method='delete',
-            **kwargs
+            f'featured_tags/{tag_id}', version='v1', method='delete', **kwargs
         )
 
     @action
-    def publish_status(self, status: str, in_reply_to_id: Optional[str] = None,
-                       media_ids: Optional[Iterable[str]] = None,
-                       sensitive: Optional[bool] = None, spoiler_text: Optional[str] = None,
-                       visibility: Optional[str] = None, **kwargs) -> dict:
+    def publish_status(
+        self,
+        status: str,
+        in_reply_to_id: Optional[str] = None,
+        media_ids: Optional[Iterable[str]] = None,
+        sensitive: Optional[bool] = None,
+        spoiler_text: Optional[str] = None,
+        visibility: Optional[str] = None,
+        **kwargs,
+    ) -> dict:
         """
         Publish a new status.
 
@@ -798,13 +880,15 @@ class MastodonPlugin(Plugin):
             schema=MastodonStatusSchema(),
             json={
                 'status': status,
-                **({'in_reply_to_id': in_reply_to_id} if in_reply_to_id is None else {}),
+                **(
+                    {'in_reply_to_id': in_reply_to_id} if in_reply_to_id is None else {}
+                ),
                 **({'media_ids': media_ids} if media_ids else {}),
                 **({'sensitive': sensitive} if sensitive is None else {}),
                 **({'spoiler_text': spoiler_text} if spoiler_text is None else {}),
                 **({'visibility': visibility} if visibility is None else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
@@ -822,7 +906,7 @@ class MastodonPlugin(Plugin):
             f'statuses/{status_id}',
             version='v1',
             schema=MastodonStatusSchema(),
-            **kwargs
+            **kwargs,
         )
 
     @action
@@ -836,10 +920,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'statuses/{status_id}',
-            version='v1',
-            method='delete',
-            **kwargs
+            f'statuses/{status_id}', version='v1', method='delete', **kwargs
         )
 
     @action
@@ -853,10 +934,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'statuses/{status_id}/favourite',
-            version='v1',
-            method='post',
-            **kwargs
+            f'statuses/{status_id}/favourite', version='v1', method='post', **kwargs
         )
 
     @action
@@ -870,10 +948,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'statuses/{status_id}/favourite',
-            version='v1',
-            method='delete',
-            **kwargs
+            f'statuses/{status_id}/favourite', version='v1', method='delete', **kwargs
         )
 
     @action
@@ -887,10 +962,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'statuses/{status_id}/reblog',
-            version='v1',
-            method='post',
-            **kwargs
+            f'statuses/{status_id}/reblog', version='v1', method='post', **kwargs
         )
 
     @action
@@ -904,10 +976,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'statuses/{status_id}/unreblog',
-            version='v1',
-            method='post',
-            **kwargs
+            f'statuses/{status_id}/unreblog', version='v1', method='post', **kwargs
         )
 
     @action
@@ -921,10 +990,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'statuses/{status_id}/bookmark',
-            version='v1',
-            method='post',
-            **kwargs
+            f'statuses/{status_id}/bookmark', version='v1', method='post', **kwargs
         )
 
     @action
@@ -938,10 +1004,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'statuses/{status_id}/unbookmark',
-            version='v1',
-            method='post',
-            **kwargs
+            f'statuses/{status_id}/unbookmark', version='v1', method='post', **kwargs
         )
 
     @action
@@ -955,10 +1018,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'statuses/{status_id}/mute',
-            version='v1',
-            method='post',
-            **kwargs
+            f'statuses/{status_id}/mute', version='v1', method='post', **kwargs
         )
 
     @action
@@ -972,10 +1032,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'statuses/{status_id}/unmute',
-            version='v1',
-            method='post',
-            **kwargs
+            f'statuses/{status_id}/unmute', version='v1', method='post', **kwargs
         )
 
     @action
@@ -989,10 +1046,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'statuses/{status_id}/pin',
-            version='v1',
-            method='post',
-            **kwargs
+            f'statuses/{status_id}/pin', version='v1', method='post', **kwargs
         )
 
     @action
@@ -1006,15 +1060,17 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'statuses/{status_id}/unpin',
-            version='v1',
-            method='post',
-            **kwargs
+            f'statuses/{status_id}/unpin', version='v1', method='post', **kwargs
         )
 
     @action
-    def upload_media(self, file: str, description: Optional[str] = None,
-                     thumbnail: Optional[str] = None, **kwargs) -> dict:
+    def upload_media(
+        self,
+        file: str,
+        description: Optional[str] = None,
+        thumbnail: Optional[str] = None,
+        **kwargs,
+    ) -> dict:
         """
         Upload media that can be used as attachments.
 
@@ -1038,24 +1094,34 @@ class MastodonPlugin(Plugin):
             },
             files={
                 'file': (
-                    os.path.basename(file_path), open(file_path, 'rb'), get_mime_type(file_path)
+                    os.path.basename(file_path),
+                    open(file_path, 'rb'),
+                    get_mime_type(file_path),
                 ),
                 **(
                     {
                         'thumbnail': (
                             os.path.basename(thumbnail_path),
                             open(os.path.expanduser(thumbnail_path), 'rb'),
-                            get_mime_type(thumbnail_path)
+                            get_mime_type(thumbnail_path),
                         ),
-                    } if thumbnail_path else {}
+                    }
+                    if thumbnail_path
+                    else {}
                 ),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def update_media(self, media_id: str, file: Optional[str] = None, description: Optional[str] = None,
-                     thumbnail: Optional[str] = None, **kwargs) -> dict:
+    def update_media(
+        self,
+        media_id: str,
+        file: Optional[str] = None,
+        description: Optional[str] = None,
+        thumbnail: Optional[str] = None,
+        **kwargs,
+    ) -> dict:
         """
         Update a media attachment.
 
@@ -1079,27 +1145,33 @@ class MastodonPlugin(Plugin):
                 **({'description': description} if description else {}),
             },
             files={
-                'file': (
-                    os.path.basename(file), open(file, 'rb'), get_mime_type(file)
-                ),
+                'file': (os.path.basename(file), open(file, 'rb'), get_mime_type(file)),
                 **(
                     {
                         'thumbnail': (
                             os.path.basename(thumbnail),
                             open(os.path.expanduser(thumbnail), 'rb'),
-                            get_mime_type(thumbnail)
+                            get_mime_type(thumbnail),
                         ),
-                    } if thumbnail else {}
+                    }
+                    if thumbnail
+                    else {}
                 ),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
     def get_public_timeline(
-            self, local: bool = False, remote: bool = False, only_media: bool = False,
-            min_id: Optional[str] = None, max_id: Optional[str] = None, limit: int = 20,
-            offset: int = 0, **kwargs
+        self,
+        local: bool = False,
+        remote: bool = False,
+        only_media: bool = False,
+        min_id: Optional[str] = None,
+        max_id: Optional[str] = None,
+        limit: int = 20,
+        offset: int = 0,
+        **kwargs,
     ) -> Iterable[dict]:
         """
         Get a list of statuses from the public timeline.
@@ -1128,14 +1200,21 @@ class MastodonPlugin(Plugin):
                 **({'max_id': max_id} if max_id else {}),
                 **({'limit': limit} if limit else {}),
                 **({'offset': offset} if offset else {}),
-            }, **kwargs
+            },
+            **kwargs,
         )
 
     @action
     def get_hashtag_timeline(
-            self, hashtag: str, local: bool = False, only_media: bool = False,
-            min_id: Optional[str] = None, max_id: Optional[str] = None, limit: int = 20,
-            offset: int = 0, **kwargs
+        self,
+        hashtag: str,
+        local: bool = False,
+        only_media: bool = False,
+        min_id: Optional[str] = None,
+        max_id: Optional[str] = None,
+        limit: int = 20,
+        offset: int = 0,
+        **kwargs,
     ) -> Iterable[dict]:
         """
         Get a list of statuses associated to a hashtag.
@@ -1163,14 +1242,20 @@ class MastodonPlugin(Plugin):
                 **({'max_id': max_id} if max_id else {}),
                 **({'limit': limit} if limit else {}),
                 **({'offset': offset} if offset else {}),
-            }, **kwargs
+            },
+            **kwargs,
         )
 
     @action
     def get_home_timeline(
-            self, local: bool = False, only_media: bool = False,
-            min_id: Optional[str] = None, max_id: Optional[str] = None, limit: int = 20,
-            offset: int = 0, **kwargs
+        self,
+        local: bool = False,
+        only_media: bool = False,
+        min_id: Optional[str] = None,
+        max_id: Optional[str] = None,
+        limit: int = 20,
+        offset: int = 0,
+        **kwargs,
     ) -> Iterable[dict]:
         """
         Get a list of statuses from the followed users.
@@ -1187,7 +1272,7 @@ class MastodonPlugin(Plugin):
         :return: .. schema:: mastodon.MastodonStatusSchema(many=True)
         """
         return self._run(
-            f'timelines/home',
+            'timelines/home',
             version='v1',
             schema=MastodonStatusSchema(many=True),
             params={
@@ -1197,14 +1282,19 @@ class MastodonPlugin(Plugin):
                 **({'max_id': max_id} if max_id else {}),
                 **({'limit': limit} if limit else {}),
                 **({'offset': offset} if offset else {}),
-            }, **kwargs
+            },
+            **kwargs,
         )
 
     @action
     def get_list_timeline(
-            self, list_id: str,
-            min_id: Optional[str] = None, max_id: Optional[str] = None, limit: int = 20,
-            offset: int = 0, **kwargs
+        self,
+        list_id: str,
+        min_id: Optional[str] = None,
+        max_id: Optional[str] = None,
+        limit: int = 20,
+        offset: int = 0,
+        **kwargs,
     ) -> Iterable[dict]:
         """
         Get a list of statuses from a list timeline.
@@ -1228,13 +1318,17 @@ class MastodonPlugin(Plugin):
                 **({'max_id': max_id} if max_id else {}),
                 **({'limit': limit} if limit else {}),
                 **({'offset': offset} if offset else {}),
-            }, **kwargs
+            },
+            **kwargs,
         )
 
     @action
     def get_conversations(
-            self, min_id: Optional[str] = None, max_id: Optional[str] = None,
-            limit: int = 20,  **kwargs
+        self,
+        min_id: Optional[str] = None,
+        max_id: Optional[str] = None,
+        limit: int = 20,
+        **kwargs,
     ) -> Iterable[dict]:
         """
         Get a list of user conversations.
@@ -1255,7 +1349,8 @@ class MastodonPlugin(Plugin):
                 **({'min_id': min_id} if min_id else {}),
                 **({'max_id': max_id} if max_id else {}),
                 **({'limit': limit} if limit else {}),
-            }, **kwargs
+            },
+            **kwargs,
         )
 
     @action
@@ -1269,10 +1364,7 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            f'conversations/{conversation_id}',
-            version='v1',
-            method='delete',
-            **kwargs
+            f'conversations/{conversation_id}', version='v1', method='delete', **kwargs
         )
 
     @action
@@ -1289,11 +1381,13 @@ class MastodonPlugin(Plugin):
             f'conversations/{conversation_id}/read',
             version='v1',
             method='post',
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def get_lists(self, list_id: Optional[int] = None, **kwargs) -> Union[dict, Iterable[dict]]:
+    def get_lists(
+        self, list_id: Optional[int] = None, **kwargs
+    ) -> Union[dict, Iterable[dict]]:
         """
         Get the lists owned by the logged user.
 
@@ -1308,7 +1402,7 @@ class MastodonPlugin(Plugin):
             version='v1',
             method='get',
             schema=MastodonListSchema(many=list_id is None),
-            **kwargs
+            **kwargs,
         )
 
     @action
@@ -1329,12 +1423,16 @@ class MastodonPlugin(Plugin):
             method='post',
             schema=MastodonListSchema(),
             data={'title': title, 'replies_policy': replies_policy},
-            **kwargs
+            **kwargs,
         )
 
     @action
     def update_list(
-            self, list_id: int, title: Optional[str], replies_policy: Optional[str] = None, **kwargs
+        self,
+        list_id: int,
+        title: Optional[str],
+        replies_policy: Optional[str] = None,
+        **kwargs,
     ) -> dict:
         """
         Update a list.
@@ -1357,7 +1455,7 @@ class MastodonPlugin(Plugin):
                 **({'title': title} if title else {}),
                 **({'replies_policy': replies_policy} if replies_policy else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
@@ -1370,17 +1468,16 @@ class MastodonPlugin(Plugin):
         :param list_id: List ID.
         :param kwargs: ``base_url``/``access_token`` override.
         """
-        return self._run(
-            f'lists/{list_id}',
-            version='v1',
-            method='delete',
-            **kwargs
-        )
+        return self._run(f'lists/{list_id}', version='v1', method='delete', **kwargs)
 
     @action
     def get_list_accounts(
-            self, list_id: Optional[int] = None, min_id: Optional[str] = None,
-            max_id: Optional[str] = None, limit: int = 20, **kwargs
+        self,
+        list_id: Optional[int] = None,
+        min_id: Optional[str] = None,
+        max_id: Optional[str] = None,
+        limit: int = 20,
+        **kwargs,
     ) -> Iterable[dict]:
         """
         Get the accounts in a list.
@@ -1404,7 +1501,7 @@ class MastodonPlugin(Plugin):
                 **({'max_id': max_id} if max_id else {}),
                 **({'limit': limit} if limit else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
     @action
@@ -1424,11 +1521,13 @@ class MastodonPlugin(Plugin):
             version='v1',
             method='post',
             data={'account_ids': account_ids},
-            **kwargs
+            **kwargs,
         )
 
     @action
-    def remove_accounts_from_list(self, list_id: int, account_ids: Sequence[str], **kwargs):
+    def remove_accounts_from_list(
+        self, list_id: int, account_ids: Sequence[str], **kwargs
+    ):
         """
         Remove accounts from a list
 
@@ -1444,13 +1543,17 @@ class MastodonPlugin(Plugin):
             version='v1',
             method='delete',
             data={'account_ids': account_ids},
-            **kwargs
+            **kwargs,
         )
 
     @action
     def get_notifications(
-            self, notification_id: Optional[str] = None, min_id: Optional[str] = None,
-            max_id: Optional[str] = None, limit: int = 20, **kwargs
+        self,
+        notification_id: Optional[str] = None,
+        min_id: Optional[str] = None,
+        max_id: Optional[str] = None,
+        limit: int = 20,
+        **kwargs,
     ) -> Union[dict, Iterable[dict]]:
         """
         Get the list of notifications of the user.
@@ -1474,7 +1577,7 @@ class MastodonPlugin(Plugin):
                 **({'max_id': max_id} if max_id else {}),
                 **({'limit': limit} if limit else {}),
             },
-            **kwargs
+            **kwargs,
         )
 
         return rs
@@ -1490,12 +1593,11 @@ class MastodonPlugin(Plugin):
         :param kwargs: ``base_url``/``access_token`` override.
         """
         return self._run(
-            'notifications/' + (
-                f'{notification_id}/dismiss' if notification_id else 'clear'
-            ),
+            'notifications/'
+            + (f'{notification_id}/dismiss' if notification_id else 'clear'),
             version='v1',
             method='post',
-            **kwargs
+            **kwargs,
         )
 
 

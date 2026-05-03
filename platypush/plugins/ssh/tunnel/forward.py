@@ -25,20 +25,28 @@ class Handler(socketserver.BaseRequestHandler):
                 self.request.getpeername(),
             )
         except Exception as e:
-            self.logger.warning('Incoming request to {host}:{port} failed: {error}'.format(
-                host=self.chain_host, port=self.chain_port, error=repr(e)))
+            self.logger.warning(
+                'Incoming request to {host}:{port} failed: {error}'.format(
+                    host=self.chain_host, port=self.chain_port, error=repr(e)
+                )
+            )
             return
 
         if chan is None:
-            self.logger.warning('Incoming request to {host}:{port} was rejected by the SSH server'.format(
-                host=self.chain_host, port=self.chain_port))
+            self.logger.warning(
+                'Incoming request to {host}:{port} was rejected by the SSH server'.format(
+                    host=self.chain_host, port=self.chain_port
+                )
+            )
             return
 
-        self.logger.info('Connected! Tunnel open {} -> {} -> {}'.format(
-            self.request.getpeername(),
-            chan.getpeername(),
-            (self.chain_host, self.chain_port),
-        ))
+        self.logger.info(
+            'Connected! Tunnel open {} -> {} -> {}'.format(
+                self.request.getpeername(),
+                chan.getpeername(),
+                (self.chain_host, self.chain_port),
+            )
+        )
 
         while True:
             r, w, x = select.select([self.request, chan], [], [])
@@ -59,7 +67,9 @@ class Handler(socketserver.BaseRequestHandler):
         self.logger.info('Tunnel closed from {}'.format(peer))
 
 
-def forward_tunnel(local_port, remote_host, remote_port, transport, bind_addr='') -> ForwardServer:
+def forward_tunnel(
+    local_port, remote_host, remote_port, transport, bind_addr=''
+) -> ForwardServer:
     class SubHandler(Handler):
         ssh_transport = transport
         chain_host = remote_host

@@ -26,7 +26,7 @@ class AudioSynthPlayer(AudioPlayer):
         channels: int,
         dtype,  # : DTypeLike,
         sounds: Optional[Iterable[Sound]] = None,
-        **kwargs
+        **kwargs,
     ):
         sounds = sounds or []
         self.mix = Mix(*sounds, volume=volume, channels=channels, dtype=dtype)

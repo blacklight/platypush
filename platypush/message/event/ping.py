@@ -19,7 +19,7 @@ class HostDownEvent(Event):
     """
 
     def __init__(self, host: str, *args, **kwargs):
-        super().__init__(host=host, *args, **kwargs)
+        super().__init__(*args, host=host, **kwargs)
 
 
 class HostUpEvent(Event):
@@ -28,7 +28,7 @@ class HostUpEvent(Event):
     """
 
     def __init__(self, host: str, *args, **kwargs):
-        super().__init__(host=host, *args, **kwargs)
+        super().__init__(*args, host=host, **kwargs)
 
 
 class PingResponseEvent(Event):
@@ -44,7 +44,7 @@ class PingResponseEvent(Event):
         avg: float,
         mdev: float,
         *args,
-        **kwargs
+        **kwargs,
     ):
         """
         :param host: Remote host IP or name.
@@ -54,7 +54,7 @@ class PingResponseEvent(Event):
         :param mdev: Standard deviation of the round-trip time (in ms).
         """
         super().__init__(
-            host=host, min=min, max=max, avg=avg, mdev=mdev, *args, **kwargs
+            *args, host=host, min=min, max=max, avg=avg, mdev=mdev, **kwargs
         )
 
 

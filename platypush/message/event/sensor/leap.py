@@ -12,7 +12,7 @@ class LeapFrameEvent(Event):
         :type hands: dict
         """
 
-        super().__init__(hands=hands, *args, **kwargs)
+        super().__init__(*args, hands=hands, **kwargs)
 
 
 class LeapFrameStartEvent(Event):
@@ -52,4 +52,3 @@ class LeapDisconnectEvent(Event):
 
 
 # vim:sw=4:ts=4:et:
-

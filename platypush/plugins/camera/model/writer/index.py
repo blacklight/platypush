@@ -1,8 +1,16 @@
 from enum import Enum
 
-from platypush.plugins.camera.model.writer.ffmpeg import MKVStreamWriter, H264StreamWriter, H265StreamWriter
-from platypush.plugins.camera.model.writer.image import JPEGStreamWriter, PNGStreamWriter, BMPStreamWriter, \
-    MJPEGStreamWriter
+from platypush.plugins.camera.model.writer.ffmpeg import (
+    MKVStreamWriter,
+    H264StreamWriter,
+    H265StreamWriter,
+)
+from platypush.plugins.camera.model.writer.image import (
+    JPEGStreamWriter,
+    PNGStreamWriter,
+    BMPStreamWriter,
+    MJPEGStreamWriter,
+)
 
 
 class StreamHandlers(Enum):

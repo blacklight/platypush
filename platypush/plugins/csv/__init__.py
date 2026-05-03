@@ -1,6 +1,7 @@
 import csv
 import os
 from typing import Optional, List, Any, Union, Dict
+
 try:
     from typing.io import TextIO
 except ImportError:
@@ -20,7 +21,7 @@ class CsvPlugin(Plugin):
 
     @staticmethod
     def reversed_blocks(f: TextIO, blocksize=4096):
-        """ Generate blocks of file's contents in reverse order. """
+        """Generate blocks of file's contents in reverse order."""
         f.seek(0, os.SEEK_END)
         here = f.tell()
         while 0 < here:
@@ -66,16 +67,18 @@ class CsvPlugin(Plugin):
         return column_names
 
     @action
-    def read(self,
-             filename: str,
-             delimiter: str = ',',
-             quotechar: Optional[str] = '"',
-             start: int = 0,
-             limit: Optional[int] = None,
-             reverse: bool = False,
-             has_header: bool = None,
-             column_names: Optional[List[str]] = None,
-             dialect: str = 'excel'):
+    def read(
+        self,
+        filename: str,
+        delimiter: str = ',',
+        quotechar: Optional[str] = '"',
+        start: int = 0,
+        limit: Optional[int] = None,
+        reverse: bool = False,
+        has_header: bool = None,
+        column_names: Optional[List[str]] = None,
+        dialect: str = 'excel',
+    ):
         """
         Gets the content of a CSV file.
 
@@ -107,7 +110,9 @@ class CsvPlugin(Plugin):
 
         rows = []
         with open(filename, 'r', newline='') as f:
-            for i, row in enumerate(csv.reader(self.lines(f, reverse=reverse), **csv_args)):
+            for i, row in enumerate(
+                csv.reader(self.lines(f, reverse=reverse), **csv_args)
+            ):
                 if not row or i < start:
                     continue
                 if limit and len(rows) >= limit + (1 if has_header else 0):
@@ -120,13 +125,15 @@ class CsvPlugin(Plugin):
         return rows
 
     @action
-    def write(self,
-              filename: str,
-              rows: List[Union[List[Any], Dict[str, Any]]],
-              truncate: bool = False,
-              delimiter: str = ',',
-              quotechar: Optional[str] = '"',
-              dialect: str = 'excel'):
+    def write(
+        self,
+        filename: str,
+        rows: List[Union[List[Any], Dict[str, Any]]],
+        truncate: bool = False,
+        delimiter: str = ',',
+        quotechar: Optional[str] = '"',
+        dialect: str = 'excel',
+    ):
         """
         Writes lines to a CSV file.
 
@@ -167,8 +174,9 @@ class CsvPlugin(Plugin):
                 if isinstance(row, dict):
                     flat_row = [None] * len(column_names)
                     for column, value in row.items():
-                        assert column in column_name_to_idx, \
-                            'No such column available in the CSV file: {}'.format(column)
+                        assert (
+                            column in column_name_to_idx
+                        ), 'No such column available in the CSV file: {}'.format(column)
                         idx = column_name_to_idx[column]
                         flat_row[idx] = value
 

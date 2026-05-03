@@ -509,11 +509,11 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
             tmp_collections = list(collection.collections)
             for collection in tmp_collections:
                 if collection.id not in self._collections:
-                    collection._collections[
-                        collection.id
-                    ] = self._collections[  # pylint: disable=protected-access
-                        collection.id
-                    ]
+                    collection._collections[collection.id] = (
+                        self._collections[  # pylint: disable=protected-access
+                            collection.id
+                        ]
+                    )
 
             # Link the parent collections to their child collections
             tmp_collections = list(collection.collections)

@@ -15,7 +15,7 @@ class HidBaseEvent(Event):
         product_id: int,
         product_string: str,
         manufacturer_string: str,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             *args,
@@ -25,7 +25,7 @@ class HidBaseEvent(Event):
             product_id=product_id,
             product_string=product_string,
             manufacturer_string=manufacturer_string,
-            **kwargs
+            **kwargs,
         )
 
 

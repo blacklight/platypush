@@ -72,7 +72,7 @@ class EntitiesMerger:
                         entity.children,
                         new_entities,
                         existing_entities,
-                    )
+                    ),
                 )
 
                 # Use the existing entity now that it's been merged

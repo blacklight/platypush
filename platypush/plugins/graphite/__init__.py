@@ -8,7 +8,9 @@ class GraphitePlugin(Plugin):
     Plugin for sending data to a Graphite instance.
     """
 
-    def __init__(self, host: str = 'localhost', port: int = 2003, timeout: int = 5, **kwargs):
+    def __init__(
+        self, host: str = 'localhost', port: int = 2003, timeout: int = 5, **kwargs
+    ):
         """
         :param host: Default Graphite host (default: 'localhost').
         :param port: Default Graphite port (default: 2003).
@@ -20,15 +22,17 @@ class GraphitePlugin(Plugin):
         self.timeout = timeout
 
     @action
-    def send(self,
-             metric: str,
-             value,
-             host: Optional[str] = None,
-             port: Optional[int] = None,
-             timeout: Optional[int] = None,
-             tags: Optional[Dict[str, str]] = None,
-             prefix: str = '',
-             protocol: str = 'tcp'):
+    def send(
+        self,
+        metric: str,
+        value,
+        host: Optional[str] = None,
+        port: Optional[int] = None,
+        timeout: Optional[int] = None,
+        tags: Optional[Dict[str, str]] = None,
+        prefix: str = '',
+        protocol: str = 'tcp',
+    ):
         """
         Send data to a Graphite instance.
 
@@ -48,7 +52,13 @@ class GraphitePlugin(Plugin):
         tags = tags or {}
         protocol = protocol.lower()
 
-        graphyte.init(host, port=port, prefix=prefix, protocol=protocol, timeout=timeout or self.timeout)
+        graphyte.init(
+            host,
+            port=port,
+            prefix=prefix,
+            protocol=protocol,
+            timeout=timeout or self.timeout,
+        )
         graphyte.send(metric, value, tags=tags)
 
 

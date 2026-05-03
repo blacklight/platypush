@@ -19,7 +19,9 @@ def user(*_):
 def tmp_file(*_):
     n_files = 2
     for _ in range(n_files):
-        tmp_file = tempfile.NamedTemporaryFile(prefix='platypush-test-procedure-', suffix='.txt', delete=False)
+        tmp_file = tempfile.NamedTemporaryFile(
+            prefix='platypush-test-procedure-', suffix='.txt', delete=False
+        )
         tmp_files.append(tmp_file.name)
 
     yield
@@ -39,7 +41,9 @@ def check_file_content(expected_content: str, tmp_file: str, timeout: int = 10):
             with open(tmp_file, 'r') as f:
                 content = f.read()
 
-            assert content == expected_content, 'The output file did not contain the expected text'
+            assert (
+                content == expected_content
+            ), 'The output file did not contain the expected text'
             error = None
             break
         except Exception as e:
@@ -59,7 +63,8 @@ def test_procedure_call(base_url):
         args={
             'file': tmp_files[0],
             'content': output_text,
-        })
+        },
+    )
 
     check_file_content(expected_content=output_text, tmp_file=tmp_files[0])
 
@@ -71,7 +76,9 @@ def test_procedure_from_event(app, base_url):
     output_text = 'Procedure from event test'
     event_type = 'test_procedure'
     # noinspection PyUnresolvedReferences
-    app.bus.post(CustomEvent(subtype=event_type, file=tmp_files[1], content=output_text))
+    app.bus.post(
+        CustomEvent(subtype=event_type, file=tmp_files[1], content=output_text)
+    )
     check_file_content(expected_content=output_text, tmp_file=tmp_files[1])
 
 

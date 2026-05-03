@@ -32,7 +32,7 @@ class CameraIrMlx90640Plugin(CameraPlugin):
         rawrgb_path: Optional[str] = None,
         resolution: Tuple[int, int] = (32, 24),
         warmup_frames: Optional[int] = 5,
-        **kwargs
+        **kwargs,
     ):
         """
         :param rawrgb_path: Specify it if the rawrgb executable compiled from
@@ -46,7 +46,7 @@ class CameraIrMlx90640Plugin(CameraPlugin):
             device='mlx90640',
             resolution=resolution,
             warmup_frames=warmup_frames,
-            **kwargs
+            **kwargs,
         )
 
         if not rawrgb_path:
@@ -117,7 +117,7 @@ class CameraIrMlx90640Plugin(CameraPlugin):
         """
         Back-compatibility alias for :meth:`.capture_image`.
         """
-        return self.capture_image(image_file=output_file, *args, **kwargs)
+        return self.capture_image(*args, image_file=output_file, **kwargs)
 
 
 # vim:sw=4:ts=4:et:

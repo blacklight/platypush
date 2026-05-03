@@ -15,8 +15,7 @@ class SerialDataEvent(Event):
         :type device: str
         """
 
-        super().__init__(data=data, device=device, *args, **kwargs)
+        super().__init__(*args, data=data, device=device, **kwargs)
 
 
 # vim:sw=4:ts=4:et:
-

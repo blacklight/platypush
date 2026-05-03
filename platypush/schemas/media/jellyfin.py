@@ -315,9 +315,9 @@ class JellyfinBookSchema(JellyfinSchema):
     @pre_dump
     def _gen_book_url(self, data, **_):
         data = data or {}
-        data[
-            'url'
-        ] = f'{self._server}/Items/{data["Id"]}/Download?api_key={self._api_key}'
+        data['url'] = (
+            f'{self._server}/Items/{data["Id"]}/Download?api_key={self._api_key}'
+        )
         data['embed_url'] = f'{self._server}/web/#/details?id={data["Id"]}'
         return data
 

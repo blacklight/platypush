@@ -23,15 +23,25 @@ class Repo:
 
 
 class GithubEvent(Event):
-    """ Generic Github event """
+    """Generic Github event"""
 
-    def __init__(self,
-                 event_type: str,
-                 created_at: datetime,
-                 actor: Optional[Dict[str, str]] = None,
-                 repo: Optional[Dict[str, str]] = None,
-                 *args, **kwargs):
-        super().__init__(*args, actor=actor, event_type=event_type, repo=repo, created_at=created_at, **kwargs)
+    def __init__(
+        self,
+        event_type: str,
+        created_at: datetime,
+        actor: Optional[Dict[str, str]] = None,
+        repo: Optional[Dict[str, str]] = None,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(
+            *args,
+            actor=actor,
+            event_type=event_type,
+            repo=repo,
+            created_at=created_at,
+            **kwargs,
+        )
         self.event_type = event_type
         self.actor = Actor(**actor) if actor else None
         self.repo = Repo(**repo) if repo else None
@@ -39,105 +49,105 @@ class GithubEvent(Event):
 
 
 class GithubPushEvent(GithubEvent):
-    """ Github push event. """
+    """Github push event."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubCommitCommentEvent(GithubEvent):
-    """ A commit comment is created. """
+    """A commit comment is created."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubCreateEvent(GithubEvent):
-    """ A git branch or tag is created. """
+    """A git branch or tag is created."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubDeleteEvent(GithubEvent):
-    """ A git branch or tag is deleted. """
+    """A git branch or tag is deleted."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubForkEvent(GithubEvent):
-    """ A user forks a watched repository. """
+    """A user forks a watched repository."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubWikiEvent(GithubEvent):
-    """ A wiki page is created or updated on a watched repository. """
+    """A wiki page is created or updated on a watched repository."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubIssueCommentEvent(GithubEvent):
-    """ A comment is added or updated on an issue. """
+    """A comment is added or updated on an issue."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubIssueEvent(GithubEvent):
-    """ A new activity is registered on an issue. """
+    """A new activity is registered on an issue."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubMemberEvent(GithubEvent):
-    """ New activity related to repository collaborators. """
+    """New activity related to repository collaborators."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubPublicEvent(GithubEvent):
-    """ A private repository is made public. """
+    """A private repository is made public."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubPullRequestEvent(GithubEvent):
-    """ New activity related to a pull request. """
+    """New activity related to a pull request."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubPullRequestReviewCommentEvent(GithubEvent):
-    """ New activity related to comments of a pull request. """
+    """New activity related to comments of a pull request."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubReleaseEvent(GithubEvent):
-    """ New activity related to the release of a repository. """
+    """New activity related to the release of a repository."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubSponsorshipEvent(GithubEvent):
-    """ New activity related to the sponsorship of a repository. """
+    """New activity related to the sponsorship of a repository."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)
 
 
 class GithubWatchEvent(GithubEvent):
-    """ Event triggered when someone stars or starts watching a repository. """
+    """Event triggered when someone stars or starts watching a repository."""
 
     def __init__(self, payload: dict, *args, **kwargs):
         super().__init__(*args, payload=payload, **kwargs)

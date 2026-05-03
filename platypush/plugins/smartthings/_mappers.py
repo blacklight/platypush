@@ -38,7 +38,7 @@ class DeviceMapper:
         set_command: Optional[Union[str, Callable[[Any], str]]] = None,
         get_value: Optional[Callable[[DeviceEntity], Any]] = None,
         set_value_args: Optional[Callable[..., Any]] = None,
-        **kwargs
+        **kwargs,
     ):
         self.entity_type = entity_type
         self.capability = capability

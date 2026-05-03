@@ -44,9 +44,9 @@ class ZeroconfListener(ServiceListener):
             'other_ttl': info.other_ttl,
             'priority': info.priority,
             'properties': {
-                k.decode()
-                if isinstance(k, bytes)
-                else k: (v.decode() if isinstance(v, bytes) else v)
+                k.decode() if isinstance(k, bytes) else k: (
+                    v.decode() if isinstance(v, bytes) else v
+                )
                 for k, v in info.properties.items()
             },
             'server': info.server,

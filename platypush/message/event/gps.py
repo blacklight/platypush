@@ -28,7 +28,7 @@ class GPSDeviceEvent(GPSEvent):
         cycle: Optional[float] = None,
         driver: Optional[str] = None,
         subtype: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param path: Device path.
@@ -52,7 +52,7 @@ class GPSDeviceEvent(GPSEvent):
             cycle=cycle,
             driver=driver,
             subtype=subtype,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -69,7 +69,7 @@ class GPSLocationUpdateEvent(GPSEvent):
         longitude=None,
         altitude=None,
         mode=None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             *args,
@@ -78,7 +78,7 @@ class GPSLocationUpdateEvent(GPSEvent):
             longitude=longitude,
             altitude=altitude,
             mode=mode,
-            **kwargs
+            **kwargs,
         )
 
 

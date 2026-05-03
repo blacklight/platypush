@@ -28,9 +28,9 @@ class StreamManager:
         self._stream_index_to_type: Dict[int, StreamType] = {}
         self.logger = getLogger(__name__)
 
-        self._streams: Dict[
-            int, Dict[StreamType, Dict[int, AudioThread]]
-        ] = defaultdict(lambda: {stream_type: {} for stream_type in StreamType})
+        self._streams: Dict[int, Dict[StreamType, Dict[int, AudioThread]]] = (
+            defaultdict(lambda: {stream_type: {} for stream_type in StreamType})
+        )
         """ {device_index: {stream_type: {stream_index: audio_thread}}} """
 
         self._streams_by_index: Dict[StreamType, Dict[int, AudioThread]] = {

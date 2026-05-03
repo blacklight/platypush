@@ -121,7 +121,7 @@ class RtorrentPlugin(TorrentPlugin):
         url: str,
         poll_seconds: float = 5.0,
         download_dir: str = '~/.rtorrent/watch',
-        **kwargs
+        **kwargs,
     ):
         """
         :param url: HTTP URL that exposes the XML/RPC interface of RTorrent (e.g. ``http://localhost:5000/RPC2``).

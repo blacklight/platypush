@@ -44,7 +44,9 @@ class WxPreviewWriter(PreviewWriter, Process):
         try:
             self.bitmap_queue.put(image)
         except Exception as e:
-            self.logger.warning('Could not add an image to the preview queue: {}'.format(str(e)))
+            self.logger.warning(
+                'Could not add an image to the preview queue: {}'.format(str(e))
+            )
 
 
 # vim:sw=4:ts=4:et:

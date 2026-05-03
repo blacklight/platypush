@@ -42,9 +42,9 @@ class GotifyPlugin(RunnablePlugin):
         rs = getattr(requests, method)(
             f'{self.server_url}/{endpoint}',
             headers={
-                'X-Gotify-Key': self.app_token
-                if method == 'post'
-                else self.client_token,
+                'X-Gotify-Key': (
+                    self.app_token if method == 'post' else self.client_token
+                ),
                 'Content-Type': 'application/json',
                 **kwargs.pop('headers', {}),
             },

@@ -43,7 +43,7 @@ class BluetoothDeviceEvent(BluetoothEvent):
         tx_power: Optional[int] = None,
         manufacturer: Optional[str] = None,
         services: Optional[Iterable[dict]] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param address: The Bluetooth address of the device.
@@ -64,7 +64,7 @@ class BluetoothDeviceEvent(BluetoothEvent):
             tx_power=tx_power,
             manufacturer=manufacturer,
             services=services,
-            **kwargs
+            **kwargs,
         )
 
     @classmethod
@@ -82,7 +82,7 @@ class BluetoothDeviceEvent(BluetoothEvent):
             tx_power=device.tx_power,
             manufacturer=device.manufacturer,
             services=[srv.to_dict() for srv in device.services],
-            **kwargs
+            **kwargs,
         )
 
 

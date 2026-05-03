@@ -7,6 +7,7 @@ from platypush.plugins.camera.model.writer.preview import PreviewWriter
 class Panel(wx.Panel):
     def __init__(self, parent, process, width: int, height: int):
         import wx
+
         super().__init__(parent, -1)
 
         self.process: PreviewWriter = process
@@ -18,6 +19,7 @@ class Panel(wx.Panel):
     @staticmethod
     def img_to_bitmap(image) -> wx.Bitmap:
         import wx
+
         return wx.Bitmap.FromBuffer(image.width, image.height, image.tobytes())
 
     def get_bitmap(self):
@@ -28,6 +30,7 @@ class Panel(wx.Panel):
 
     def update(self):
         import wx
+
         self.Refresh()
         self.Update()
         wx.CallLater(15, self.update)
@@ -41,6 +44,7 @@ class Panel(wx.Panel):
 
     def on_paint(self, *_, **__):
         import wx
+
         bitmap = self.create_bitmap()
         if not bitmap:
             return
@@ -52,11 +56,14 @@ class Panel(wx.Panel):
 class Frame(wx.Frame):
     def __init__(self, process):
         import wx
+
         style = wx.DEFAULT_FRAME_STYLE & ~wx.RESIZE_BORDER & ~wx.MAXIMIZE_BOX
         self.process = process
         image = self.process.bitmap_queue.get()
 
-        super().__init__(None, -1, process.camera.info.device or 'Camera Preview', style=style)
+        super().__init__(
+            None, -1, process.camera.info.device or 'Camera Preview', style=style
+        )
         self.Bind(wx.EVT_WINDOW_DESTROY, self.on_close)
         self.panel = Panel(self, process, width=image.width, height=image.height)
         self.Fit()

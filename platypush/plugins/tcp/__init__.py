@@ -16,7 +16,9 @@ class TcpPlugin(Plugin):
         super().__init__(**kwargs)
         self._sockets = {}
 
-    def _connect(self, host: str, port: int, timeout: Optional[float] = None) -> socket.socket:
+    def _connect(
+        self, host: str, port: int, timeout: Optional[float] = None
+    ) -> socket.socket:
         sd = self._sockets.get((host, port))
         if sd:
             return sd
@@ -55,8 +57,16 @@ class TcpPlugin(Plugin):
         sd.close()
 
     @action
-    def send(self, data: Union[bytes, str], host: str, port: int, binary: bool = False,
-             timeout: Optional[float] = None, recv_response: bool = False, **recv_opts):
+    def send(
+        self,
+        data: Union[bytes, str],
+        host: str,
+        port: int,
+        binary: bool = False,
+        timeout: Optional[float] = None,
+        recv_response: bool = False,
+        **recv_opts,
+    ):
         """
         Send data over a TCP connection. If the connection isn't active it will be created.
 
@@ -68,7 +78,7 @@ class TcpPlugin(Plugin):
         :param recv_response: If True then the action will wait for a response from the server before closing the
             connection. Note that ``recv_opts`` must be specified in this case - at least ``length``.
         """
-        if isinstance(data, list) or isinstance(data, dict):
+        if isinstance(data, (list, dict)):
             data = json.dumps(data)
         if isinstance(data, str):
             data = data.encode()
@@ -80,19 +90,28 @@ class TcpPlugin(Plugin):
         try:
             sd.send(data)
             if recv_response:
-                recv_opts.update({
-                    'host': host,
-                    'port': port,
-                    'timeout': timeout,
-                    'binary': binary,
-                })
+                recv_opts.update(
+                    {
+                        'host': host,
+                        'port': port,
+                        'timeout': timeout,
+                        'binary': binary,
+                    }
+                )
 
                 return self.recv(**recv_opts)
         finally:
             self.close(host, port)
 
     @action
-    def recv(self, length: int, host: str, port: int, binary: bool = False, timeout: Optional[float] = None) -> str:
+    def recv(
+        self,
+        length: int,
+        host: str,
+        port: int,
+        binary: bool = False,
+        timeout: Optional[float] = None,
+    ) -> str:
         """
         Receive data from a TCP connection. If the connection isn't active it will be created.
 

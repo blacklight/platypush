@@ -53,7 +53,7 @@ class WeatherPlugin(RunnablePlugin, WeatherEntityManager, ABC):
         lat: Optional[float] = None,
         long: Optional[float] = None,
         units: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> dict:
         """
         Returns the current weather.
@@ -76,7 +76,7 @@ class WeatherPlugin(RunnablePlugin, WeatherEntityManager, ABC):
         lat: Optional[float] = None,
         long: Optional[float] = None,
         units: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> List[dict]:
         """
         Returns the weather forecast for the upcoming hours/days.

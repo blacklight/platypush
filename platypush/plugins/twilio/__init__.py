@@ -34,7 +34,7 @@ class TwilioPlugin(Plugin):
         address_sid: Optional[str] = None,
         phone_number: Optional[str] = None,
         address_book: Optional[Dict[str, str]] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param account_sid: Account SID.
@@ -410,12 +410,16 @@ class TwilioPlugin(Plugin):
         messages = self.client.messages.list(
             to=to,
             from_=from_,
-            date_sent_before=datetime.datetime.fromisoformat(date_sent_before)
-            if date_sent_before
-            else None,
-            date_sent_after=datetime.datetime.fromisoformat(date_sent_after)
-            if date_sent_after
-            else None,
+            date_sent_before=(
+                datetime.datetime.fromisoformat(date_sent_before)
+                if date_sent_before
+                else None
+            ),
+            date_sent_after=(
+                datetime.datetime.fromisoformat(date_sent_after)
+                if date_sent_after
+                else None
+            ),
             date_sent=datetime.datetime.fromisoformat(date_sent) if date_sent else None,
             limit=limit,
             page_size=page_size,
@@ -671,22 +675,30 @@ class TwilioPlugin(Plugin):
             from_=from_,
             parent_call_sid=parent_call_sid,
             status=status,
-            start_time_before=datetime.datetime.fromisoformat(start_time_before)
-            if start_time_before
-            else None,
-            start_time=datetime.datetime.fromisoformat(start_time)
-            if start_time
-            else None,
-            start_time_after=datetime.datetime.fromisoformat(start_time_after)
-            if start_time_after
-            else None,
-            end_time_before=datetime.datetime.fromisoformat(end_time_before)
-            if end_time_before
-            else None,
+            start_time_before=(
+                datetime.datetime.fromisoformat(start_time_before)
+                if start_time_before
+                else None
+            ),
+            start_time=(
+                datetime.datetime.fromisoformat(start_time) if start_time else None
+            ),
+            start_time_after=(
+                datetime.datetime.fromisoformat(start_time_after)
+                if start_time_after
+                else None
+            ),
+            end_time_before=(
+                datetime.datetime.fromisoformat(end_time_before)
+                if end_time_before
+                else None
+            ),
             end_time=datetime.datetime.fromisoformat(end_time) if end_time else None,
-            end_time_after=datetime.datetime.fromisoformat(end_time_after)
-            if end_time_after
-            else None,
+            end_time_after=(
+                datetime.datetime.fromisoformat(end_time_after)
+                if end_time_after
+                else None
+            ),
             limit=limit,
             page_size=page_size,
         )

@@ -21,7 +21,7 @@ class LinodeInstanceStatusChanged(LinodeEvent):
         instance_name: str,
         status: str,
         old_status: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param instance_id: Linode instance ID.
@@ -35,7 +35,7 @@ class LinodeInstanceStatusChanged(LinodeEvent):
             instance_name=instance_name,
             status=status,
             old_status=old_status,
-            **kwargs
+            **kwargs,
         )
 
 

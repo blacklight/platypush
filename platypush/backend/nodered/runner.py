@@ -5,7 +5,9 @@ from platypush.context import get_plugin
 
 
 # noinspection PyUnusedLocal
-@node_red(name='run', title='run', category='platypush', description='Run a platypush action')
+@node_red(
+    name='run', title='run', category='platypush', description='Run a platypush action'
+)
 def run(node, msg):
     msg = msg['payload']
     if isinstance(msg, bytes):

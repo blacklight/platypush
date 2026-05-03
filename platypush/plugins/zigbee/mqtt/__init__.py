@@ -1719,7 +1719,7 @@ class ZigbeeMqttPlugin(
 
     @staticmethod
     def _ieee_address_and_property(
-        device: Union[dict, str]
+        device: Union[dict, str],
     ) -> Tuple[str, Optional[str]]:
         """
         Given a device property, as a dictionary containing the full device

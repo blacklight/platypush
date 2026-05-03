@@ -2,7 +2,8 @@ from platypush.message.event import Event
 
 
 class SttEvent(Event):
-    """ Base class for speech-to-text events """
+    """Base class for speech-to-text events"""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -11,6 +12,7 @@ class SpeechStartedEvent(SttEvent):
     """
     Event triggered when speech starts being detected.
     """
+
     pass
 
 
@@ -30,7 +32,9 @@ class ConversationDetectedEvent(SpeechDetectedEvent):
     """
     Event triggered when speech is detected after a hotword.
     """
+
     pass
+
 
 class HotwordDetectedEvent(SttEvent):
     """
@@ -48,6 +52,7 @@ class SpeechDetectionStartedEvent(SttEvent):
     """
     Event triggered when the speech detection engine starts.
     """
+
     pass
 
 
@@ -55,6 +60,7 @@ class SpeechDetectionStoppedEvent(SttEvent):
     """
     Event triggered when the speech detection engine stops.
     """
+
     pass
 
 

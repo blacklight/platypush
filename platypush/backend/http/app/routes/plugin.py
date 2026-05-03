@@ -16,7 +16,7 @@ __routes__ = [
 @panel.route('/plugin/<plugin>', methods=['GET'])
 @authenticate()
 def plugin_route(plugin):
-    """ Route to the plugin panel template """
+    """Route to the plugin panel template"""
     return render_template('index.html', plugin=plugin, utils=HttpUtils)
 
 

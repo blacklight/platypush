@@ -10,6 +10,7 @@ class FFplayPreviewWriter(PreviewWriter, MJPEGStreamWriter):
     """
     General class for managing previews from camera devices or generic sources of images over ffplay.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -20,7 +21,7 @@ class FFplayPreviewWriter(PreviewWriter, MJPEGStreamWriter):
     def _ffplay_thread(self):
         while not self.closed and self.ffplay.poll() is None:
             with self.ready:
-                self.ready.wait(1.)
+                self.ready.wait(1.0)
                 if not self.frame:
                     continue
 
@@ -37,8 +38,11 @@ class FFplayPreviewWriter(PreviewWriter, MJPEGStreamWriter):
 
         self.camera = None
         super().close()
-        if self._preview_thread and self._preview_thread.is_alive() and \
-                threading.get_ident() != self._preview_thread.ident:
+        if (
+            self._preview_thread
+            and self._preview_thread.is_alive()
+            and threading.get_ident() != self._preview_thread.ident
+        ):
             self._preview_thread.join(timeout=5.0)
             self._preview_thread = None
 

@@ -56,7 +56,7 @@ class CameraFrameCapturedEvent(CameraEvent):
             *args,
             filename=filename,
             logging_level=kwargs.pop('logging_level', logging.DEBUG),
-            **kwargs
+            **kwargs,
         )
 
 

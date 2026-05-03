@@ -51,7 +51,7 @@ class AdafruitIoPlugin(RunnablePlugin):
         key: str,
         feeds: Iterable[str] = (),
         throttle_interval: Optional[float] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param username: Your Adafruit username
@@ -244,9 +244,11 @@ class AdafruitIoPlugin(RunnablePlugin):
 
         return [
             {
-                attr: self._cast_value(getattr(i, attr))
-                if attr == 'value'
-                else getattr(i, attr)
+                attr: (
+                    self._cast_value(getattr(i, attr))
+                    if attr == 'value'
+                    else getattr(i, attr)
+                )
                 for attr in DATA_FIELDS
                 if getattr(i, attr) is not None
             }

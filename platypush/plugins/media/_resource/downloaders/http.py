@@ -20,7 +20,7 @@ class HttpResourceDownloader(MediaResourceDownloader):
         resource: HttpMediaResource,
         path: Optional[str] = None,
         timeout: Optional[int] = None,
-        **_
+        **_,
     ) -> 'HttpDownloadThread':
         path = path or self.get_download_path(resource=resource)
         download_thread = HttpDownloadThread(

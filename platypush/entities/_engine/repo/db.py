@@ -87,9 +87,9 @@ class EntitiesDb:
             lambda: defaultdict(Entity)
         )
 
-        children_by_parent_key: Dict[
-            Tuple[str, str], Dict[Tuple[str, str], Entity]
-        ] = defaultdict(lambda: defaultdict(Entity))
+        children_by_parent_key: Dict[Tuple[str, str], Dict[Tuple[str, str], Entity]] = (
+            defaultdict(lambda: defaultdict(Entity))
+        )
 
         for entity in entities:
             parent_key = None

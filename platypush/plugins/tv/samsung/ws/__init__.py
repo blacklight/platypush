@@ -21,7 +21,7 @@ class TvSamsungWsPlugin(Plugin):
         timeout: Optional[int] = 5,
         name='platypush',
         token_file: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param host: IP address or host name of the smart TV.

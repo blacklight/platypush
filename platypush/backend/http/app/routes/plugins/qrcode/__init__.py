@@ -20,6 +20,7 @@ def generate_code():
     """
 
     from platypush.plugins.qrcode import QrcodePlugin
+
     content = request.args.get('content')
     if not content:
         abort(400, 'Expected content parmeter')

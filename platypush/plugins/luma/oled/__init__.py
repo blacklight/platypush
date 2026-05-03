@@ -47,7 +47,7 @@ class LumaOledPlugin(Plugin):
         spi_mode: Optional[int] = None,
         font: Optional[str] = None,
         font_size: int = 10,
-        **kwargs
+        **kwargs,
     ):
         """
         :param interface: Serial interface the display is connected to (``spi``

@@ -7,6 +7,7 @@ class FoursquareCheckinEvent(Event):
     """
     Event triggered when a new check-in occurs.
     """
+
     def __init__(self, checkin: Dict[str, Any], *args, **kwargs):
         super().__init__(*args, checkin=checkin, **kwargs)
 

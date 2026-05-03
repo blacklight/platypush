@@ -83,7 +83,7 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
 
     @staticmethod
     def _parse_datetime(
-        dt: Optional[Union[str, datetime, int, float]]
+        dt: Optional[Union[str, datetime, int, float]],
     ) -> Optional[datetime]:
         if isinstance(dt, str):
             try:

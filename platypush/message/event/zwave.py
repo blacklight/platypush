@@ -25,7 +25,7 @@ class ZwaveNetworkReadyEvent(ZwaveEvent):
         nodes_count: int,
         device: Optional[str] = None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             *args,
@@ -37,7 +37,7 @@ class ZwaveNetworkReadyEvent(ZwaveEvent):
             node_id=node_id,
             node_version=node_version,
             nodes_count=nodes_count,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -216,7 +216,7 @@ class ZwaveCommandEvent(ZwaveEvent):
         error_description: Optional[str] = None,
         node: Optional[Dict[str, Any]] = None,
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             *args,
@@ -225,7 +225,7 @@ class ZwaveCommandEvent(ZwaveEvent):
             error=error,
             error_description=error_description,
             node=node,
-            **kwargs
+            **kwargs,
         )
 
 

@@ -704,16 +704,18 @@ class MatrixPlugin(AsyncRunnablePlugin):
                 visibility=(
                     RoomVisibility.public if is_public else RoomVisibility.private
                 ),
-                initial_state=[
-                    {
-                        'type': 'm.room.encryption',
-                        'content': {
-                            'algorithm': 'm.megolm.v1.aes-sha2',
-                        },
-                    }
-                ]
-                if encrypted
-                else (),
+                initial_state=(
+                    [
+                        {
+                            'type': 'm.room.encryption',
+                            'content': {
+                                'algorithm': 'm.megolm.v1.aes-sha2',
+                            },
+                        }
+                    ]
+                    if encrypted
+                    else ()
+                ),
             )
         )
 

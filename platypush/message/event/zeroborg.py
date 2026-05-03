@@ -8,7 +8,13 @@ class ZeroborgEvent(Event):
 
 
 class ZeroborgDriveEvent(ZeroborgEvent):
-    def __init__(self, motors: Union[list, tuple], direction: Optional[str] = None, *args, **kwargs):
+    def __init__(
+        self,
+        motors: Union[list, tuple],
+        direction: Optional[str] = None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, motors=motors, direction=direction, **kwargs)
 
 

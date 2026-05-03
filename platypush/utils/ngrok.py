@@ -34,7 +34,9 @@ def get_or_create_ngrok_tunnel() -> str:
         if Config.get('ngrok'):
             ngrok = get_plugin('ngrok')
 
-        assert ngrok, 'The ngrok plugin is required in order to subscribe to notifications'
+        assert (
+            ngrok
+        ), 'The ngrok plugin is required in order to subscribe to notifications'
         tunnel_response = ngrok.create_tunnel(
             resource=local_port,
             protocol='http',

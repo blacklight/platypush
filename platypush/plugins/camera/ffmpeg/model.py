@@ -10,10 +10,7 @@ class FFmpegCameraInfo(CameraInfo):
     ffmpeg_args: Tuple[str] = ()
 
     def to_dict(self) -> dict:
-        return {
-            'ffmpeg_args': list(self.ffmpeg_args or ()),
-            **super().to_dict()
-        }
+        return {'ffmpeg_args': list(self.ffmpeg_args or ()), **super().to_dict()}
 
 
 class FFmpegCamera(Camera):

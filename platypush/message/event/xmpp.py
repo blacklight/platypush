@@ -213,7 +213,7 @@ class XmppRoomTopicChangedEvent(XmppRoomEvent):
         *args,
         topic: Optional[str] = None,
         changed_by: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param topic: New room topic.
@@ -252,7 +252,7 @@ class XmppRoomAffiliationChangedEvent(XmppRoomOccupantEvent):
         affiliation: str,
         changed_by: Optional[str] = None,
         reason: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param affiliation: New affiliation.
@@ -264,7 +264,7 @@ class XmppRoomAffiliationChangedEvent(XmppRoomOccupantEvent):
             affiliation=affiliation,
             changed_by=changed_by,
             reason=reason,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -279,7 +279,7 @@ class XmppRoomRoleChangedEvent(XmppRoomOccupantEvent):
         role: str,
         changed_by: Optional[str] = None,
         reason: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param role: New role.
@@ -308,7 +308,7 @@ class XmppRoomInviteEvent(XmppRoomEvent, XmppUserEvent):
         mode: str,
         password: Optional[str] = None,
         reason: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         """
         :param user_id: The user who sent the invite.
