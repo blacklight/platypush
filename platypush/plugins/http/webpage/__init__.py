@@ -12,6 +12,7 @@ from html.parser import HTMLParser
 from typing import Iterable, Optional, Union
 from urllib.parse import urlparse
 
+from platypush.config import Config
 from platypush.plugins import Plugin, action
 
 
@@ -74,7 +75,6 @@ class HttpWebpagePlugin(Plugin):
 
     _plugin_dir = os.path.dirname(os.path.abspath(__file__))
     _parser_script = os.path.join(_plugin_dir, 'readability-parser.js')
-    _node_modules_dir = os.path.join(_plugin_dir, 'node_modules')
     _npm_packages = ('@mozilla/readability', 'jsdom')
 
     _default_headers = {
@@ -184,20 +184,31 @@ class HttpWebpagePlugin(Plugin):
         return parser.get_text()
 
     @classmethod
+    def _node_modules_dir(cls) -> str:
+        """
+        :return: The path to the node_modules directory under the
+            application's working directory.
+        """
+        return os.path.join(Config.get_workdir(), 'http.webpage', 'node_modules')
+
+    @classmethod
     def _ensure_node_deps(cls):
         """
-        Ensure that the required npm packages are installed locally
-        under the plugin directory.
+        Ensure that the required npm packages are installed under the
+        application's working directory.
         """
+        node_modules = cls._node_modules_dir()
+        node_dir = os.path.dirname(node_modules)
         missing = [
             pkg
             for pkg in cls._npm_packages
-            if not os.path.isdir(os.path.join(cls._node_modules_dir, pkg))
+            if not os.path.isdir(os.path.join(node_modules, pkg))
         ]
 
         if not missing:
             return
 
+        os.makedirs(node_dir, exist_ok=True)
         npm = shutil.which('npm')
         assert npm, (
             'npm is not installed or not found in PATH. '
@@ -205,7 +216,7 @@ class HttpWebpagePlugin(Plugin):
         )
 
         subprocess.check_call(
-            [npm, 'install', '--prefix', cls._plugin_dir, *missing],
+            [npm, 'install', '--prefix', node_dir, *missing],
             stdout=subprocess.DEVNULL,
         )
 
@@ -318,7 +329,7 @@ class HttpWebpagePlugin(Plugin):
                 f.flush()
                 proc.append(f.name)
 
-        env = {**os.environ, 'NODE_PATH': self._node_modules_dir}
+        env = {**os.environ, 'NODE_PATH': self._node_modules_dir()}
 
         try:
             with subprocess.Popen(
