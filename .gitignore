@@ -29,3 +29,5 @@ Session.vim
 /.skipci
 dump.rdb
 .env
+node_modules/
+platypush/plugins/http/webpage/package*.json

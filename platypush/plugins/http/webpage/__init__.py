@@ -1,12 +1,14 @@
-from dataclasses import dataclass
 import datetime
-from enum import Enum
 import json
 import os
 import re
+import shutil
 import subprocess
 import tempfile
 import textwrap
+from enum import Enum
+from dataclasses import dataclass
+from html.parser import HTMLParser
 from typing import Iterable, Optional, Union
 from urllib.parse import urlparse
 
@@ -66,18 +68,14 @@ class OutputFormats(Enum):
 class HttpWebpagePlugin(Plugin):
     """
     Plugin to handle and parse/simplify web pages.
-    It used to use the Mercury Reader web API, but now that the API is discontinued this plugin is basically a
-    wrapper around the `mercury-parser <https://github.com/postlight/mercury-parser>`_ JavaScript library.
-
-    Requires:
-
-        * The mercury-parser library installed (``npm install -g @postlight/mercury-parser``)
-
+    It uses the `Mozilla Readability library
+    <https://github.com/mozilla/readability>`_ JavaScript library.
     """
 
-    _mercury_script = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), 'mercury-parser.js'
-    )
+    _plugin_dir = os.path.dirname(os.path.abspath(__file__))
+    _parser_script = os.path.join(_plugin_dir, 'readability-parser.js')
+    _node_modules_dir = os.path.join(_plugin_dir, 'node_modules')
+    _npm_packages = ('@mozilla/readability', 'jsdom')
 
     _default_headers = {
         'User-Agent': (
@@ -89,18 +87,143 @@ class HttpWebpagePlugin(Plugin):
 
     def __init__(self, *args, headers: Optional[dict] = None, **kwargs):
         """
-        :param headers: Custom headers to be sent to the Mercury API.
+        :param headers: Custom headers to be sent to the Readability API.
         """
         super().__init__(*args, **kwargs)
         self._headers = {**self._default_headers, **(headers or {})}
+        self._ensure_node_deps()
 
-    @staticmethod
-    def _parse(proc):
+    _block_tags = frozenset(
+        (
+            'p',
+            'div',
+            'br',
+            'hr',
+            'h1',
+            'h2',
+            'h3',
+            'h4',
+            'h5',
+            'h6',
+            'li',
+            'ul',
+            'ol',
+            'blockquote',
+            'pre',
+            'article',
+            'section',
+            'header',
+            'footer',
+            'nav',
+            'aside',
+            'main',
+            'figure',
+            'figcaption',
+            'table',
+            'tr',
+            'th',
+            'td',
+            'details',
+            'summary',
+        )
+    )
+
+    class _HtmlToTextParser(HTMLParser):
         """
-        Runs the mercury-parser script and returns the result as a string.
+        HTML parser that converts HTML to plain text, rendering links as
+        ``link text [link url]``.
         """
-        with subprocess.Popen(proc, stdout=subprocess.PIPE, stderr=None) as parser:
-            return parser.communicate()[0].decode()
+
+        def __init__(self, block_tags: frozenset):
+            super().__init__()
+            self._chunks: list = []
+            self._link_href: Optional[str] = None
+            self._link_text: str = ''
+            self._in_link: bool = False
+            self._block_tags = block_tags
+
+        def handle_starttag(self, tag, attrs):
+            if tag == 'a':
+                href = dict(attrs).get('href')
+                if href:
+                    self._in_link = True
+                    self._link_href = href
+                    self._link_text = ''
+            elif tag in self._block_tags:
+                self._chunks.append('\n')
+
+        def handle_endtag(self, tag):
+            if tag == 'a' and self._in_link:
+                text = self._link_text.strip()
+                if text and self._link_href:
+                    self._chunks.append(f'{text} [{self._link_href}]')
+                elif text:
+                    self._chunks.append(text)
+                self._in_link = False
+                self._link_href = None
+                self._link_text = ''
+            elif tag in self._block_tags:
+                self._chunks.append('\n')
+
+        def handle_data(self, data):
+            if self._in_link:
+                self._link_text += data
+            else:
+                self._chunks.append(data)
+
+        def get_text(self) -> str:
+            return re.sub(r'\n{3,}', '\n\n', ''.join(self._chunks)).strip()
+
+    @classmethod
+    def _html_to_text(cls, html_content: str) -> str:
+        """
+        Convert HTML to plain text, rendering links as ``text [url]``.
+        """
+        parser = cls._HtmlToTextParser(cls._block_tags)
+        parser.feed(html_content)
+        return parser.get_text()
+
+    @classmethod
+    def _ensure_node_deps(cls):
+        """
+        Ensure that the required npm packages are installed locally
+        under the plugin directory.
+        """
+        missing = [
+            pkg
+            for pkg in cls._npm_packages
+            if not os.path.isdir(os.path.join(cls._node_modules_dir, pkg))
+        ]
+
+        if not missing:
+            return
+
+        npm = shutil.which('npm')
+        assert npm, (
+            'npm is not installed or not found in PATH. '
+            'It is required by the http.webpage plugin.'
+        )
+
+        subprocess.check_call(
+            [npm, 'install', '--prefix', cls._plugin_dir, *missing],
+            stdout=subprocess.DEVNULL,
+        )
+
+    def _html_to_markdown(self, content: str, url: str) -> str:
+        try:
+            from markdownify import markdownify as md
+        except ImportError:
+            self.logger.warning(
+                'Markdownify is not installed. '
+                'The HTML content will not be converted to Markdown.'
+            )
+
+            return content
+
+        return self._fix_relative_links(
+            markdown=md(content, heading_style='ATX'),
+            url=url,
+        )
 
     @staticmethod
     def _fix_relative_links(markdown: str, url: str) -> str:
@@ -115,6 +238,7 @@ class HttpWebpagePlugin(Plugin):
     def simplify(
         self,
         url: str,
+        *,
         type: Union[  # pylint: disable=redefined-builtin
             str, OutputFormats
         ] = OutputFormats.HTML,
@@ -139,16 +263,16 @@ class HttpWebpagePlugin(Plugin):
         ),
     ):
         """
-        Parse the readable content of a web page removing any extra HTML elements using Mercury.
+        Parse the readable content of a web page removing any extra HTML elements using Readability.
 
         :param url: URL to parse.
         :param type: Output format. Supported types: ``html``, ``markdown``,
             ``text``, ``pdf`` (default: ``html``).
         :param html: Set this parameter if you want to parse some HTML content
-            already fetched. Note that URL is still required by Mercury to
+            already fetched. Note that URL is still required by Readability to
             properly style the output, but it won't be used to actually fetch
             the content.
-        :param headers: Custom headers to be sent to the Mercury API.
+        :param headers: Custom headers to be sent to the Readability API.
         :param outfile: If set then the output will be written to the specified
             file. If the file extension is ``.pdf`` then the content will be
             exported in PDF format. If the output ``type`` is not specified
@@ -179,7 +303,7 @@ class HttpWebpagePlugin(Plugin):
 
         self.logger.info('Parsing URL %s', url)
         fmt = OutputFormats.parse(type=type, outfile=outfile)
-        proc = ['node', self._mercury_script, url, fmt.value.cmd_fmt]
+        proc = ['node', self._parser_script, url, fmt.value.cmd_fmt]
         headers = {**self._headers, **(headers or {})}
 
         for k, v in headers.items():
@@ -194,8 +318,13 @@ class HttpWebpagePlugin(Plugin):
                 f.flush()
                 proc.append(f.name)
 
+        env = {**os.environ, 'NODE_PATH': self._node_modules_dir}
+
         try:
-            response = self._parse(proc)
+            with subprocess.Popen(
+                proc, stdout=subprocess.PIPE, stderr=None, env=env
+            ) as parser:
+                response = parser.communicate()[0].decode()
         finally:
             if tmp_file:
                 os.unlink(tmp_file)
@@ -207,10 +336,12 @@ class HttpWebpagePlugin(Plugin):
                 f'Could not parse JSON: {e}. Response: {response}'
             ) from e
 
-        if fmt == OutputFormats.MARKDOWN:
-            response['content'] = self._fix_relative_links(response['content'], url)
+        if fmt == OutputFormats.TEXT:
+            response['content'] = self._html_to_text(response['content'])
+        elif fmt == OutputFormats.MARKDOWN:
+            response['content'] = self._html_to_markdown(response['content'], url)
 
-        self.logger.debug('Got response from Mercury API: %s', response)
+        self.logger.debug('Got response from Readability API: %s', response)
         title = response.get(
             'title',
             (
