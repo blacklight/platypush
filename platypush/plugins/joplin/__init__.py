@@ -46,6 +46,7 @@ class JoplinPlugin(BaseNotePlugin):
     e.g. open an SSH tunnel to the Joplin machine:
 
         .. code-block:: bash
+
             ssh -L 41184:localhost:41184 user@joplin-machine
 
     ### Using Joplin in headless mode
