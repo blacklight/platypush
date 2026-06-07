@@ -1,0 +1,34 @@
+{
+  "manifest": {
+    "package": "platypush.plugins.assistant.vosk",
+    "type": "plugin",
+    "events": [
+      "platypush.message.event.assistant.ConversationEndEvent",
+      "platypush.message.event.assistant.ConversationStartEvent",
+      "platypush.message.event.assistant.ConversationTimeoutEvent",
+      "platypush.message.event.assistant.MicMutedEvent",
+      "platypush.message.event.assistant.MicUnmutedEvent",
+      "platypush.message.event.assistant.NoResponseEvent",
+      "platypush.message.event.assistant.ResponseEndEvent",
+      "platypush.message.event.assistant.ResponseEvent",
+      "platypush.message.event.assistant.SpeechRecognizedEvent"
+    ],
+    "install": {
+      "apt": [
+        "python3-numpy"
+      ],
+      "dnf": [
+        "python-numpy"
+      ],
+      "pacman": [
+        "python-numpy",
+        "python-sounddevice"
+      ],
+      "pip": [
+        "platypush-vosk",
+        "numpy",
+        "sounddevice"
+      ]
+    }
+  }
+}
