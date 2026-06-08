@@ -154,9 +154,10 @@ class AudioRecorder:
 
     def __exit__(self, *_):
         """
-        Stop the audio stream.
+        Stop and close the audio stream, releasing the device.
         """
         self.stop()
+        self.stream.close()
 
     def _audio_callback(self, indata, *_):
         if self.should_stop() or self.paused:

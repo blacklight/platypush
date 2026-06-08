@@ -170,12 +170,6 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
                 )
                 self._should_stop.wait(timeout=5)
             finally:
-                if self._recorder:
-                    try:
-                        self._recorder.stream.close()
-                    except Exception as e:
-                        self.logger.warning("Error closing the audio stream: %s", e)
-
                 self._recorder = None
 
     def _stop_audio_thread(self):
