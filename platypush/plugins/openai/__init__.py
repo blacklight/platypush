@@ -149,7 +149,6 @@ class OpenaiPlugin(Plugin):
         timeout: float = 30,
         context: Optional[Iterable[dict]] = None,
         context_expiry: Optional[float] = 600,
-        max_tokens: int = 500,
         **kwargs,
     ):
         """
@@ -157,8 +156,6 @@ class OpenaiPlugin(Plugin):
             ``OPENAI_API_KEY`` environment variable.
         :param model: The model to use. Default: ``gpt-3.5-turbo``.
         :param timeout: Default timeout for API requests (default: 30 seconds).
-        :param max_tokens: Maximum number of tokens to generate in the response
-            (default: 500).
         :param context: Default context to use for completions, as a list of
             dictionaries with ``role`` and ``content`` keys. Default: None.
         :param context_expiry: Default expiry time for the context in seconds.
@@ -190,7 +187,6 @@ class OpenaiPlugin(Plugin):
             ContextEntry.from_dict(entries) for entries in (context or [])
         ]
 
-        self.max_tokens = max_tokens
         self.context_expiry = context_expiry
         self.model = model
         self.timeout = timeout
@@ -218,7 +214,6 @@ class OpenaiPlugin(Plugin):
         model: Optional[str] = None,
         context: Optional[Iterable[dict]] = None,
         timeout: Optional[float] = None,
-        max_tokens: Optional[int] = None,
     ) -> Optional[str]:
         """
         Get completions for a given prompt using ChatGPT.
@@ -226,8 +221,6 @@ class OpenaiPlugin(Plugin):
         :param prompt: The prompt/question to complete/answer.
         :param model: Override the default model to use.
         :param context: Extend the default context with these extra messages.
-        :param max_tokens: Override the default maximum number of tokens to
-            generate in the response.
         :param timeout: Override the default timeout for the API request.
         :return: The completion for the prompt - or, better, the message
             associted to the highest scoring completion choice.
@@ -260,7 +253,6 @@ class OpenaiPlugin(Plugin):
                     ),
                     *context,
                 ],
-                "max_tokens": max_tokens or self.max_tokens,
             },
         )
 
