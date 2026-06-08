@@ -314,11 +314,23 @@ class AudioThread(Thread, ABC):
         :return: True if the process should continue, False if it should terminate.
         """
         data = converter.read(timeout=timeout)
-        if not data:
+        if data is None:
             return self._on_converter_timeout(converter)
+
+        if data == b'':
+            return self._on_converter_eof(converter)
 
         self._on_audio_converted(data, out_f)
         return True
+
+    def _on_converter_eof(self, converter: AudioConverter) -> bool:
+        """
+        Callback logic invoked when the converter reaches the end of the audio
+        stream.
+
+        :return: ``False`` (default), as EOF terminates the stream.
+        """
+        return False
 
     def _on_converter_timeout(self, converter: AudioConverter) -> bool:
         """

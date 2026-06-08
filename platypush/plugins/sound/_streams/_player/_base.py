@@ -1,4 +1,5 @@
 from abc import ABC
+from math import ceil
 from typing import IO, Iterable, List, Optional, Type, Union
 
 import numpy as np
@@ -27,10 +28,15 @@ class AudioPlayer(AudioThread, ABC):
     """
 
     def __init__(
-        self, *args, sound: Optional[Union[dict, Iterable[dict]]] = None, **kwargs
+        self,
+        *args,
+        sound: Optional[Union[dict, Iterable[dict]]] = None,
+        end_padding: float = 0,
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.sound = sound
+        self.end_padding = end_padding
 
     @classmethod
     def build(
@@ -79,6 +85,19 @@ class AudioPlayer(AudioThread, ABC):
             )
 
         super()._on_audio_converted(data, out_f)
+
+    def _on_converter_eof(self, *_, **__) -> bool:
+        if self.audio_stream and self.end_padding > 0 and not self.should_stop:
+            frames_left = ceil(self.sample_rate * self.end_padding)
+            frames_per_chunk = max(1, self.blocksize)
+            while frames_left > 0 and not self.should_stop:
+                frames = min(frames_left, frames_per_chunk)
+                self.audio_stream.write(
+                    np.zeros((frames, self.channels), dtype=self.dtype)
+                )
+                frames_left -= frames
+
+        return False
 
     @property
     def _started_event_type(self) -> Type[SoundPlaybackStartedEvent]:

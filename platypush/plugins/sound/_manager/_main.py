@@ -65,6 +65,7 @@ class AudioManager:
         blocksize: Optional[int] = None,
         latency: Union[float, str] = 'high',
         stream_name: Optional[str] = None,
+        end_padding: float = 0,
     ) -> AudioPlayer:
         """
         Create an audio player thread.
@@ -82,6 +83,8 @@ class AudioManager:
         :param blocksize: Block size of the stream.
         :param latency: Latency of the stream.
         :param stream_name: Name of the stream.
+        :param end_padding: Silence, in seconds, to append before closing the
+            output stream.
         """
         dev = self._device_manager.get_device(device, type=StreamType.OUTPUT)
         player = AudioPlayer.build(
@@ -96,6 +99,7 @@ class AudioManager:
             latency=latency,
             channels=channels,
             output_format=format,
+            end_padding=end_padding,
             queue_size=self.queue_size,
             should_stop=self._should_stop,
         )

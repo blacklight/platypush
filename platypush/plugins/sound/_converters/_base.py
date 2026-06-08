@@ -204,12 +204,7 @@ class AudioConverter(Thread, ABC):
 
         self.logger.info('Running ffmpeg: %s', ' '.join(ffmpeg_args))
 
-        while (
-            self._loop
-            and self.ffmpeg
-            and self.ffmpeg.returncode is None
-            and not self.should_stop
-        ):
+        while self._loop and self.ffmpeg and not self.should_stop:
             self._check_ffmpeg()
             assert (
                 self.ffmpeg and self.ffmpeg.stdout
@@ -220,12 +215,18 @@ class AudioConverter(Thread, ABC):
             try:
                 reader = asyncio.create_task(self.ffmpeg.stdout.read(self._chunk_size))
                 data = await asyncio.wait_for(reader, timeout)
+                if data == b'':
+                    break
+
                 self._out_queue.put(data)
             except asyncio.TimeoutError:
                 pass
             except Exception as e:
                 self.logger.warning('Audio proxy error: %s', e)
                 break
+
+        if self.ffmpeg and self.ffmpeg.returncode is None and not self.should_stop:
+            await self.ffmpeg.wait()
 
         self._out_queue.put(b'')
 
