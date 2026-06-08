@@ -3,12 +3,17 @@ import pathlib
 import queue
 import time
 
-from threading import RLock, Thread
-from typing import Iterable, List, Optional, Union
+from threading import Event, RLock, Thread
+from typing import Callable, Iterable, List, Optional, Union
 
 from platypush.common.assistant import AudioRecorder
 from platypush.config import Config
-from platypush.message.event.assistant import HotwordDetectedEvent
+from platypush.context import get_bus
+from platypush.message.event.assistant import (
+    ConversationEndEvent,
+    ConversationStartEvent,
+    HotwordDetectedEvent,
+)
 from platypush.plugins import RunnablePlugin, action
 
 
@@ -72,6 +77,8 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
         self._audio_queue = queue.Queue()
         self._audio_thread: Optional[Thread] = None
         self._last_detection_time = 0.0
+        self._conversation_active = Event()
+        self._unregister_handlers: List[Callable[[], None]] = []
 
     @property
     def _has_speex_dsp(self) -> bool:
@@ -111,8 +118,32 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
 
         return list(MODELS.keys())
 
+    def _on_conversation_start(self, *_):
+        """
+        Called when any assistant plugin starts a conversation.
+        Releases the audio device so the assistant can use it.
+        """
+        self._conversation_active.set()
+        with self._audio_lock:
+            if self._recorder:
+                self._recorder.stop()
+
+    def _on_conversation_end(self, *_):
+        """
+        Called when any assistant plugin ends a conversation.
+        Allows the audio loop to re-acquire the device.
+        """
+        self._conversation_active.clear()
+
     def _audio_loop(self):
         while not self.should_stop():
+            # Wait if another assistant is using the audio device
+            while self._conversation_active.is_set() and not self.should_stop():
+                self._should_stop.wait(timeout=0.5)
+
+            if self.should_stop():
+                break
+
             try:
                 with AudioRecorder(
                     stop_event=self._should_stop,
@@ -121,8 +152,11 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
                     frame_size=int(16000 * self.frame_duration),
                     channels=1,
                 ) as self._recorder:
-                    while not self.should_stop():
-                        audio_data = self._recorder.read()
+                    while (
+                        not self.should_stop()
+                        and not self._conversation_active.is_set()
+                    ):
+                        audio_data = self._recorder.read(timeout=1.0)
                         if not (audio_data and len(audio_data.data)):
                             continue
 
@@ -193,6 +227,14 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
 
         self.logger.info("Refreshed available models: %s", list(MODELS.keys()))
 
+        # Register conversation event handlers so we release the audio device
+        # when another assistant plugin needs it.
+        bus = get_bus()
+        self._unregister_handlers = [
+            bus.register_handler(ConversationStartEvent, self._on_conversation_start),
+            bus.register_handler(ConversationEndEvent, self._on_conversation_end),
+        ]
+
         while not self.should_stop():
             try:
                 with self._audio_lock:
@@ -222,5 +264,8 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
                 self._stop_audio_thread()
 
     def stop(self):
+        for unregister in self._unregister_handlers:
+            unregister()
+        self._unregister_handlers = []
         super().stop()
         self._stop_audio_thread()
