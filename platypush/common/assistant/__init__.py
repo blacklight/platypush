@@ -27,6 +27,7 @@ class AudioRecorder:
         paused: bool = False,
         dtype: str = 'int16',
         queue_size: int = 100,
+        open_retries: int = 5,
     ):
         self.logger = getLogger(__name__)
         self._audio_queue: Queue[AudioFrame] = Queue(maxsize=queue_size)
@@ -46,6 +47,7 @@ class AudioRecorder:
             channels=channels,
             dtype=dtype,
             frame_size=frame_size,
+            retries=open_retries,
         )
 
     def _open_stream(

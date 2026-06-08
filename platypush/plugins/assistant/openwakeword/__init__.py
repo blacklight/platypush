@@ -136,6 +136,8 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
         self._conversation_active.clear()
 
     def _audio_loop(self):
+        import sounddevice as sd
+
         while not self.should_stop():
             # Wait if another assistant is using the audio device
             while self._conversation_active.is_set() and not self.should_stop():
@@ -151,6 +153,7 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
                     dtype='int16',
                     frame_size=int(16000 * self.frame_duration),
                     channels=1,
+                    open_retries=1,
                 ) as self._recorder:
                     while (
                         not self.should_stop()
@@ -161,6 +164,11 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
                             continue
 
                         self._audio_queue.put(audio_data)
+            except sd.PortAudioError as e:
+                self.logger.warning(
+                    'Audio device unavailable: %s. Retrying in 5s...', e
+                )
+                self._should_stop.wait(timeout=5)
             finally:
                 if self._recorder:
                     try:
