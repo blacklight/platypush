@@ -1,0 +1,35 @@
+{
+  "manifest": {
+    "events": {},
+    "install": {
+      "apk": [
+        "ffmpeg",
+        "portaudio-dev",
+        "py3-numpy"
+      ],
+      "apt": [
+        "ffmpeg",
+        "portaudio19-dev",
+        "python3-numpy"
+      ],
+      "dnf": [
+        "ffmpeg",
+        "portaudio-devel",
+        "python-numpy"
+      ],
+      "pacman": [
+        "ffmpeg",
+        "portaudio",
+        "python-numpy",
+        "python-sounddevice"
+      ],
+      "pip": [
+        "numpy",
+        "piper-tts",
+        "sounddevice"
+      ]
+    },
+    "package": "platypush.plugins.tts.piper",
+    "type": "plugin"
+  }
+}
