@@ -1,7 +1,7 @@
 from logging import getLogger
-from queue import Full, Queue
+from queue import Empty, Full, Queue
 from threading import Event
-from time import time
+from time import sleep, time
 from typing import Optional
 
 import numpy as np
@@ -54,11 +54,54 @@ class AudioRecorder:
         channels: int,
         dtype: str,
         frame_size: int,
+        retries: int = 5,
+        retry_delay: float = 1.0,
     ):
         """
         Try to open the audio stream at the requested sample rate. If the
         device doesn't support it, fall back to the device's default rate and
-        resample in software.
+        resample in software. Retries on transient "device unavailable" errors.
+        """
+        last_error: Optional[Exception] = None
+
+        for attempt in range(retries):
+            if self.should_stop():
+                raise RuntimeError('Audio recorder stop requested')
+
+            try:
+                return self._try_open_stream(
+                    sample_rate=sample_rate,
+                    channels=channels,
+                    dtype=dtype,
+                    frame_size=frame_size,
+                )
+            except sd.PortAudioError as e:
+                last_error = e
+                # Retry only on "Device unavailable" (-9985); other errors
+                # (like invalid sample rate) are already handled inside
+                # _try_open_stream via the native-rate fallback.
+                if attempt < retries - 1:
+                    self.logger.debug(
+                        'Audio device unavailable, retrying in %.1fs '
+                        '(attempt %d/%d)',
+                        retry_delay,
+                        attempt + 1,
+                        retries,
+                    )
+                    sleep(retry_delay)
+
+        raise last_error  # type: ignore[misc]
+
+    def _try_open_stream(
+        self,
+        sample_rate: int,
+        channels: int,
+        dtype: str,
+        frame_size: int,
+    ):
+        """
+        Single attempt to open the stream. Falls back to native sample rate
+        if the requested rate is not supported.
         """
         try:
             stream = sd.InputStream(
@@ -69,8 +112,12 @@ class AudioRecorder:
                 callback=self._audio_callback,
             )
             return stream, sample_rate
-        except sd.PortAudioError:
-            pass
+        except sd.PortAudioError as e:
+            # -9997 = paInvalidSampleRate — fall back to native rate
+            if len(e.args) >= 2 and e.args[1] == -9997:
+                pass
+            else:
+                raise
 
         # Fall back to the device's default sample rate
         device_info = sd.query_devices(kind='input')
@@ -140,8 +187,7 @@ class AudioRecorder:
         """
         try:
             return self._audio_queue.get(timeout=timeout)
-        except TimeoutError:
-            self.logger.debug('Audio queue is empty')
+        except (Empty, TimeoutError):
             return None
 
     def start(self):
