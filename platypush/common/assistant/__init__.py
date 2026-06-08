@@ -4,6 +4,7 @@ from threading import Event
 from time import time
 from typing import Optional
 
+import numpy as np
 import sounddevice as sd
 
 from platypush.utils import wait_for_either
@@ -30,6 +31,8 @@ class AudioRecorder:
         self.logger = getLogger(__name__)
         self._audio_queue: Queue[AudioFrame] = Queue(maxsize=queue_size)
         self.frame_size = frame_size
+        self._target_sample_rate = sample_rate
+        self._dtype = dtype
         self._stop_event = Event()
         self._upstream_stop_event = stop_event
         self._paused_state = PauseState()
@@ -38,13 +41,57 @@ class AudioRecorder:
         else:
             self._paused_state.resume()
 
-        self.stream = sd.InputStream(
-            samplerate=sample_rate,
+        self.stream, self._actual_sample_rate = self._open_stream(
+            sample_rate=sample_rate,
             channels=channels,
             dtype=dtype,
-            blocksize=frame_size,
+            frame_size=frame_size,
+        )
+
+    def _open_stream(
+        self,
+        sample_rate: int,
+        channels: int,
+        dtype: str,
+        frame_size: int,
+    ):
+        """
+        Try to open the audio stream at the requested sample rate. If the
+        device doesn't support it, fall back to the device's default rate and
+        resample in software.
+        """
+        try:
+            stream = sd.InputStream(
+                samplerate=sample_rate,
+                channels=channels,
+                dtype=dtype,
+                blocksize=frame_size,
+                callback=self._audio_callback,
+            )
+            return stream, sample_rate
+        except sd.PortAudioError:
+            pass
+
+        # Fall back to the device's default sample rate
+        device_info = sd.query_devices(kind='input')
+        native_rate = int(device_info['default_samplerate'])  # type: ignore
+        # Adjust blocksize to produce the equivalent duration at the native rate
+        native_block = int(frame_size * native_rate / sample_rate)
+        self.logger.warning(
+            'Audio device does not support %d Hz; '
+            'using native rate %d Hz with software resampling',
+            sample_rate,
+            native_rate,
+        )
+
+        stream = sd.InputStream(
+            samplerate=native_rate,
+            channels=channels,
+            dtype=dtype,
+            blocksize=native_block,
             callback=self._audio_callback,
         )
+        return stream, native_rate
 
     @property
     def paused(self):
@@ -67,9 +114,21 @@ class AudioRecorder:
             return
 
         try:
-            self._audio_queue.put_nowait(AudioFrame(indata.reshape(-1), time()))
+            data = indata.reshape(-1)
+            if self._actual_sample_rate != self._target_sample_rate:
+                data = self._resample(data)
+            self._audio_queue.put_nowait(AudioFrame(data, time()))
         except Full:
             self.logger.warning('Audio queue is full, dropping audio frame')
+
+    def _resample(self, data: np.ndarray) -> np.ndarray:
+        """Resample audio data from the actual device rate to the target rate."""
+        target_len = int(
+            len(data) * self._target_sample_rate / self._actual_sample_rate
+        )
+        indices = np.linspace(0, len(data) - 1, target_len)
+        resampled = np.interp(indices, np.arange(len(data)), data.astype(np.float64))
+        return resampled.astype(self._dtype)
 
     def read(self, timeout: Optional[float] = None):
         """
