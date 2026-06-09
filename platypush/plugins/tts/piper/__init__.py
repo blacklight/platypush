@@ -175,7 +175,8 @@ class TtsPiperPlugin(TtsPlugin):
         try:
             with wave.open(tmp_path, 'wb') as wav_file:
                 voice.synthesize_wav(text, wav_file, syn_config=syn_config)
-            self._playback(tmp_path, join=True, **player_args)
+            player_args["join"] = True
+            self._playback(tmp_path, **player_args)
         finally:
             if os.path.exists(tmp_path):
                 os.unlink(tmp_path)
