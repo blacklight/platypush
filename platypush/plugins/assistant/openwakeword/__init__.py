@@ -133,6 +133,7 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
         Called when any assistant plugin ends a conversation.
         Allows the audio loop to re-acquire the device.
         """
+        self._last_detection_time = time.time()
         self._conversation_active.clear()
 
     def _audio_loop(self):
@@ -145,6 +146,9 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
 
             if self.should_stop():
                 break
+
+            if self._model:
+                self._model.reset()
 
             try:
                 with AudioRecorder(
