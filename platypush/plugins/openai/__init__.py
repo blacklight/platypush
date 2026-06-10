@@ -256,7 +256,19 @@ class OpenaiPlugin(Plugin):
             },
         )
 
-        resp.raise_for_status()
+        try:
+            resp.raise_for_status()
+        except Exception as e:
+            try:
+                err = resp.json()
+            except Exception:
+                err = None
+
+            self.logger.error(
+                "OpenAI request failed: %s%s", e, (f" ({err})" if err else "")
+            )
+            return None
+
         self._update_context(*context)
         choices = resp.json()["choices"]
         self.logger.debug("OpenAI response: %s", resp.json())
