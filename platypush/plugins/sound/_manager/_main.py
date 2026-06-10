@@ -65,6 +65,7 @@ class AudioManager:
         blocksize: Optional[int] = None,
         latency: Union[float, str] = 'high',
         stream_name: Optional[str] = None,
+        start_padding: float = 0,
         end_padding: float = 0,
     ) -> AudioPlayer:
         """
@@ -83,6 +84,8 @@ class AudioManager:
         :param blocksize: Block size of the stream.
         :param latency: Latency of the stream.
         :param stream_name: Name of the stream.
+        :param start_padding: Silence, in seconds, to prepend before audio
+            playback starts.
         :param end_padding: Silence, in seconds, to append before closing the
             output stream.
         """
@@ -99,6 +102,7 @@ class AudioManager:
             latency=latency,
             channels=channels,
             output_format=format,
+            start_padding=start_padding,
             end_padding=end_padding,
             queue_size=self.queue_size,
             should_stop=self._should_stop,

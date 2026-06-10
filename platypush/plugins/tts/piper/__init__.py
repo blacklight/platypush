@@ -41,6 +41,7 @@ class TtsPiperPlugin(TtsPlugin):
         noise_scale: Optional[float] = None,
         noise_w_scale: Optional[float] = None,
         use_cuda: bool = False,
+        start_padding: float = 1,
         end_padding: float = 1,
         **kwargs,
     ):
@@ -62,6 +63,10 @@ class TtsPiperPlugin(TtsPlugin):
             (default: voice default).
         :param use_cuda: Whether to use CUDA for GPU acceleration. Requires
             ``onnxruntime-gpu`` to be installed (default: False).
+        :param start_padding: Silence, in seconds, to prepend before playing
+            the audio. This gives the audio backend (e.g. PulseAudio/PipeWire)
+            time to initialize the output path, avoiding the first fraction of
+            generated speech being silently dropped (default: 1).
         :param end_padding: Silence, in seconds, to append before closing the
             playback stream. This avoids clipping the tail of short generated
             speech on some audio backends (default: 1).
@@ -82,6 +87,7 @@ class TtsPiperPlugin(TtsPlugin):
         self._noise_scale = noise_scale
         self._noise_w_scale = noise_w_scale
         self._use_cuda = use_cuda
+        self.player_args.setdefault('start_padding', start_padding)
         self.player_args.setdefault('end_padding', end_padding)
         self._voices: Dict[str, Optional[PiperVoice]] = defaultdict(lambda: None)
         self._voices_locks = defaultdict(RLock)

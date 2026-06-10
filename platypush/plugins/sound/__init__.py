@@ -89,6 +89,7 @@ class SoundPlugin(RunnablePlugin):
         format: Optional[str] = None,  # pylint: disable=redefined-builtin
         stream_name: Optional[str] = None,
         stream_index: Optional[int] = None,
+        start_padding: float = 0,
         end_padding: float = 0,
         join: bool = False,
     ):
@@ -176,6 +177,11 @@ class SoundPlugin(RunnablePlugin):
             name will be created. If not set, and ``stream_index`` is not set
             either, then a new stream will be created on the next available
             index and named ``platypush-stream-<index>``.
+        :param start_padding: Silence, in seconds, to prepend to the stream
+            before playing the audio. This can be useful to give the audio
+            backend (e.g. PulseAudio/PipeWire) time to initialize the output
+            path, avoiding the first fraction of audio being silently dropped
+            (default: 0).
         :param end_padding: Silence, in seconds, to append to the stream before
             closing it. This can be useful for short generated audio clips, like
             TTS, on backends that may otherwise drop the tail of the playback
@@ -222,6 +228,7 @@ class SoundPlugin(RunnablePlugin):
             channels=channels,
             volume=volume,
             stream_name=stream_name,
+            start_padding=start_padding,
             end_padding=end_padding,
             **player_kwargs,
         )

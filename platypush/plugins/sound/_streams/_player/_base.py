@@ -31,11 +31,13 @@ class AudioPlayer(AudioThread, ABC):
         self,
         *args,
         sound: Optional[Union[dict, Iterable[dict]]] = None,
+        start_padding: float = 0,
         end_padding: float = 0,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.sound = sound
+        self.start_padding = start_padding
         self.end_padding = end_padding
 
     @classmethod
@@ -73,6 +75,21 @@ class AudioPlayer(AudioThread, ABC):
     @property
     def _audio_converter_type(self) -> Type[RawOutputAudioConverter]:
         return RawOutputAudioConverter
+
+    def _write_start_padding(self):
+        if not (self.audio_stream and self.start_padding > 0):
+            return
+
+        frames_left = ceil(self.sample_rate * self.start_padding)
+        frames_per_chunk = max(1, self.blocksize)
+        while frames_left > 0 and not self.should_stop:
+            frames = min(frames_left, frames_per_chunk)
+            self.audio_stream.write(np.zeros((frames, self.channels), dtype=self.dtype))
+            frames_left -= frames
+
+    def main(self, *args, **kwargs):
+        self._write_start_padding()
+        super().main(*args, **kwargs)
 
     def _on_audio_converted(self, data: bytes, out_f: Optional[IO] = None):
         if self.audio_stream:
