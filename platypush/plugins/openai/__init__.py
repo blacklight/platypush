@@ -214,6 +214,7 @@ class OpenaiPlugin(Plugin):
         model: Optional[str] = None,
         context: Optional[Iterable[dict]] = None,
         timeout: Optional[float] = None,
+        clear_context: bool = True,
     ) -> Optional[str]:
         """
         Get completions for a given prompt using ChatGPT.
@@ -222,10 +223,17 @@ class OpenaiPlugin(Plugin):
         :param model: Override the default model to use.
         :param context: Extend the default context with these extra messages.
         :param timeout: Override the default timeout for the API request.
+        :param clear_context: Clear the context before making the request.
+            If set to False, then the previous context will be retained
+            for the configured ``context_expiry`` duration.
         :return: The completion for the prompt - or, better, the message
             associted to the highest scoring completion choice.
         """
-        self._rotate_context()
+        if clear_context:
+            self.clear_context()
+        else:
+            self._rotate_context()
+
         context = [
             *(context or []),
             {
