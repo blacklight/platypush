@@ -1,5 +1,77 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `assistant.vosk`: Added a Vosk-based speech-to-text plugin.
+
+- `assistant.vosk`: Added support for automatically downloading, verifying,
+  extracting and caching Vosk models by language.
+
+- `tts.piper`: Added a Piper text-to-speech plugin.
+
+- `sound`: Added `start_padding` support to `AudioPlayer`,
+  `AudioManager.create_player()` and `sound.play` to prevent the first samples
+  from being clipped while PulseAudio/PipeWire initializes the output stream.
+  `tts.piper` now defaults this option to one second.
+
+- `assistant`: Added fallback to the audio device's native sample rate with
+  software resampling when the requested rate is not supported by the device.
+
+- `openai`: Added a `clear_context` option to `openai.chatgpt`.
+
+### Changed
+
+- `http.webpage`: Migrated the webpage parser API from Mercury to Readability.
+
+- `openai`: Removed the unsupported `max_tokens` option from the plugin API.
+
+- `logging`: Moved `EntityEvent` logs to `DEBUG` to reduce noise.
+
+- Updated web UI dependencies, including `axios`, `core-js`, `cronstrue`,
+  `sass`, `vue`, `vue-router`, `webpack`, `rollup`, `ajv`, `express`,
+  `qs`, `lodash`, `node-forge`, `follow-redirects`, `fast-uri`, `flatted`,
+  `immutable`, `picomatch`, `svgo`, `ws`, `form-data`, `js-yaml`,
+  `compression` and `on-headers`.
+
+### Fixed
+
+- `music.mpd`: Made status retrieval more robust when the connection is broken
+  or times out.
+
+- `repos`: Fixed broken newlines in the `index.txt` generated for the APT
+  repository.
+
+- `app`: Forced the multiprocessing start method to `fork` on Linux.
+
+- `http.webpage`: Fixed Node dependency installation by running it under the
+  plugin workdir.
+
+- `sound`: Drain `ffmpeg` output before ending playback.
+
+- `assistant`: Retry opening audio streams when the device is transiently
+  unavailable or busy.
+
+- `assistant`: Close recorder audio streams reliably on context-manager exit.
+
+- `assistant.openwakeword`: Release the audio device during assistant
+  conversations, then resume wake-word detection afterwards.
+
+- `assistant.openwakeword`: Reset the model and refresh the cooldown when a
+  conversation ends.
+
+- `tts.piper`: Pass `join` through `player_args` to avoid errors when it is
+  already present in the player arguments.
+
+- `openai`: Handle HTTP errors and log response details.
+
+### Documentation
+
+- Added missing plugin documentation.
+
+- Removed the Matrix chat badge from the README.
+
 ## [1.3.17]
 
 ### Fixed
