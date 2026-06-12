@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Handle Redis timeout errors on the bus (mostly to stabilize tests).
+
 ## [1.3.18]
 
 ### Added
