@@ -81,7 +81,7 @@ class RedisBus(Bus):
                                 self._on_message(parsed_msg)
                         except Exception as e:
                             logger.exception(e)
-                except RedisConnectionError as e:
+                except (TimeoutError, RedisConnectionError) as e:
                     if not (self.should_stop() or has_error):
                         logger.warning('Redis connection error: %s', e)
 
