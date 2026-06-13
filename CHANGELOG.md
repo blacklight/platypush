@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- `assistant.openwakeword`: Clearer value for `detection_sensitivity`.
+  By default, in OpenWakeWord a higher sensitivity value actually means
+  _less_ likely to detect a hotword. Since this is counter-intuitive,
+  use `1.0 - detection_sensitivity` instead and explicitly document the
+  meaning of the value.
+
 ## [1.3.19]
 
 ### Fixed

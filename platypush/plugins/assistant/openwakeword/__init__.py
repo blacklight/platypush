@@ -28,8 +28,8 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
     :param models_directory: Directory where to store wake word models.
         Default: ``<PLATYPUSH_WORKDIR>/openwakeword/models``
     :param detection_sensitivity: Wake word detection sensitivity, a float
-        between 0.0 and 1.0 (default: 0.5). Higher values increase the
-        sensitivity.
+        between 0.0 and 1.0 (default: 0.4). Higher values increase the
+        sensitivity, i.e. make the plugin more likely to detect a hotword.
     :param frame_duration: Audio frame duration in seconds. Default: 0.5
         seconds.
     :param enable_speex_noise_suppression: Whether to enable Speex-based
@@ -46,7 +46,7 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
         self,
         models: Optional[Iterable[str]] = None,
         models_directory: Optional[str] = None,
-        detection_sensitivity: float = 0.5,
+        detection_sensitivity: float = 0.4,
         frame_duration: float = 0.5,
         enable_speex_noise_suppression: Optional[bool] = None,
         audio_frame_timeout: float = 5.0,
@@ -67,7 +67,12 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
             else self._has_speex_dsp
         )
 
-        self.detection_sensitivity = detection_sensitivity
+        if not 0 <= detection_sensitivity <= 1:
+            raise ValueError(
+                "detection_sensitivity must be a float between 0.0 and 1.0"
+            )
+
+        self.detection_sensitivity = 1.0 - detection_sensitivity
         self.frame_duration = frame_duration
         self._pause_seconds_after_hotword = pause_seconds_after_hotword
         self._audio_frame_timeout = audio_frame_timeout
