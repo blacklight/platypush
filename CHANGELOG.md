@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- `docker`: Switched to exec-form `CMD` in Docker images for proper signal
+  handling.
+
+### Fixed
+
+- `redis`: Forward the `redis_bin` CLI option to `RedisBus` and handle redis-py
+  timeout exceptions in the subscriber loop.
+
 ## [1.3.20]
 
 ### Changed
