@@ -341,6 +341,7 @@ class Application:
             start_redis=opts.start_redis,
             redis_host=opts.redis_host,
             redis_port=opts.redis_port,
+            redis_bin=opts.redis_bin,
             ctrl_sock=opts.ctrl_sock,
             debug_sql=opts.debug_sql,
         )
