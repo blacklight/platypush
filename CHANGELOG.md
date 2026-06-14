@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `plugins`: Run `RunnablePlugin` worker threads as daemon threads so a plugin
+  that times out during shutdown cannot keep the application process alive.
+
 ## [1.3.22]
 
 ### Fixed

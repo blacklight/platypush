@@ -222,7 +222,7 @@ class RunnablePlugin(Plugin):
         :meta private:
         """
         self._thread = threading.Thread(
-            target=self._runner, name=self.__class__.__name__
+            target=self._runner, name=self.__class__.__name__, daemon=True
         )
         self._thread.start()
 
