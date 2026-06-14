@@ -16,6 +16,7 @@ class RedisBus(Bus):
     """
 
     DEFAULT_REDIS_QUEUE: str = 'platypush/bus'
+    _PUBSUB_POLL_TIMEOUT: float = 1.0
 
     def __init__(self, *_, on_message=None, redis_queue=None, **kwargs):
         super().__init__(on_message=on_message)
@@ -31,16 +32,22 @@ class RedisBus(Bus):
     def redis(self):
         from platypush.utils import get_redis
 
-        if not self._redis:
+        if self._redis is None:
             self._redis = get_redis(**self.redis_args)
         return self._redis
 
     @property
     def pubsub(self):
         with self._pubsub_lock:
-            if not self._pubsub:
+            if self._pubsub is None:
                 self._pubsub = self.redis.pubsub()
             return self._pubsub
+
+    def _close_pubsub(self):
+        with self._pubsub_lock:
+            if self._pubsub is not None:
+                self._pubsub.close()
+                self._pubsub = None
 
     def poll(self):
         """
@@ -57,42 +64,45 @@ class RedisBus(Bus):
         has_error = False
 
         while not self.should_stop():
-            with self.pubsub as pubsub:
-                try:
-                    pubsub.subscribe(self.redis_queue)
-                    self.post(ApplicationStartedEvent())
+            try:
+                pubsub = self.pubsub
+                pubsub.subscribe(self.redis_queue)
+                self.post(ApplicationStartedEvent())
 
-                    for msg in pubsub.listen():
-                        if has_error:
-                            logger.info('Redis connection restored')
+                while not self.should_stop():
+                    msg = pubsub.get_message(
+                        ignore_subscribe_messages=True,
+                        timeout=self._PUBSUB_POLL_TIMEOUT,
+                    )
 
-                        has_error = False
-                        if msg.get('type') != 'message':
-                            continue
+                    if has_error:
+                        logger.info('Redis connection restored')
 
-                        if self.should_stop():
-                            break
+                    has_error = False
+                    if not msg:
+                        continue
 
-                        try:
-                            data = msg.get('data', b'').decode('utf-8')
-                            logger.debug('Received message on the Redis bus: %r', data)
-                            parsed_msg = Message.build(data)
-                            if parsed_msg:
-                                self._on_message(parsed_msg)
-                        except Exception as e:
-                            logger.exception(e)
-                except (RedisTimeoutError, RedisConnectionError) as e:
-                    if not (self.should_stop() or has_error):
-                        logger.warning('Redis connection error: %s', e)
-
-                    has_error = True
-                    pubsub.close()
-                    redis_pools.clear()  # Clear the connection pool
-                    self._redis = None
-                    time.sleep(1)
-                finally:
                     try:
-                        pubsub.unsubscribe(self.redis_queue)
+                        data = msg.get('data', b'').decode('utf-8')
+                        logger.debug('Received message on the Redis bus: %r', data)
+                        parsed_msg = Message.build(data)
+                        if parsed_msg:
+                            self._on_message(parsed_msg)
+                    except Exception as e:
+                        logger.exception(e)
+            except (RedisTimeoutError, RedisConnectionError) as e:
+                if not (self.should_stop() or has_error):
+                    logger.warning('Redis connection error: %s', e)
+
+                has_error = True
+                self._close_pubsub()
+                redis_pools.clear()  # Clear the connection pool
+                self._redis = None
+                time.sleep(1)
+            finally:
+                if self._pubsub is not None:
+                    try:
+                        self._pubsub.unsubscribe(self.redis_queue)
                     except (RedisConnectionError, RedisTimeoutError) as e:
                         logger.warning(
                             'Could not unsubscribe from Redis queue %s: %s',
@@ -137,7 +147,9 @@ class RedisBus(Bus):
 
     def stop(self):
         super().stop()
-        self.redis.close()
+        self._close_pubsub()
+        if self._redis is not None:
+            self._redis.close()
 
 
 # vim:sw=4:ts=4:et:

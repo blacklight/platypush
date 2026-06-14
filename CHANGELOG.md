@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `redis`: Avoid blocking indefinitely on Redis Pub/Sub listeners by polling
+  with a bounded timeout. This prevents idle subscribers from hanging on
+  shutdown when `socket_timeout` is unset and from reporting false Redis
+  connection errors when a socket timeout is configured.
+
 ## [1.3.21]
 
 ### Changed

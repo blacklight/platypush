@@ -6,6 +6,7 @@ from multiprocessing import RLock
 from typing import Generator, Iterable, Optional, Set, Union
 
 from redis import ConnectionError as RedisConnectionError
+from redis import TimeoutError as RedisTimeoutError
 from redis.client import PubSub
 
 from platypush.config import Config
@@ -34,6 +35,8 @@ class PubSubMixin:
     """
     A mixin for Tornado route handlers that support pub/sub mechanisms.
     """
+
+    _PUBSUB_POLL_TIMEOUT: float = 1.0
 
     def __init__(self, *_, subscriptions: Optional[Iterable[str]] = None, **__):
         self._pubsub: Optional[PubSub] = None
@@ -117,15 +120,20 @@ class PubSubMixin:
         try:
             with self.pubsub as pubsub:
                 pubsub.subscribe(*self._subscriptions)
-                for msg in pubsub.listen():
+                while self._subscriptions:
+                    msg = pubsub.get_message(
+                        ignore_subscribe_messages=True,
+                        timeout=self._PUBSUB_POLL_TIMEOUT,
+                    )
+                    if not msg:
+                        continue
+
                     channel = msg.get('channel', b'').decode()
-                    if msg.get('type') != 'message' or not (
-                        channel and channel in self._subscriptions
-                    ):
+                    if not (channel and channel in self._subscriptions):
                         continue
 
                     yield Message(data=msg.get('data', b''), channel=channel)
-        except (AttributeError, ValueError, RedisConnectionError):
+        except (AttributeError, ValueError, RedisConnectionError, RedisTimeoutError):
             return
 
     def _pubsub_close(self):
