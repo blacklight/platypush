@@ -32,7 +32,8 @@ class XmppAsyncMixin(XmppBaseMixin, ABC):
         Utility method to call an async action from the thread of the parent
         action.
         """
-        assert self._loop, Errors.LOOP
+        if not (self._loop):
+            raise AssertionError(Errors.LOOP)
         fut = asyncio.run_coroutine_threadsafe(coro(*args, **kwargs), self._loop)
 
         if wait_result:
@@ -50,6 +51,7 @@ class XmppAsyncMixin(XmppBaseMixin, ABC):
                 self.logger.exception(e)
                 err = e
             finally:
-                assert not err, str(err)
+                if err:
+                    raise AssertionError(str(err))
 
         return None

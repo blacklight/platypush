@@ -113,7 +113,10 @@ class AssistantGooglePlugin(AssistantPlugin, RunnablePlugin):
             if os.path.isfile(default_file):
                 break
 
-        assert f, 'No credentials_file provided and no default file found'
+        if not (f):
+            raise AssertionError(
+                'No credentials_file provided and no default file found'
+            )
         return f
 
     @property

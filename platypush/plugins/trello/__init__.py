@@ -123,7 +123,8 @@ class TrelloPlugin(RunnablePlugin):
             return client.get_board(board)
         except ResourceUnavailable:
             boards = [b for b in client.list_boards() if b.name == board]
-            assert boards, f'No such board: {board}'
+            if not (boards):
+                raise AssertionError(f'No such board: {board}')
             return boards[0]
 
     def _get_boards(
@@ -253,7 +254,8 @@ class TrelloPlugin(RunnablePlugin):
             b.delete_label(label)
         except ResourceUnavailable:
             label_ = next(iter(ll for ll in b.get_labels() if ll.name == label), None)
-            assert label_, f'No such label: {label}'
+            if not (label_):
+                raise AssertionError(f'No such label: {label}')
             label = label_.id
             b.delete_label(label)
 
@@ -360,7 +362,8 @@ class TrelloPlugin(RunnablePlugin):
             return b.get_list(list)
         except ResourceUnavailable:
             lists = [ll for ll in b.list_lists() if ll.name == list]
-            assert lists, f'No such list: {list}'
+            if not (lists):
+                raise AssertionError(f'No such list: {list}')
             return lists[0]
 
     @action
@@ -598,7 +601,8 @@ class TrelloPlugin(RunnablePlugin):
 
         labels = [ll for ll in card.board.get_labels() if ll.name == label]
 
-        assert labels, f'No such label: {label}'
+        if not (labels):
+            raise AssertionError(f'No such label: {label}')
         label = labels[0]
         card.add_label(label)
 
@@ -615,7 +619,8 @@ class TrelloPlugin(RunnablePlugin):
 
         labels = [ll for ll in card.board.get_labels() if ll.name == label]
 
-        assert labels, f'No such label: {label}'
+        if not (labels):
+            raise AssertionError(f'No such label: {label}')
         label = labels[0]
         card.remove_label(label)
 
@@ -909,7 +914,8 @@ class TrelloPlugin(RunnablePlugin):
                     ),
                     None,
                 )
-                assert ll, f'No such list ID/name: {list}'
+                if not (ll):
+                    raise AssertionError(f'No such list ID/name: {list}')
                 list_id = ll.id  # type: ignore
 
         return TrelloCardSchema().dump(
@@ -1134,7 +1140,8 @@ class TrelloPlugin(RunnablePlugin):
         self._req_id += 1
 
     def _connect(self, reconnect: bool = False) -> WebSocketApp:
-        assert self.url, 'Trello websocket URL not set'
+        if not (self.url):
+            raise AssertionError('Trello websocket URL not set')
         if reconnect:
             self.stop()
 

@@ -138,10 +138,11 @@ class NextcloudPlugin(RunnablePlugin):
 
         for perm in permissions or []:
             perm = perm.upper()
-            assert hasattr(Permission, perm), (
-                f'Unknown permissions type: {perm}. Supported permissions: '
-                f'{[p.name.lower() for p in Permission]}'
-            )
+            if not (hasattr(Permission, perm)):
+                raise AssertionError(
+                    f'Unknown permissions type: {perm}. Supported permissions: '
+                    f'{[p.name.lower() for p in Permission]}'
+                )
 
             if perm == 'ALL':
                 int_perm = Permission.ALL.value
@@ -154,34 +155,38 @@ class NextcloudPlugin(RunnablePlugin):
     @staticmethod
     def _get_share_type(share_type: str) -> int:
         share_type = share_type.upper()
-        assert hasattr(ShareType, share_type), (
-            f'Unknown share type: {share_type}. Supported share types: '
-            f'{[s.name.lower() for s in ShareType]}'
-        )
+        if not (hasattr(ShareType, share_type)):
+            raise AssertionError(
+                f'Unknown share type: {share_type}. Supported share types: '
+                f'{[s.name.lower() for s in ShareType]}'
+            )
 
         return getattr(ShareType, share_type).value
 
     def _execute(self, server_args: dict, method: str, *args, **kwargs):
         client = self._get_client(**server_args)
         func = getattr(client, method, None)
-        assert func, f'No such NextCloud method: {method}'
+        if not (func):
+            raise AssertionError(f'No such NextCloud method: {method}')
 
         response = func(*args, **kwargs)
-        assert response is not None, 'No response from NextCloud server'
-        assert response.is_ok, (
-            'Error on '
-            + method
-            + '('
-            + ', '.join(args)
-            + (', ' if args and kwargs else '')
-            + ', '.join([f'{k}={v}' for k, v in kwargs.items()])
-            + '): status='
-            + str(response.status_code)
-            + ', message='
-            + getattr(response, 'meta', {}).get('message', '[No message]')
-            + ', data='
-            + str(response.json_data)
-        )
+        if not (response is not None):
+            raise AssertionError('No response from NextCloud server')
+        if not (response.is_ok):
+            raise AssertionError(
+                'Error on '
+                + method
+                + '('
+                + ', '.join(args)
+                + (', ' if args and kwargs else '')
+                + ', '.join([f'{k}={v}' for k, v in kwargs.items()])
+                + '): status='
+                + str(response.status_code)
+                + ', message='
+                + getattr(response, 'meta', {}).get('message', '[No message]')
+                + ', data='
+                + str(response.json_data)
+            )
 
         return response.json_data
 
@@ -1196,9 +1201,8 @@ class NextcloudPlugin(RunnablePlugin):
         if isinstance(timestamp, datetime):
             timestamp = int(timestamp.timestamp())
 
-        assert (local_path or content) and not (
-            local_path and content
-        ), 'Please specify either local_path or content'
+        if not ((local_path or content) and not (local_path and content)):
+            raise AssertionError('Please specify either local_path or content')
 
         if local_path:
             method = 'upload_file'

@@ -95,7 +95,8 @@ class MediaSubtitlesRoute(StreamingRoute):
         subfile = None
         if self.request.body:
             subfile = json.loads(self.request.body).get('filename')
-            assert subfile, 'No filename specified in the request'
+            if not (subfile):
+                raise AssertionError('No filename specified in the request')
 
         if not subfile:
             if not media_hndl.path:

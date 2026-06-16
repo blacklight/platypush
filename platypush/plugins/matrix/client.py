@@ -130,7 +130,8 @@ class MatrixClient(AsyncClient):
         if not store_path:
             store_path = os.path.join(Config.get('workdir'), 'matrix', 'store')  # type: ignore
 
-        assert store_path
+        if not (store_path):
+            raise AssertionError
         store_path = os.path.abspath(os.path.expanduser(store_path))
         pathlib.Path(store_path).mkdir(exist_ok=True, parents=True)
 
@@ -193,8 +194,10 @@ class MatrixClient(AsyncClient):
             )
             return
 
-        assert credentials.get('user_id'), 'Missing user_id'
-        assert credentials.get('access_token'), 'Missing access_token'
+        if not (credentials.get('user_id')):
+            raise AssertionError('Missing user_id')
+        if not (credentials.get('access_token')):
+            raise AssertionError('Missing access_token')
 
         self.access_token = credentials['access_token']
         self.user_id = credentials['user_id']
@@ -227,18 +230,21 @@ class MatrixClient(AsyncClient):
                 access_token=self.access_token,
             )
         else:
-            assert self.user, 'No credentials file found and no user provided'
+            if not (self.user):
+                raise AssertionError('No credentials file found and no user provided')
             login_args = {'device_name': device_name}
             if token:
                 login_args['token'] = token
             else:
-                assert (
-                    password
-                ), 'No credentials file found and no password nor access token provided'
+                if not (password):
+                    raise AssertionError(
+                        'No credentials file found and no password nor access token provided'
+                    )
                 login_args['password'] = password
 
             login_res = await super().login(**login_args)
-            assert isinstance(login_res, LoginResponse), f'Failed to login: {login_res}'
+            if not (isinstance(login_res, LoginResponse)):
+                raise AssertionError(f'Failed to login: {login_res}')
             self.logger.info(login_res)
 
             credentials = Credentials(
@@ -274,7 +280,8 @@ class MatrixClient(AsyncClient):
     @logged_in
     async def sync(self, *args, **kwargs) -> SyncResponse:
         response = await super().sync(*args, **kwargs)
-        assert isinstance(response, SyncResponse), str(response)
+        if not (isinstance(response, SyncResponse)):
+            raise AssertionError(str(response))
         self._last_batches_by_room.update(
             {
                 room_id: {
@@ -293,13 +300,15 @@ class MatrixClient(AsyncClient):
     ) -> RoomMessagesResponse:
         if not start:
             start = self._last_batches_by_room.get(room_id, {}).get('prev_batch')
-            assert start, (
-                f'No sync batches were found for room {room_id} and no start'
-                'batch has been provided'
-            )
+            if not (start):
+                raise AssertionError(
+                    f'No sync batches were found for room {room_id} and no start'
+                    'batch has been provided'
+                )
 
         response = await super().room_messages(room_id, start, *args, **kwargs)
-        assert isinstance(response, RoomMessagesResponse), str(response)
+        if not (isinstance(response, RoomMessagesResponse)):
+            raise AssertionError(str(response))
         return response
 
     def _sync_devices_trust(self):
@@ -437,9 +446,10 @@ class MatrixClient(AsyncClient):
         Cached version of get_profile.
         """
         ret = await super().get_profile(user_id)
-        assert isinstance(
-            ret, ProfileGetResponse
-        ), f'Could not retrieve profile for user {user_id}: {ret.message}'
+        if not (isinstance(ret, ProfileGetResponse)):
+            raise AssertionError(
+                f'Could not retrieve profile for user {user_id}: {ret.message}'
+            )
         return ret
 
     @alru_cache(maxsize=500)
@@ -449,9 +459,10 @@ class MatrixClient(AsyncClient):
         Cached version of room_get_state.
         """
         ret = await super().room_get_state(room_id)
-        assert isinstance(
-            ret, RoomGetStateResponse
-        ), f'Could not retrieve profile for room {room_id}: {ret.message}'
+        if not (isinstance(ret, RoomGetStateResponse)):
+            raise AssertionError(
+                f'Could not retrieve profile for room {room_id}: {ret.message}'
+            )
         return ret
 
     @client_session
@@ -466,9 +477,8 @@ class MatrixClient(AsyncClient):
             server_name, media_id, filename, allow_remote=allow_remote
         )
 
-        assert isinstance(
-            response, DownloadResponse
-        ), f'Could not download media {media_id}: {response}'
+        if not (isinstance(response, DownloadResponse)):
+            raise AssertionError(f'Could not download media {media_id}: {response}')
 
         encryption_data = self._encrypted_attachments_keystore.get(
             (server_name, media_id)
@@ -672,12 +682,12 @@ class MatrixClient(AsyncClient):
             return
 
         rs = await self.accept_key_verification(sas.transaction_id)
-        assert not isinstance(
-            rs, ToDeviceError
-        ), f'accept_key_verification failed: {rs}'
+        if isinstance(rs, ToDeviceError):
+            raise AssertionError(f'accept_key_verification failed: {rs}')
 
         rs = await self.to_device(sas.share_key())
-        assert not isinstance(rs, ToDeviceError), f'Shared key exchange failed: {rs}'
+        if isinstance(rs, ToDeviceError):
+            raise AssertionError(f'Shared key exchange failed: {rs}')
 
     async def _on_key_verification_accept(self, event: KeyVerificationAccept):
         self.logger.info('Key verification from device %s accepted', event.sender)
@@ -701,9 +711,8 @@ class MatrixClient(AsyncClient):
         )
 
         rs = await self.confirm_short_auth_string(sas.transaction_id)
-        assert not isinstance(
-            rs, ToDeviceError
-        ), f'confirm_short_auth_string failed: {rs}'
+        if isinstance(rs, ToDeviceError):
+            raise AssertionError(f'confirm_short_auth_string failed: {rs}')
 
     async def _on_key_verification_mac(self, event: KeyVerificationMac):
         self.logger.info('Received MAC verification request from %s', event.sender)
@@ -723,9 +732,10 @@ class MatrixClient(AsyncClient):
             return
 
         rs = await self.to_device(mac)
-        assert not isinstance(
-            rs, ToDeviceError
-        ), f'Sending of the verification MAC to {event.sender} failed: {rs}'
+        if isinstance(rs, ToDeviceError):
+            raise AssertionError(
+                f'Sending of the verification MAC to {event.sender} failed: {rs}'
+            )
 
         self.logger.info('This device has been successfully verified!')
 

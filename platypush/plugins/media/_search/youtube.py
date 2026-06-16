@@ -15,7 +15,8 @@ class YoutubeMediaSearcher(MediaSearcher):
 
         self.logger.info('Searching YouTube for "%s"', query)
         yt = get_plugin('youtube')
-        assert yt, 'YouTube plugin not available/configured'
+        if not (yt):
+            raise AssertionError('YouTube plugin not available/configured')
         return yt.search(query=query).output
 
     def supports(self, type: str) -> bool:

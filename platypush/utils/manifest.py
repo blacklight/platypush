@@ -611,7 +611,8 @@ class Manifest(ABC):
         with open(str(filename), 'r') as f:
             manifest = json.load(f).get('manifest', {})
 
-        assert 'type' in manifest, f'Manifest file {filename} has no type field'
+        if not ('type' in manifest):
+            raise AssertionError(f'Manifest file {filename} has no type field')
         comp_type = ManifestType(manifest.pop('type'))
         manifest_class = cls.by_type(comp_type)
         return manifest_class(**manifest, pkg_manager=pkg_manager)

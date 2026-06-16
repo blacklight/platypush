@@ -200,9 +200,10 @@ class SensorPlugin(RunnablePlugin, SensorEntityManager, ABC):
         if low_t is None or high_t is None:
             return []
 
-        assert isinstance(low_t, (int, float)) and isinstance(
-            high_t, (int, float)
-        ), f'Non-numeric thresholds detected: "{low_t}" and "{high_t}"'
+        if not (isinstance(low_t, (int, float)) and isinstance(high_t, (int, float))):
+            raise AssertionError(
+                f'Non-numeric thresholds detected: "{low_t}" and "{high_t}"'
+            )
 
         # Above threshold case
         if (old_data is None or old_data <= high_t) and new_data > high_t:

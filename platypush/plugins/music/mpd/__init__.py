@@ -413,9 +413,13 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
         :param to_pos: Alias for ``position`` - it only works with one track at
             the time.
         """
-        assert (start is not None and end is not None and position is not None) or (
-            from_pos is not None and to_pos is not None
-        ), 'Specify either (start, end, position) or (from_pos, to_pos)'
+        if not (
+            (start is not None and end is not None and position is not None)
+            or (from_pos is not None and to_pos is not None)
+        ):
+            raise AssertionError(
+                'Specify either (start, end, position) or (from_pos, to_pos)'
+            )
 
         if from_pos is not None and to_pos is not None:
             return self._exec('move', from_pos, to_pos)
@@ -838,7 +842,8 @@ class MusicMpdPlugin(MusicPlugin, RunnablePlugin):
             ``query``, it's still here for back-compatibility reasons.
         :returns: list[dict]
         """
-        assert query or filter, 'Specify either `query` or `filter`'
+        if not (query or filter):
+            raise AssertionError('Specify either `query` or `filter`')
 
         filt = filter
         if isinstance(query, str):

@@ -25,9 +25,10 @@ __routes__ = [
 def _get_otp_and_qrcode():
     otp = get_plugin('otp')  # pylint: disable=redefined-outer-name
     qrcode = get_plugin('qrcode')
-    assert (
-        otp and qrcode
-    ), 'The otp and/or qrcode plugins are not available in your installation'
+    if not (otp and qrcode):
+        raise AssertionError(
+            'The otp and/or qrcode plugins are not available in your installation'
+        )
 
     return otp, qrcode
 
@@ -97,7 +98,8 @@ def _get_otp():
 
 
 def _authenticate_user(username: str, password: Optional[str]):
-    assert password, 'The password field is required when setting up OTP'
+    if not (password):
+        raise AssertionError('The password field is required when setting up OTP')
     user, auth_status = UserManager().authenticate_user(  # type: ignore
         username, password, skip_2fa=True, with_status=True
     )
@@ -108,7 +110,8 @@ def _authenticate_user(username: str, password: Optional[str]):
 
 def _post_otp():
     body = request.json
-    assert body, 'Invalid request body'
+    if not (body):
+        raise AssertionError('Invalid request body')
 
     username = _get_username()
     dry_run = body.get('dry_run', False)
@@ -119,7 +122,8 @@ def _post_otp():
 
         if otp_secret:
             code = body.get('code')
-            assert code, 'The code field is required when setting up OTP'
+            if not (code):
+                raise AssertionError('The code field is required when setting up OTP')
 
             if not _verify_code(code, otp_secret):
                 raise InvalidOtpCodeException()
@@ -140,7 +144,8 @@ def _post_otp():
 
 def _delete_otp():
     body = request.json
-    assert body, 'Invalid request body'
+    if not (body):
+        raise AssertionError('Invalid request body')
 
     username = _get_username()
     _authenticate_user(username, body.get('password'))

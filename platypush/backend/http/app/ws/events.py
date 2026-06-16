@@ -28,7 +28,8 @@ class WSEventProxy(WSRoute):
     def on_message(self, message):
         try:
             event = Event.build(message)
-            assert isinstance(event, Event), f'Expected {Event}, got {type(event)}'
+            if not (isinstance(event, Event)):
+                raise AssertionError(f'Expected {Event}, got {type(event)}')
         except Exception as e:
             logger.info('Could not build event from %s: %s', message, e)
             logger.exception(e)

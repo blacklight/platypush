@@ -29,11 +29,15 @@ class FileHandler(MediaHandler):
             raise FileNotFoundError(self.path)
 
         self.mime_type = get_mime_type(source)
-        assert self.mime_type, f'Could not detect mime type for {source}'
-        assert (
+        if not (self.mime_type):
+            raise AssertionError(f'Could not detect mime type for {source}')
+        if not (
             self.mime_type[:5] in ['video', 'audio', 'image']
             or self.mime_type == 'application/octet-stream'
-        ), f'{source} is not a valid media file (detected format: {self.mime_type})'
+        ):
+            raise AssertionError(
+                f'{source} is not a valid media file (detected format: {self.mime_type})'
+            )
 
         self.extension = mimetypes.guess_extension(self.mime_type)
         if self.url and self.extension and not self.url.endswith(self.extension):

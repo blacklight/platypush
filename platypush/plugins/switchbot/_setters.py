@@ -79,9 +79,10 @@ class EntitySetterWithValueAsMethod(EntitySetter):
 
     def _set(self, value: Any, *_: Any, **__: Any):
         method = getattr(self._plugin, value, None)
-        assert (
-            method
-        ), f'No such action available for device "{self.device_id}": "{value}"'
+        if not (method):
+            raise AssertionError(
+                f'No such action available for device "{self.device_id}": "{value}"'
+            )
         return method(self.device_id)
 
 
@@ -137,7 +138,8 @@ class LightEntitySetter(EntitySetter):
         property: Optional[str] = None,  # pylint: disable=redefined-builtin
         **__: Any,
     ):
-        assert property, 'No light property specified'
+        if not (property):
+            raise AssertionError('No light property specified')
         return self._plugin.set_curtain_position(self.device_id, int(value))
 
 

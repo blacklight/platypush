@@ -55,9 +55,10 @@ class CameraIrMlx90640Plugin(CameraPlugin):
             )
         rawrgb_path = os.path.abspath(os.path.expanduser(rawrgb_path))
 
-        assert os.path.isfile(
-            rawrgb_path
-        ), 'rawrgb executable not found. Please follow the documentation of this plugin to build it'
+        if not (os.path.isfile(rawrgb_path)):
+            raise AssertionError(
+                'rawrgb executable not found. Please follow the documentation of this plugin to build it'
+            )
 
         self.rawrgb_path = rawrgb_path
         self._capture_proc = None

@@ -131,7 +131,8 @@ def get_plugin(plugin, plugin_name=None, reload=False):
     else:
         raise TypeError(f'Invalid plugin type/name: {plugin}')
 
-    assert name, 'No plugin name provided'
+    if not (name):
+        raise AssertionError('No plugin name provided')
     if name not in plugins_init_locks:
         plugins_init_locks[name] = RLock()
 

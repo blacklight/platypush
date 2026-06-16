@@ -68,12 +68,13 @@ def get_credentials(scope: str, secrets_file: Optional[str] = None):
         args = []
         generate_credentials(secrets_file, scope, *args)
 
-    assert os.path.isfile(credentials_file), tw.dedent(
-        f"""
+    example_secrets_file = secrets_file or '/path/to/client_secret.json'
+    if not (os.path.isfile(credentials_file)):
+        raise AssertionError(
+            tw.dedent(
+                f"""
         Credentials file {credentials_file} not found. Generate it through:
-            python -m platypush.plugins.google.credentials "{','.join(scopes)}" {
-                secrets_file or '/path/to/client_secret.json'
-            }
+            python -m platypush.plugins.google.credentials "{','.join(scopes)}" {example_secrets_file}
               [--auth_host_name AUTH_HOST_NAME]
               [--noauth_local_webserver]
               [--auth_host_port [AUTH_HOST_PORT [AUTH_HOST_PORT ...]]]
@@ -83,7 +84,8 @@ def get_credentials(scope: str, secrets_file: Optional[str] = None):
         You will then get an authentication URL on the logs.
         Otherwise, the URL will be opened in the available browser.
         """
-    )
+            )
+        )
 
     store = Storage(credentials_file)
     credentials = store.get()

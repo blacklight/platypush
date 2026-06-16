@@ -10,7 +10,8 @@ def unregister_media(source: Optional[str] = None):
     """
     Unregisters a media streaming URL file given its source.
     """
-    assert source is not None, 'No media_id specified'
+    if not (source is not None):
+        raise AssertionError('No media_id specified')
     media_id = MediaHandler.get_media_id(source)
     media_info = {}
 

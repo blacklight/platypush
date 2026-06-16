@@ -169,10 +169,10 @@ class MidiPlugin(RunnablePlugin):
             else:
                 dev = self._devices.by_port(device)
 
-            assert dev, f'Could not find device by name {device}'
-            assert (
-                dev.device_type == MidiDeviceType.OUTPUT
-            ), f'The device {device} is not an output device'
+            if not (dev):
+                raise AssertionError(f'Could not find device by name {device}')
+            if not (dev.device_type == MidiDeviceType.OUTPUT):
+                raise AssertionError(f'The device {device} is not an output device')
 
             midi_out = dev.midi_out
             if not (midi_out and midi_out.is_port_open()):
@@ -180,7 +180,8 @@ class MidiPlugin(RunnablePlugin):
         else:
             midi_out = self.midi_out
 
-        assert midi_out and midi_out.is_port_open(), 'No MIDI output port available'
+        if not (midi_out and midi_out.is_port_open()):
+            raise AssertionError('No MIDI output port available')
         midi_out.send_message(values)
 
     @action
@@ -261,7 +262,8 @@ class MidiPlugin(RunnablePlugin):
 
                 self._devices.add(dev)
                 dev = self._devices.by_port(port)
-                assert dev, f'Could not find device by port {port}'
+                if not (dev):
+                    raise AssertionError(f'Could not find device by port {port}')
 
                 if not self._is_self(dev) and (
                     not self._devices_to_monitor

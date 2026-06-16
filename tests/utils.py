@@ -107,7 +107,8 @@ def on_timeout(msg):
 
 def parse_response(response):
     response = Message.build(response.json())
-    assert isinstance(
-        response, Response
-    ), f'Expected Response type, got {response.__class__.__name__}'
+    if not (isinstance(response, Response)):
+        raise AssertionError(
+            f'Expected Response type, got {response.__class__.__name__}'
+        )
     return response

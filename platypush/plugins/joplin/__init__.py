@@ -381,7 +381,8 @@ class JoplinPlugin(BaseNotePlugin):
             data['source_application'] = source.app or ''
 
         response = self._exec('POST', 'notes', json=data)
-        assert response, 'Failed to create note'
+        if not (response):
+            raise AssertionError('Failed to create note')
         return self._to_note(response)
 
     def _edit_note(
@@ -416,7 +417,8 @@ class JoplinPlugin(BaseNotePlugin):
             data['source_application'] = source.app or ''
 
         response = self._exec('PUT', f'notes/{note_id}', json=data)
-        assert response, 'Failed to edit note'
+        if not (response):
+            raise AssertionError('Failed to edit note')
         return self._to_note(response)
 
     def _delete_note(self, note_id: Any, *_, **__):
@@ -478,7 +480,8 @@ class JoplinPlugin(BaseNotePlugin):
             },
         )
 
-        assert response, 'Failed to create collection'
+        if not (response):
+            raise AssertionError('Failed to create collection')
         return self._to_collection(response)
 
     def _edit_collection(
@@ -497,7 +500,8 @@ class JoplinPlugin(BaseNotePlugin):
             data['parent_id'] = parent
 
         response = self._exec('PUT', f'folders/{collection_id}', json=data)
-        assert response, 'Failed to edit collection'
+        if not (response):
+            raise AssertionError('Failed to edit collection')
         return self._to_collection(response)
 
     def _delete_collection(self, collection_id: Any, *_: Any, **__: Any):
@@ -561,9 +565,10 @@ class JoplinPlugin(BaseNotePlugin):
         Search for notes or collections based on the provided query and filters.
         """
         api_item_type = self._joplin_item_types.get(item_type)
-        assert (
-            api_item_type
-        ), f'Invalid item type: {item_type}. Supported types: {list(self._joplin_item_types.keys())}'
+        if not (api_item_type):
+            raise AssertionError(
+                f'Invalid item type: {item_type}. Supported types: {list(self._joplin_item_types.keys())}'
+            )
 
         limit = limit or 100
         results = (

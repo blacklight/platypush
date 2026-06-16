@@ -201,9 +201,15 @@ class TorrentPlugin(Plugin):
         else:
             parsed_providers = search_providers
 
-        assert all(
-            isinstance(provider, TorrentSearchProvider) for provider in parsed_providers
-        ), 'All search providers must be instances of TorrentSearchProvider'
+        if not (
+            all(
+                isinstance(provider, TorrentSearchProvider)
+                for provider in parsed_providers
+            )
+        ):
+            raise AssertionError(
+                'All search providers must be instances of TorrentSearchProvider'
+            )
 
         return parsed_providers
 
@@ -572,7 +578,8 @@ class TorrentPlugin(Plugin):
         :type torrent: str
         """
 
-        assert torrent in self.transfers, f"No transfer in progress for {torrent}"
+        if not (torrent in self.transfers):
+            raise AssertionError(f"No transfer in progress for {torrent}")
         self.transfers[torrent].resume()
 
     @action

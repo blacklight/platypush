@@ -448,9 +448,10 @@ class ForProcedure(LoopProcedure):
 
         try:
             iterable = eval(self.iterable)
-            assert hasattr(
-                iterable, '__iter__'
-            ), f'Object of type {type(iterable)} is not iterable: {iterable}'
+            if not (hasattr(iterable, '__iter__')):
+                raise AssertionError(
+                    f'Object of type {type(iterable)} is not iterable: {iterable}'
+                )
         except Exception as e:
             logger.debug('Iterable %s expansion error: %s', self.iterable, e)
             iterable = Request.expand_value_from_context(self.iterable, **ctx)

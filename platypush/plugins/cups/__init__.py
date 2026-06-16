@@ -36,7 +36,8 @@ class CupsPlugin(Plugin):
 
     def _get_printer(self, printer: Optional[str] = None):
         printer = printer or self.printer
-        assert printer, 'No printer specified nor default printer configured'
+        if not (printer):
+            raise AssertionError('No printer specified nor default printer configured')
         return printer
 
     @action

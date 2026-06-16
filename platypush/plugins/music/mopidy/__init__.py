@@ -58,7 +58,8 @@ class MusicMopidyPlugin(RunnablePlugin):
         self._playlist_sync = PlaylistSync()
 
     def _exec(self, *msgs: dict, **kwargs):
-        assert self._client, "Mopidy client not running"
+        if not (self._client):
+            raise AssertionError("Mopidy client not running")
         return self._client.exec(
             *msgs, timeout=kwargs.pop('timeout', self.config.timeout)
         )
@@ -68,7 +69,8 @@ class MusicMopidyPlugin(RunnablePlugin):
         return self._dump_status()
 
     def _dump_status(self):
-        assert self._client, "Mopidy client not running"
+        if not (self._client):
+            raise AssertionError("Mopidy client not running")
         return MopidyStatusSchema().dump(self._client.status)
 
     def _dump_results(self, results: List[dict]) -> List[dict]:
@@ -180,7 +182,8 @@ class MusicMopidyPlugin(RunnablePlugin):
         pl_by_name = {p.name: p for p in playlists}
         pl_by_uri = {p.uri: p for p in playlists}
         pl = pl_by_uri.get(playlist, pl_by_name.get(playlist))
-        assert pl, f"Playlist {playlist} not found"
+        if not (pl):
+            raise AssertionError(f"Playlist {playlist} not found")
 
         if with_tracks:
             pl.tracks = self._get_playlist_tracks(playlist)
@@ -192,10 +195,12 @@ class MusicMopidyPlugin(RunnablePlugin):
         pl_by_name = {p.name: p for p in playlists}
         pl_by_uri = {p.uri: p for p in playlists}
         pl = pl_by_uri.get(playlist, pl_by_name.get(playlist))
-        assert pl, f"Playlist {playlist} not found"
+        if not (pl):
+            raise AssertionError(f"Playlist {playlist} not found")
 
         tracks = self._exec({'method': 'core.playlists.get_items', 'uri': pl.uri})[0]
-        assert tracks is not None, f"Playlist {playlist} not found"
+        if not (tracks is not None):
+            raise AssertionError(f"Playlist {playlist} not found")
 
         ret = []
         for track in tracks:
@@ -567,12 +572,14 @@ class MusicMopidyPlugin(RunnablePlugin):
         :param positions: (0-based) positions of the tracks to be deleted.
         :param uris: URIs of the tracks to be deleted.
         """
-        assert (
-            positions or uris
-        ), "At least one of 'positions' or 'uris' must be specified"
+        if not (positions or uris):
+            raise AssertionError(
+                "At least one of 'positions' or 'uris' must be specified"
+            )
         criteria = {}
         if positions:
-            assert self._client, "Mopidy client not running"
+            if not (self._client):
+                raise AssertionError("Mopidy client not running")
             positions = set(positions)
             criteria['tlid'] = list(
                 {
@@ -623,9 +630,13 @@ class MusicMopidyPlugin(RunnablePlugin):
             the time. Maintained for compatibility with
             :meth:`platypush.plugins.music.mpd.MusicMpdPlugin.move`.
         """
-        assert (from_pos is not None and to_pos is not None) or (
-            start is not None and end is not None and position is not None
-        ), 'Either "start", "end" and "position", or "from_pos" and "to_pos" must be specified'
+        if not (
+            (from_pos is not None and to_pos is not None)
+            or (start is not None and end is not None and position is not None)
+        ):
+            raise AssertionError(
+                'Either "start", "end" and "position", or "from_pos" and "to_pos" must be specified'
+            )
 
         if (from_pos is not None) and (to_pos is not None):
             start, end, position = from_pos, from_pos, to_pos
@@ -695,7 +706,8 @@ class MusicMopidyPlugin(RunnablePlugin):
 
         :return: .. schema:: mopidy.MopidyStatusSchema
         """
-        assert self._client, "Mopidy client not running"
+        if not (self._client):
+            raise AssertionError("Mopidy client not running")
         self._client.refresh_status()
         return self._dump_status()
 
@@ -706,7 +718,8 @@ class MusicMopidyPlugin(RunnablePlugin):
 
         :return: .. schema:: mopidy.MopidyTrackSchema
         """
-        assert self._client, "Mopidy client not running"
+        if not (self._client):
+            raise AssertionError("Mopidy client not running")
         if not self._client.status.track:
             return None
 
@@ -719,7 +732,8 @@ class MusicMopidyPlugin(RunnablePlugin):
 
         :return: .. schema:: mopidy.MopidyTrackSchema(many=True)
         """
-        assert self._client, "Mopidy client not running"
+        if not (self._client):
+            raise AssertionError("Mopidy client not running")
         return [t.to_dict() for t in self._client.tracks]
 
     @action
@@ -860,9 +874,10 @@ class MusicMopidyPlugin(RunnablePlugin):
         :return: The modified playlist.
             .. schema:: mopidy.MopidyPlaylistSchema
         """
-        assert resources or (
-            from_pos is not None and to_pos is not None
-        ), "Either 'tracks', or 'positions', or 'from_pos' and 'to_pos' must be specified"
+        if not (resources or (from_pos is not None and to_pos is not None)):
+            raise AssertionError(
+                "Either 'tracks', or 'positions', or 'from_pos' and 'to_pos' must be specified"
+            )
 
         pl = self._get_playlist(playlist, with_tracks=True)
 
@@ -916,9 +931,13 @@ class MusicMopidyPlugin(RunnablePlugin):
         :return: The modified playlist.
             .. schema:: mopidy.MopidyPlaylistSchema
         """
-        assert (start is not None and end is not None and position is not None) or (
-            from_pos is not None and to_pos is not None
-        ), "Either 'start', 'end' and 'position', or 'from_pos' and 'to_pos' must be specified"
+        if not (
+            (start is not None and end is not None and position is not None)
+            or (from_pos is not None and to_pos is not None)
+        ):
+            raise AssertionError(
+                "Either 'start', 'end' and 'position', or 'from_pos' and 'to_pos' must be specified"
+            )
 
         pl = self._get_playlist(playlist, with_tracks=True)
 

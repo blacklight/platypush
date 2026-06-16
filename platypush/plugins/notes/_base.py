@@ -358,7 +358,8 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
 
     def _get_note(self, note_id: Any, *args, **kwargs) -> Note:
         note = self._fetch_note(note_id, *args, **kwargs)
-        assert note, f'Note with ID {note_id} not found'
+        if not (note):
+            raise AssertionError(f'Note with ID {note_id} not found')
         with self._sync_lock:
             # Always overwrite the note in the cache,
             # as this is the most up-to-date complete version
@@ -436,7 +437,8 @@ class BaseNotePlugin(  # pylint: disable=too-many-ancestors
 
     def _get_collection(self, collection_id: Any, *args, **kwargs) -> NoteCollection:
         collection = self._fetch_collection(collection_id, *args, **kwargs)
-        assert collection, f'Collection with ID {collection_id} not found'
+        if not (collection):
+            raise AssertionError(f'Collection with ID {collection_id} not found')
         with self._sync_lock:
             # Always overwrite the collection in the cache,
             # as this is the most up-to-date complete version

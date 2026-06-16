@@ -70,7 +70,8 @@ class Request(Message):
             'timestamp': msg['_timestamp'] if '_timestamp' in msg else time.time(),
         }
 
-        assert args.get('action'), 'No action specified in the request'
+        if not (args.get('action')):
+            raise AssertionError('No action specified in the request')
         if 'origin' in msg:
             args['origin'] = msg['origin']
         if 'token' in msg:
@@ -258,7 +259,8 @@ class Request(Message):
                 action = self.expand_value_from_context(self.action, **context)
                 (module_name, method_name) = get_module_and_method_from_action(action)
                 plugin = get_plugin(module_name)
-                assert plugin, f'No such plugin: {module_name}'
+                if not (plugin):
+                    raise AssertionError(f'No such plugin: {module_name}')
             except Exception as e:
                 logger.exception(e)
                 response = Response(output=None, errors=[str(e)])

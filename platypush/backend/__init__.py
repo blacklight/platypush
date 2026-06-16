@@ -171,7 +171,8 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         """
 
         event = Event.build(event)
-        assert isinstance(event, Event)
+        if not (isinstance(event, Event)):
+            raise AssertionError
 
         event.origin = self.device_id
         if not hasattr(event, 'target'):
@@ -202,7 +203,8 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         """
 
         request = Request.build(request)
-        assert isinstance(request, Request)
+        if not (isinstance(request, Request)):
+            raise AssertionError
 
         request.origin = self.device_id
 
@@ -220,8 +222,10 @@ class Backend(Thread, EventGenerator, ExtensionWithManifest):
         :param request: Associated request, used to set the response parameters that will link them
         """
 
-        assert isinstance(response, Response)
-        assert isinstance(request, Request)
+        if not (isinstance(response, Response)):
+            raise AssertionError
+        if not (isinstance(request, Request)):
+            raise AssertionError
 
         self.send_message(response, **kwargs)
 

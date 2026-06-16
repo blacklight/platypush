@@ -162,7 +162,8 @@ class ArduinoPlugin(SensorPlugin):
         board_obj_type = (
             self._get_board_type(board_type) if board_type else self.board_type
         )
-        assert board_obj_type
+        if not (board_obj_type):
+            raise AssertionError
 
         board_obj = board_obj_type(board_name, baudrate=baud_rate, timeout=timeout)
         board_name = board_obj.name or ''
@@ -187,7 +188,8 @@ class ArduinoPlugin(SensorPlugin):
         if pin in self._pin_number_by_name[pin_type]:
             pin = self._pin_number_by_name[pin_type][str(pin)]
 
-        assert isinstance(pin, int), f'Invalid PIN number/name: {pin}'
+        if not (isinstance(pin, int)):
+            raise AssertionError(f'Invalid PIN number/name: {pin}')
         return board_, pin
 
     @staticmethod
@@ -198,7 +200,8 @@ class ArduinoPlugin(SensorPlugin):
         if pin_type == PinType.DIGITAL:
             pins = board.digital
 
-        assert pins, f'Invalid pin_type: {pin_type}'
+        if not (pins):
+            raise AssertionError(f'Invalid pin_type: {pin_type}')
 
         if pins[pin].mode in [ANALOG, INPUT]:
             pins[pin].enable_reporting()
@@ -407,7 +410,8 @@ class ArduinoPlugin(SensorPlugin):
             timeout=timeout,
         )
 
-        assert board_.digital[pin].PWM_CAPABLE, f'PIN {pin} is not PWM capable'
+        if not (board_.digital[pin].PWM_CAPABLE):
+            raise AssertionError(f'PIN {pin} is not PWM capable')
         if board_.digital[pin] != PWM:
             board_.digital[pin].mode = PWM
             time.sleep(0.001)  # 1 μs spike to activate a PWM pin
@@ -441,7 +445,10 @@ class ArduinoPlugin(SensorPlugin):
             board=board, board_type=board_type, baud_rate=baud_rate, timeout=timeout
         )
 
-        assert board_, f'No such board: board={board}, board_type={board_type}'
+        if not (board_):
+            raise AssertionError(
+                f'No such board: board={board}, board_type={board_type}'
+            )
 
         for pin in board_.analog:
             if (

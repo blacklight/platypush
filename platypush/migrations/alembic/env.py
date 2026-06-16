@@ -81,9 +81,11 @@ def set_db_engine():
     engine_url = context.get_x_argument(as_dictionary=True).get('DBNAME')
     if not engine_url:
         db_conf = Config.get('db')
-        assert db_conf, 'Could not retrieve the database configuration'
+        if not (db_conf):
+            raise AssertionError('Could not retrieve the database configuration')
         engine_url = db_conf['engine']
-        assert engine_url, 'No database engine configured'
+        if not (engine_url):
+            raise AssertionError('No database engine configured')
 
     section = config.config_ini_section
     config.set_section_option(section, 'DB_ENGINE', engine_url)

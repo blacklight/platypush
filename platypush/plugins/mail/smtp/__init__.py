@@ -67,9 +67,11 @@ class MailSmtpPlugin(MailOutPlugin):
                 message['From'], message['To'], message.as_string()
             )
 
-        assert not errors, 'Failed to send message: ' + str(
-            [f'{code}: {err}' for code, err in errors.items()]
-        )
+        if errors:
+            raise AssertionError(
+                'Failed to send message: '
+                + str([f'{code}: {err}' for code, err in errors.items()])
+            )
 
 
 # vim:sw=4:ts=4:et:

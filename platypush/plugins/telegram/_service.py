@@ -227,10 +227,14 @@ class TelegramService(Process):
         **kwargs,
     ):
         method = getattr(self._app.bot, cmd, None)
-        assert method, f"Method {cmd} not found"
+        if not (method):
+            raise AssertionError(f"Method {cmd} not found")
 
         if resource:
-            assert resource_attr, f"Resource attribute not specified for command {cmd}"
+            if not (resource_attr):
+                raise AssertionError(
+                    f"Resource attribute not specified for command {cmd}"
+                )
             with resource as file:
                 kwargs[resource_attr] = file
                 return self._exec(

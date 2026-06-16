@@ -133,7 +133,8 @@ class ZeroconfPlugin(Plugin):
             }
 
         """
-        assert not self._discovery_in_progress, 'A discovery process is already running'
+        if self._discovery_in_progress:
+            raise AssertionError('A discovery process is already running')
         self._discovery_in_progress = True
 
         evt_queue = queue.Queue()

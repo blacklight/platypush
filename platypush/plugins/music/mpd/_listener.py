@@ -43,7 +43,8 @@ class MpdListener(Thread):
         from . import MusicMpdPlugin
 
         super().__init__(name='platypush:mpd:listener')
-        assert isinstance(plugin, MusicMpdPlugin)
+        if not (isinstance(plugin, MusicMpdPlugin)):
+            raise AssertionError
         self.plugin: MusicMpdPlugin = plugin
         self._status = MpdStatus()
 
@@ -144,7 +145,8 @@ class MpdListener(Thread):
         while not self.plugin.should_stop():
             try:
                 status = self.plugin._status()  # pylint: disable=protected-access
-                assert status and status.get('state'), 'No status returned'
+                if not (status and status.get('state')):
+                    raise AssertionError('No status returned')
                 if not (status and status.get('state')):
                     self.wait_stop(self.plugin.poll_interval)
                     break

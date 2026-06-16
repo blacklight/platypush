@@ -62,7 +62,8 @@ class LegacyManager(BaseBluetoothManager):
         if dev:
             return dev  # If it's already cached, just return it.
 
-        assert not _fail_if_not_cached, f'Device "{device}" not found'
+        if _fail_if_not_cached:
+            raise AssertionError(f'Device "{device}" not found')
 
         # Otherwise, scan for the device.
         self.logger.info('Scanning for device "%s"...', device)
@@ -82,9 +83,11 @@ class LegacyManager(BaseBluetoothManager):
         Given a device and a port or service UUID, return a list of matching
         services.
         """
-        assert port or service_uuid, 'Please specify at least one of port/service_uuid'
+        if not (port or service_uuid):
+            raise AssertionError('Please specify at least one of port/service_uuid')
         dev = self.get_device(device)
-        assert dev, f'Device "{device}" not found'
+        if not (dev):
+            raise AssertionError(f'Device "{device}" not found')
 
         matching_services = []
         if port:
@@ -109,10 +112,11 @@ class LegacyManager(BaseBluetoothManager):
         """
         dev = self.get_device(device)
         matching_services = self._get_matching_services(device, port, service_uuid)
-        assert matching_services, (
-            f'No services found on {dev.address} for '
-            f'UUID={service_uuid} port={port}'
-        )
+        if not (matching_services):
+            raise AssertionError(
+                f'No services found on {dev.address} for '
+                f'UUID={service_uuid} port={port}'
+            )
 
         conn = BluetoothConnection(
             address=dev.address,
@@ -217,7 +221,8 @@ class LegacyManager(BaseBluetoothManager):
         # Wait for the connected event
         timeout = timeout or self._connect_timeout
         conn_success = connected.wait(timeout=timeout)
-        assert conn_success, f'Connection to {device} timed out'
+        if not (conn_success):
+            raise AssertionError(f'Connection to {device} timed out')
 
     def disconnect(
         self,
@@ -233,13 +238,15 @@ class LegacyManager(BaseBluetoothManager):
             and (service_uuid is None or conn.service.uuid == service_uuid)
         ]
 
-        assert matching_connections, f'No active connections found to {device}'
+        if not (matching_connections):
+            raise AssertionError(f'No active connections found to {device}')
         for conn in matching_connections:
             conn.close()
 
     def scan(self, duration: Optional[float] = None) -> List[BluetoothDevice]:
         duration = duration or self.poll_interval
-        assert duration, 'Scan duration must be set'
+        if not (duration):
+            raise AssertionError('Scan duration must be set')
         duration = int(max(duration, 1))
 
         with self._scan_lock:

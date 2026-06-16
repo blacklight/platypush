@@ -54,7 +54,8 @@ def reverse_tunnel(
         while should_run.get(key):
             try:
                 chan = transport.accept(1)
-                assert chan is not None
+                if not (chan is not None):
+                    raise AssertionError
             except Exception as e:
                 logger.warning(e)
                 continue

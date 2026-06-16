@@ -11,7 +11,9 @@ def test_runnable_plugin_thread_is_daemon():
     plugin.start()
 
     try:
-        assert plugin._thread is not None
-        assert plugin._thread.daemon
+        if not (plugin._thread is not None):
+            raise AssertionError
+        if not (plugin._thread.daemon):
+            raise AssertionError
     finally:
         plugin.stop()

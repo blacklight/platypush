@@ -12,10 +12,11 @@ class RawInputAudioConverter(AudioConverter):
         super().__init__(*args, **kwargs)
         if self._dtype and not self._input_format:
             ffmpeg_format = dtype_to_ffmpeg_format.get(self._dtype)
-            assert ffmpeg_format, (
-                f'Unsupported data type: {self._dtype}. Supported data types: '
-                f'{list(dtype_to_ffmpeg_format.keys())}'
-            )
+            if not (ffmpeg_format):
+                raise AssertionError(
+                    f'Unsupported data type: {self._dtype}. Supported data types: '
+                    f'{list(dtype_to_ffmpeg_format.keys())}'
+                )
 
             self._input_format = ffmpeg_format
 
@@ -38,10 +39,11 @@ class RawInputAudioConverter(AudioConverter):
             return ()
 
         ffmpeg_args = self._format_to_ffmpeg_args.get(self._output_format)
-        assert ffmpeg_args, (
-            f'Unsupported output format: {self._output_format}. Supported formats: '
-            f'{list(self._format_to_ffmpeg_args.keys())}'
-        )
+        if not (ffmpeg_args):
+            raise AssertionError(
+                f'Unsupported output format: {self._output_format}. Supported formats: '
+                f'{list(self._format_to_ffmpeg_args.keys())}'
+            )
 
         return ffmpeg_args
 

@@ -21,7 +21,8 @@ from platypush.utils import utcnow
 
 def _variable() -> VariablePlugin:
     var = get_plugin(VariablePlugin)
-    assert var, 'Could not load the variable plugin'
+    if not (var):
+        raise AssertionError('Could not load the variable plugin')
     return var
 
 

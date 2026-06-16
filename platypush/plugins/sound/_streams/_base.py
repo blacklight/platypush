@@ -390,7 +390,8 @@ class AudioThread(Thread, ABC):
             yield None
             return
 
-        assert not self._converter, 'A converter process is already running'
+        if self._converter:
+            raise AssertionError('A converter process is already running')
         self._converter = self._audio_converter_type(
             ffmpeg_bin=self.ffmpeg_bin,
             sample_rate=self.sample_rate,

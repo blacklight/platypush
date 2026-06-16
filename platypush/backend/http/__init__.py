@@ -161,7 +161,8 @@ class HttpBackend(Backend):
                 @when(WebhookEvent, hook='lights_toggle')
                 def lights_toggle(event, **context):
                     # Do any checks on the request
-                    assert event.headers.get('X-Token') == hook_token, 'Unauthorized'
+                    if not (event.headers.get('X-Token') == hook_token):
+                        raise AssertionError('Unauthorized')
 
                     # Run some actions
                     lights = get_plugin('light.hue')
@@ -238,9 +239,8 @@ class HttpBackend(Backend):
                   device that doesn't support Tornado.
         """
         super().__init__(**kwargs)
-        assert (
-            bind_address or bind_socket
-        ), 'Either bind_address or bind_socket must be set'
+        if not (bind_address or bind_socket):
+            raise AssertionError('Either bind_address or bind_socket must be set')
 
         self.port = port
         self._server_proc: Optional[Process] = None
@@ -353,9 +353,8 @@ class HttpBackend(Backend):
         self._service_registry_thread.start()
 
     async def _post_fork_main(self, sockets):
-        assert isinstance(
-            self.bus, RedisBus
-        ), 'The HTTP backend only works if backed by a Redis bus'
+        if not (isinstance(self.bus, RedisBus)):
+            raise AssertionError('The HTTP backend only works if backed by a Redis bus')
 
         application.config['redis_queue'] = self.bus.redis_queue
         application.secret_key = self._get_secret_key()
@@ -389,7 +388,8 @@ class HttpBackend(Backend):
         )
 
         if self.use_werkzeug_server:
-            assert self.bind_address, 'bind_address must be set when using Werkzeug'
+            if not (self.bind_address):
+                raise AssertionError('bind_address must be set when using Werkzeug')
             application.config['redis_queue'] = self.bus.redis_queue  # type: ignore
             application.run(
                 host=self.bind_address,

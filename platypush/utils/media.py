@@ -37,10 +37,11 @@ def get_default_media_plugin(video: bool = False) -> MediaPlugin:
     if enabled_plugins:
         return enabled_plugins[0]
 
-    assert not video, (
-        'No media plugin with video support is enabled. '
-        f'Supported plugins: {MediaPlugin.supported_media_plugins}'
-    )
+    if video:
+        raise AssertionError(
+            'No media plugin with video support is enabled. '
+            f'Supported plugins: {MediaPlugin.supported_media_plugins}'
+        )
 
     for plugin_name in audio_plugins:
         try:

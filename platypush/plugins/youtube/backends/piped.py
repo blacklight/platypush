@@ -130,17 +130,20 @@ class PipedBackend(BaseBackend):
 
     def _to_video(self, video: dict) -> YoutubeVideo:
         item = self._to_entity(video, type='stream')
-        assert isinstance(item, YoutubeVideo), f'Expected a video, got {item}'
+        if not (isinstance(item, YoutubeVideo)):
+            raise AssertionError(f'Expected a video, got {item}')
         return item
 
     def _to_channel(self, channel: dict) -> YoutubeChannel:
         item = self._to_entity(channel, type='channel')
-        assert isinstance(item, YoutubeChannel), f'Expected a channel, got {item}'
+        if not (isinstance(item, YoutubeChannel)):
+            raise AssertionError(f'Expected a channel, got {item}')
         return item
 
     def _to_playlist(self, playlist: dict) -> YoutubePlaylist:
         item = self._to_entity(playlist, type='playlist')
-        assert isinstance(item, YoutubePlaylist), f'Expected a playlist, got {item}'
+        if not (isinstance(item, YoutubePlaylist)):
+            raise AssertionError(f'Expected a playlist, got {item}')
         return item
 
     @ignore_unhashable
@@ -230,7 +233,8 @@ class PipedBackend(BaseBackend):
             )
             items = [kwargs['video_id']]
 
-        assert items, 'No items provided to add to the playlist'
+        if not (items):
+            raise AssertionError('No items provided to add to the playlist')
         self._request(
             'user/playlists/add',
             method='post',
@@ -260,7 +264,8 @@ class PipedBackend(BaseBackend):
             )
             indices = [kwargs['index']]
 
-        assert items or indices, 'Either item_ids or indices must be provided'
+        if not (items or indices):
+            raise AssertionError('Either item_ids or indices must be provided')
 
         if not indices:
             item_ids = {
@@ -298,7 +303,8 @@ class PipedBackend(BaseBackend):
 
     def create_playlist(self, name: str, **_) -> YoutubePlaylist:
         name = name.strip()
-        assert name, 'Playlist name cannot be empty'
+        if not (name):
+            raise AssertionError('Playlist name cannot be empty')
 
         playlist_id = self._request(
             'user/playlists/create',
@@ -306,11 +312,13 @@ class PipedBackend(BaseBackend):
             json={'name': name},
         ).get('playlistId')
 
-        assert playlist_id, 'Failed to create the playlist'
+        if not (playlist_id):
+            raise AssertionError('Failed to create the playlist')
         playlists = self._request('user/playlists')
         new_playlist = next((p for p in playlists if p.get('id') == playlist_id), None)
 
-        assert new_playlist, 'Failed to retrieve the new playlist'
+        if not (new_playlist):
+            raise AssertionError('Failed to retrieve the new playlist')
         return self._to_playlist(new_playlist)
 
     def edit_playlist(

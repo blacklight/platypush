@@ -59,15 +59,22 @@ def test_redis_bus_poll_uses_bounded_pubsub_polling():
 
     bus.poll()
 
-    assert fake_pubsub.subscribed == ['test/bus']
-    assert fake_pubsub.closed
-    assert fake_pubsub.get_message_calls == [
-        {
-            'ignore_subscribe_messages': True,
-            'timeout': RedisBus._PUBSUB_POLL_TIMEOUT,
-        }
-    ]
-    assert fake_redis.published
+    if not (fake_pubsub.subscribed == ['test/bus']):
+        raise AssertionError
+    if not (fake_pubsub.closed):
+        raise AssertionError
+    if not (
+        fake_pubsub.get_message_calls
+        == [
+            {
+                'ignore_subscribe_messages': True,
+                'timeout': RedisBus._PUBSUB_POLL_TIMEOUT,
+            }
+        ]
+    ):
+        raise AssertionError
+    if not (fake_redis.published):
+        raise AssertionError
 
 
 def test_redis_bus_poll_processes_messages():
@@ -88,5 +95,7 @@ def test_redis_bus_poll_processes_messages():
 
     bus.poll()
 
-    assert len(received) == 1
-    assert isinstance(received[0], ApplicationStartedEvent)
+    if not (len(received) == 1):
+        raise AssertionError
+    if not (isinstance(received[0], ApplicationStartedEvent)):
+        raise AssertionError

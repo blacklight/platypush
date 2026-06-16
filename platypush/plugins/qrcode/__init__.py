@@ -42,15 +42,15 @@ class QrcodePlugin(Plugin):
         self, camera_plugin: Optional[str] = None, **config
     ) -> CameraPlugin:
         camera_plugin = camera_plugin or self.camera_plugin
-        assert camera_plugin, 'No camera plugin specified'
+        if not (camera_plugin):
+            raise AssertionError('No camera plugin specified')
         if not config:
             config = Config.get(camera_plugin) or {}
         config['stream_raw_frames'] = True
 
         cls = get_plugin_class_by_name(camera_plugin)
-        assert cls and issubclass(
-            cls, CameraPlugin
-        ), f'{camera_plugin} is not a valid camera plugin'
+        if not (cls and issubclass(cls, CameraPlugin)):
+            raise AssertionError(f'{camera_plugin} is not a valid camera plugin')
         return cls(**config)
 
     @action
@@ -89,7 +89,8 @@ class QrcodePlugin(Plugin):
                 except ValueError as e:
                     raise AssertionError(f'Invalid base64-encoded binary content: {e}')
 
-            assert isinstance(content, bytes), 'Invalid binary content'
+            if not (isinstance(content, bytes)):
+                raise AssertionError('Invalid binary content')
 
         qr = qrcode.make(content)
         img = qr.get_image()
@@ -153,7 +154,8 @@ class QrcodePlugin(Plugin):
         :param n_codes: Stop after decoding this number of codes (default: None).
         :return: .. schema:: qrcode.QrcodeDecodedResultSchema(many=True)
         """
-        assert not self._capturing.is_set(), 'A capturing process is already running'
+        if self._capturing.is_set():
+            raise AssertionError('A capturing process is already running')
 
         camera = self._get_camera(camera_plugin)
         codes = []

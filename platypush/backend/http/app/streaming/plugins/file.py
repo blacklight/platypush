@@ -169,7 +169,8 @@ class FileRoute(StreamingRoute):
             self.finish()
             return
 
-        assert self._out_f
+        if not (self._out_f):
+            raise AssertionError
         self._out_f.write(chunk)
         self._out_f.flush()
         self._bytes_written += len(chunk)

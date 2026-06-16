@@ -166,7 +166,8 @@ class Alarm:
             t = now + delta
             self.when = datetime.datetime.fromtimestamp(t).isoformat()
         except (TypeError, ValueError):
-            assert isinstance(self.when, str), f'Invalid alarm time {self.when}'
+            if not (isinstance(self.when, str)):
+                raise AssertionError(f'Invalid alarm time {self.when}')
 
             try:
                 # If when is a cron expression, get the next run time
@@ -260,11 +261,12 @@ class Alarm:
 
     def _get_media_plugin(self) -> MediaPlugin:
         plugin = get_plugin(self.media_plugin)
-        assert plugin and isinstance(plugin, MediaPlugin), (
-            f'Invalid audio plugin {self.media_plugin}'
-            if plugin
-            else f'Missing audio plugin {self.media_plugin}'
-        )
+        if not (plugin and isinstance(plugin, MediaPlugin)):
+            raise AssertionError(
+                f'Invalid audio plugin {self.media_plugin}'
+                if plugin
+                else f'Missing audio plugin {self.media_plugin}'
+            )
 
         return plugin
 

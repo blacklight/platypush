@@ -220,7 +220,8 @@ class MopidyAlbumSchema(Schema):
     genre = fields.String(load_default=None, metadata={"description": "Album genre"})
 
     def parse(self, data: dict, **_):
-        assert data.get("uri"), "Album URI is required"
+        if not (data.get("uri")):
+            raise AssertionError("Album URI is required")
         return {
             "uri": data["uri"],
             "artist": data.get("artist")

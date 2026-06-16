@@ -132,9 +132,8 @@ class NgrokPlugin(Plugin):
         if tunnel in self._active_tunnels_by_name:
             tunnel = self._active_tunnels_by_name[tunnel]['url']
 
-        assert (
-            tunnel in self._active_tunnels_by_url
-        ), f'No such tunnel URL or name: {tunnel}'
+        if not (tunnel in self._active_tunnels_by_url):
+            raise AssertionError(f'No such tunnel URL or name: {tunnel}')
         ngrok.disconnect(tunnel)
 
     @action
@@ -158,7 +157,8 @@ class NgrokPlugin(Plugin):
         from pyngrok import ngrok
 
         proc = ngrok.get_ngrok_process()
-        assert proc and proc.proc, 'The ngrok process is not running'
+        if not (proc and proc.proc):
+            raise AssertionError('The ngrok process is not running')
         proc.proc.kill()
         get_bus().post(NgrokProcessStoppedEvent())
 

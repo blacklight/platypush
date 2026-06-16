@@ -27,7 +27,8 @@ class JPEGStreamWriter(ImageStreamWriter):
 
     def __init__(self, *args, quality: int = 90, **kwargs):
         super().__init__(*args, **kwargs)
-        assert 0 < quality <= 100, 'JPEG quality should be between 0 and 100'
+        if not (0 < quality <= 100):
+            raise AssertionError('JPEG quality should be between 0 and 100')
         self.quality = quality
 
     def encode(self, image: Image) -> bytes:

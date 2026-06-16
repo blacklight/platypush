@@ -178,7 +178,8 @@ class OpenaiPlugin(Plugin):
         """
         super().__init__(**kwargs)
         api_key = api_key or os.getenv('OPENAI_API_KEY')
-        assert api_key, 'OpenAI API key not provided'
+        if not (api_key):
+            raise AssertionError('OpenAI API key not provided')
 
         self._api_key = api_key
         self._context_lock = RLock()

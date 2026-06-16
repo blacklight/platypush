@@ -111,7 +111,8 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
             models = [models]
 
         missing_models = [model for model in models if model not in openwakeword.MODELS]
-        assert not missing_models, f"Models not found: {', '.join(missing_models)}"
+        if missing_models:
+            raise AssertionError(f"Models not found: {', '.join(missing_models)}")
         return list(models)
 
     @action
@@ -196,7 +197,8 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
             self.logger.debug("Discarding stale audio frame")
             return
 
-        assert self._model is not None, "Model not initialized"
+        if not (self._model is not None):
+            raise AssertionError("Model not initialized")
         prediction = self._model.predict(audio_data.data)
 
         if prediction is not None:

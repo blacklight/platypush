@@ -103,9 +103,8 @@ class FoursquarePlugin(RunnablePlugin):
         :param radius: Search radius in meters.
         :return: A list of venues, as returned by the Foursquare API.
         """
-        assert (
-            latitude and longitude
-        ) or near, 'Specify either latitude/longitude or near'
+        if not ((latitude and longitude) or near):
+            raise AssertionError('Specify either latitude/longitude or near')
         args = {}
 
         if latitude and longitude:
@@ -162,9 +161,8 @@ class FoursquarePlugin(RunnablePlugin):
 
         :return: A list of venues, as returned by the Foursquare API.
         """
-        assert (
-            latitude and longitude
-        ) or near, 'Specify either latitude/longitude or near'
+        if not ((latitude and longitude) or near):
+            raise AssertionError('Specify either latitude/longitude or near')
         args = {}
 
         if latitude and longitude:
@@ -212,9 +210,8 @@ class FoursquarePlugin(RunnablePlugin):
 
         :return: A list of venues, as returned by the Foursquare API.
         """
-        assert (
-            latitude and longitude
-        ) or near, 'Specify either latitude/longitude or near'
+        if not ((latitude and longitude) or near):
+            raise AssertionError('Specify either latitude/longitude or near')
         args = {}
 
         if latitude and longitude:
@@ -241,9 +238,10 @@ class FoursquarePlugin(RunnablePlugin):
         if isinstance(t, str):
             return datetime.datetime.fromisoformat(t)
 
-        assert isinstance(
-            t, datetime.datetime
-        ), f'Cannot parse object of type {type(t)} into datetime: {t}'
+        if not (isinstance(t, datetime.datetime)):
+            raise AssertionError(
+                f'Cannot parse object of type {type(t)} into datetime: {t}'
+            )
         return t
 
     @action

@@ -36,7 +36,8 @@ def _wait_for_app(app: Application, timeout: int = app_start_timeout):
         http = (app.backends or {}).get('http')
         time.sleep(1)
 
-    assert http, f'HTTP backend not started after {timeout} seconds'
+    if not (http):
+        raise AssertionError(f'HTTP backend not started after {timeout} seconds')
 
     while not success and time.time() - start_time < timeout:
         try:
@@ -49,7 +50,8 @@ def _wait_for_app(app: Application, timeout: int = app_start_timeout):
             logging.info('App not ready yet: %s', e)
             time.sleep(1)
 
-    assert success, f'App not ready after {timeout} seconds'
+    if not (success):
+        raise AssertionError(f'App not ready after {timeout} seconds')
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -85,7 +87,8 @@ def db_file():
 @pytest.fixture(scope='session')
 def base_url():
     backends = Config.get_backends()
-    assert 'http' in backends, 'Missing HTTP server configuration'
+    if not ('http' in backends):
+        raise AssertionError('Missing HTTP server configuration')
     url = f'http://localhost:{backends["http"]["port"]}'
     set_base_url(url)
     yield url

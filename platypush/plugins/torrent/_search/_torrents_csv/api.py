@@ -30,7 +30,8 @@ class TorrentsCsvAPIProvider(TorrentsCsvBaseProvider):
         :param limit: Number of results to return (default: 25).
         :param page: Page number (default: 1).
         """
-        assert page > 0, 'Page number must be greater than 0'
+        if not (page > 0):
+            raise AssertionError('Page number must be greater than 0')
         response = requests.get(
             f'{self.api_url}/search',
             params={

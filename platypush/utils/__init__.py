@@ -268,7 +268,8 @@ def _get_ssl_context(
     else:
         ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 
-    assert ssl_cert, 'No certificate specified'
+    if not (ssl_cert):
+        raise AssertionError('No certificate specified')
     if ssl_cafile or ssl_capath:
         ssl_context.load_verify_locations(cafile=ssl_cafile, capath=ssl_capath)
 
@@ -799,7 +800,8 @@ def import_file(path: str, name: Optional[str] = None):
     name = name or re.split(r"\.py$", os.path.basename(path))[0]
     loader = SourceFileLoader(name, os.path.expanduser(path))
     mod_spec = spec_from_loader(name, loader)
-    assert mod_spec, f"Cannot create module specification for {path}"
+    if not (mod_spec):
+        raise AssertionError(f"Cannot create module specification for {path}")
     mod = module_from_spec(mod_spec)
     loader.exec_module(mod)
     return mod
@@ -888,7 +890,8 @@ def is_binary(data: Union[str, bytes]) -> bool:
         return False
 
     # From https://stackoverflow.com/questions/898669/how-can-i-detect-if-a-file-is-binary-non-text-in-python
-    assert isinstance(data, bytes), f"Invalid data type: {type(data)}"
+    if not (isinstance(data, bytes)):
+        raise AssertionError(f"Invalid data type: {type(data)}")
     textchars = bytearray({7, 8, 9, 10, 12, 13, 27} | set(range(0x20, 0x100)) - {0x7F})
     return bool(data.translate(None, textchars))
 

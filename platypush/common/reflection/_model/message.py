@@ -52,7 +52,8 @@ class Message(Component, Serializable):
         """
         from platypush.message import Message as MessageClass
 
-        assert issubclass(type, MessageClass), f"Expected a Message class, got {type}"
+        if not (issubclass(type, MessageClass)):
+            raise AssertionError(f"Expected a Message class, got {type}")
         obj = cls(
             name=f'{type.__module__}.{type.__qualname__}',
             type=type,

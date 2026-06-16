@@ -56,7 +56,8 @@ class RedisBackend(Backend):
 
     def get_message(self, queue_name: Optional[str] = None) -> Optional[Message]:
         queue = queue_name or self.queue
-        assert self.redis, 'The Redis backend is not yet running.'
+        if not (self.redis):
+            raise AssertionError('The Redis backend is not yet running.')
         data = self.redis.blpop(queue, timeout=1)
         if data is None:
             return None

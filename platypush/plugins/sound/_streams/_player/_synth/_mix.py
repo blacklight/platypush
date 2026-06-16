@@ -48,9 +48,15 @@ class Mix(SoundBase):
         """
         Remove one or more sounds from the mix.
         """
-        assert self._sounds and all(
-            0 <= sound_index < len(sound_indices) for sound_index in sound_indices
-        ), f'Sound indices must be between 0 and {len(self._sounds) - 1}'
+        if not (
+            self._sounds
+            and all(
+                0 <= sound_index < len(sound_indices) for sound_index in sound_indices
+            )
+        ):
+            raise AssertionError(
+                f'Sound indices must be between 0 and {len(self._sounds) - 1}'
+            )
 
         for sound_index in sound_indices[::-1]:
             self._sounds.pop(sound_index)
@@ -92,7 +98,8 @@ class Mix(SoundBase):
                         'Supported values for "on_clip": ' + '"scale" or "clip"'
                     )
 
-        assert wave is not None
+        if not (wave is not None):
+            raise AssertionError
         return convert_nd_array(self.gain * wave, dtype=self.dtype)
 
     def duration(self):

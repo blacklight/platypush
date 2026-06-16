@@ -100,9 +100,8 @@ class UserPlugin(Plugin):
         )
 
         if return_details:
-            assert (
-                isinstance(response, tuple) and len(response) == 2
-            ), 'Invalid response from authenticate_user'
+            if not (isinstance(response, tuple) and len(response) == 2):
+                raise AssertionError('Invalid response from authenticate_user')
             return response[0], response[1].value
 
         return response
@@ -267,7 +266,8 @@ class UserPlugin(Plugin):
 
         """
         user = self.user_manager.get_user_by_session(session_token)
-        assert user, 'No user associated with the specified session token'
+        if not (user):
+            raise AssertionError('No user associated with the specified session token')
 
         return {
             'user_id': user.user_id,

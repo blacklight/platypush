@@ -82,9 +82,10 @@ class SwitchbotPlugin(
 
         response.raise_for_status()
         response = response.json()
-        assert (
-            response.get('statusCode') == 100
-        ), f'Switchbot API request failed: {response.get("statusCode")}: {response.get("message")}'
+        if not (response.get('statusCode') == 100):
+            raise AssertionError(
+                f'Switchbot API request failed: {response.get("statusCode")}: {response.get("message")}'
+            )
 
         return response.get('body')
 
@@ -104,7 +105,8 @@ class SwitchbotPlugin(
         if device in self._devices_by_id:
             return self._devices_by_id[device]
 
-        assert use_cache, f'Device not found: {device}'
+        if not (use_cache):
+            raise AssertionError(f'Device not found: {device}')
         return self._get_device(device, use_cache=False)
 
     @action
@@ -565,7 +567,8 @@ class SwitchbotPlugin(
             if not response:
                 continue
 
-            assert not isinstance(response, Exception), str(response)
+            if isinstance(response, Exception):
+                raise AssertionError(str(response))
             results.append(
                 {
                     **devices_by_id.get(response.get('id'), {}),
@@ -1092,7 +1095,8 @@ class SwitchbotPlugin(
             if s.get('id') == scene or s.get('name') == scene
         ]
 
-        assert scenes, f'No such scene: {scene}'
+        if not (scenes):
+            raise AssertionError(f'No such scene: {scene}')
         return self._run('post', 'scenes', scenes[0]['id'], 'execute')
 
     @action
@@ -1110,14 +1114,17 @@ class SwitchbotPlugin(
         :param value: Value to set.
         """
         entity = self._to_entity(device, property)
-        assert entity, f'No such device: "{device}"'
+        if not (entity):
+            raise AssertionError(f'No such device: "{device}"')
 
         dt = entity.data.get('device_type')
-        assert dt, f'Could not infer the device type for "{device}"'
+        if not (dt):
+            raise AssertionError(f'Could not infer the device type for "{device}"')
 
         device_type = DeviceType(dt)
         setter_class = entity_setters.get(device_type)
-        assert setter_class, f'No setters found for device type "{device_type}"'
+        if not (setter_class):
+            raise AssertionError(f'No setters found for device type "{device_type}"')
 
         setter = setter_class(entity)
         return setter(property=property, value=value)
@@ -1139,7 +1146,8 @@ class SwitchbotPlugin(
             return entities[0]
         if not property:
             device, property = self._split_device_id_and_property(device)
-        assert property, 'No property specified'
+        if not (property):
+            raise AssertionError('No property specified')
 
         entity_id = f'{device}:{property}'
         return next(iter([e for e in entities if e.id == entity_id]), None)

@@ -87,7 +87,8 @@ class BLEManager(BaseBluetoothManager):
 
             dev = self._device_cache.get(device)
 
-        assert dev, f'Unknown device: "{device}"'
+        if not (dev):
+            raise AssertionError(f'Unknown device: "{device}"')
         return dev
 
     def _disconnected_callback(self, client: BleakClient):
@@ -232,13 +233,18 @@ class BLEManager(BaseBluetoothManager):
         This may be required if there is an active connection to the device that is not owned by the
         """
         entity = self._cache.get(device.address)
-        assert entity, f'Unknown device: "{device.address}"'
+        if not (entity):
+            raise AssertionError(f'Unknown device: "{device.address}"')
         path = device.details.get('path')
-        assert path, f'The device "{device.address}" has no reported system path'
-        assert path.startswith('/org/bluez/'), (
-            f'The device "{device.address}" is not a BlueZ device. Programmatic '
-            'system disconnection is only supported on Linux'
-        )
+        if not (path):
+            raise AssertionError(
+                f'The device "{device.address}" has no reported system path'
+            )
+        if not (path.startswith('/org/bluez/')):
+            raise AssertionError(
+                f'The device "{device.address}" is not a BlueZ device. Programmatic '
+                'system disconnection is only supported on Linux'
+            )
 
         try:
             import pydbus
@@ -295,16 +301,18 @@ class BLEManager(BaseBluetoothManager):
 
         # Wait for the connection to succeed
         success = connected_event.wait(timeout=timeout)
-        assert success, f'Connection to {device} timed out'
+        if not (success):
+            raise AssertionError(f'Connection to {device} timed out')
 
     def disconnect(self, device: str, *_, **__):
         # Get the device
         loop = get_or_create_event_loop()
         dev = loop.run_until_complete(self._get_device(device))
-        assert dev, f'Device {device} not found'
+        if not (dev):
+            raise AssertionError(f'Device {device} not found')
 
         # Check if there are any active connections
-        connection = self._connections.get(dev.address, None)
+        connection = self._connections.get(dev.address)
         if not connection:
             # If there are no active connections in this process, try to
             # disconnect through the DBus API
@@ -316,9 +324,8 @@ class BLEManager(BaseBluetoothManager):
             connection.close_event.set()
         if connection.thread and connection.thread.is_alive():
             connection.thread.join(timeout=5)
-        assert not (
-            connection.thread and connection.thread.is_alive()
-        ), f'Disconnection from {device} timed out'
+        if connection.thread and connection.thread.is_alive():
+            raise AssertionError(f'Disconnection from {device} timed out')
 
     def scan(
         self,

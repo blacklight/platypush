@@ -97,14 +97,16 @@ class TwilioPlugin(Plugin):
             self._api_base_url + phone_numbers.uri,
             auth=(self.account_sid, self.auth_token),
         ).json()
-        assert (
-            'subresource_uris' in resp
-        ), 'No available phone numbers found for the country {}'.format(country)
-        assert (
-            number_type in resp['subresource_uris']
-        ), 'No "{}" phone numbers available - available types: {}'.format(
-            number_type, list(resp['subresource_uris'].keys())
-        )
+        if not ('subresource_uris' in resp):
+            raise AssertionError(
+                'No available phone numbers found for the country {}'.format(country)
+            )
+        if not (number_type in resp['subresource_uris']):
+            raise AssertionError(
+                'No "{}" phone numbers available - available types: {}'.format(
+                    number_type, list(resp['subresource_uris'].keys())
+                )
+            )
 
         resp = requests.get(
             self._api_base_url + resp['subresource_uris'][number_type],
@@ -112,7 +114,8 @@ class TwilioPlugin(Plugin):
         ).json()
 
         phone_numbers = resp['available_phone_numbers']
-        assert len(phone_numbers), 'No phone numbers available'
+        if not (len(phone_numbers)):
+            raise AssertionError('No phone numbers available')
         return phone_numbers
 
     @action
@@ -333,9 +336,10 @@ class TwilioPlugin(Plugin):
                 }
 
         """
-        assert (
-            from_ or self.phone_number
-        ), 'No valid sender phone number specified nor configured'
+        if not (from_ or self.phone_number):
+            raise AssertionError(
+                'No valid sender phone number specified nor configured'
+            )
 
         to = self.address_book.get(to, to)
         status = self.client.messages.create(

@@ -120,11 +120,12 @@ class WallabagPlugin(Plugin):
                 e,
             )
 
-            assert self._username and self._password, (
-                "Can't refresh the OAuth session: username and password have not been provided. "
-                "Please either provide them in the configuration and restart "
-                "the service, or call the `wallabag.login` action"
-            )
+            if not (self._username and self._password):
+                raise AssertionError(
+                    "Can't refresh the OAuth session: username and password have not been provided. "
+                    "Please either provide them in the configuration and restart "
+                    "the service, or call the `wallabag.login` action"
+                )
 
             self._oauth_create_new_session(self._username, self._password)
             return
@@ -200,9 +201,10 @@ class WallabagPlugin(Plugin):
 
         username = username or self._username
         password = password or self._password
-        assert (
-            username and password
-        ), 'No stored user session and no username/password provided'
+        if not (username and password):
+            raise AssertionError(
+                'No stored user session and no username/password provided'
+            )
 
         self._oauth_create_new_session(username, password)
 

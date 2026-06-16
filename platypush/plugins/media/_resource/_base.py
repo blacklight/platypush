@@ -52,7 +52,8 @@ class MediaResource(ABC):
         """
         from platypush.plugins.media import MediaPlugin
 
-        assert isinstance(self.media_plugin, MediaPlugin)
+        if not (isinstance(self.media_plugin, MediaPlugin)):
+            raise AssertionError
         return self.media_plugin
 
     @abstractmethod

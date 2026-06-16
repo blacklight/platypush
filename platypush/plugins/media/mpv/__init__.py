@@ -254,7 +254,8 @@ class MediaMpvPlugin(MediaPlugin):
             only_audio=only_audio,
         )
 
-        assert self._cur_player, 'The player is not ready'
+        if not (self._cur_player):
+            raise AssertionError('The player is not ready')
         self._cur_player.play(media.resource or media.url)
 
         if self.volume:
@@ -352,7 +353,8 @@ class MediaMpvPlugin(MediaPlugin):
         if not self._cur_player:
             return None
 
-        assert self._cur_player.seekable, 'The resource is not seekable'
+        if not (self._cur_player.seekable):
+            raise AssertionError('The resource is not seekable')
         self._cur_player.time_pos = min(
             float(self._cur_player.time_pos or 0)
             + float(self._cur_player.time_remaining or 0),
@@ -366,7 +368,8 @@ class MediaMpvPlugin(MediaPlugin):
         if not self._cur_player:
             return None
 
-        assert self._cur_player.seekable, 'The resource is not seekable'
+        if not (self._cur_player.seekable):
+            raise AssertionError('The resource is not seekable')
         cur_pos = float(self._cur_player.time_pos or 0)
         return self.seek(cur_pos - offset)
 
@@ -376,7 +379,8 @@ class MediaMpvPlugin(MediaPlugin):
         if not self._cur_player:
             return None
 
-        assert self._cur_player.seekable, 'The resource is not seekable'
+        if not (self._cur_player.seekable):
+            raise AssertionError('The resource is not seekable')
         cur_pos = float(self._cur_player.time_pos or 0)
         return self.seek(cur_pos + offset)
 

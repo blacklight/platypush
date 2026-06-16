@@ -37,18 +37,25 @@ if not is_defined('three_axis_sensor'):
                 return
 
             if isinstance(value, dict):
-                assert set(value.keys()) == {
-                    'x',
-                    'y',
-                    'z',
-                }, f'Invalid keys for entity of type {self.__class__}: "{value}"'
+                if not (
+                    set(value.keys())
+                    == {
+                        'x',
+                        'y',
+                        'z',
+                    }
+                ):
+                    raise AssertionError(
+                        f'Invalid keys for entity of type {self.__class__}: "{value}"'
+                    )
 
                 value = [value[k] for k in ['x', 'y', 'z']]  # type: ignore
 
-            assert (
+            if not (
                 isinstance(value, (list, tuple))
                 and len(value) == 3  # type: ignore
                 and all(isinstance(v, (int, float)) for v in value)
-            ), f'Invalid 3-axis value: {value}'
+            ):
+                raise AssertionError(f'Invalid 3-axis value: {value}')
 
             super(ThreeAxisSensor, type(self)).value.fset(self, value)  # type: ignore

@@ -54,7 +54,8 @@ class MailInPlugin(BaseMailPlugin, ABC):
     ) -> Mail:
         msgs = self.get_messages(id, with_body=with_body)
         msg = msgs.get(id)
-        assert msg, f"Message {id} not found"
+        if not (msg):
+            raise AssertionError(f"Message {id} not found")
         return msg
 
     @abstractmethod

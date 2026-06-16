@@ -81,9 +81,10 @@ class ExtensionWithManifest:
         manifest_file = os.path.join(
             os.path.dirname(inspect.getfile(self.__class__)), 'manifest.json'
         )
-        assert os.path.isfile(
-            manifest_file
-        ), f'The extension {self.__class__.__name__} has no associated manifest.json'
+        if not (os.path.isfile(manifest_file)):
+            raise AssertionError(
+                f'The extension {self.__class__.__name__} has no associated manifest.json'
+            )
 
         return Manifest.from_file(manifest_file)
 

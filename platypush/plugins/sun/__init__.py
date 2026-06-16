@@ -52,7 +52,8 @@ class SunPlugin(RunnablePlugin):
                 None,
             )
 
-            assert next_event is not None, 'No next event found'
+            if not (next_event is not None):
+                raise AssertionError('No next event found')
             wait_secs = max(
                 0, (next_event.time - datetime.datetime.now(tz=gettz())).seconds
             )

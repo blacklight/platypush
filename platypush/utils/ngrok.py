@@ -13,7 +13,10 @@ def _get_http_port() -> int:
     if Config.get('backend.http'):
         http = get_backend('http')
 
-    assert http, 'The http backend is required in order to subscribe to notifications'
+    if not (http):
+        raise AssertionError(
+            'The http backend is required in order to subscribe to notifications'
+        )
     return http.port
 
 
@@ -34,9 +37,10 @@ def get_or_create_ngrok_tunnel() -> str:
         if Config.get('ngrok'):
             ngrok = get_plugin('ngrok')
 
-        assert (
-            ngrok
-        ), 'The ngrok plugin is required in order to subscribe to notifications'
+        if not (ngrok):
+            raise AssertionError(
+                'The ngrok plugin is required in order to subscribe to notifications'
+            )
         tunnel_response = ngrok.create_tunnel(
             resource=local_port,
             protocol='http',
@@ -44,5 +48,6 @@ def get_or_create_ngrok_tunnel() -> str:
         ).output
 
         _app_tunnel_url = tunnel_response.get('url')
-        assert _app_tunnel_url, 'Unable to create an ngrok tunnel'
+        if not (_app_tunnel_url):
+            raise AssertionError('Unable to create an ngrok tunnel')
         return _app_tunnel_url

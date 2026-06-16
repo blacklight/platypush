@@ -45,13 +45,15 @@ class Pipeline:
         return el
 
     def add_source(self, element_name: str, *args, **props):
-        assert not self.source, 'A source element is already set for this pipeline'
+        if not (not self.source):
+            raise AssertionError('A source element is already set for this pipeline')
         source = self.add(element_name, *args, **props)
         self.source = source
         return source
 
     def add_sink(self, element_name: str, *args, **props):
-        assert not self.sink, 'A sink element is already set for this pipeline'
+        if not (not self.sink):
+            raise AssertionError('A sink element is already set for this pipeline')
         sink = self.add(element_name, *args, **props)
         sink.connect('new-sample', self.on_buffer)
         sink.set_property('emit-signals', True)
@@ -70,7 +72,8 @@ class Pipeline:
 
     def play(self):
         self.pipeline.set_state(Gst.State.PLAYING)
-        assert self.loop, 'No GLib loop is running'
+        if not (self.loop):
+            raise AssertionError('No GLib loop is running')
         self.loop.start()
 
     def pause(self):
@@ -87,11 +90,13 @@ class Pipeline:
         self.loop = None
 
     def get_volume(self) -> float:
-        assert self.source, 'No source initialized'
+        if not (self.source):
+            raise AssertionError('No source initialized')
         return self.source.get_property('volume') or 0
 
     def set_volume(self, volume: float):
-        assert self.source, 'No source initialized'
+        if not (self.source):
+            raise AssertionError('No source initialized')
         self.source.set_property('volume', volume)
 
     def _msg_handler(self, message) -> bool:
@@ -186,7 +191,8 @@ class Pipeline:
         return pos[1] / 1e9
 
     def get_duration(self) -> Optional[float]:
-        assert self.source, 'No active source found'
+        if not (self.source):
+            raise AssertionError('No active source found')
         pos = self.source.query_duration(Gst.Format(Gst.Format.TIME))
         if not pos[0]:
             return None
@@ -199,7 +205,8 @@ class Pipeline:
         return self.source.get_property('mute')
 
     def set_mute(self, mute: bool):
-        assert self.source, 'No source specified'
+        if not (self.source):
+            raise AssertionError('No source specified')
         self.source.set_property('mute', mute)
 
     def mute(self):
@@ -209,7 +216,8 @@ class Pipeline:
         self.set_mute(False)
 
     def seek(self, position: float):
-        assert self.source, 'No source specified'
+        if not (self.source):
+            raise AssertionError('No source specified')
         position = max(0, position)
         duration = self.get_duration()
         if duration and position > duration:
@@ -229,7 +237,8 @@ class Loop(threading.Thread):
         self._loop = GLib.MainLoop()
 
     def run(self):
-        assert self._loop, 'No GLib loop is running'
+        if not (self._loop):
+            raise AssertionError('No GLib loop is running')
         self._loop.run()
 
     def is_running(self) -> bool:

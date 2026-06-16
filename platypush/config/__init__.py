@@ -335,7 +335,8 @@ class Config:
                     self._included_files.add(include_file)
                     config.update(self._read_config_file(include_file))
             elif section == 'scripts_dir':
-                assert isinstance(file_config[section], str)
+                if not (isinstance(file_config[section], str)):
+                    raise AssertionError
                 config['scripts_dir'] = os.path.abspath(
                     os.path.expanduser(file_config[section])
                 )
@@ -457,7 +458,8 @@ class Config:
         self, name: str, dashboards_dir: Optional[str] = None
     ) -> Optional[str]:
         dashboards_dir = dashboards_dir or self._config['dashboards_dir']
-        assert dashboards_dir
+        if not (dashboards_dir):
+            raise AssertionError
         abspath = os.path.join(dashboards_dir, name + '.xml')
         if not os.path.isfile(abspath):
             return None
@@ -468,7 +470,8 @@ class Config:
     def _get_dashboards(self, dashboards_dir: Optional[str] = None) -> dict:
         dashboards = {}
         dashboards_dir = dashboards_dir or self._config['dashboards_dir']
-        assert dashboards_dir
+        if not (dashboards_dir):
+            raise AssertionError
 
         for f in os.listdir(dashboards_dir):
             abspath = os.path.join(dashboards_dir, f)
@@ -595,7 +598,8 @@ class Config:
         :return: The path of the configured working directory.
         """
         workdir = cls._get_instance().get('workdir')
-        assert workdir
+        if not (workdir):
+            raise AssertionError
         return workdir  # type: ignore
 
     @classmethod
@@ -604,7 +608,8 @@ class Config:
         :return: The configured/default device ID.
         """
         device_id = cls._get_instance().get('device_id')
-        assert device_id
+        if not (device_id):
+            raise AssertionError
         return device_id  # type: ignore
 
     @classmethod
@@ -613,7 +618,8 @@ class Config:
         :return: The path of the configured cache directory.
         """
         workdir = cls._get_instance().get('cachedir')
-        assert workdir
+        if not (workdir):
+            raise AssertionError
         return workdir  # type: ignore
 
     @classmethod

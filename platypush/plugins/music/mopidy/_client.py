@@ -103,7 +103,8 @@ class MopidyClient(Thread):
         """
         Send a list of tasks to the Mopidy server.
         """
-        assert self._ws, 'Websocket not connected'
+        if not (self._ws):
+            raise AssertionError('Websocket not connected')
 
         for task in tasks:
             with self._req_lock:
@@ -123,11 +124,13 @@ class MopidyClient(Thread):
 
             try:
                 task_state = self._tasks.get(task.id)
-                assert (
-                    task_state
-                ), f'The Mopidy task {task.id} is not found or is no longer running'
+                if not (task_state):
+                    raise AssertionError(
+                        f'The Mopidy task {task.id} is not found or is no longer running'
+                    )
                 ret = task_state.get_response(timeout=remaining_timeout)
-                assert not isinstance(ret, Exception), ret
+                if isinstance(ret, Exception):
+                    raise AssertionError(ret)
                 self.logger.debug('Got response for %s: %s', task, ret)
                 yield ret
             except Empty as e:

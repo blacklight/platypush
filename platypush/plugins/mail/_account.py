@@ -54,7 +54,10 @@ class Account:
         in_plugin = None
         if incoming:
             server = incoming.pop('server', None)
-            assert server, 'No server provided for incoming mail for account "{name}"'
+            if not (server):
+                raise AssertionError(
+                    'No server provided for incoming mail for account "{name}"'
+                )
 
             keyfile = incoming.pop('keyfile', keyfile)
             certfile = incoming.pop('certfile', certfile)
@@ -67,14 +70,18 @@ class Account:
                 certfile=certfile,
             )
 
-            assert isinstance(
-                in_plugin, MailInPlugin
-            ), 'Incoming mail plugin expected for account "{name}"'
+            if not (isinstance(in_plugin, MailInPlugin)):
+                raise AssertionError(
+                    'Incoming mail plugin expected for account "{name}"'
+                )
 
         out_plugin = None
         if outgoing:
             server = outgoing.pop('server', None)
-            assert server, 'No server provided for outgoing mail for account "{name}"'
+            if not (server):
+                raise AssertionError(
+                    'No server provided for outgoing mail for account "{name}"'
+                )
 
             keyfile = outgoing.pop('keyfile', keyfile)
             certfile = outgoing.pop('certfile', certfile)
@@ -87,9 +94,10 @@ class Account:
                 certfile=certfile,
             )
 
-            assert isinstance(
-                out_plugin, MailOutPlugin
-            ), 'Outgoing mail plugin expected for account "{name}"'
+            if not (isinstance(out_plugin, MailOutPlugin)):
+                raise AssertionError(
+                    'Outgoing mail plugin expected for account "{name}"'
+                )
 
         return cls(
             name=name,

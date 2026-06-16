@@ -37,13 +37,15 @@ def check_file_content(expected_content: str, tmp_file: str, timeout: int = 10):
 
     while time.time() - start_time < timeout:
         try:
-            assert os.path.isfile(tmp_file), 'The expected output file was not created'
+            if not (os.path.isfile(tmp_file)):
+                raise AssertionError('The expected output file was not created')
             with open(tmp_file, 'r') as f:
                 content = f.read()
 
-            assert (
-                content == expected_content
-            ), 'The output file did not contain the expected text'
+            if not (content == expected_content):
+                raise AssertionError(
+                    'The output file did not contain the expected text'
+                )
             error = None
             break
         except Exception as e:

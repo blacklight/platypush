@@ -43,7 +43,8 @@ class CameraRoute(StreamingRoute):
     def _get_camera(self, plugin: str) -> CameraPlugin:
         plugin_name = f'camera.{plugin.replace("/", ".")}'
         p = get_plugin(plugin_name)
-        assert p, f'No such plugin: {plugin_name}'
+        if not (p):
+            raise AssertionError(f'No such plugin: {plugin_name}')
         return p
 
     def _get_frame(
@@ -96,7 +97,8 @@ class CameraRoute(StreamingRoute):
     @classmethod
     def _get_redis_queue(cls, camera: CameraPlugin, *_, **__) -> str:
         plugin_name = get_plugin_name_by_class(camera.__class__)
-        assert plugin_name, f'No such plugin: {plugin_name}'
+        if not (plugin_name):
+            raise AssertionError(f'No such plugin: {plugin_name}')
         return '/'.join(
             [
                 cls._redis_queue_prefix,

@@ -206,9 +206,8 @@ class MqttPlugin(RunnablePlugin):
         )
 
         if not host:
-            assert (
-                self.default_listener
-            ), 'No host specified and no configured default host'
+            if not (self.default_listener):
+                raise AssertionError('No host specified and no configured default host')
 
             return {
                 **default_conf,
@@ -314,9 +313,8 @@ class MqttPlugin(RunnablePlugin):
             kwargs['host'] = host
             kwargs['port'] = port
         else:
-            assert (
-                self.default_listener
-            ), 'No host specified and no configured default host'
+            if not (self.default_listener):
+                raise AssertionError('No host specified and no configured default host')
             kwargs = self.default_listener.configuration
 
         on_message = on_message or self.on_mqtt_message()

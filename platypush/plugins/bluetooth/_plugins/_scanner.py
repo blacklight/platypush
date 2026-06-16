@@ -19,9 +19,11 @@ def scan_plugins(manager) -> List[BaseBluetoothPlugin]:
     plugins = {}
     base_dir = os.path.dirname(inspect.getfile(manager.__class__))
     module = inspect.getmodule(manager.__class__)
-    assert module is not None
+    if not (module is not None):
+        raise AssertionError
     package = module.__package__
-    assert package is not None
+    if not (package is not None):
+        raise AssertionError
 
     for _, mod_name, _ in pkgutil.walk_packages([base_dir], prefix=package + '.'):
         try:

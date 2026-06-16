@@ -209,7 +209,8 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
                     }:
                         raise PhueRegistrationException(id=1, message=err)
 
-                    assert not err, err
+                    if err:
+                        raise AssertionError(err)
                     break
                 except Exception as e:
                     retry_secs = min(retry_secs * 2, self._MAX_RECONNECT_SECS)
@@ -425,7 +426,8 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
             self.bridge = None
             raise e
 
-        assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
+        if not (self.bridge):
+            raise AssertionError(self._UNINITIALIZED_BRIDGE_ERR)
         lights = []
         groups = []
 
@@ -451,7 +453,8 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
 
         try:
             if attr == 'scene':
-                assert groups, 'No groups specified'
+                if not (groups):
+                    raise AssertionError('No groups specified')
                 self.bridge.run_scene(list(groups)[0], kwargs.pop('name'))
             else:
                 if groups:
@@ -488,7 +491,8 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         """
 
         self.connect()
-        assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
+        if not (self.bridge):
+            raise AssertionError(self._UNINITIALIZED_BRIDGE_ERR)
         all_lights = self._get_lights()
 
         for i, l in enumerate(lights):
@@ -508,7 +512,8 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         for arg, value in kwargs.items():
             args += [arg, value]
 
-        assert len(args) > 1, 'Not enough parameters passed to set_lights'
+        if not (len(args) > 1):
+            raise AssertionError('Not enough parameters passed to set_lights')
         param = args.pop(0)
         value = args.pop(0)
         self.bridge.set_light(lights, param, value, *args)
@@ -538,7 +543,8 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         """
 
         self.connect()
-        assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
+        if not (self.bridge):
+            raise AssertionError(self._UNINITIALIZED_BRIDGE_ERR)
         self.bridge.set_group(group, **kwargs)
 
     @action
@@ -1114,7 +1120,8 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
             while not stop_animation and not (
                 duration and time.time() - animation_start_time > duration
             ):
-                assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
+                if not (self.bridge):
+                    raise AssertionError(self._UNINITIALIZED_BRIDGE_ERR)
 
                 try:
                     if animation == self.Animation.COLOR_TRANSITION:
@@ -1235,7 +1242,8 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         return new_entities
 
     def _get_lights(self, publish_entities=False) -> dict:
-        assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
+        if not (self.bridge):
+            raise AssertionError(self._UNINITIALIZED_BRIDGE_ERR)
         lights = self.bridge.get_light()
         lights = {id: light for id, light in lights.items() if not light.get('recycle')}
         self._cached_lights = lights
@@ -1244,12 +1252,14 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         return lights
 
     def _get_groups(self) -> dict:
-        assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
+        if not (self.bridge):
+            raise AssertionError(self._UNINITIALIZED_BRIDGE_ERR)
         groups = self.bridge.get_group() or {}
         return {id: group for id, group in groups.items() if not group.get('recycle')}
 
     def _get_scenes(self) -> dict:
-        assert self.bridge, self._UNINITIALIZED_BRIDGE_ERR
+        if not (self.bridge):
+            raise AssertionError(self._UNINITIALIZED_BRIDGE_ERR)
         scenes = self.bridge.get_scene() or {}
         return {id: scene for id, scene in scenes.items() if not scene.get('recycle')}
 

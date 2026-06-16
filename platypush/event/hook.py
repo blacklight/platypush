@@ -68,7 +68,8 @@ class EventCondition:
             )
 
             type = getattr(module, type.__name__)
-            assert type, f'Invalid event type: {type}'
+            if not (type):
+                raise AssertionError(f'Invalid event type: {type}')
 
         return type
 
@@ -83,7 +84,8 @@ class EventCondition:
             return rule
 
         rule = parse(rule)
-        assert isinstance(rule, dict), f'Not a valid rule: {rule}'
+        if not (isinstance(rule, dict)):
+            raise AssertionError(f'Not a valid rule: {rule}')
         type = get_event_class_by_type(rule.pop('type') if 'type' in rule else 'Event')
 
         args = {}
@@ -158,7 +160,8 @@ class EventHook:
                 name=name, condition=getattr(hook, 'condition', None), actions=actions
             )
 
-        assert isinstance(hook, dict)
+        if not (isinstance(hook, dict)):
+            raise AssertionError
         condition = EventCondition.build(hook['if']) if 'if' in hook else None
         actions = []
         priority = hook['priority'] if 'priority' in hook else None

@@ -47,7 +47,8 @@ class Device:
             pass
 
         pin_obj = self._pins_by_name.get(pin)
-        assert pin_obj, f'No such PIN configured: {pin}'
+        if not (pin_obj):
+            raise AssertionError(f'No such PIN configured: {pin}')
         return pin_obj.number
 
 

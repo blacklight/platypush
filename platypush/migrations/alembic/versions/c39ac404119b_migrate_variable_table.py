@@ -41,7 +41,8 @@ def upgrade() -> None:
         sa.Column('value', sa.String),
     )
 
-    assert VariableNew is not None, 'Could not create table "variable_new"'
+    if not (VariableNew is not None):
+        raise AssertionError('Could not create table "variable_new"')
 
     # Select all existing variables
     existing_vars = {
@@ -119,7 +120,8 @@ def downgrade() -> None:
         sa.Column('value', sa.String),
     )
 
-    assert VariableOld is not None, 'Could not create table "variable_old"'
+    if not (VariableOld is not None):
+        raise AssertionError('Could not create table "variable_old"')
 
     # Select all existing variables
     existing_vars = {

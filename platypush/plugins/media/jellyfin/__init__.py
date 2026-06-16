@@ -94,9 +94,8 @@ class MediaJellyfinPlugin(Plugin):
             try:
                 self.__user_id = self._execute('GET', '/Users/Me')['Id']
             except requests.exceptions.HTTPError as e:
-                assert (
-                    e.response.status_code == 400
-                ), f'Could not get the current user: {e}'
+                if not (e.response.status_code == 400):
+                    raise AssertionError(f'Could not get the current user: {e}')
 
                 self.__user_id = self._execute('GET', '/Users')[0]['Id']
 
@@ -540,16 +539,16 @@ class MediaJellyfinPlugin(Plugin):
             by :meth:`.get_playlist_items`. **Note**: This is the
             ``playlist_item_id`` on the response, not the ``id``.
         """
-        assert (
-            from_pos is not None or item_id is not None
-        ), 'Either from_pos or item must be set'
-        assert (
-            from_pos is None or item_id is None
-        ), 'Either from_pos or item must be set'
-        assert to_pos >= 0, 'to_pos must be >= 0'
+        if not (from_pos is not None or item_id is not None):
+            raise AssertionError('Either from_pos or item must be set')
+        if not (from_pos is None or item_id is None):
+            raise AssertionError('Either from_pos or item must be set')
+        if not (to_pos >= 0):
+            raise AssertionError('to_pos must be >= 0')
 
         if from_pos is not None:
-            assert from_pos >= 0, 'from_pos must be >= 0'
+            if not (from_pos >= 0):
+                raise AssertionError('from_pos must be >= 0')
             if from_pos == to_pos:
                 self.logger.info(
                     'from_pos and to_pos are the same, no need to move the item'

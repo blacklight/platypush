@@ -27,7 +27,8 @@ class JellyfinSchema(Schema):
     @property
     def _plugin(self):
         p = get_plugin('media.jellyfin')
-        assert p, 'The media.jellyfin plugin is not configured'
+        if not (p):
+            raise AssertionError('The media.jellyfin plugin is not configured')
         return p
 
     @property

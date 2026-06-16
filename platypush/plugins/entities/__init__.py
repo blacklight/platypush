@@ -29,7 +29,8 @@ class EntitiesPlugin(Plugin):
 
     def _get_session(self, *args, **kwargs) -> Session:
         db = get_plugin('db')
-        assert db
+        if not (db):
+            raise AssertionError
         return db.get_session(*args, **kwargs)
 
     @action
@@ -58,10 +59,11 @@ class EntitiesPlugin(Plugin):
             selected_types = {t.lower() for t in types}
             entity_types = {t: et for t, et in all_types.items() if t in selected_types}
             invalid_types = selected_types.difference(entity_types.keys())
-            assert not invalid_types, (
-                f'No such entity types: {invalid_types}. '
-                f'Supported types: {list(all_types.keys())}'
-            )
+            if invalid_types:
+                raise AssertionError(
+                    f'No such entity types: {invalid_types}. '
+                    f'Supported types: {list(all_types.keys())}'
+                )
 
             selected_types = entity_types.keys()
 
@@ -125,10 +127,12 @@ class EntitiesPlugin(Plugin):
         def worker(plugin_name: str, q: Queue):
             try:
                 plugin = get_plugin(plugin_name)
-                assert plugin, f'No such configured plugin: {plugin_name}'
+                if not (plugin):
+                    raise AssertionError(f'No such configured plugin: {plugin_name}')
                 # Force a plugin scan by calling the `status` action
                 response = plugin.status()
-                assert not response.errors, response.errors
+                if response.errors:
+                    raise AssertionError(response.errors)
                 q.put((plugin_name, response.output))
             except Exception as e:
                 q.put((plugin_name, e))
@@ -190,7 +194,8 @@ class EntitiesPlugin(Plugin):
         with self._get_session() as session:
             entity = session.query(Entity).filter_by(id=id).one_or_none()
 
-        assert entity, f'No such entity ID: {id}'
+        if not (entity):
+            raise AssertionError(f'No such entity ID: {id}')
         return entity.run(action, *args, **kwargs)
 
     @action

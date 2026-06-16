@@ -13,9 +13,8 @@ class HttpResourceParser(MediaResourceParser):
 
     def parse(self, resource: str, *_, **__) -> Optional[HttpMediaResource]:
         if resource.startswith('http://') or resource.startswith('https://'):
-            assert self._media.is_media_file(
-                resource
-            ), f'Invalid media resource: {resource}'
+            if not (self._media.is_media_file(resource)):
+                raise AssertionError(f'Invalid media resource: {resource}')
 
             return HttpMediaResource(
                 resource=resource,

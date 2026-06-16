@@ -65,7 +65,8 @@ class TensorflowPlugin(Plugin):
 
         try:
             success = self._model_locks[model_name].acquire(blocking=True, timeout=30.0)
-            assert success, 'Unable to acquire the model lock'
+            if not (success):
+                raise AssertionError('Unable to acquire the model lock')
             yield
         finally:
             try:
@@ -99,7 +100,8 @@ class TensorflowPlugin(Plugin):
             else:
                 raise FileNotFoundError(f'Model not found: {model_name}')
 
-        assert model, 'Could not find model: {}'.format(model_name)
+        if not (model):
+            raise AssertionError('Could not find model: {}'.format(model_name))
         model.input_labels = []
         model.output_labels = []
         labels_file = os.path.join(model_dir, 'labels.json')
@@ -205,7 +207,8 @@ class TensorflowPlugin(Plugin):
         :param model: Name of the model.
         """
         with self._lock_model(model):
-            assert model in self.models, 'The model {} is not loaded'.format(model)
+            if not (model in self.models):
+                raise AssertionError('The model {} is not loaded'.format(model))
             del self.models[model]
 
     @action
@@ -562,7 +565,8 @@ class TensorflowPlugin(Plugin):
         model.input_names = input_names or []
 
         if output_names:
-            assert units == len(output_names)
+            if not (units == len(output_names)):
+                raise AssertionError
             model.output_labels = output_names
         else:
             model.output_labels = []
@@ -590,7 +594,8 @@ class TensorflowPlugin(Plugin):
         from tensorflow.keras import layers
 
         cls = getattr(layers, layer_type)
-        assert issubclass(cls, layers.Layer)
+        if not (issubclass(cls, layers.Layer)):
+            raise AssertionError
         return cls(*args, **kwargs)
 
     @staticmethod
@@ -613,11 +618,12 @@ class TensorflowPlugin(Plugin):
 
         input_shape = model.inputs[0].shape
         size = input_shape[1:3].as_list()
-        assert (
-            len(size) == 2
-        ), 'The model {} does not have enough dimensions to process an image (shape: {})'.format(
-            model.name, size
-        )
+        if not (len(size) == 2):
+            raise AssertionError(
+                'The model {} does not have enough dimensions to process an image (shape: {})'.format(
+                    model.name, size
+                )
+            )
 
         colors = input_shape[3:]
         if len(colors) == 0 or colors[0] == 1:
@@ -646,11 +652,12 @@ class TensorflowPlugin(Plugin):
             for f in os.listdir(directory)
             if os.path.isdir(os.path.join(directory, f))
         ]
-        assert set(model.output_labels) == set(
-            labels
-        ), 'The directory {dir} should contain exactly {n} subfolders named {names}'.format(
-            dir=directory, n=len(model.output_labels), names=model.output.labels
-        )
+        if not (set(model.output_labels) == set(labels)):
+            raise AssertionError(
+                'The directory {dir} should contain exactly {n} subfolders named {names}'.format(
+                    dir=directory, n=len(model.output_labels), names=model.output.labels
+                )
+            )
 
         ret = {}
         for label in labels:
@@ -712,11 +719,12 @@ class TensorflowPlugin(Plugin):
         ]
 
         if os.path.isfile(data_file):
-            assert (
-                extensions
-            ), 'Unsupported type for file {}. Supported extensions: {}'.format(
-                data_file, cls._supported_data_file_extensions
-            )
+            if not (extensions):
+                raise AssertionError(
+                    'Unsupported type for file {}. Supported extensions: {}'.format(
+                        data_file, cls._supported_data_file_extensions
+                    )
+                )
 
             extension = extensions.pop()
             if extension in cls._csv_extensions:
@@ -1235,7 +1243,8 @@ class TensorflowPlugin(Plugin):
                 raise FileNotFoundError(f'No such model loaded: {model_name}')
 
         model_obj = self.models.get(model_name, self.models.get(model_dir))
-        assert model_obj, f'No such model loaded: {model_name}'
+        if not (model_obj):
+            raise AssertionError(f'No such model loaded: {model_name}')
         pathlib.Path(model_dir).mkdir(parents=True, exist_ok=True)
 
         with self._lock_model(model_name):

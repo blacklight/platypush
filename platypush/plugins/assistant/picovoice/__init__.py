@@ -524,7 +524,8 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
     @property
     def tts(self) -> TtsPicovoicePlugin:
         p = get_plugin('tts.picovoice')
-        assert p, 'Picovoice TTS plugin not configured/found'
+        if not (p):
+            raise AssertionError('Picovoice TTS plugin not configured/found')
         return p
 
     def _get_tts_plugin(self) -> TtsPicovoicePlugin:

@@ -200,14 +200,15 @@ class ZwaveMqttPlugin(
 
     @staticmethod
     def _parse_response(response: Union[dict, Response]) -> dict:
-        if isinstance(response, Response):
-            assert not response.is_error(), response.errors[0]
+        if isinstance(response, Response) and response.is_error():
+            raise AssertionError(response.errors[0])
 
         rs: dict = (
             response.output if isinstance(response, Response) else response
         )  # type: ignore
 
-        assert rs.get('success') is True, rs.get('message', 'zwavejs2mqtt error')
+        if not (rs.get('success') is True):
+            raise AssertionError(rs.get('message', 'zwavejs2mqtt error'))
         return rs
 
     def _api_request(self, api: str, *args: Any, **kwargs):
@@ -224,7 +225,8 @@ class ZwaveMqttPlugin(
             )
         )
 
-        assert not ret or ret.get('success') is True, ret.get('message')
+        if not (not ret or ret.get('success') is True):
+            raise AssertionError(ret.get('message'))
         return ret.get('result')
 
     @staticmethod
@@ -239,9 +241,8 @@ class ZwaveMqttPlugin(
         scene_label: Optional[str] = None,
         **kwargs,
     ) -> dict:
-        assert not (
-            scene_id is None and scene_label is None
-        ), 'No scene_id/scene_label specified'
+        if scene_id is None and scene_label is None:
+            raise AssertionError('No scene_id/scene_label specified')
 
         scene = self._state.scenes.get((scene_id, scene_label))
         if scene:
@@ -249,7 +250,10 @@ class ZwaveMqttPlugin(
 
         self._refresh_scenes(**kwargs)
         scene = self._state.scenes.get((scene_id, scene_label))
-        assert scene, f'No such scene: scene_id={scene_id}, scene_label={scene_label}'
+        if not (scene):
+            raise AssertionError(
+                f'No such scene: scene_id={scene_id}, scene_label={scene_label}'
+            )
         return scene
 
     @classmethod
@@ -511,13 +515,15 @@ class ZwaveMqttPlugin(
         make_request: bool = True,
         **kwargs,
     ) -> dict:
-        assert node_id or node_name, 'Please provide either a node_id or node_name'
+        if not (node_id or node_name):
+            raise AssertionError('Please provide either a node_id or node_name')
         if use_cache:
             node = self._state.nodes.get((node_id, node_name))
             if node:
                 return node
 
-        assert make_request, f'No such node: {node_id or node_name}'
+        if not (make_request):
+            raise AssertionError(f'No such node: {node_id or node_name}')
         self._refresh_nodes(**kwargs)
         return self._get_node(
             node_id=node_id,
@@ -540,23 +546,27 @@ class ZwaveMqttPlugin(
     ) -> Dict[str, Any]:
         # Unlike python-openzwave, value_id and id_on_network are the same on zwavejs2mqtt
         value_id = value_id or id_on_network
-        assert (
-            value_id or value_label
-        ), 'Please provide either value_id, id_on_network or value_label'
+        if not (value_id or value_label):
+            raise AssertionError(
+                'Please provide either value_id, id_on_network or value_label'
+            )
 
         if use_cache:
             value = self._state.values.get((value_id, value_label))
             if value:
                 if node_id or node_name:
                     node = self._state.nodes.get((node_id, node_name))
-                    assert node, f'No such node: {node_id or node_name}'
-                    assert (
-                        value['node_id'] == node['id']
-                    ), f'No such value on node {node_id or node_name}: {value_id or value_label}'
+                    if not (node):
+                        raise AssertionError(f'No such node: {node_id or node_name}')
+                    if not (value['node_id'] == node['id']):
+                        raise AssertionError(
+                            f'No such value on node {node_id or node_name}: {value_id or value_label}'
+                        )
 
                 return value
 
-        assert make_request, f'No such value: {value_id or value_label}'
+        if not (make_request):
+            raise AssertionError(f'No such value: {value_id or value_label}')
         self._refresh_nodes(**kwargs)
         return self._get_value(
             value_id=value_id,
@@ -927,16 +937,16 @@ class ZwaveMqttPlugin(
         group_index: Optional[int] = None,
         **kwargs,
     ) -> dict:
-        assert not (
-            group_id is None and group_index is None
-        ), 'No group_id/group_index specified'
+        if group_id is None and group_index is None:
+            raise AssertionError('No group_id/group_index specified')
         group_id = group_id or str(group_index)
         group = self._state.groups.get(group_id)
         if group:
             return group
 
         groups = self._get_groups(**kwargs)
-        assert group_id in groups, f'No such group_id: {group_id}'
+        if not (group_id in groups):
+            raise AssertionError(f'No such group_id: {group_id}')
         return groups[group_id]
 
     def on_mqtt_message(self):
@@ -984,7 +994,8 @@ class ZwaveMqttPlugin(
         **kwargs,
     ):
         node_id = node.get('id')
-        assert node_id is not None, 'No node ID specified'
+        if not (node_id is not None):
+            raise AssertionError('No node ID specified')
 
         if fetch_node:
             node = kwargs['node'] = self._get_node(node_id)
@@ -1152,7 +1163,8 @@ class ZwaveMqttPlugin(
         if node_name:
             node_id = self._get_node(node_name=node_name).get('node_id')
 
-        assert node_id is not None, f'No such node_id: {node_id}'
+        if not (node_id is not None):
+            raise AssertionError(f'No such node_id: {node_id}')
         self._api_request('removeFailedNode', node_id, **kwargs)
 
     @action
@@ -1170,7 +1182,8 @@ class ZwaveMqttPlugin(
         if node_name:
             node_id = self._get_node(node_name=node_name).get('node_id')
 
-        assert node_id is not None, f'No such node_id: {node_id}'
+        if not (node_id is not None):
+            raise AssertionError(f'No such node_id: {node_id}')
         self._api_request('replaceFailedNode', node_id, **kwargs)
 
     @action
@@ -1188,7 +1201,8 @@ class ZwaveMqttPlugin(
         if node_name:
             node_id = self._get_node(node_name=node_name).get('node_id')
 
-        assert node_id is not None, f'No such node_id: {node_id}'
+        if not (node_id is not None):
+            raise AssertionError(f'No such node_id: {node_id}')
         self._api_request('refreshInfo', node_id, **kwargs)
 
     @action
@@ -1394,7 +1408,8 @@ class ZwaveMqttPlugin(
         if node_name:
             node_id = self._get_node(node_name=node_name, **kwargs).get('node_id')
 
-        assert node_id, f'No such node: {node_id}'
+        if not (node_id):
+            raise AssertionError(f'No such node: {node_id}')
         self._api_request('setNodeName', node_id, new_name, **kwargs)
         get_bus().post(
             ZwaveNodeRenamedEvent(
@@ -1425,7 +1440,8 @@ class ZwaveMqttPlugin(
         if node_name:
             node_id = self._get_node(node_name=node_name, **kwargs).get('node_id')
 
-        assert node_id, f'No such node: {node_id}'
+        if not (node_id):
+            raise AssertionError(f'No such node: {node_id}')
         self._api_request('setNodeLocation', node_id, location, **kwargs)
         get_bus().post(
             ZwaveNodeEvent(
@@ -2161,7 +2177,8 @@ class ZwaveMqttPlugin(
         value['data'] = not value['data']
         self.set_value(data=value['data'], id_on_network=device, **kwargs)
         node = self._state.nodes.get(value['node_id'])
-        assert node, f'Node {value["node_id"]} not found'
+        if not (node):
+            raise AssertionError(f'Node {value["node_id"]} not found')
 
         return {
             'name': (node['name'] + ' - ' + value.get('label', '[No Label]')),

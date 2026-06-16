@@ -31,7 +31,8 @@ class EntitiesDb:
 
     def get_session(self, *args, **kwargs) -> Session:
         db = get_plugin('db')
-        assert db
+        if not (db):
+            raise AssertionError
         return db.get_session(*args, **kwargs)
 
     def fetch(

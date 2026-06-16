@@ -39,7 +39,8 @@ class NfcPlugin(RunnablePlugin):
         if not self._clf:
             self._clf = nfc.ContactlessFrontend()
             self._clf.open(self.device_id)
-            assert self._clf and self._clf.device, 'NFC reader not initialized'
+            if not (self._clf and self._clf.device):
+                raise AssertionError('NFC reader not initialized')
             self._bus.post(NFCDeviceConnectedEvent(reader=self._get_device_str()))
             self.logger.info(
                 'Initialized NFC reader on device %s', self._get_device_str()
@@ -48,7 +49,8 @@ class NfcPlugin(RunnablePlugin):
         return self._clf
 
     def _get_device_str(self):
-        assert self._clf, 'NFC reader not initialized'
+        if not (self._clf):
+            raise AssertionError('NFC reader not initialized')
         return str(self._clf.device)
 
     def close(self):
@@ -246,7 +248,8 @@ class NfcPlugin(RunnablePlugin):
             }
 
         """
-        assert self._clf and self._clf.device, 'NFC reader not initialized'
+        if not (self._clf and self._clf.device):
+            raise AssertionError('NFC reader not initialized')
         return {
             'display_name': str(self._clf.device),
             'path': self._clf.device.path,

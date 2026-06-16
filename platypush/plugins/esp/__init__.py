@@ -213,13 +213,13 @@ class EspPlugin(Plugin):
         **_,
     ) -> Device:
         if device:
-            assert device in self._devices_by_name, (
-                'No such device configured: ' + device
-            )
+            if not (device in self._devices_by_name):
+                raise AssertionError('No such device configured: ' + device)
             return self._devices_by_name[device]
 
         host = host or self.devices[0].host
-        assert host and port, 'No host and port specified'
+        if not (host and port):
+            raise AssertionError('No host and port specified')
         if host in self._devices_by_host:
             return self._devices_by_host[host]
 
@@ -233,14 +233,14 @@ class EspPlugin(Plugin):
         **_,
     ) -> Optional[Connection]:
         if device:
-            assert device in self._devices_by_name, (
-                'No such device configured: ' + device
-            )
+            if not (device in self._devices_by_name):
+                raise AssertionError('No such device configured: ' + device)
             dev = self._devices_by_name[device]
             host = dev.host
             port = dev.port
 
-        assert host and port, 'No host and port specified'
+        if not (host and port):
+            raise AssertionError('No host and port specified')
         conn = self._connections.get((host, port))
         return conn
 
@@ -259,7 +259,8 @@ class EspPlugin(Plugin):
         if conn and conn.ws and conn.ws.sock and conn.ws.sock.connected:
             return conn
 
-        assert host and port, 'No host and port specified'
+        if not (host and port):
+            raise AssertionError('No host and port specified')
         conn = Connection(
             host=host, port=port, password=password, connect_timeout=timeout
         )
@@ -317,7 +318,8 @@ class EspPlugin(Plugin):
         dev = self._get_device(device=device, host=host, port=port)
         host, port = [dev.host, dev.port]
         conn = self._connections.get((host, port))
-        assert conn, f'No active connection found to {host}:{port}'
+        if not (conn):
+            raise AssertionError(f'No active connection found to {host}:{port}')
         conn.close()
         self._connections.pop((host, port), None)
 
@@ -355,7 +357,8 @@ class EspPlugin(Plugin):
             timeout=conn_timeout,
         )
         conn = self._connections.get((dev.host, dev.port))
-        assert conn, f'No active connection found to {dev.host}:{dev.port}'
+        if not (conn):
+            raise AssertionError(f'No active connection found to {dev.host}:{dev.port}')
 
         try:
             return Response(
@@ -591,12 +594,12 @@ pin.deinit()
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
         """
         code = f'''
-args = {
+args = {{
     'baudrate': {baudrate},
     'polarity': {polarity},
     'phase': {phase},
     'bits': {bits},
-}
+}}
 '''
         self.execute(code, **kwargs)
 
@@ -645,9 +648,8 @@ if {miso}:
 
             return response.decode()
         except UnicodeDecodeError:
-            assert isinstance(
-                response, bytes
-            ), f'Invalid response type: {type(response)}'
+            if not (isinstance(response, bytes)):
+                raise AssertionError(f'Invalid response type: {type(response)}')
             return base64.encodebytes(response).decode()
 
     @action
@@ -757,9 +759,8 @@ i2c = machine.I2C(id={id}, freq={baudrate}, **args)
                 return response
             return response.decode()
         except UnicodeDecodeError:
-            assert isinstance(
-                response, bytes
-            ), f'Invalid response type: {type(response)}'
+            if not (isinstance(response, bytes)):
+                raise AssertionError(f'Invalid response type: {type(response)}')
             return base64.encodebytes(response).decode()
 
     @action
@@ -840,11 +841,11 @@ i2c = machine.I2C(id={id}, freq={baudrate}, **args)
         :param kwargs: Parameters to pass to :meth:`platypush.plugins.esp.EspPlugin.execute`.
         """
         code = f'''
-args = {
+args = {{
     'bits': {bits},
     'parity': {parity},
     'stop': {stop},
-}
+}}
 
 if {tx_pin}:
     args['tx'] = {tx_pin}
@@ -901,9 +902,8 @@ uart.read(*args)
                 return response
             return response.decode()
         except UnicodeDecodeError:
-            assert isinstance(
-                response, bytes
-            ), f'Invalid response type: {type(response)}'
+            if not (isinstance(response, bytes)):
+                raise AssertionError(f'Invalid response type: {type(response)}')
             return base64.encodebytes(response).decode()
 
     @action
@@ -924,9 +924,8 @@ uart.read(*args)
                 return response
             return response.decode()
         except UnicodeDecodeError:
-            assert isinstance(
-                response, bytes
-            ), f'Invalid response type: {type(response)}'
+            if not (isinstance(response, bytes)):
+                raise AssertionError(f'Invalid response type: {type(response)}')
             return base64.encodebytes(response).decode()
 
     @action

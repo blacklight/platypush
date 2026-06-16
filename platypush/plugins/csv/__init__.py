@@ -174,9 +174,12 @@ class CsvPlugin(Plugin):
                 if isinstance(row, dict):
                     flat_row = [None] * len(column_names)
                     for column, value in row.items():
-                        assert (
-                            column in column_name_to_idx
-                        ), 'No such column available in the CSV file: {}'.format(column)
+                        if not (column in column_name_to_idx):
+                            raise AssertionError(
+                                'No such column available in the CSV file: {}'.format(
+                                    column
+                                )
+                            )
                         idx = column_name_to_idx[column]
                         flat_row[idx] = value
 

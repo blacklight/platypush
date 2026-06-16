@@ -138,7 +138,8 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         """
         super().__init__(**kwargs)
 
-        assert model_path or lang, "Either 'model_path' or 'lang' must be specified"
+        if not (model_path or lang):
+            raise AssertionError("Either 'model_path' or 'lang' must be specified")
 
         self._model_path = os.path.expanduser(model_path) if model_path else None
         self._lang = lang
@@ -166,7 +167,8 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         if self._model_path:
             return self._model_path
 
-        assert self._lang, "Either 'model_path' or 'lang' must be specified"
+        if not (self._lang):
+            raise AssertionError("Either 'model_path' or 'lang' must be specified")
         lang = self._lang.lower().strip()
 
         # Check if a model for this language is already downloaded
@@ -184,10 +186,11 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         model_list = self._fetch_model_list()
         best = self._pick_best_model(lang, model_list)
 
-        assert best, (
-            f"No Vosk model found for language '{lang}'. "
-            f"Check available languages at {_VOSK_MODEL_LIST_URL}"
-        )
+        if not (best):
+            raise AssertionError(
+                f"No Vosk model found for language '{lang}'. "
+                f"Check available languages at {_VOSK_MODEL_LIST_URL}"
+            )
 
         return self._download_model(best)
 
@@ -296,18 +299,20 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
 
             if expected_md5:
                 actual_md5 = self._md5(zip_path)
-                assert actual_md5 == expected_md5, (
-                    f'MD5 mismatch for {name}: '
-                    f'expected {expected_md5}, got {actual_md5}'
-                )
+                if not (actual_md5 == expected_md5):
+                    raise AssertionError(
+                        f'MD5 mismatch for {name}: '
+                        f'expected {expected_md5}, got {actual_md5}'
+                    )
 
             self.logger.info('Extracting %s ...', name)
             with zipfile.ZipFile(zip_path, 'r') as zf:
                 zf.extractall(self._models_directory)
 
-            assert os.path.isdir(
-                dest_dir
-            ), f'Expected model directory {dest_dir} not found after extraction'
+            if not (os.path.isdir(dest_dir)):
+                raise AssertionError(
+                    f'Expected model directory {dest_dir} not found after extraction'
+                )
         finally:
             if os.path.isfile(zip_path):
                 os.remove(zip_path)

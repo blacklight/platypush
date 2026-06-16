@@ -18,7 +18,8 @@ class FileResourceParser(MediaResourceParser):
             if resource.startswith('file://'):
                 path = resource[len('file://') :]
 
-            assert os.path.isfile(path), f'File {path} not found'
+            if not (os.path.isfile(path)):
+                raise AssertionError(f'File {path} not found')
             metadata = get_file_metadata(path)
             metadata['timestamp'] = metadata.pop('created_at', None)
 

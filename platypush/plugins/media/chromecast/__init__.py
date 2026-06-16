@@ -239,7 +239,8 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
         else:
             media.open(youtube_format=youtube_format, ytdl_args=ytdl_args, **kwargs)
 
-        assert media.resource, 'No playable resource found'
+        if not (media.resource):
+            raise AssertionError('No playable resource found')
         resource = media.resource
         self.logger.debug('Opened media resource: %s', media.to_dict())
 
@@ -516,9 +517,8 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
 
     def _status(self, chromecast: Optional[str] = None) -> dict:
         if chromecast:
-            assert (
-                chromecast in self._chromecasts_by_name
-            ), f'No such Chromecast device: {chromecast}'
+            if not (chromecast in self._chromecasts_by_name):
+                raise AssertionError(f'No such Chromecast device: {chromecast}')
             return self._serialize_device(self._chromecasts_by_name[chromecast])
 
         return {

@@ -83,7 +83,8 @@ class YoutubeResourceDownloader(MediaResourceDownloader):
                 ],
                 stdout=subprocess.PIPE,
             ) as proc:
-                assert proc.stdout, 'yt-dlp stdout is None'
+                if not (proc.stdout):
+                    raise AssertionError('yt-dlp stdout is None')
                 filename = proc.stdout.read().decode()[:-1]
 
         return super().get_download_path(

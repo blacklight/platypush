@@ -131,7 +131,8 @@ class GooglePubsubPlugin(RunnablePlugin):
             the ``topic_name`` under the ``project_id`` of your service
             credentials.
         """
-        assert self._subscriber, 'Subscriber not initialized'
+        if not (self._subscriber):
+            raise AssertionError('Subscriber not initialized')
         topic = self._norm_topic(topic)
         subscription_name = '/'.join(
             [*topic.split('/')[:2], 'subscriptions', topic.split('/')[-1]]
@@ -157,7 +158,8 @@ class GooglePubsubPlugin(RunnablePlugin):
             the ``topic_name`` under the ``project_id`` of your service
             credentials.
         """
-        assert self._subscriber, 'Subscriber not initialized'
+        if not (self._subscriber):
+            raise AssertionError('Subscriber not initialized')
         topic = self._norm_topic(topic)
         subscription_name = '/'.join(
             [*topic.split('/')[:2], 'subscriptions', topic.split('/')[-1]]

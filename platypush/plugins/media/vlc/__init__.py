@@ -97,7 +97,8 @@ class MediaVlcPlugin(MediaPlugin):
         self._monitor_thread = threading.Thread(target=self._player_monitor)
         self._monitor_thread.start()
         self._set_media(resource, cache_streams=cache_streams)
-        assert self._player, 'Could not create a VLC player instance'
+        if not (self._player):
+            raise AssertionError('Could not create a VLC player instance')
 
         for evt in self._watched_event_types():
             self._player.event_manager().event_attach(
@@ -112,7 +113,8 @@ class MediaVlcPlugin(MediaPlugin):
         if not self._instance:
             self._instance = vlc.Instance(*self._args)
 
-        assert self._instance, 'Could not create a VLC instance'
+        if not (self._instance):
+            raise AssertionError('Could not create a VLC instance')
         if not self._player:
             self._player = self._instance.media_player_new()
 
@@ -333,8 +335,10 @@ class MediaVlcPlugin(MediaPlugin):
     @action
     def pause(self, *_, **__):
         """Toggle the paused state"""
-        assert self._player, 'No vlc instance is running'
-        assert self._player.can_pause(), 'The specified media type cannot be paused'
+        if not (self._player):
+            raise AssertionError('No vlc instance is running')
+        if not (self._player.can_pause()):
+            raise AssertionError('The specified media type cannot be paused')
         self._player.pause()
         return self.status()
 
@@ -363,13 +367,15 @@ class MediaVlcPlugin(MediaPlugin):
     @action
     def voldown(self, *_, step: float = 10.0, **__):
         """Volume down by (default: 10)%"""
-        assert self._player, 'No vlc instance is running'
+        if not (self._player):
+            raise AssertionError('No vlc instance is running')
         return self.set_volume(int(max(0, self._player.audio_get_volume() - step)))
 
     @action
     def volup(self, *_, step: float = 10.0, **__):
         """Volume up by (default: 10)%"""
-        assert self._player, 'No vlc instance is running'
+        if not (self._player):
+            raise AssertionError('No vlc instance is running')
         return self.set_volume(int(min(100, self._player.audio_get_volume() + step)))
 
     @action
@@ -379,7 +385,8 @@ class MediaVlcPlugin(MediaPlugin):
 
         :param volume: Volume value between 0 and 100
         """
-        assert self._player, 'No vlc instance is running'
+        if not (self._player):
+            raise AssertionError('No vlc instance is running')
         volume = max(0, min([100, volume]))
         self._player.audio_set_volume(volume)
         status: dict = self.status().output  # type: ignore
@@ -437,10 +444,10 @@ class MediaVlcPlugin(MediaPlugin):
     @action
     def toggle_subtitles(self, *_, **__):
         """Toggle the subtitles visibility"""
-        assert self._player, 'No vlc instance is running'
-        assert (
-            self._player.video_get_spu_count() > 0
-        ), 'The media file has no subtitles set'
+        if not (self._player):
+            raise AssertionError('No vlc instance is running')
+        if not (self._player.video_get_spu_count() > 0):
+            raise AssertionError('The media file has no subtitles set')
 
         if self._player.video_get_spu() is None or self._player.video_get_spu() == -1:
             self._player.video_set_spu(0)
@@ -450,19 +457,22 @@ class MediaVlcPlugin(MediaPlugin):
     @action
     def toggle_fullscreen(self):
         """Toggle the fullscreen mode"""
-        assert self._player, 'No vlc instance is running'
+        if not (self._player):
+            raise AssertionError('No vlc instance is running')
         self._player.toggle_fullscreen()
 
     @action
     def set_fullscreen(self, fullscreen: bool = True):
         """Set fullscreen mode"""
-        assert self._player, 'No vlc instance is running'
+        if not (self._player):
+            raise AssertionError('No vlc instance is running')
         self._player.set_fullscreen(fullscreen)
 
     @action
     def set_subtitles(self, filename: str, *_, **__):
         """Sets media subtitles from filename"""
-        assert self._player, 'No vlc instance is running'
+        if not (self._player):
+            raise AssertionError('No vlc instance is running')
         if filename.startswith('file://'):
             filename = filename[len('file://') :]
 
@@ -471,7 +481,8 @@ class MediaVlcPlugin(MediaPlugin):
     @action
     def remove_subtitles(self, *_, **__):
         """Removes (hides) the subtitles"""
-        assert self._player, 'No vlc instance is running'
+        if not (self._player):
+            raise AssertionError('No vlc instance is running')
         self._player.video_set_spu(-1)
 
     @action
@@ -499,7 +510,8 @@ class MediaVlcPlugin(MediaPlugin):
     @action
     def mute(self, *_, **__):
         """Toggle mute state"""
-        assert self._player, 'No vlc instance is running'
+        if not (self._player):
+            raise AssertionError('No vlc instance is running')
         self._player.audio_toggle_mute()
 
     @action

@@ -62,7 +62,8 @@ class XmppRoomHandler(XmppBaseHandler):
         **__,
     ):
         def join():
-            assert self._loop, Errors.LOOP
+            if not (self._loop):
+                raise AssertionError(Errors.LOOP)
             nick = self._jid.localpart
             self._async_run(
                 self.join,
@@ -108,7 +109,8 @@ class XmppRoomHandler(XmppBaseHandler):
             None,
         )
 
-        assert occupant, Errors.NO_USER
+        if not (occupant):
+            raise AssertionError(Errors.NO_USER)
         return occupant
 
     async def join(
@@ -132,7 +134,8 @@ class XmppRoomHandler(XmppBaseHandler):
 
     async def leave(self, room_id: str):
         room = self._state.rooms.get(room_id)
-        assert room, Errors.ROOM_NOT_JOINED
+        if not (room):
+            raise AssertionError(Errors.ROOM_NOT_JOINED)
         await room.leave()
         self._unregister_room(room)
 
@@ -144,7 +147,8 @@ class XmppRoomHandler(XmppBaseHandler):
         text: Optional[str] = None,
     ):
         room = self._state.rooms.get(room_id)
-        assert room, Errors.ROOM_NOT_JOINED
+        if not (room):
+            raise AssertionError(Errors.ROOM_NOT_JOINED)
         await room.invite(user_id, text=text, mode=mode)
 
     async def kick(
@@ -154,7 +158,8 @@ class XmppRoomHandler(XmppBaseHandler):
         reason: Optional[str] = None,
     ):
         room = self._state.rooms.get(room_id)
-        assert room, Errors.ROOM_NOT_JOINED
+        if not (room):
+            raise AssertionError(Errors.ROOM_NOT_JOINED)
 
         occupant = self._get_occupant_by_jid(user_id=str(user_id), room=room)
         await room.kick(occupant, reason=reason)
@@ -166,7 +171,8 @@ class XmppRoomHandler(XmppBaseHandler):
         reason: Optional[str] = None,
     ):
         room = self._state.rooms.get(room_id)
-        assert room, Errors.ROOM_NOT_JOINED
+        if not (room):
+            raise AssertionError(Errors.ROOM_NOT_JOINED)
 
         occupant = self._get_occupant_by_jid(user_id=str(user_id), room=room)
         await room.ban(occupant, reason=reason)
@@ -179,7 +185,8 @@ class XmppRoomHandler(XmppBaseHandler):
         reason: Optional[str] = None,
     ):
         room = self._state.rooms.get(room_id)
-        assert room, Errors.ROOM_NOT_JOINED
+        if not (room):
+            raise AssertionError(Errors.ROOM_NOT_JOINED)
 
         occupant = self._get_occupant_by_jid(user_id=str(user_id), room=room)
         await room.muc_set_affiliation(
@@ -194,19 +201,22 @@ class XmppRoomHandler(XmppBaseHandler):
         reason: Optional[str] = None,
     ):
         room = self._state.rooms.get(room_id)
-        assert room, Errors.ROOM_NOT_JOINED
+        if not (room):
+            raise AssertionError(Errors.ROOM_NOT_JOINED)
 
         occupant = self._get_occupant_by_jid(user_id=str(user_id), room=room)
         await room.muc_set_role(occupant.nick, role, reason=reason)
 
     async def set_topic(self, room_id: str, topic: str):
         room = self._state.rooms.get(room_id)
-        assert room, Errors.ROOM_NOT_JOINED
+        if not (room):
+            raise AssertionError(Errors.ROOM_NOT_JOINED)
         await room.set_topic(topic)
 
     async def set_nick(self, room_id: str, nick: str):
         room = self._state.rooms.get(room_id)
-        assert room, Errors.ROOM_NOT_JOINED
+        if not (room):
+            raise AssertionError(Errors.ROOM_NOT_JOINED)
         await room.set_nick(nick)
 
     # pylint: disable=too-many-branches
@@ -232,7 +242,8 @@ class XmppRoomHandler(XmppBaseHandler):
         language: Optional[str] = None,
     ):
         room = self._state.rooms.get(room_id)
-        assert room, Errors.ROOM_NOT_JOINED
+        if not (room):
+            raise AssertionError(Errors.ROOM_NOT_JOINED)
         config = await self.muc_client.get_room_config(room.jid)
         form = aioxmpp.muc.xso.ConfigurationForm.from_xso(config)
 
@@ -522,7 +533,8 @@ class XmppRoomHandler(XmppBaseHandler):
         language: Optional[str] = None,
     ):
         room = self._state.rooms.get(room_id)
-        assert room, Errors.ROOM_NOT_JOINED
+        if not (room):
+            raise AssertionError(Errors.ROOM_NOT_JOINED)
 
         target = room.jid
         msg_type = aioxmpp.MessageType.GROUPCHAT
@@ -533,15 +545,18 @@ class XmppRoomHandler(XmppBaseHandler):
 
     def accept_invite(self, room_id: str):
         invite = self._state.room_invites.get(room_id)
-        assert invite, Errors.NO_INVITE
+        if not (invite):
+            raise AssertionError(Errors.NO_INVITE)
         invite.accept()
 
     def reject_invite(self, room_id: str):
         invite = self._state.room_invites.get(room_id)
-        assert invite, Errors.NO_INVITE
+        if not (invite):
+            raise AssertionError(Errors.NO_INVITE)
         invite.reject()
 
     async def request_voice(self, room_id: str):
         room = self._state.rooms.get(room_id)
-        assert room, Errors.ROOM_NOT_JOINED
+        if not (room):
+            raise AssertionError(Errors.ROOM_NOT_JOINED)
         await room.muc_request_voice()

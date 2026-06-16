@@ -97,7 +97,8 @@ class KafkaPlugin(RunnablePlugin):
         if not host:
             host = self.host
 
-        assert host, 'No Kafka server specified'
+        if not (host):
+            raise AssertionError('No Kafka server specified')
         if not port:
             port = self.port
 

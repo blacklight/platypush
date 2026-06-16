@@ -22,7 +22,8 @@ class PlexMediaSearcher(MediaSearcher):
         except RuntimeError:
             return []
 
-        assert plex, 'No Plex plugin configured'
+        if not (plex):
+            raise AssertionError('No Plex plugin configured')
         self.logger.info('Searching Plex for "%s"', query)
         results = []
 

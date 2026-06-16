@@ -113,7 +113,8 @@ class Event(Message):
         """
         for op, filter_val in filter.items():
             comparator = _event_filter_operators.get(op)
-            assert comparator, f'Invalid operator: {op}'
+            if not (comparator):
+                raise AssertionError(f'Invalid operator: {op}')
 
             # If this is a numeric or string filter, and one of the two values
             # is null, return False - it doesn't make sense to run numeric or
@@ -133,8 +134,10 @@ class Event(Message):
                     raise AssertionError(
                         f'Could not convert either "{value}" nor "{filter_val} to a number'
                     ) from e
-            elif op in _string_filter_operators:
-                assert isinstance(filter_val, str) and isinstance(value, str), (
+            elif op in _string_filter_operators and not (
+                isinstance(filter_val, str) and isinstance(value, str)
+            ):
+                raise AssertionError(
                     f'Expected two strings, got "{filter_val}" '
                     f'({type(filter_val)}) and "{value}" ({type(value)})'
                 )

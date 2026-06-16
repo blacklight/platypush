@@ -266,9 +266,10 @@ class IRCBot(irc.bot.SingleServerIRCBot):
     ):
         pathlib.Path(self.dcc_downloads_dir).mkdir(parents=True, exist_ok=True)
         filename = os.path.abspath(os.path.join(self.dcc_downloads_dir, filename))
-        assert filename.startswith(
-            self.dcc_downloads_dir
-        ), 'Attempt to save a file outside the downloads directory'
+        if not (filename.startswith(self.dcc_downloads_dir)):
+            raise AssertionError(
+                'Attempt to save a file outside the downloads directory'
+            )
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock, open(
             filename, 'wb'

@@ -61,5 +61,8 @@ class SwitchbotPlugin(BaseBluetoothPlugin):
     def set(self, device: BluetoothDevice, value: str, **_) -> None:
         value = value.upper()
         cmd = getattr(Command, value, None)
-        assert cmd, f'No such command: {value}. Available commands: {list(Command)}.'
+        if not (cmd):
+            raise AssertionError(
+                f'No such command: {value}. Available commands: {list(Command)}.'
+            )
         self._manager.write(device.address, cmd.value, Characteristic.TX.value)

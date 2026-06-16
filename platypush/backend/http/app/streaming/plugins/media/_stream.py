@@ -97,7 +97,8 @@ class MediaStreamRoute(StreamingRoute):
             raise AssertionError(f'Invalid JSON request: {e}') from e
 
         source = args.get('source')
-        assert source, 'The request does not contain any source'
+        if not (source):
+            raise AssertionError('The request does not contain any source')
         subtitles = args.get('subtitles')
         media_hndl = register_media(source, subtitles)
         ret = media_hndl.to_json()

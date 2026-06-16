@@ -101,7 +101,8 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
         try:
             rs.raise_for_status()
             rs = rs.json()
-            assert rs.get('ok'), rs.get('error', rs.get('warning'))
+            if not (rs.get('ok')):
+                raise AssertionError(rs.get('error', rs.get('warning')))
         except Exception as e:
             raise AssertionError(e)
 
@@ -162,7 +163,8 @@ class SlackPlugin(ChatPlugin, RunnablePlugin):
                 raise
 
             rs = rs.json()
-            assert rs.get('ok')
+            if not (rs.get('ok')):
+                raise AssertionError
             self._ws_url = rs.get('url')
             self._ws_app = WebSocketApp(
                 self._ws_url,

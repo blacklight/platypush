@@ -54,10 +54,9 @@ class GoogleMapsPlugin(GooglePlugin):
             },
         ).json()
 
-        address = {
-            t: None
-            for t in ['street_number', 'street', 'locality', 'country', 'postal_code']
-        }
+        address = dict.fromkeys(
+            ['street_number', 'street', 'locality', 'country', 'postal_code']
+        )
 
         address['latitude'] = latitude
         address['longitude'] = longitude
@@ -228,11 +227,14 @@ class GoogleMapsPlugin(GooglePlugin):
             },
         ).json()
 
-        assert not rs.get('error_message'), f'{rs["status"]}: {rs["error_message"]}'
+        if rs.get('error_message'):
+            raise AssertionError(f'{rs["status"]}: {rs["error_message"]}')
         rows = rs.get('rows', [])
-        assert rows, 'The API returned no rows'
+        if not (rows):
+            raise AssertionError('The API returned no rows')
         elements = rows[0].get('elements')
-        assert elements, 'The API returned no elements'
+        if not (elements):
+            raise AssertionError('The API returned no elements')
 
         return MapsTravelTimeSchema().dump(elements, many=True)
 

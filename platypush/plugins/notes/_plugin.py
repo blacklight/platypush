@@ -86,9 +86,10 @@ class NotesPlugin(BaseNotePlugin):
 
         # Security check: must be inside path (abspath, not realpath, so symlinks OK)
         notes_dir_abs = os.path.abspath(self.path)
-        assert (
-            os.path.commonpath([candidate_path, notes_dir_abs]) == notes_dir_abs
-        ), f'Item ID "{item_id}" is outside the notes directory "{self.path}"'
+        if not (os.path.commonpath([candidate_path, notes_dir_abs]) == notes_dir_abs):
+            raise AssertionError(
+                f'Item ID "{item_id}" is outside the notes directory "{self.path}"'
+            )
 
         return candidate_path
 
@@ -103,9 +104,10 @@ class NotesPlugin(BaseNotePlugin):
 
         # Security check: must be inside notes_dir (abspath, not realpath, so symlinks OK)
         notes_dir_abs = os.path.abspath(self.path)
-        assert (
-            os.path.commonpath([path, notes_dir_abs]) == notes_dir_abs
-        ), f'Item path "{path}" is outside the notes directory "{self.path}"'
+        if not (os.path.commonpath([path, notes_dir_abs]) == notes_dir_abs):
+            raise AssertionError(
+                f'Item path "{path}" is outside the notes directory "{self.path}"'
+            )
 
         return os.path.relpath(path, notes_dir_abs)
 
@@ -133,7 +135,8 @@ class NotesPlugin(BaseNotePlugin):
         """
         note_id = self._note_path_to_id(path)
         content = None
-        assert os.path.exists(path), f'Note path "{path}" does not exist'
+        if not (os.path.exists(path)):
+            raise AssertionError(f'Note path "{path}" does not exist')
 
         if with_content:
             with open(path, 'r') as f:
@@ -156,7 +159,8 @@ class NotesPlugin(BaseNotePlugin):
         Convert a file path to a NoteCollection object.
         """
         collection_id = self._path_to_id(path)
-        assert os.path.exists(path), f'Collection path "{path}" does not exist'
+        if not (os.path.exists(path)):
+            raise AssertionError(f'Collection path "{path}" does not exist')
 
         return NoteCollection(
             id=collection_id,
@@ -237,7 +241,8 @@ class NotesPlugin(BaseNotePlugin):
         Edit an existing note with the given ID.
         """
         note = self._fetch_note(note_id)
-        assert note is not None, f'Note with ID "{note_id}" not found'
+        if not (note is not None):
+            raise AssertionError(f'Note with ID "{note_id}" not found')
 
         if title is not None or parent is not None:
             old_path = self._note_id_to_path(note.id)
@@ -271,7 +276,8 @@ class NotesPlugin(BaseNotePlugin):
         Delete a note with the given ID.
         """
         note = self._fetch_note(note_id)
-        assert note is not None, f'Note with ID "{note_id}" not found'
+        if not (note is not None):
+            raise AssertionError(f'Note with ID "{note_id}" not found')
 
         path = self._note_id_to_path(note.id)
         if not os.path.exists(path):
@@ -350,7 +356,8 @@ class NotesPlugin(BaseNotePlugin):
         Edit an existing collection with the given ID.
         """
         collection = self._fetch_collection(collection_id)
-        assert collection is not None, f'Collection with ID "{collection_id}" not found'
+        if not (collection is not None):
+            raise AssertionError(f'Collection with ID "{collection_id}" not found')
 
         if title is not None or parent is not None:
             old_path = self._id_to_path(collection.id)
@@ -373,7 +380,8 @@ class NotesPlugin(BaseNotePlugin):
         Delete a collection with the given ID.
         """
         collection = self._fetch_collection(collection_id)
-        assert collection is not None, f'Collection with ID "{collection_id}" not found'
+        if not (collection is not None):
+            raise AssertionError(f'Collection with ID "{collection_id}" not found')
 
         path = self._id_to_path(collection.id)
         if not os.path.exists(path):
@@ -472,7 +480,8 @@ class NotesPlugin(BaseNotePlugin):
             # Handle file move events
             if isinstance(event, FileSystemMovedEvent):
                 new_path = event.args.get("new_path")
-                assert new_path
+                if not (new_path):
+                    raise AssertionError
                 note_id = self._note_path_to_id(new_path)
                 notes[note_id] = self._to_note(new_path, with_content=True)
             # Handle file creation or modification

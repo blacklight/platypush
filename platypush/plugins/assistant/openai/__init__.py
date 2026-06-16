@@ -287,10 +287,11 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
     @property
     def _openai(self) -> OpenaiPlugin:
         openai: Optional[OpenaiPlugin] = get_plugin("openai")
-        assert openai, (
-            "OpenAI plugin not found. "
-            "Please configure the `openai` plugin to use `assistant.openai`"
-        )
+        if not (openai):
+            raise AssertionError(
+                "OpenAI plugin not found. "
+                "Please configure the `openai` plugin to use `assistant.openai`"
+            )
         return openai
 
     def _get_prediction(self, audio: BytesIO) -> str:

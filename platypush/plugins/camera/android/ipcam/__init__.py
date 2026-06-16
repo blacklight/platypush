@@ -108,7 +108,8 @@ class CameraAndroidIpcamPlugin(Plugin):
         self._camera_name_to_idx: Dict[str, int] = {}
 
         if not cameras:
-            assert host, 'You need to specify at least one camera'
+            if not (host):
+                raise AssertionError('You need to specify at least one camera')
             name = name or host
             camera = AndroidIpcam(
                 name=name,
@@ -123,7 +124,8 @@ class CameraAndroidIpcamPlugin(Plugin):
             self._camera_name_to_idx[name] = 0
         else:
             for camera in cameras:
-                assert 'host' in camera, 'You need to specify the host for each camera'
+                if not ('host' in camera):
+                    raise AssertionError('You need to specify the host for each camera')
                 name = camera.get('name', camera['host'])
                 camera = AndroidIpcam(
                     name=name,
@@ -152,7 +154,7 @@ class CameraAndroidIpcamPlugin(Plugin):
         cam = self._get_camera(camera)
         url = cam.base_url + url
         response = requests.get(
-            url, auth=cam.auth, timeout=cam.timeout, verify=False, *args, **kwargs
+            url, *args, auth=cam.auth, timeout=cam.timeout, verify=False, **kwargs
         )
         response.raise_for_status()
 
@@ -217,7 +219,8 @@ class CameraAndroidIpcamPlugin(Plugin):
                 response = self._exec(
                     'status.json', params={'show_avail': 1}, camera=cam.name
                 )
-                assert isinstance(response, dict), f'Invalid response: {response}'
+                if not (isinstance(response, dict)):
+                    raise AssertionError(f'Invalid response: {response}')
 
                 status_data = response.get('curvals', {})
                 status = CameraStatusSchema().dump(

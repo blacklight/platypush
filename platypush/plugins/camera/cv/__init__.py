@@ -63,7 +63,10 @@ class CameraCvPlugin(CameraPlugin):
         from PIL import Image
 
         ret, frame = camera.object.read()
-        assert ret, 'Cannot retrieve frame from {}'.format(camera.info.device)
+        if not (ret):
+            raise AssertionError(
+                'Cannot retrieve frame from {}'.format(camera.info.device)
+            )
 
         color_transform = camera.info.color_transform
         if isinstance(color_transform, str):

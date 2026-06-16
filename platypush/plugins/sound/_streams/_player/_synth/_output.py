@@ -40,12 +40,15 @@ class AudioOutputCallback:
         if self._should_stop():
             raise sd.CallbackStop
 
-        assert frames == self._blocksize, (
-            f'Received {frames} frames, expected blocksize is {self._blocksize}',
-        )
+        if not (frames == self._blocksize):
+            raise AssertionError(
+                (f'Received {frames} frames, expected blocksize is {self._blocksize}',)
+            )
 
-        assert not status.output_underflow, 'Output underflow: increase blocksize?'
-        assert not status, f'Audio callback failed: {status}'
+        if status.output_underflow:
+            raise AssertionError('Output underflow: increase blocksize?')
+        if status:
+            raise AssertionError(f'Audio callback failed: {status}')
 
     # outdata: NDArray[np.number]
     def _audio_callback(self, outdata, frames: int, status):

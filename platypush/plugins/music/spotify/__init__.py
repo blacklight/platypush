@@ -78,7 +78,8 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
             self.get_devices()
 
         dev = self._players_by_id.get(device, self._players_by_name.get(device))
-        assert dev, f'No such device: {device}'
+        if not (dev):
+            raise AssertionError(f'No such device: {device}')
         return dev
 
     @staticmethod
@@ -432,7 +433,8 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
         """
         before = self._parse_datetime(before)
         after = self._parse_datetime(after)
-        assert not (before and after), 'before and after cannot both be set'
+        if before and after:
+            raise AssertionError('before and after cannot both be set')
 
         results = self._spotify_paginate_results(
             '/v1/me/player/recently-played',
@@ -542,7 +544,8 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
             if (pl['id'] == playlist or pl['uri'] == playlist or pl['name'] == playlist)
         ]
 
-        assert playlists, f'No such playlist ID, URI or name: {playlist}'
+        if not (playlists):
+            raise AssertionError(f'No such playlist ID, URI or name: {playlist}')
         return playlists[0]
 
     def _get_playlist_tracks_from_cache(
@@ -667,7 +670,8 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
         )
 
         snapshot_id = response.get('snapshot_id')
-        assert snapshot_id is not None, 'Could not save playlist'
+        if not (snapshot_id is not None):
+            raise AssertionError('Could not save playlist')
 
     @action
     def remove_from_playlist(self, playlist: str, resources: Union[str, Iterable[str]]):
@@ -694,7 +698,8 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
         )
 
         snapshot_id = response.get('snapshot_id')
-        assert snapshot_id is not None, 'Could not save playlist'
+        if not (snapshot_id is not None):
+            raise AssertionError('Could not save playlist')
 
     @action
     def playlist_move(
@@ -742,7 +747,8 @@ class MusicSpotifyPlugin(MusicPlugin, SpotifyMixin):
         )
 
         snapshot_id = response.get('snapshot_id')
-        assert snapshot_id is not None, 'Could not save playlist'
+        if not (snapshot_id is not None):
+            raise AssertionError('Could not save playlist')
 
     # noinspection PyShadowingBuiltins
     @staticmethod

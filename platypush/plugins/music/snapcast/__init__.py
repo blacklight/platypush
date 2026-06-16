@@ -70,7 +70,8 @@ class MusicSnapcastPlugin(RunnablePlugin):
         super().__init__(poll_interval=poll_interval, **kwargs)
 
         self._hosts = self._get_hosts(host=host, port=port, hosts=hosts)
-        assert self._hosts, 'No Snapcast hosts specified'
+        if not (self._hosts):
+            raise AssertionError('No Snapcast hosts specified')
         self._latest_req_id = 0
         self._latest_req_id_lock = threading.RLock()
 
@@ -97,9 +98,10 @@ class MusicSnapcastPlugin(RunnablePlugin):
     ) -> List[Tuple[str, int]]:
         ret = []
         if hosts:
-            assert all(
-                isinstance(h, dict) and h.get('host') for h in hosts
-            ), f'Expected a list of dicts with host and port keys, got: {hosts}'
+            if not (all(isinstance(h, dict) and h.get('host') for h in hosts)):
+                raise AssertionError(
+                    f'Expected a list of dicts with host and port keys, got: {hosts}'
+                )
 
             ret.extend((h['host'], h.get('port', self.port)) for h in hosts)
 
@@ -149,9 +151,8 @@ class MusicSnapcastPlugin(RunnablePlugin):
         if isinstance(req, str):
             req = req.encode()
 
-        assert isinstance(
-            req, bytes
-        ), f'Unsupported type {type(req)} for Snapcast request'
+        if not (isinstance(req, bytes)):
+            raise AssertionError(f'Unsupported type {type(req)} for Snapcast request')
         sock.send(req + cls._SOCKET_EOL)
 
     @classmethod
@@ -479,7 +480,8 @@ class MusicSnapcastPlugin(RunnablePlugin):
         :param port: Snapcast server port (default: default configured port)
         """
 
-        assert client or group, 'Please specify either a client or a group'
+        if not (client or group):
+            raise AssertionError('Please specify either a client or a group')
         sock = None
 
         try:
@@ -493,13 +495,15 @@ class MusicSnapcastPlugin(RunnablePlugin):
 
             if group:
                 g = self._get_group(sock, group)
-                assert g, f'No such group: {group}'
+                if not (g):
+                    raise AssertionError(f'No such group: {group}')
                 cur_muted = g['muted']
                 request['params']['id'] = g['id']
                 request['params']['mute'] = not cur_muted if mute is None else mute
             elif client:
                 c = self._get_client(sock, client)
-                assert c, f'No such client: {client}'
+                if not (c):
+                    raise AssertionError(f'No such client: {client}')
                 cur_muted = c['config']['volume']['muted']
                 request['params']['id'] = c['id']
                 request['params']['volume'] = {}
@@ -540,10 +544,11 @@ class MusicSnapcastPlugin(RunnablePlugin):
         :param port: Snapcast server port (default: default configured port)
         """
 
-        assert not (volume is None and delta is None and mute is None), (
-            'Please specify either an absolute volume, a relative delta or '
-            + 'a mute status'
-        )
+        if volume is None and delta is None and mute is None:
+            raise AssertionError(
+                'Please specify either an absolute volume, a relative delta or '
+                + 'a mute status'
+            )
 
         sock = None
 
@@ -557,7 +562,8 @@ class MusicSnapcastPlugin(RunnablePlugin):
             }
 
             c = self._get_client(sock, client)
-            assert c, f'No such client: {client}'
+            if not (c):
+                raise AssertionError(f'No such client: {client}')
             cur_volume = int(c['config']['volume']['percent'])
             cur_mute = bool(c['config']['volume']['muted'])
 
@@ -612,7 +618,8 @@ class MusicSnapcastPlugin(RunnablePlugin):
             }
 
             c = self._get_client(sock, client)
-            assert c, f'No such client: {client}'
+            if not (c):
+                raise AssertionError(f'No such client: {client}')
             request['params']['id'] = c['id']
             request['params']['name'] = name
             self._send(sock, request)
@@ -693,7 +700,8 @@ class MusicSnapcastPlugin(RunnablePlugin):
             }
 
             c = self._get_client(sock, client)
-            assert c, f'No such client: {client}'
+            if not (c):
+                raise AssertionError(f'No such client: {client}')
             request['params']['id'] = c['id']
             self._send(sock, request)
             return self._recv_result(sock)
@@ -728,7 +736,8 @@ class MusicSnapcastPlugin(RunnablePlugin):
             }
 
             c = self._get_client(sock, client)
-            assert c, f'No such client: {client}'
+            if not (c):
+                raise AssertionError(f'No such client: {client}')
             request['params']['id'] = c['id']
             self._send(sock, request)
             return self._recv_result(sock)
@@ -761,7 +770,8 @@ class MusicSnapcastPlugin(RunnablePlugin):
         try:
             sock = self._connect(host or self.host, port or self.port)
             g = self._get_group(sock, group)
-            assert g, f'No such group: {group}'
+            if not (g):
+                raise AssertionError(f'No such group: {group}')
             request = {
                 'id': self._next_req_id(),
                 'jsonrpc': '2.0',
@@ -771,7 +781,8 @@ class MusicSnapcastPlugin(RunnablePlugin):
 
             for client in clients:
                 c = self._get_client(sock, client)
-                assert c, f'No such client: {client}'
+                if not (c):
+                    raise AssertionError(f'No such client: {client}')
                 request['params']['clients'].append(c['id'])
 
             self._send(sock, request)
@@ -805,7 +816,8 @@ class MusicSnapcastPlugin(RunnablePlugin):
         try:
             sock = self._connect(host or self.host, port or self.port)
             g = self._get_group(sock, group)
-            assert g, f'No such group: {group}'
+            if not (g):
+                raise AssertionError(f'No such group: {group}')
             request = {
                 'id': self._next_req_id(),
                 'jsonrpc': '2.0',

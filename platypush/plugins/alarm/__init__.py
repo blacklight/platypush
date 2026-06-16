@@ -132,7 +132,8 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             plugin: Optional[MediaPlugin] = (
                 get_plugin(media_plugin) if media_plugin else get_default_media_plugin()
             )
-            assert plugin, 'No media/audio plugin configured'
+            if not (plugin):
+                raise AssertionError('No media/audio plugin configured')
             self.media_plugin = get_plugin_name_by_class(plugin.__class__)
         except AssertionError:
             self.media_plugin = None
@@ -159,7 +160,8 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
     @property
     def _db(self) -> DbPlugin:
         db = get_plugin('db')
-        assert db, 'No database plugin configured'
+        if not (db):
+            raise AssertionError('No database plugin configured')
         return db
 
     @contextmanager
@@ -250,7 +252,8 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         )
 
     def _get_alarm(self, name: str) -> Alarm:
-        assert name in self.alarms, f'The alarm {name} does not exist'
+        if not (name in self.alarms):
+            raise AssertionError(f'The alarm {name} does not exist')
         return self.alarms[name]
 
     def _get_current_alarm(self) -> Optional[Alarm]:
@@ -306,10 +309,11 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         )
 
         if alarm.name in self.alarms:
-            assert not self.alarms[alarm.name].static, (
-                f'Alarm {alarm.name} is statically defined in the configuration, '
-                'cannot overwrite it programmatically'
-            )
+            if self.alarms[alarm.name].static:
+                raise AssertionError(
+                    f'Alarm {alarm.name} is statically defined in the configuration, '
+                    'cannot overwrite it programmatically'
+                )
 
             self.logger.info('Overwriting existing alarm: %s', alarm.name)
             self.alarms[alarm.name].stop()
@@ -430,15 +434,14 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
         :return: The modified alarm.
         """
         alarm = self._get_alarm(name)
-        assert not alarm.static, (
-            f'Alarm {name} is statically defined in the configuration, '
-            'cannot overwrite it programmatically'
-        )
+        if alarm.static:
+            raise AssertionError(
+                f'Alarm {name} is statically defined in the configuration, '
+                'cannot overwrite it programmatically'
+            )
 
-        if new_name and new_name != name:
-            assert (
-                new_name not in self.alarms
-            ), f'An alarm with name {new_name} already exists'
+        if new_name and new_name != name and new_name in self.alarms:
+            raise AssertionError(f'An alarm with name {new_name} already exists')
 
         with self._db.get_session() as session:
             db_alarm = session.query(DbAlarm).filter_by(name=name).first()
@@ -473,10 +476,11 @@ class AlarmPlugin(RunnablePlugin, EntityManager):
             self.logger.warning('Alarm %s does not exist', name)
             return
 
-        assert not alarm.static, (
-            f'Alarm {name} is statically defined in the configuration, '
-            'cannot overwrite it programmatically'
-        )
+        if alarm.static:
+            raise AssertionError(
+                f'Alarm {name} is statically defined in the configuration, '
+                'cannot overwrite it programmatically'
+            )
 
         alarm.stop()
 

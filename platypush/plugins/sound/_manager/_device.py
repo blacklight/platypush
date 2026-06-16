@@ -70,7 +70,8 @@ class DeviceManager:
             returned.
         :param type: The type of the device to search.
         """
-        assert device or type, 'Please specify either device or type'
+        if not (device or type):
+            raise AssertionError('Please specify either device or type')
         if device is None:
             if type == StreamType.INPUT and self.input_device is not None:
                 return self.input_device
@@ -78,7 +79,8 @@ class DeviceManager:
                 return self.output_device
 
         all_devices: List[dict] = sd.query_devices()  # type: ignore
-        assert all_devices, 'No sound devices found'
+        if not (all_devices):
+            raise AssertionError('No sound devices found')
 
         try:
             dev: dict = sd.query_devices(
@@ -104,7 +106,8 @@ class DeviceManager:
                 None,
             )
 
-            assert idx is not None, 'Could not infer the sound device index'
+            if not (idx is not None):
+                raise AssertionError('Could not infer the sound device index')
             dev['index'] = idx
 
         return AudioDevice(**dev)

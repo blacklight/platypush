@@ -44,10 +44,11 @@ class FileSender:
 
         dev = self._scanner.get_device(device)
         service = dev.known_services.get(ServiceClass.OBEX_OBJECT_PUSH)
-        assert service, (
-            f'The device {device} does not expose the service '
-            f'{str(ServiceClass.OBEX_OBJECT_PUSH)}'
-        )
+        if not (service):
+            raise AssertionError(
+                f'The device {device} does not expose the service '
+                f'{str(ServiceClass.OBEX_OBJECT_PUSH)}'
+            )
 
         port = service.port
         client = self._connect(dev, port)
@@ -85,9 +86,8 @@ class FileSender:
 
         try:
             client.connect()
-            assert (
-                client.connection_id is not None
-            ), 'Could not establish a connection to the device'
+            if not (client.connection_id is not None):
+                raise AssertionError('Could not establish a connection to the device')
         except Exception as e:
             self._post_event(BluetoothConnectionFailedEvent, dev, reason=str(e))
             raise AssertionError(

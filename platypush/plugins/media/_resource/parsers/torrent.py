@@ -30,7 +30,8 @@ class TorrentResourceParser(MediaResourceParser):
             return None
 
         torrents = get_plugin(self._media.torrent_plugin)
-        assert torrents, f'{self._media.torrent_plugin} plugin not configured'
+        if not (torrents):
+            raise AssertionError(f'{self._media.torrent_plugin} plugin not configured')
 
         evt_queue = queue.Queue()
         torrents.download(
@@ -49,7 +50,8 @@ class TorrentResourceParser(MediaResourceParser):
         else:
             raise RuntimeError(f'No media file found in torrent {resource}')
 
-        assert resource, 'Unable to find any compatible media resource'
+        if not (resource):
+            raise AssertionError('Unable to find any compatible media resource')
         return FileMediaResource(
             resource=resource,
             url=f'file://{resource}',

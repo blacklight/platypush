@@ -91,7 +91,8 @@ def _session_auth():
 
         if status:
             auth_status = UserAuthStatus.by_status(status)
-            assert auth_status
+            if not (auth_status):
+                raise AssertionError
             return auth_status.to_response()
 
     return UserAuthStatus.INVALID_CREDENTIALS.to_response()
@@ -141,7 +142,8 @@ def _delete_token():
     try:
         payload = json.loads(request.get_data(as_text=True))
         token = payload.get('token')
-        assert token
+        if not (token):
+            raise AssertionError
     except (AssertionError, json.JSONDecodeError):
         return UserAuthStatus.INVALID_TOKEN.to_response()
 
@@ -324,7 +326,8 @@ def _tokens_delete():
             if token_id:
                 args['token_id'] = token_id
 
-        assert args, 'No token or token_id specified'
+        if not (args):
+            raise AssertionError('No token or token_id specified')
     except (AssertionError, json.JSONDecodeError):
         return UserAuthStatus.INVALID_TOKEN.to_response()
 

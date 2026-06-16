@@ -66,11 +66,13 @@ class MediaGstreamerPlugin(MediaPlugin):
         return status
 
     def _get_volume(self) -> float:
-        assert self._player, 'No instance is running'
+        if not (self._player):
+            raise AssertionError('No instance is running')
         return self._player.get_volume() * 100.0
 
     def _set_position(self, position: float) -> dict:
-        assert self._player, 'No instance is running'
+        if not (self._player):
+            raise AssertionError('No instance is running')
         self._player.seek(position)
         return self._status()
 
@@ -107,7 +109,8 @@ class MediaGstreamerPlugin(MediaPlugin):
     @action
     def pause(self, *_, **__):
         """Toggle the paused state"""
-        assert self._player, 'No instance is running'
+        if not (self._player):
+            raise AssertionError('No instance is running')
         self._player.pause()
         return self._status()
 
@@ -148,7 +151,8 @@ class MediaGstreamerPlugin(MediaPlugin):
 
         :return: Volume value between 0 and 100.
         """
-        assert self._player, 'No instance is running'
+        if not (self._player):
+            raise AssertionError('No instance is running')
         return self._player.get_volume() * 100.0
 
     @action
@@ -158,7 +162,8 @@ class MediaGstreamerPlugin(MediaPlugin):
 
         :param volume: Volume value between 0 and 100.
         """
-        assert self._player, 'Player not running'
+        if not (self._player):
+            raise AssertionError('Player not running')
         volume = max(0, min(1, volume / 100.0))
         self._player.set_volume(volume)
         self._player.post_event(MediaVolumeChangedEvent, volume=volume * 100)
@@ -171,7 +176,8 @@ class MediaGstreamerPlugin(MediaPlugin):
 
         :param position: Number of seconds relative to the current cursor.
         """
-        assert self._player, 'No instance is running'
+        if not (self._player):
+            raise AssertionError('No instance is running')
         cur_pos = self._player.get_position()
         # return self._set_position(cur_pos + position)
         return self._set_position((cur_pos or 0) + float(position))
@@ -203,7 +209,8 @@ class MediaGstreamerPlugin(MediaPlugin):
     @action
     def mute(self):
         """Toggle mute state"""
-        assert self._player, 'No instance is running'
+        if not (self._player):
+            raise AssertionError('No instance is running')
         muted = self._player.is_muted()
         if muted:
             self._player.unmute()
@@ -220,7 +227,8 @@ class MediaGstreamerPlugin(MediaPlugin):
         :param position: Stream position in seconds.
         :return: Player state.
         """
-        assert self._player, 'No instance is running'
+        if not (self._player):
+            raise AssertionError('No instance is running')
         self._player.seek(position)
         return self._status()
 

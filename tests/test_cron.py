@@ -20,9 +20,10 @@ def _test_cron_queue(expected_msg: str):
         except queue.Empty:
             continue  # Keep polling until timeout
 
-    assert (
-        msg == expected_msg
-    ), f'The expected cronjob has not been executed. Got: {msg}, Expected: {expected_msg}'
+    if not (msg == expected_msg):
+        raise AssertionError(
+            f'The expected cronjob has not been executed. Got: {msg}, Expected: {expected_msg}'
+        )
 
 
 def test_cron_execution():

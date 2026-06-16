@@ -123,9 +123,10 @@ class Connection:
     def on_password_requested(self):
         self._password_requested = True
         self.state = Connection.State.PASSWORD_REQUIRED
-        assert (
-            self.password
-        ), 'This device is protected by password and no password was provided'
+        if not (self.password):
+            raise AssertionError(
+                'This device is protected by password and no password was provided'
+            )
         self.send(self.password, wait_response=False)
 
     def on_ready(self):
@@ -281,12 +282,14 @@ class Connection:
     def wait_file_request_ack_received(self, timeout):
         self.state = self.State.WAITING_FILE_TRANSFER_RESPONSE
         self._file_transfer_request_ack_received.wait(timeout=timeout)
-        assert self._file_transfer_request_successful, 'File transfer request failed'
+        if not (self._file_transfer_request_successful):
+            raise AssertionError('File transfer request failed')
         self.logger.info('File transfer request acknowledged')
 
     def wait_file_transfer_completed(self, timeout):
         self._file_transfer_ack_received.wait(timeout)
-        assert self._file_transfer_successful, 'File transfer failed'
+        if not (self._file_transfer_successful):
+            raise AssertionError('File transfer failed')
         self.logger.info('File transfer completed')
 
     @staticmethod

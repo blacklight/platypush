@@ -166,7 +166,8 @@ class GpsPlugin(RunnablePlugin):
         """
         import gps
 
-        assert self._session, 'GPSD session not initialized'
+        if not (self._session):
+            raise AssertionError('GPSD session not initialized')
         self._session.stream(gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
 
     @action
@@ -176,7 +177,8 @@ class GpsPlugin(RunnablePlugin):
         """
         import gps
 
-        assert self._session, 'GPSD session not initialized'
+        if not (self._session):
+            raise AssertionError('GPSD session not initialized')
         self._session.stream(gps.WATCH_DISABLE)
 
     @action

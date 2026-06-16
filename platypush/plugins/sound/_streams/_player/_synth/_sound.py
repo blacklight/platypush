@@ -159,7 +159,8 @@ class Sound(SoundBase):
             with the raw float values
         """
 
-        assert self.frequency is not None, 'The sound has no associated base frequency'
+        if not (self.frequency is not None):
+            raise AssertionError('The sound has no associated base frequency')
         if t_start > t_end:
             return np.array([])
 

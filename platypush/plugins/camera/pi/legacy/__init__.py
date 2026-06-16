@@ -168,7 +168,8 @@ class CameraPiLegacyPlugin(CameraPlugin):
     def prepare_device(self, device: Camera, **_):
         import picamera  # type: ignore
 
-        assert isinstance(device, PiCamera), f'Invalid camera type: {type(device)}'
+        if not (isinstance(device, PiCamera)):
+            raise AssertionError(f'Invalid camera type: {type(device)}')
         camera = picamera.PiCamera(
             camera_num=device.info.device,
             resolution=device.info.resolution,
@@ -197,7 +198,8 @@ class CameraPiLegacyPlugin(CameraPlugin):
     def release_device(self, device: Camera):
         import picamera  # type: ignore
 
-        assert isinstance(device, PiCamera), f'Invalid camera type: {type(device)}'
+        if not (isinstance(device, PiCamera)):
+            raise AssertionError(f'Invalid camera type: {type(device)}')
         if device.object:
             try:
                 device.object.stop_recording()
@@ -214,8 +216,10 @@ class CameraPiLegacyPlugin(CameraPlugin):
         import numpy as np
         from PIL import Image
 
-        assert device.info.resolution, 'Invalid resolution'
-        assert device.object, 'Camera not opened'
+        if not (device.info.resolution):
+            raise AssertionError('Invalid resolution')
+        if not (device.object):
+            raise AssertionError('Camera not opened')
         shape = (
             device.info.resolution[1] + (device.info.resolution[1] % 16),
             device.info.resolution[0] + (device.info.resolution[0] % 32),
@@ -230,7 +234,8 @@ class CameraPiLegacyPlugin(CameraPlugin):
         """
         Start camera preview.
         """
-        assert camera.object, 'Camera not opened'
+        if not (camera.object):
+            raise AssertionError('Camera not opened')
         camera.object.start_preview()
 
     def stop_preview(self, camera: Camera):
@@ -267,13 +272,14 @@ class CameraPiLegacyPlugin(CameraPlugin):
         from picamera import PiCamera as PiCamera_  # type: ignore
 
         stream_format = stream_format.lower()
-        assert (
-            stream_format in self._supported_encoders
-        ), f'Invalid stream format: {stream_format}. Supported formats: {", ".join(self._supported_encoders)}'
-        assert isinstance(camera, PiCamera), f'Invalid camera type: {type(camera)}'
-        assert camera.object and isinstance(
-            camera.object, PiCamera_
-        ), f'Invalid camera object type: {type(camera.object)}'
+        if not (stream_format in self._supported_encoders):
+            raise AssertionError(
+                f'Invalid stream format: {stream_format}. Supported formats: {", ".join(self._supported_encoders)}'
+            )
+        if not (isinstance(camera, PiCamera)):
+            raise AssertionError(f'Invalid camera type: {type(camera)}')
+        if not (camera.object and isinstance(camera.object, PiCamera_)):
+            raise AssertionError(f'Invalid camera object type: {type(camera.object)}')
 
         cam = camera.object
         try:

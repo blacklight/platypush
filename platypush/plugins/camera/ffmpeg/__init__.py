@@ -35,7 +35,8 @@ class CameraFfmpegPlugin(CameraPlugin):
         self.camera_info.ffmpeg_args = ffmpeg_args or ()  # type: ignore
 
     def prepare_device(self, device: Camera, **_) -> subprocess.Popen:
-        assert isinstance(device, FFmpegCamera)
+        if not (isinstance(device, FFmpegCamera)):
+            raise AssertionError
         warmup_seconds = self._get_warmup_seconds(device)
         ffmpeg = [
             device.info.ffmpeg_bin,
@@ -68,13 +69,15 @@ class CameraFfmpegPlugin(CameraPlugin):
         return proc
 
     def start_camera(self, camera: Camera, *args, preview: bool = False, **kwargs):
-        assert isinstance(camera, FFmpegCamera)
+        if not (isinstance(camera, FFmpegCamera)):
+            raise AssertionError
         super().start_camera(*args, camera=camera, preview=preview, **kwargs)
         if camera.object:
             camera.object.send_signal(signal.SIGCONT)
 
     def release_device(self, device: Camera):
-        assert isinstance(device, FFmpegCamera)
+        if not (isinstance(device, FFmpegCamera)):
+            raise AssertionError
         if device.object:
             device.object.terminate()
             if device.object.stdout:
@@ -82,7 +85,8 @@ class CameraFfmpegPlugin(CameraPlugin):
             device.object = None  # type: ignore
 
     def wait_capture(self, camera: Camera):
-        assert isinstance(camera, FFmpegCamera)
+        if not (isinstance(camera, FFmpegCamera)):
+            raise AssertionError
         if camera.object and camera.object.poll() is None:
             try:
                 camera.object.wait(timeout=camera.info.capture_timeout)
@@ -90,9 +94,12 @@ class CameraFfmpegPlugin(CameraPlugin):
                 self.logger.warning('Error on FFmpeg capture wait: %s', e)
 
     def capture_frame(self, device: Camera, *_, **__) -> Optional[ImageType]:
-        assert isinstance(device, FFmpegCamera)
-        assert device.info.resolution, 'Resolution not set'
-        assert device.object.stdout, 'Camera not started'
+        if not (isinstance(device, FFmpegCamera)):
+            raise AssertionError
+        if not (device.info.resolution):
+            raise AssertionError('Resolution not set')
+        if not (device.object.stdout):
+            raise AssertionError('Camera not started')
 
         raw_size = device.info.resolution[0] * device.info.resolution[1] * 3
         data = device.object.stdout.read(raw_size)

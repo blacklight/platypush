@@ -255,7 +255,8 @@ class RtorrentPlugin(TorrentPlugin):
         if torrent.startswith('magnet:?'):
             # Magnet link: extract and download
             m = re.search(r'xt=urn:btih:([^&/]+)', torrent)
-            assert m, 'Invalid magnet link: {}'.format(torrent)
+            if not (m):
+                raise AssertionError('Invalid magnet link: {}'.format(torrent))
             torrent_hash = m.group(1)
             torrent_file = os.path.join(
                 self.torrent_files_dir, '{}.torrent'.format(torrent_hash)
@@ -286,7 +287,8 @@ class RtorrentPlugin(TorrentPlugin):
 
         # Local torrent file
         torrent_file = os.path.abspath(os.path.expanduser(torrent))
-        assert os.path.isfile(torrent_file), 'No such torrent file: {}'.format(torrent)
+        if not (os.path.isfile(torrent_file)):
+            raise AssertionError('No such torrent file: {}'.format(torrent))
 
         self._torrent_urls[os.path.basename(torrent_file).split('.')[0]] = (
             'file://' + torrent

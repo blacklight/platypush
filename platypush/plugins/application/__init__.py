@@ -108,6 +108,7 @@ class ApplicationPlugin(Plugin):
         with auto_mocks(), override_definitions():
             ext = getter(extension)
 
-        assert ext, f'Could not find extension {extension}'
+        if not (ext):
+            raise AssertionError(f'Could not find extension {extension}')
         manifest_file = str(pathlib.Path(inspect.getfile(ext)).parent / 'manifest.json')
         return list(Manifest.from_file(manifest_file).install.to_install_commands())

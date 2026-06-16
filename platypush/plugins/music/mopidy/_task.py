@@ -34,7 +34,8 @@ class MopidyTask:
         return json.dumps(self.to_dict())
 
     def send(self, ws: WebSocketApp):
-        assert ws, "Websocket connection not established"
+        if not (ws):
+            raise AssertionError("Websocket connection not established")
         self.response_ready.clear()
         ws.send(str(self))
 

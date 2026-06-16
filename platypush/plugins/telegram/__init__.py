@@ -65,7 +65,8 @@ class TelegramPlugin(ChatPlugin, RunnablePlugin):
     def _exec(
         self, cmd: str, *args, timeout: Optional[float] = _DEFAULT_TIMEOUT, **kwargs
     ):
-        assert self._service, "Telegram service not running"
+        if not (self._service):
+            raise AssertionError("Telegram service not running")
         cmd_obj = Command(cmd, args=args, kwargs=kwargs, timeout=timeout)
         self._response_queues[cmd_obj.id] = TQueue()
         self._cmd_queue.put_nowait(cmd_obj)
@@ -77,9 +78,8 @@ class TelegramPlugin(ChatPlugin, RunnablePlugin):
         finally:
             self._response_queues.pop(cmd_obj.id, None)
 
-        assert not isinstance(
-            result, Exception
-        ), f'Error while executing command {cmd}: {result}'
+        if isinstance(result, Exception):
+            raise AssertionError(f'Error while executing command {cmd}: {result}')
 
         return result
 

@@ -210,10 +210,11 @@ class HttpWebpagePlugin(Plugin):
 
         os.makedirs(node_dir, exist_ok=True)
         npm = shutil.which('npm')
-        assert npm, (
-            'npm is not installed or not found in PATH. '
-            'It is required by the http.webpage plugin.'
-        )
+        if not (npm):
+            raise AssertionError(
+                'npm is not installed or not found in PATH. '
+                'It is required by the http.webpage plugin.'
+            )
 
         subprocess.check_call(
             [npm, 'install', '--prefix', node_dir, *missing],

@@ -73,7 +73,8 @@ class WeatherOpenweathermapPlugin(WeatherPlugin):  # pylint: disable=too-many-an
         if location:
             return {'q': location}
 
-        assert self._location_query, 'Specify either location, city_id or lat/long'
+        if not (self._location_query):
+            raise AssertionError('Specify either location, city_id or lat/long')
         return self._location_query
 
     def _weather_request(

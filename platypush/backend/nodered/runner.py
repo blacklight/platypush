@@ -15,7 +15,8 @@ def run(node, msg):
     if isinstance(msg, str):
         msg = json.loads(msg)
 
-    assert isinstance(msg, dict) and 'action' in msg
+    if not (isinstance(msg, dict) and 'action' in msg):
+        raise AssertionError
 
     if 'type' not in msg:
         msg['type'] = 'request'

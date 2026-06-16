@@ -92,7 +92,8 @@ class IrcPlugin(RunnablePlugin, ChatPlugin):
         else:
             bot = self._bots_by_alias.get(server, self._bots_by_server.get(server))
 
-        assert bot, f'Bot connection to {server} not found'
+        if not (bot):
+            raise AssertionError(f'Bot connection to {server} not found')
         return bot
 
     @action
@@ -113,7 +114,8 @@ class IrcPlugin(RunnablePlugin, ChatPlugin):
         :param bind_address: DCC listen bind address (default: any).
         """
         file = os.path.expanduser(file)
-        assert os.path.isfile(file), f'{file} is not a regular file'
+        if not (os.path.isfile(file)):
+            raise AssertionError(f'{file} is not a regular file')
         bot = self._get_bot(server)
         bot.dcc_file_transfer(file=file, nick=nick, bind_address=bind_address)
 
@@ -185,7 +187,8 @@ class IrcPlugin(RunnablePlugin, ChatPlugin):
         bot = self._get_bot(server)
         channel_name = channel
         ch = bot.channels.get(channel)
-        assert ch, f'Not connected to channel {channel}'
+        if not (ch):
+            raise AssertionError(f'Not connected to channel {channel}')
         return dict(
             IRCChannelSchema().dump(
                 {

@@ -15,7 +15,8 @@ class Resource:
         url: Optional[str] = None,
         path: Optional[str] = None,
     ):
-        assert file_id or url or path, 'You need to specify either file_id, url or path'
+        if not (file_id or url or path):
+            raise AssertionError('You need to specify either file_id, url or path')
         self.file_id = file_id
         self.url = url
         self.path = path

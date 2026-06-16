@@ -140,11 +140,11 @@ class StreamWriter(VideoWriter, ABC):
         from platypush.plugins.camera.model.writer.index import StreamHandlers
 
         name = name.upper()
-        assert hasattr(
-            StreamHandlers, name
-        ), f'No such stream handler: {name}. Supported types: ' + (
-            ', '.join([hndl.name for hndl in list(StreamHandlers)])
-        )
+        if not (hasattr(StreamHandlers, name)):
+            raise AssertionError(
+                f'No such stream handler: {name}. Supported types: '
+                + (', '.join([hndl.name for hndl in list(StreamHandlers)]))
+            )
 
         return getattr(StreamHandlers, name).value
 

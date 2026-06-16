@@ -706,7 +706,8 @@ class MediaMplayerPlugin(MediaPlugin):
             else:
                 response[k] = v
 
-        assert not errors, f'get_property errors: {errors}'
+        if errors:
+            raise AssertionError(f'get_property errors: {errors}')
         return response
 
     def _handle_property_error(

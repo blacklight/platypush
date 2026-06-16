@@ -53,9 +53,10 @@ class DataClassSchema(Schema):
 
         matching_fields = [f for f in self.fields.values() if key == f.data_key]
 
-        assert (
-            len(matching_fields) == 1
-        ), f'Could not find field {key} in {self.__class__.__name__}'
+        if not (len(matching_fields) == 1):
+            raise AssertionError(
+                f'Could not find field {key} in {self.__class__.__name__}'
+            )
 
         return matching_fields[0]
 

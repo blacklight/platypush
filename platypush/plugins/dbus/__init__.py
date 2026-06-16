@@ -457,10 +457,11 @@ class DbusPlugin(RunnablePlugin):
         bus = self._get_bus(bus)
         obj = bus.get(service, path)[interface]
         method = getattr(obj, method_name, None)
-        assert method, (
-            f'No such method exposed by service={service}, '
-            f'interface={interface}: {method_name}'
-        )
+        if not (method):
+            raise AssertionError(
+                f'No such method exposed by service={service}, '
+                f'interface={interface}: {method_name}'
+            )
 
         # Normalize any lists/dictionaries to JSON strings
         for i, arg in enumerate(args):

@@ -150,7 +150,8 @@ class DbPlugin(Plugin):
         if not db_ok and last_error:
             raise last_error
 
-        assert table_ is not None, f'No such table: {table}'
+        if not (table_ is not None):
+            raise AssertionError(f'No such table: {table}')
         return table_, engine
 
     @action
@@ -326,10 +327,10 @@ class DbPlugin(Plugin):
                 }
         """
 
-        if on_duplicate_update:
-            assert (
-                key_columns
-            ), 'on_duplicate_update requires key_columns to be specified'
+        if on_duplicate_update and not (key_columns):
+            raise AssertionError(
+                'on_duplicate_update requires key_columns to be specified'
+            )
 
         if key_columns is None:
             key_columns = []
@@ -373,9 +374,8 @@ class DbPlugin(Plugin):
             if (
                 # SQLite
                 str(e).startswith('RETURNING is not supported')
-                or
                 # MySQL/MariaDB
-                "syntax to use near 'RETURNING *'" in str(e)
+                or "syntax to use near 'RETURNING *'" in str(e)
             ):
                 connection.execute(stmt)
             else:

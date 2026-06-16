@@ -172,7 +172,8 @@ class PiholePlugin(Plugin):
 
         try:
             status = (response.json() or {}).get('status')
-            assert status == 'enabled', 'Wrong credentials'
+            if not (status == 'enabled'):
+                raise AssertionError('Wrong credentials')
         except Exception as e:
             raise AssertionError(f'Could not enable the server: {response.text or e}')
 
@@ -224,7 +225,8 @@ class PiholePlugin(Plugin):
 
         try:
             status = (response.json() or {}).get('status')
-            assert status == 'disabled', 'Wrong credentials'
+            if not (status == 'disabled'):
+                raise AssertionError('Wrong credentials')
         except Exception as e:
             raise AssertionError(f'Could not disable the server: {response.text or e}')
 

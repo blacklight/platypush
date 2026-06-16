@@ -86,9 +86,10 @@ class CalendarIcalPlugin(Plugin, CalendarInterface):
 
         events = []
         response = requests.get(self.url, timeout=20)
-        assert (
-            response.ok
-        ), f"HTTP error while getting events from {self.url}: {response.text}"
+        if not (response.ok):
+            raise AssertionError(
+                f"HTTP error while getting events from {self.url}: {response.text}"
+            )
 
         calendar = Calendar.from_ical(response.text)
         for event in calendar.walk():

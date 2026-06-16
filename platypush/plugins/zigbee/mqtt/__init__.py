@@ -500,10 +500,8 @@ class ZigbeeMqttPlugin(
             rs: dict = response.output  # type: ignore
             response = rs
 
-        if isinstance(response, dict):
-            assert response.get('status') != 'error', response.get(
-                'error', 'zigbee2mqtt error'
-            )
+        if isinstance(response, dict) and response.get('status') == 'error':
+            raise AssertionError(response.get('error', 'zigbee2mqtt error'))
 
         return response or {}
 
@@ -870,9 +868,8 @@ class ZigbeeMqttPlugin(
             return None
 
         devices: dict = self.devices().output  # type: ignore
-        assert not [
-            dev for dev in devices if dev.get('friendly_name') == name
-        ], f'A device named {name} already exists on the network'
+        if [dev for dev in devices if dev.get('friendly_name') == name]:
+            raise AssertionError(f'A device named {name} already exists on the network')
 
         if device:
             req: Dict[str, Any] = {
@@ -994,7 +991,8 @@ class ZigbeeMqttPlugin(
         """
         kwargs = self._mqtt_args(**kwargs)
         device_info = self._get_device_info(device, **kwargs)
-        assert device_info, f'No such device: {device}'
+        if not (device_info):
+            raise AssertionError(f'No such device: {device}')
         device = self._preferred_name(device_info)
 
         if property:
@@ -1005,7 +1003,8 @@ class ZigbeeMqttPlugin(
                 **kwargs,
             )
 
-            assert property in properties, f'No such property: {property}'
+            if not (property in properties):
+                raise AssertionError(f'No such property: {property}')
             return {property: properties[property]}
 
         exposes = (device_info.get('definition', {}) or {}).get('exposes', [])
@@ -1134,7 +1133,8 @@ class ZigbeeMqttPlugin(
         """
         msg = (values or {}).copy()
         device_info = self._get_device_info(device, **kwargs)
-        assert device_info, f'No such device: {device}'
+        if not (device_info):
+            raise AssertionError(f'No such device: {device}')
         device = self._preferred_name(device_info)
 
         if property:
@@ -1145,7 +1145,8 @@ class ZigbeeMqttPlugin(
 
             # Check if it's a property
             stored_property = self._get_properties(device_info).get(property)
-            assert stored_property, f'No such property: {property}'
+            if not (stored_property):
+                raise AssertionError(f'No such property: {property}')
 
             # Set the new value on the message
             msg[property] = value
@@ -1442,7 +1443,8 @@ class ZigbeeMqttPlugin(
         )
 
         if property:
-            assert property in properties, f'No such property: {property}'
+            if not (property in properties):
+                raise AssertionError(f'No such property: {property}')
             return {property: properties[property]}
 
         return properties
@@ -1476,7 +1478,8 @@ class ZigbeeMqttPlugin(
         )
 
         if property:
-            assert property in properties, f'No such property: {property}'
+            if not (property in properties):
+                raise AssertionError(f'No such property: {property}')
             return {property: properties[property]}
 
         return properties
@@ -1501,7 +1504,8 @@ class ZigbeeMqttPlugin(
             for g in dict(self.groups().output)  # type: ignore
         }
 
-        assert name not in groups, f'A group named {name} already exists on the network'
+        if not (name not in groups):
+            raise AssertionError(f'A group named {name} already exists on the network')
 
         return self._run_request(
             topic=self._topic('bridge/request/group/rename'),
@@ -1675,7 +1679,8 @@ class ZigbeeMqttPlugin(
             prop = 'state'
 
         device_info = self._get_device_info(name)
-        assert device_info, f'No such device: {name}'
+        if not (device_info):
+            raise AssertionError(f'No such device: {name}')
         name = self._preferred_name(device_info)
 
         prop_info = self._get_properties(device_info).get(prop)
@@ -1683,7 +1688,8 @@ class ZigbeeMqttPlugin(
         if option:
             return name, option
 
-        assert prop_info, f'No such property on device {name}: {prop}'
+        if not (prop_info):
+            raise AssertionError(f'No such property on device {name}: {prop}')
         return name, prop_info
 
     @staticmethod
@@ -2052,9 +2058,11 @@ class ZigbeeMqttPlugin(
         devices = [self._get_device_info(light) for light in lights]
 
         for i, dev in enumerate(devices):
-            assert dev, f'No such device: {lights[i]}'
+            if not (dev):
+                raise AssertionError(f'No such device: {lights[i]}')
             light_meta = self._get_light_meta(dev)
-            assert light_meta, f'{dev["name"]} is not a light'
+            if not (light_meta):
+                raise AssertionError(f'{dev["name"]} is not a light')
             data = {}
 
             for attr, value in kwargs.items():
@@ -2126,7 +2134,8 @@ class ZigbeeMqttPlugin(
                     return
 
                 dev = self._info.devices.get(name)
-                assert dev is not None, f'No such device: {name}'
+                if not (dev is not None):
+                    raise AssertionError(f'No such device: {name}')
                 changed_props = {
                     k: v for k, v in data.items() if v != dev.get('state', {}).get(k)
                 }

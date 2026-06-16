@@ -214,7 +214,8 @@ class GoogleBackend(GooglePlugin, BaseBackend):
         )
 
         result = next(iter(results.get('items', [])), None)
-        assert result, f'Channel not found: {id}'
+        if not (result):
+            raise AssertionError(f'Channel not found: {id}')
         channel = self._to_channel(result)
 
         playlist_id = (

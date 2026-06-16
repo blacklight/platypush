@@ -48,7 +48,8 @@ class TvSamsungWsPlugin(Plugin):
     ) -> Tuple[str, int]:
         host = host or self.host
         port = port or self.port
-        assert host and port, 'No host/port specified'
+        if not (host and port):
+            raise AssertionError('No host/port specified')
         return host, port
 
     def connect(

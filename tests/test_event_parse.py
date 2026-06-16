@@ -18,11 +18,13 @@ def test_event_parse():
 
     event = PingEvent(message=condition.args['message'])
     result = event.matches_condition(condition)
-    assert result.is_match
+    if not (result.is_match):
+        raise AssertionError
 
     event = PingEvent(message="This is not a test message")
     result = event.matches_condition(condition)
-    assert not result.is_match
+    if result.is_match:
+        raise AssertionError
 
 
 def test_nested_event_condition():
@@ -45,7 +47,8 @@ def test_nested_event_condition():
         }
     )
 
-    assert event.matches_condition(condition).is_match
+    if not (event.matches_condition(condition).is_match):
+        raise AssertionError
 
     event = PingEvent(
         message={
@@ -53,7 +56,8 @@ def test_nested_event_condition():
         }
     )
 
-    assert not event.matches_condition(condition).is_match
+    if event.matches_condition(condition).is_match:
+        raise AssertionError
 
     event = PingEvent(
         message={
@@ -61,7 +65,8 @@ def test_nested_event_condition():
         }
     )
 
-    assert not event.matches_condition(condition).is_match
+    if event.matches_condition(condition).is_match:
+        raise AssertionError
 
 
 def test_speech_recognized_event_parse():
@@ -78,13 +83,17 @@ def test_speech_recognized_event_parse():
 
     event = SpeechRecognizedEvent(phrase="GARBAGE GARBAGE this is the answer: 42")
     result = event.matches_condition(condition)
-    assert result.is_match
-    assert 'answer' in result.parsed_args
-    assert result.parsed_args['answer'] == '42'
+    if not (result.is_match):
+        raise AssertionError
+    if not ('answer' in result.parsed_args):
+        raise AssertionError
+    if not (result.parsed_args['answer'] == '42'):
+        raise AssertionError
 
     event = SpeechRecognizedEvent(phrase="what is not the answer? 43")
     result = event.matches_condition(condition)
-    assert not result.is_match
+    if result.is_match:
+        raise AssertionError
 
 
 def test_condition_with_relational_operators():
@@ -103,13 +112,15 @@ def test_condition_with_relational_operators():
     event = PingEvent(message={'foo': 26})
 
     # Then: The condition is matched.
-    assert event.matches_condition(condition).is_match
+    if not (event.matches_condition(condition).is_match):
+        raise AssertionError
 
     # When: An event with a value lower than 25 is received.
     event = PingEvent(message={'foo': 24})
 
     # Then: The condition is not matched.
-    assert not event.matches_condition(condition).is_match
+    if event.matches_condition(condition).is_match:
+        raise AssertionError
 
 
 def test_filter_with_regex_condition():
@@ -128,13 +139,15 @@ def test_filter_with_regex_condition():
     event = PingEvent(message={'foo': 'bart'})
 
     # Then: The condition is matched.
-    assert event.matches_condition(condition).is_match
+    if not (event.matches_condition(condition).is_match):
+        raise AssertionError
 
     # When: An event with a non-matching string is received.
     event = PingEvent(message={'foo': 'back'})
 
     # Then: The condition is not matched.
-    assert not event.matches_condition(condition).is_match
+    if event.matches_condition(condition).is_match:
+        raise AssertionError
 
 
 if __name__ == '__main__':

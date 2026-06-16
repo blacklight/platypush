@@ -98,9 +98,10 @@ class TtsPicovoicePlugin(TtsPlugin):
         super().__init__(**kwargs)
         if not access_key:
             access_key = Config.get('assistant.picovoice', {}).get('access_key')
-            assert (
-                access_key
-            ), 'No access key specified and no assistant.picovoice plugin found'
+            if not (access_key):
+                raise AssertionError(
+                    'No access key specified and no assistant.picovoice plugin found'
+                )
 
         self.model_path = model_path
         self.access_key = access_key

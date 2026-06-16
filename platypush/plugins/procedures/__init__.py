@@ -88,15 +88,17 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
         if isinstance(procedure, str):
             return run(f'procedure.{procedure}', *args, **kwargs)
 
-        assert isinstance(procedure, dict), 'Invalid procedure definition'
+        if not (isinstance(procedure, dict)):
+            raise AssertionError('Invalid procedure definition')
         procedure_name = procedure.get(
             'name', f'procedure_{f"{randint(0, 1 << 32):08x}"}'
         )
 
         actions = procedure.get('actions')
-        assert actions and isinstance(
-            actions, (list, tuple, set)
-        ), 'Procedure definition should have at least the "actions" key as a list of actions'
+        if not (actions and isinstance(actions, (list, tuple, set))):
+            raise AssertionError(
+                'Procedure definition should have at least the "actions" key as a list of actions'
+            )
 
         try:
             # Create a temporary procedure definition and execute it
@@ -212,8 +214,10 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
                 }
 
         """
-        assert name, 'Procedure name cannot be empty'
-        assert actions, 'Procedure actions cannot be empty'
+        if not (name):
+            raise AssertionError('Procedure name cannot be empty')
+        if not (actions):
+            raise AssertionError('Procedure actions cannot be empty')
 
         args = args or []
         proc_def = self._all_procedures.get(name, {})
@@ -284,15 +288,18 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
         """
         if isinstance(procedure, str):
             proc = self._all_procedures.get(procedure)
-            assert proc, f'Procedure {proc} not found'
+            if not (proc):
+                raise AssertionError(f'Procedure {proc} not found')
         elif isinstance(procedure, dict):
             name = self._normalize_name(procedure.get('name'))
-            assert name, 'Procedure name cannot be empty'
+            if not (name):
+                raise AssertionError('Procedure name cannot be empty')
 
             actions = procedure.get('actions', [])
-            assert actions and isinstance(
-                actions, (list, tuple, set)
-            ), 'Procedure definition should have at least the "actions" key as a list of actions'
+            if not (actions and isinstance(actions, (list, tuple, set))):
+                raise AssertionError(
+                    'Procedure definition should have at least the "actions" key as a list of actions'
+                )
 
             args = [self._normalize_name(arg) for arg in procedure.get('args', [])]
             proc = {
@@ -339,9 +346,11 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
     @contextmanager
     def _db_session(self) -> Generator[Session, None, None]:
         db: Optional[DbPlugin] = get_plugin(DbPlugin)
-        assert db, 'No database plugin configured'
+        if not (db):
+            raise AssertionError('No database plugin configured')
         with db.get_session(locked=True) as session:
-            assert isinstance(session, Session)
+            if not (isinstance(session, Session)):
+                raise AssertionError
             yield session
 
             if session.is_active:
@@ -350,16 +359,19 @@ class ProceduresPlugin(RunnablePlugin, ProcedureEntityManager):
                 session.rollback()
 
     def _delete(self, name: str, session: Session):
-        assert name, 'Procedure name cannot be empty'
+        if not (name):
+            raise AssertionError('Procedure name cannot be empty')
         proc_row: Procedure = (
             session.query(Procedure).filter(Procedure.name == name).first()
         )
 
-        assert proc_row, f'Procedure {name} not found in the database'
-        assert proc_row.procedure_type == ProcedureType.DB.value, (  # type: ignore[attr-defined]
-            f'Procedure {name} is not stored in the database, '
-            f'it should be removed from the source file'
-        )
+        if not (proc_row):
+            raise AssertionError(f'Procedure {name} not found in the database')
+        if not (proc_row.procedure_type == ProcedureType.DB.value):
+            raise AssertionError(
+                f'Procedure {name} is not stored in the database, '
+                f'it should be removed from the source file'
+            )
 
         session.delete(proc_row)
         self._all_procedures.pop(name, None)

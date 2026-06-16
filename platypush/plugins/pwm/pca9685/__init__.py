@@ -84,10 +84,12 @@ class PwmPca9685Plugin(Plugin):
         from adafruit_pca9685 import PCA9685
 
         if value is not None:
-            assert self.channels, 'No default channels configured'
+            if not (self.channels):
+                raise AssertionError('No default channels configured')
             channels = {i: value for i in self.channels}
 
-        assert channels, 'Both value and channels are missing'
+        if not (channels):
+            raise AssertionError('Both value and channels are missing')
 
         i2c_bus = busio.I2C(SCL, SDA)
         pca = self._pca = self._pca or PCA9685(i2c_bus)

@@ -141,10 +141,11 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
     def _set(self, device: SmartDevice, state: bool):
         action_name = 'turn_on' if state else 'turn_off'
         act = getattr(device, action_name, None)
-        assert act, (
-            f'No such action available on the device "{device.alias}": '
-            f'"{action_name}"'
-        )
+        if not (act):
+            raise AssertionError(
+                f'No such action available on the device "{device.alias}": '
+                f'"{action_name}"'
+            )
         act()
         self.publish_entities([device])
         return self._serialize(device)

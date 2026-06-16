@@ -38,7 +38,8 @@ class WSRequestsProxy(WSRoute):
 
         try:
             msg = Request.build(message)
-            assert isinstance(msg, Request), f'Expected {Request}, got {type(msg)}'
+            if not (isinstance(msg, Request)):
+                raise AssertionError(f'Expected {Request}, got {type(msg)}')
         except Exception as e:
             logger.info('Could not build request from %s: %s', message, e)
             logger.exception(e)

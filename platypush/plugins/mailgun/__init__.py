@@ -59,7 +59,8 @@ class MailgunPlugin(Plugin):
         :param body_type: Mail body type - ``text`` or ``html``.
         """
         domain = domain or self._domain
-        assert domain, 'No domain specified'
+        if not (domain):
+            raise AssertionError('No domain specified')
         from_ = from_ or kwargs.pop('from', None)
         rs = requests.post(
             f'{self._api_base_url}/{domain}/messages',

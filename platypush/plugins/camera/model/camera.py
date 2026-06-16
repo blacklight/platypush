@@ -79,7 +79,8 @@ class Camera:
         """
         import numpy as np
 
-        assert self.info.resolution, 'No base resolution specified'
+        if not (self.info.resolution):
+            raise AssertionError('No base resolution specified')
         rot = (self.info.rotate or 0) * math.pi / 180
         sin = math.sin(rot)
         cos = math.cos(rot)

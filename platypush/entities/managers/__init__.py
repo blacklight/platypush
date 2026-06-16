@@ -43,10 +43,11 @@ class EntityManager(ABC):
         managed by your extension into the standard format before they
         are stored and published to all the consumers.
         """
-        assert all(isinstance(e, Entity) for e in entities), (
-            'Expected all the instances to be entities, got '
-            f'{[e.__class__.__name__ for e in entities]}'
-        )
+        if not (all(isinstance(e, Entity) for e in entities)):
+            raise AssertionError(
+                'Expected all the instances to be entities, got '
+                f'{[e.__class__.__name__ for e in entities]}'
+            )
         return entities
 
     @abstractmethod

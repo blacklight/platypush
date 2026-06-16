@@ -262,7 +262,8 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
         if dev:
             return dev
 
-        assert not _fail_if_not_cached, f'Device {device} not found'
+        if _fail_if_not_cached:
+            raise AssertionError(f'Device {device} not found')
         self.logger.info('Scanning for unknown device %s', device)
         self.scan()
         return self._get_device(device, _fail_if_not_cached=True)
@@ -332,7 +333,8 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
             except Exception as e:
                 err = e
 
-        assert success, f'Could not disconnect from {device}: {err}'
+        if not (success):
+            raise AssertionError(f'Could not disconnect from {device}: {err}')
 
     @action
     def scan_pause(self, duration: Optional[float] = None):
@@ -478,12 +480,12 @@ class BluetoothPlugin(RunnablePlugin, EnumSwitchEntityManager):
             None,
         )
 
-        assert (
-            matching_plugin is not None
-        ), f'Action `set` not supported on device {entity}'
+        if not (matching_plugin is not None):
+            raise AssertionError(f'Action `set` not supported on device {entity}')
 
         method = getattr(matching_plugin, 'set', None)
-        assert method, f'The plugin {matching_plugin} does not support `set`'
+        if not (method):
+            raise AssertionError(f'The plugin {matching_plugin} does not support `set`')
         return method(device, value)
 
     @action

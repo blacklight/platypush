@@ -79,7 +79,8 @@ class GpioPlugin(RunnablePlugin):
         import RPi.GPIO as GPIO
 
         mode_str = mode_str.upper()
-        assert mode_str in ['BOARD', 'BCM'], 'Invalid mode: {}'.format(mode_str)
+        if not (mode_str in ['BOARD', 'BCM']):
+            raise AssertionError('Invalid mode: {}'.format(mode_str))
         return getattr(GPIO, mode_str)
 
     def on_gpio_event(self):

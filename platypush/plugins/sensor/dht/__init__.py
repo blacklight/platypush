@@ -40,9 +40,10 @@ class SensorDhtPlugin(SensorPlugin):
         import Adafruit_DHT
 
         sensor_type = sensor_type.upper()
-        assert hasattr(
-            Adafruit_DHT, sensor_type
-        ), f'Unknown sensor type: {sensor_type}. Supported types: DHT11, DHT22, AM2302'
+        if not (hasattr(Adafruit_DHT, sensor_type)):
+            raise AssertionError(
+                f'Unknown sensor type: {sensor_type}. Supported types: DHT11, DHT22, AM2302'
+            )
 
         return getattr(Adafruit_DHT, sensor_type)
 

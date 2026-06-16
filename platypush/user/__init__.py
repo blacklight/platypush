@@ -48,7 +48,8 @@ class UserManager:
 
     def __init__(self):
         db_plugin = get_plugin('db')
-        assert db_plugin, 'Database plugin not configured'
+        if not (db_plugin):
+            raise AssertionError('Database plugin not configured')
         self.db = db_plugin
         self.db.create_all(self.db.get_engine(), Base)
 
@@ -606,7 +607,8 @@ class UserManager:
 
     def validate_otp_code(self, username: str, code: str) -> bool:
         otp = get_plugin('otp')
-        assert otp
+        if not (otp):
+            raise AssertionError
 
         with self._get_session() as session:
             user = self._get_user(session, username)
@@ -775,7 +777,8 @@ class UserManager:
         :param token_id: Token ID.
         :return: True if the token was successfully deleted, False otherwise.
         """
-        assert token or token_id, 'Either token or token_id must be provided'
+        if not (token or token_id):
+            raise AssertionError('Either token or token_id must be provided')
 
         with self._get_session() as session:
             if token:
@@ -783,7 +786,8 @@ class UserManager:
             else:
                 user = self._get_user(session, username)
 
-            assert user, 'No such user'
+            if not (user):
+                raise AssertionError('No such user')
 
             if token_id:
                 user_token = (
@@ -805,7 +809,8 @@ class UserManager:
                     .first()
                 )
 
-            assert user_token, 'No such token'
+            if not (user_token):
+                raise AssertionError('No such token')
             session.delete(user_token)
             session.commit()
 

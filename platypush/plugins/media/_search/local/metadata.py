@@ -70,9 +70,10 @@ def get_metadata(*paths: str):
     """
     logger.info('Retrieving metadata for %d media files', len(paths))
     try:
-        assert shutil.which(
-            'ffprobe'
-        ), 'ffprobe not found in PATH. Install ffmpeg to retrieve local media metadata.'
+        if not (shutil.which('ffprobe')):
+            raise AssertionError(
+                'ffprobe not found in PATH. Install ffmpeg to retrieve local media metadata.'
+            )
 
         # Run ffprobe in parallel
         with ProcessPoolExecutor(

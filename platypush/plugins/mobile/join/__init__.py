@@ -91,7 +91,8 @@ class MobileJoinPlugin(Plugin):
             if isinstance(device, str)
             else device
         )
-        assert isinstance(devices, list)
+        if not (isinstance(devices, list)):
+            raise AssertionError
 
         has_unknown_devices = True
         cache_refreshed = False
@@ -131,7 +132,8 @@ class MobileJoinPlugin(Plugin):
             Google Drive
         """
 
-        assert url or file
+        if not (url or file):
+            raise AssertionError
         params = {}
 
         if text:
@@ -166,7 +168,8 @@ class MobileJoinPlugin(Plugin):
         :param contact_name: Alternatively to the phone number, you can specify a contact name
         """
 
-        assert (number or contact_name) and not (number and contact_name)
+        if not ((number or contact_name) and not (number and contact_name)):
+            raise AssertionError
         params = {'smstext': text}
 
         if number:
@@ -199,7 +202,8 @@ class MobileJoinPlugin(Plugin):
         :param urgent: Set to True if this is an urgent MMS. This will make the sent message be an MMS instead of an SMS
         """
 
-        assert (number or contact_name) and not (number and contact_name)
+        if not ((number or contact_name) and not (number and contact_name)):
+            raise AssertionError
         params = {
             'mmssubject': subject,
             'mmsurgent': int(urgent),
@@ -354,7 +358,8 @@ class MobileJoinPlugin(Plugin):
             (com.google.android.youtube)
         """
 
-        assert (name or package) and not (name and package)
+        if not ((name or package) and not (name and package)):
+            raise AssertionError
 
         params = {}
         if name:
@@ -435,7 +440,8 @@ class MobileJoinPlugin(Plugin):
                 if isinstance(vibration_pattern, str)
                 else vibration_pattern
             )
-            assert isinstance(params['vibrationPattern'], list)
+            if not (isinstance(params['vibrationPattern'], list)):
+                raise AssertionError
         if image:
             params['image'] = image
         if group:
@@ -452,7 +458,8 @@ class MobileJoinPlugin(Plugin):
                 if isinstance(actions, str)
                 else actions
             )
-            assert isinstance(actions, list) and len(actions) > 0
+            if not (isinstance(actions, list) and len(actions) > 0):
+                raise AssertionError
             params['actions'] = '|||'.join(actions)
 
         return self._send_request(self._push_url, device=device, params=params)

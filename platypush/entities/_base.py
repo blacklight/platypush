@@ -256,13 +256,15 @@ if not is_defined('entity'):
             from platypush.context import get_plugin
 
             plugin = get_plugin(self.plugin)
-            assert plugin, f'No such plugin: {plugin}'
+            if not (plugin):
+                raise AssertionError(f'No such plugin: {plugin}')
             return plugin
 
         def run(self, action: str, *args, **kwargs):
             plugin = self.get_plugin()
             method = getattr(plugin, action, None)
-            assert method, f'No such action: {self.plugin}.{action}'
+            if not (method):
+                raise AssertionError(f'No such action: {self.plugin}.{action}')
             return method(self.external_id or self.name, *args, **kwargs)
 
     # Inject the JSONAble mixin (Python goes nuts if done through
@@ -284,7 +286,8 @@ def _discover_entity_types():
     ):
         try:
             mod_loader = loader.find_spec(modname, None)
-            assert mod_loader and mod_loader.loader
+            if not (mod_loader and mod_loader.loader):
+                raise AssertionError
             module = types.ModuleType(mod_loader.name)
             mod_loader.loader.exec_module(module)
         except Exception as e:
@@ -311,7 +314,8 @@ def _get_db():
     from platypush.context import get_plugin
 
     db = get_plugin('db')
-    assert db
+    if not (db):
+        raise AssertionError
     return db
 
 

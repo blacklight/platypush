@@ -127,9 +127,8 @@ class Integration(Component, DocstringParser, Serializable):
         from platypush.backend import Backend
         from platypush.plugins import Plugin
 
-        assert issubclass(
-            type, (Plugin, Backend)
-        ), f"Expected a Plugin or Backend class, got {type}"
+        if not (issubclass(type, (Plugin, Backend))):
+            raise AssertionError(f"Expected a Plugin or Backend class, got {type}")
 
         name = (
             get_plugin_name_by_class(type)
@@ -137,7 +136,8 @@ class Integration(Component, DocstringParser, Serializable):
             else "backend." + get_backend_name_by_class(type)
         )
 
-        assert name
+        if not (name):
+            raise AssertionError
         obj = cls(
             name=name,
             type=type,
@@ -193,7 +193,8 @@ class Integration(Component, DocstringParser, Serializable):
         from platypush.backend import Backend
         from platypush.plugins import Plugin
 
-        assert self.cls, f'No class found for integration {self.name}'
+        if not (self.cls):
+            raise AssertionError(f'No class found for integration {self.name}')
         if issubclass(self.cls, Plugin):
             return Plugin
         if issubclass(self.cls, Backend):

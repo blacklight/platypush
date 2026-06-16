@@ -52,11 +52,12 @@ class SwitchWemoPlugin(RunnablePlugin, SwitchEntityManager):
         """
 
         super().__init__(**kwargs)
-        assert devices or netmask, (
-            'Please specify either a static list of devices (either a list of '
-            'IP addresses or a name->address map) or an IP netmask to scan for '
-            'devices'
-        )
+        if not (devices or netmask):
+            raise AssertionError(
+                'Please specify either a static list of devices (either a list of '
+                'IP addresses or a name->address map) or an IP netmask to scan for '
+                'devices'
+            )
 
         self.port = port
         self.netmask = netmask
@@ -183,7 +184,8 @@ class SwitchWemoPlugin(RunnablePlugin, SwitchEntityManager):
         self, netmask: Optional[str] = None, publish_entities: bool = True
     ) -> List[dict]:
         netmask = netmask or self.netmask
-        assert netmask, "Scan not supported: No netmask specified"
+        if not (netmask):
+            raise AssertionError("Scan not supported: No netmask specified")
 
         workers = Workers(10, Scanner, port=self.port)
         with workers:

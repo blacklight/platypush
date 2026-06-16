@@ -22,9 +22,8 @@ class AccountConfig:
         """
         Ensure that at least one of password, password_cmd or access_token is provided.
         """
-        assert (
-            self.password or self.password_cmd or self.access_token
-        ), 'No password, password_cmd or access_token provided'
+        if not (self.password or self.password_cmd or self.access_token):
+            raise AssertionError('No password, password_cmd or access_token provided')
 
     def get_password(self) -> str:
         """
@@ -36,7 +35,8 @@ class AccountConfig:
             ) as proc:
                 return proc.communicate()[0].decode()
 
-        assert self.password, 'No password provided'
+        if not (self.password):
+            raise AssertionError('No password provided')
         return self.password
 
 

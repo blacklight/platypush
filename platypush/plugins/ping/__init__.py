@@ -48,12 +48,14 @@ def ping(host: str, ping_cmd: List[str], logger: logging.Logger) -> dict:
                 match = PING_MATCHER_BUSYBOX.search(
                     str(out).rsplit("\n", maxsplit=1)[-1]
                 )
-                assert match is not None, out
+                if not (match is not None):
+                    raise AssertionError(out)
                 min_val, avg_val, max_val = match.groups()
                 mdev_val = None
             else:
                 match = PING_MATCHER.search(str(out).rsplit("\n", maxsplit=1)[-1])
-                assert match is not None, out
+                if not (match is not None):
+                    raise AssertionError(out)
                 min_val, avg_val, max_val, mdev_val = match.groups()
 
             return dict(
@@ -112,7 +114,7 @@ class PingPlugin(RunnablePlugin, EntityManager):
         self.executable = executable
         self.count = count
         self.timeout = timeout
-        self.hosts: Dict[str, Optional[dict]] = {h: None for h in (hosts or [])}
+        self.hosts: Dict[str, Optional[dict]] = dict.fromkeys(hosts or [])
 
     def _get_ping_cmd(self, host: str, count: int, timeout: float) -> List[str]:
         if sys.platform == 'win32':

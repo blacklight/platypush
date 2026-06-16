@@ -69,7 +69,8 @@ class MailOutPlugin(BaseMailPlugin, ABC):
         attachments: Optional[Sequence[str]] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Message:
-        assert from_, 'from/from_ field not specified'
+        if not (from_):
+            raise AssertionError('from/from_ field not specified')
 
         content = MIMEText(body, body_type)
         if attachments:
@@ -78,7 +79,8 @@ class MailOutPlugin(BaseMailPlugin, ABC):
 
             for attachment in attachments:
                 attachment = os.path.abspath(os.path.expanduser(attachment))
-                assert os.path.isfile(attachment), f'No such file: {attachment}'
+                if not (os.path.isfile(attachment)):
+                    raise AssertionError(f'No such file: {attachment}')
                 part = cls._file_to_part(attachment)
                 part['Content-Disposition'] = (
                     f'attachment; filename="{os.path.basename(attachment)}"'

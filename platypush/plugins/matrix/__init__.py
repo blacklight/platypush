@@ -228,23 +228,27 @@ class MatrixPlugin(AsyncRunnablePlugin):
                     self._client = None
 
     def _loop_execute(self, coro: Coroutine):
-        assert self._loop, 'The loop is not running'
+        if not (self._loop):
+            raise AssertionError('The loop is not running')
 
         try:
             ret = asyncio.run_coroutine_threadsafe(coro, self._loop).result()
         except OlmUnverifiedDeviceError as e:
             raise AssertionError(str(e))
 
-        assert not isinstance(ret, ErrorResponse), ret.message
+        if isinstance(ret, ErrorResponse):
+            raise AssertionError(ret.message)
         if hasattr(ret, 'transport_response'):
             response = ret.transport_response
-            assert response.ok, f'{coro} failed with status {response.status}'
+            if not (response.ok):
+                raise AssertionError(f'{coro} failed with status {response.status}')
 
         return ret
 
     def _process_local_attachment(self, attachment: str, room_id: str) -> dict:
         attachment = os.path.expanduser(attachment)
-        assert os.path.isfile(attachment), f'{attachment} is not a valid file'
+        if not (os.path.isfile(attachment)):
+            raise AssertionError(f'{attachment} is not a valid file')
 
         filename = os.path.basename(attachment)
         mime_type = get_mime_type(attachment) or 'application/octet-stream'
@@ -541,7 +545,8 @@ class MatrixPlugin(AsyncRunnablePlugin):
 
     def _get_device(self, device_id: str) -> OlmDevice:
         device = self.client.get_device(device_id)
-        assert device, f'No such device_id: {device_id}'
+        if not (device):
+            raise AssertionError(f'No such device_id: {device_id}')
         return device
 
     @action
@@ -581,7 +586,8 @@ class MatrixPlugin(AsyncRunnablePlugin):
         :return: The converted HTTP(s) URL.
         """
         http_url = Api.mxc_to_http(url, homeserver=homeserver)
-        assert http_url, f'Could not convert URL {url}'
+        if not (http_url):
+            raise AssertionError(f'Could not convert URL {url}')
         return http_url
 
     @action

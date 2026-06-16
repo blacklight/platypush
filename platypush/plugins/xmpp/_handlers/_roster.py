@@ -64,12 +64,14 @@ class XmppRosterHandler(XmppBaseHandler):
 
     def accept_invite(self, user_id: str):
         invite = self._state.user_invites.get(user_id)
-        assert invite, Errors.NO_INVITE
+        if not (invite):
+            raise AssertionError(Errors.NO_INVITE)
         invite.accept()
 
     def reject_invite(self, user_id: str):
         invite = self._state.user_invites.get(user_id)
-        assert invite, Errors.NO_INVITE
+        if not (invite):
+            raise AssertionError(Errors.NO_INVITE)
         invite.reject()
 
     @staticmethod

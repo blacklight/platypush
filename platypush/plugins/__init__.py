@@ -101,7 +101,8 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
         from platypush.plugins.db import DbPlugin
 
         db: DbPlugin = get_plugin(DbPlugin)  # type: ignore
-        assert db, 'db plugin not initialized'
+        if not (db):
+            raise AssertionError('db plugin not initialized')
         return db
 
     @property
@@ -113,7 +114,8 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
         from platypush.plugins.redis import RedisPlugin
 
         redis: RedisPlugin = get_plugin(RedisPlugin)  # type: ignore
-        assert redis, 'db plugin not initialized'
+        if not (redis):
+            raise AssertionError('db plugin not initialized')
         return redis
 
     @property
@@ -134,7 +136,8 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
         from platypush.plugins.entities import EntitiesPlugin
 
         entities: EntitiesPlugin = get_plugin('entities')  # type: ignore
-        assert entities, 'entities plugin not initialized'
+        if not (entities):
+            raise AssertionError('entities plugin not initialized')
         return entities
 
     @property
@@ -148,9 +151,10 @@ class Plugin(EventGenerator, ExtensionWithManifest):  # lgtm [py/missing-call-to
         return get_plugin_name_by_class(self.__class__)
 
     def run(self, method, *args, **kwargs):
-        assert (
-            method in self.registered_actions
-        ), f'{method} is not a registered action on {self.__class__.__name__}'
+        if not (method in self.registered_actions):
+            raise AssertionError(
+                f'{method} is not a registered action on {self.__class__.__name__}'
+            )
         return getattr(self, method)(*args, **kwargs)
 
 
@@ -324,7 +328,8 @@ class AsyncRunnablePlugin(RunnablePlugin, ABC):
         """
         Initialize an event loop and run the listener as a task.
         """
-        assert self._loop, 'The loop is not initialized'
+        if not (self._loop):
+            raise AssertionError('The loop is not initialized')
         asyncio.set_event_loop(self._loop)
 
         self._task = self._loop.create_task(self._listen())

@@ -268,19 +268,24 @@ class MediaPlugin(RunnablePlugin, ABC):
             if isinstance(media_dirs, dict):
                 dirs = media_dirs
 
-        assert isinstance(dirs, dict), f'Invalid media_dirs format: {media_dirs}'
+        if not (isinstance(dirs, dict)):
+            raise AssertionError(f'Invalid media_dirs format: {media_dirs}')
 
         ret = {}
         for k, v in dirs.items():
-            assert isinstance(k, str), f'Invalid media_dirs key format: {k}'
+            if not (isinstance(k, str)):
+                raise AssertionError(f'Invalid media_dirs key format: {k}')
             if isinstance(v, str):
                 v = {'path': v}
 
-            assert isinstance(v, dict), f'Invalid media_dirs format: {v}'
+            if not (isinstance(v, dict)):
+                raise AssertionError(f'Invalid media_dirs format: {v}')
             path = v.get('path')
-            assert path, f'Missing path in media_dirs entry {k}'
+            if not (path):
+                raise AssertionError(f'Missing path in media_dirs entry {k}')
             path = os.path.abspath(os.path.expanduser(path))
-            assert os.path.isdir(path), f'Invalid path in media_dirs entry {k}'
+            if not (os.path.isdir(path)):
+                raise AssertionError(f'Invalid path in media_dirs entry {k}')
 
             icon = v.get('icon', {})
             if isinstance(icon, str):
@@ -594,7 +599,10 @@ class MediaPlugin(RunnablePlugin, ABC):
         self, media: str, subtitles: Optional[str] = None, download: bool = False
     ):
         http = get_backend('http')
-        assert http, f'Unable to stream {media}: HTTP backend not configured'
+        if not (http):
+            raise AssertionError(
+                f'Unable to stream {media}: HTTP backend not configured'
+            )
 
         self.logger.info('Starting streaming %s', media)
         response = requests.put(
@@ -603,19 +611,24 @@ class MediaPlugin(RunnablePlugin, ABC):
             timeout=300,
         )
 
-        assert response.ok, response.text or response.reason
+        if not (response.ok):
+            raise AssertionError(response.text or response.reason)
         return response.json()
 
     @action
     def stop_streaming(self, media_id: str):
         http = get_backend('http')
-        assert http, f'Unable to stop streaming {media_id}: HTTP backend not configured'
+        if not (http):
+            raise AssertionError(
+                f'Unable to stop streaming {media_id}: HTTP backend not configured'
+            )
 
         response = requests.delete(
             f'{http.local_base_url}/media/{media_id}', timeout=30
         )
 
-        assert response.ok, response.text or response.reason
+        if not (response.ok):
+            raise AssertionError(response.text or response.reason)
         return response.json()
 
     @action
@@ -705,7 +718,8 @@ class MediaPlugin(RunnablePlugin, ABC):
 
                 break
 
-        assert dl_thread, f'No downloader found for resource {url}'
+        if not (dl_thread):
+            raise AssertionError(f'No downloader found for resource {url}')
 
         if sync:
             dl_thread.join()
@@ -801,7 +815,8 @@ class MediaPlugin(RunnablePlugin, ABC):
         return {dir.name: dir.to_dict() for dir in self.media_dirs.values()}
 
     def _get_downloads(self, url: Optional[str] = None, path: Optional[str] = None):
-        assert url or path, 'URL or path must be specified'
+        if not (url or path):
+            raise AssertionError('URL or path must be specified')
         threads = []
 
         if url and path:
@@ -823,7 +838,10 @@ class MediaPlugin(RunnablePlugin, ABC):
                 if path_ == path
             ]
 
-        assert threads, f'No matching downloads found for [url={url}, path={path}]'
+        if not (threads):
+            raise AssertionError(
+                f'No matching downloads found for [url={url}, path={path}]'
+            )
         return threads
 
     def on_download_start(self, thread: DownloadThread):

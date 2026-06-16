@@ -312,7 +312,8 @@ class SmartthingsPlugin(
             }
 
         """
-        assert location_id or name, 'Specify either location_id or name'
+        if not (location_id or name):
+            raise AssertionError('Specify either location_id or name')
         if (
             location_id not in self._locations_by_id
             or name not in self._locations_by_name
@@ -325,7 +326,8 @@ class SmartthingsPlugin(
         elif name:
             location = self._locations_by_name.get(name)
 
-        assert location, f'Location {location_id or name} not found'
+        if not (location):
+            raise AssertionError(f'Location {location_id or name} not found')
         return self._location_to_dict(location)
 
     def _get_device(self, device: str) -> DeviceEntity:
@@ -359,7 +361,8 @@ class SmartthingsPlugin(
             self.refresh_info()
 
         devs, missing_devs = self._get_existing_and_missing_devices(*devices)
-        assert not missing_devs, f'Devices not found: {missing_devs}'
+        if missing_devs:
+            raise AssertionError(f'Devices not found: {missing_devs}')
         return devs
 
     @action
@@ -409,9 +412,10 @@ class SmartthingsPlugin(
                 args=args,
             )
 
-            assert (
-                ret
-            ), f'The command {capability}={command} failed on device {device_id}'
+            if not (ret):
+                raise AssertionError(
+                    f'The command {capability}={command} failed on device {device_id}'
+                )
 
             await self._get_device_status(api, device_id, publish_entities=True)
 
@@ -634,7 +638,8 @@ class SmartthingsPlugin(
         self, api, device_id: str, publish_entities: bool
     ) -> dict:
         device = await api.device(device_id)
-        assert device, f'No such device: {device_id}'
+        if not (device):
+            raise AssertionError(f'No such device: {device_id}')
         await device.status.refresh()
         if publish_entities:
             self.publish_entities([device])
@@ -681,9 +686,10 @@ class SmartthingsPlugin(
             parse_device_id(dev)
 
         # Fail if some devices haven't been found after refreshing
-        assert (
-            not missing_device_ids
-        ), f'Could not find the following devices: {list(missing_device_ids)}'
+        if missing_device_ids:
+            raise AssertionError(
+                f'Could not find the following devices: {list(missing_device_ids)}'
+            )
 
         async with aiohttp.ClientSession(timeout=self._timeout) as session:
             api = SmartThings(session, self._access_token)
@@ -761,16 +767,19 @@ class SmartthingsPlugin(
             if property == 'light':
                 property = 'switch'
             else:
-                assert property, 'No property specified'
-                assert hasattr(
-                    dev.status, property
-                ), f'No such property on device "{dev.label}": "{property}"'
+                if not (property):
+                    raise AssertionError('No property specified')
+                if not (hasattr(dev.status, property)):
+                    raise AssertionError(
+                        f'No such property on device "{dev.label}": "{property}"'
+                    )
 
             value = getattr(dev.status, property, None)
-            assert value is not None, (
-                f'Could not get the current value of "{property}" for the '
-                f'device "{dev.device_id}"'
-            )
+            if not (value is not None):
+                raise AssertionError(
+                    f'Could not get the current value of "{property}" for the '
+                    f'device "{dev.device_id}"'
+                )
 
             value = not value  # Toggle
             device = dev.device_id
@@ -823,22 +832,27 @@ class SmartthingsPlugin(
         if not property:
             device, property = self._to_device_and_property(device)
 
-        assert property, 'No property name specified'
-        assert value is not None, 'No value specified'
+        if not (property):
+            raise AssertionError('No property name specified')
+        if not (value is not None):
+            raise AssertionError('No value specified')
         entity_id = f'{device}:{property}'
         entity = self._entities_by_id.get(entity_id)
-        assert entity, f'No such entity ID: {entity_id}'
+        if not (entity):
+            raise AssertionError(f'No such entity ID: {entity_id}')
 
         mapper = next(
             iter([m for m in device_mappers if m.attribute == property]), None
         )
 
-        assert (
-            mapper
-        ), f'No mappers found to set {property}={value} on device "{device}"'
-        assert (
-            mapper.set_command
-        ), f'The property "{property}" on the device "{device}" cannot be set'
+        if not (mapper):
+            raise AssertionError(
+                f'No mappers found to set {property}={value} on device "{device}"'
+            )
+        if not (mapper.set_command):
+            raise AssertionError(
+                f'The property "{property}" on the device "{device}" cannot be set'
+            )
 
         command = (
             mapper.set_command(value)
@@ -874,7 +888,8 @@ class SmartthingsPlugin(
             then it should be specified on the ``device`` level.
         :param value: Value to set.
         """
-        assert device, 'No device specified'
+        if not (device):
+            raise AssertionError('No device specified')
         try:
             return self._set_value(device, property, value, **kwargs)
         except Exception as e:

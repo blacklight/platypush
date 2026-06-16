@@ -504,7 +504,8 @@ class Application:
             self.cron_scheduler = CronScheduler(jobs=Config.get_cronjobs())
             self.cron_scheduler.start()
 
-        assert self.bus, 'The bus is not running'
+        if not (self.bus):
+            raise AssertionError('The bus is not running')
 
         # Poll for messages on the bus
         try:

@@ -281,7 +281,8 @@ class FilePlugin(Plugin):
             ``path``.
         """
         path = self._get_path(path or '/')
-        assert path and os.path.exists(path), f'No such file or directory: {path}'
+        if not (path and os.path.exists(path)):
+            raise AssertionError(f'No such file or directory: {path}')
 
         if not os.path.isdir(path):
             return [

@@ -91,7 +91,8 @@ class OtpPlugin(Plugin):
         """
 
         secret_path = secret_path or self.secret_path
-        assert secret_path, 'No secret_path configured'
+        if not (secret_path):
+            raise AssertionError('No secret_path configured')
 
         os.makedirs(
             os.path.dirname(os.path.abspath(os.path.expanduser(secret_path))),
@@ -186,7 +187,10 @@ class OtpPlugin(Plugin):
         """
         name = name or self.provisioning_name
         issuer = issuer or self.issuer
-        assert name, 'No account name or default provisioning address provided'
+        if not (name):
+            raise AssertionError(
+                'No account name or default provisioning address provided'
+            )
 
         _otp = self._get_topt(secret, secret_path)
         return _otp.provisioning_uri(name, issuer_name=issuer)
@@ -213,7 +217,10 @@ class OtpPlugin(Plugin):
         """
         name = name or self.provisioning_name
         issuer = issuer or self.issuer
-        assert name, 'No account name or default provisioning address provided'
+        if not (name):
+            raise AssertionError(
+                'No account name or default provisioning address provided'
+            )
 
         _otp = self._get_hopt(secret, secret_path)
         return _otp.provisioning_uri(

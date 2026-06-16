@@ -96,14 +96,16 @@ class PopcornTimeSearchProvider(TorrentSearchProvider):
         response = requests.get(imdb_url, timeout=self._http_timeout)
         response.raise_for_status()
         response = response.json()
-        assert not response.get('errorMessage'), response['errorMessage']
+        if response.get('errorMessage'):
+            raise AssertionError(response['errorMessage'])
         return [
             item for item in response.get('d', []) if item.get('qid') == imdb_category
         ]
 
     def _torrent_search_worker(self, imdb_id: str, category: str, q: queue.Queue):
         base_url = self.torrent_base_urls.get(category)
-        assert base_url, f'No such category: {category}'
+        if not (base_url):
+            raise AssertionError(f'No such category: {category}')
         try:
             self.logger.debug('Searching torrents for %s', imdb_id)
             response = requests.get(

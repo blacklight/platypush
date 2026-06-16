@@ -103,7 +103,8 @@ class AudioConverter(Thread, ABC):
         self.stop()
 
     def _check_ffmpeg(self):
-        assert not self.terminated, 'The ffmpeg process has already terminated'
+        if self.terminated:
+            raise AssertionError('The ffmpeg process has already terminated')
 
     @property
     def gain(self) -> float:
@@ -206,9 +207,8 @@ class AudioConverter(Thread, ABC):
 
         while self._loop and self.ffmpeg and not self.should_stop:
             self._check_ffmpeg()
-            assert (
-                self.ffmpeg and self.ffmpeg.stdout
-            ), 'The stdout is closed for the ffmpeg process'
+            if not (self.ffmpeg and self.ffmpeg.stdout):
+                raise AssertionError('The stdout is closed for the ffmpeg process')
 
             self._ffmpeg_terminated.clear()
 
@@ -235,9 +235,8 @@ class AudioConverter(Thread, ABC):
         Write raw data to the ffmpeg process.
         """
         self._check_ffmpeg()
-        assert (
-            self.ffmpeg and self._loop and self.ffmpeg.stdin
-        ), 'The stdin is closed for the ffmpeg process'
+        if not (self.ffmpeg and self._loop and self.ffmpeg.stdin):
+            raise AssertionError('The stdin is closed for the ffmpeg process')
 
         self._loop.call_soon_threadsafe(self.ffmpeg.stdin.write, data)
 

@@ -30,7 +30,10 @@ def infer_mail_domain(account: AccountConfig, server: ServerConfig) -> str:
             return server.server
 
         host = urlparse(server.server).hostname
-        assert host, f'Could not parse hostname from server URL: {server.server}'
+        if not (host):
+            raise AssertionError(
+                f'Could not parse hostname from server URL: {server.server}'
+            )
         host_tokens = host.split('.')
 
         while host_tokens:

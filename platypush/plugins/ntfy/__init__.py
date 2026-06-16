@@ -242,9 +242,11 @@ class NtfyPlugin(AsyncRunnablePlugin):
             }
 
         rs = method(server_url, **args)
-        assert rs.ok, f'Could not send message to {topic}: ' + rs.json().get(
-            'error', f'HTTP error: {rs.status_code}'
-        )
+        if not (rs.ok):
+            raise AssertionError(
+                f'Could not send message to {topic}: '
+                + rs.json().get('error', f'HTTP error: {rs.status_code}')
+            )
 
         return rs.json()
 

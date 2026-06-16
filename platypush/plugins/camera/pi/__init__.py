@@ -146,7 +146,8 @@ class CameraPiPlugin(CameraPlugin):
     ):
         from picamera2 import Picamera2  # type: ignore
 
-        assert isinstance(device, PiCamera), f'Invalid device type: {type(device)}'
+        if not (isinstance(device, PiCamera)):
+            raise AssertionError(f'Invalid device type: {type(device)}')
         camera = Picamera2(camera_num=device.info.device)
         still = not (video or stream)
         cfg_params = {
@@ -192,7 +193,8 @@ class CameraPiPlugin(CameraPlugin):
             device.object.close()
 
     def capture_frame(self, device: Camera, *_, **__):
-        assert device.object, 'Camera not open'
+        if not (device.object):
+            raise AssertionError('Camera not open')
         return device.object.capture_image('main')
 
     @property
@@ -233,16 +235,17 @@ class CameraPiPlugin(CameraPlugin):
         from picamera2 import Picamera2  # type: ignore
         from picamera2.encoders import H264Encoder  # type: ignore
 
-        assert video_file, 'Video file is required'
+        if not (video_file):
+            raise AssertionError('Video file is required')
         camera = self.open_device(
             device=device, ctx={'start': False, 'video': True}, **camera
         )
 
         encoder = H264Encoder()
-        assert camera.object, 'Camera not open'
-        assert isinstance(
-            camera.object, Picamera2
-        ), f'Invalid camera object type: {type(camera.object)}'
+        if not (camera.object):
+            raise AssertionError('Camera not open')
+        if not (isinstance(camera.object, Picamera2)):
+            raise AssertionError(f'Invalid camera object type: {type(camera.object)}')
 
         if preview:
             camera.object.start_preview()
@@ -269,13 +272,15 @@ class CameraPiPlugin(CameraPlugin):
         from picamera2.outputs import FileOutput  # type: ignore
 
         encoder_cls = self._video_encoders_by_format.get(stream_format.lower())
-        assert (
-            encoder_cls
-        ), f'Invalid stream format: {stream_format}. Supported formats: {", ".join(self._video_encoders_by_format)}'
-        assert isinstance(camera, PiCamera), f'Invalid camera type: {type(camera)}'
-        assert camera.object and isinstance(
-            camera.object, Picamera2
-        ), f'Invalid camera object type: {type(camera.object)}'
+        if not (encoder_cls):
+            raise AssertionError(
+                f'Invalid stream format: {stream_format}. Supported formats: '
+                f'{", ".join(self._video_encoders_by_format)}'
+            )
+        if not (isinstance(camera, PiCamera)):
+            raise AssertionError(f'Invalid camera type: {type(camera)}')
+        if not (camera.object and isinstance(camera.object, Picamera2)):
+            raise AssertionError(f'Invalid camera object type: {type(camera.object)}')
 
         cam = camera.object
         encoder = encoder_cls()

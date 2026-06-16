@@ -110,10 +110,12 @@ class SshPlugin(Plugin):
               }
 
         """
-        assert type != 'dsa' or bits <= 1024, 'DSA keys support a maximum of 1024 bits'
-        assert (
-            type in self.key_dispatch_table
-        ), f'No such type: {type}. Available types: {self.key_dispatch_table.keys()}'
+        if not (type != 'dsa' or bits <= 1024):
+            raise AssertionError('DSA keys support a maximum of 1024 bits')
+        if not (type in self.key_dispatch_table):
+            raise AssertionError(
+                f'No such type: {type}. Available types: {self.key_dispatch_table.keys()}'
+            )
 
         if filename:
             filename = os.path.abspath(os.path.expanduser(filename))
@@ -341,9 +343,10 @@ class SshPlugin(Plugin):
         recursive: bool = False,
     ) -> None:
         if self.is_directory(sftp, remote_path):
-            assert (
-                recursive
-            ), '{} is a directory on the server but recursive has been set to False'
+            if not (recursive):
+                raise AssertionError(
+                    '{} is a directory on the server but recursive has been set to False'
+                )
             local_path = os.path.join(local_path, os.path.basename(remote_path))
             os.makedirs(local_path, mode=0o755, exist_ok=True)
             sftp.chdir(remote_path)
@@ -423,7 +426,8 @@ class SshPlugin(Plugin):
         :param kwargs: Arguments for :meth:`platypush.plugins.ssh.SshPlugin.connect`.
         """
         local_path = os.path.abspath(os.path.expanduser(local_path))
-        assert os.path.exists(local_path), os.strerror(errno.ENOENT)
+        if not (os.path.exists(local_path)):
+            raise AssertionError(os.strerror(errno.ENOENT))
         kwargs['compress'] = True
         client = self._connect(**kwargs)
         sftp = client.open_sftp()
@@ -437,13 +441,15 @@ class SshPlugin(Plugin):
                         'mkdir %s failed: %s: %s', remote_path, type(e), e
                     )
 
-                assert (
-                    recursive
-                ), f'{local_path} is a directory but recursive has been set to False'
+                if not (recursive):
+                    raise AssertionError(
+                        f'{local_path} is a directory but recursive has been set to False'
+                    )
 
-                assert self.is_directory(
-                    sftp, remote_path
-                ), f'{remote_path} is not a directory on the remote host'
+                if not (self.is_directory(sftp, remote_path)):
+                    raise AssertionError(
+                        f'{remote_path} is not a directory on the remote host'
+                    )
 
                 sftp.chdir(remote_path)
                 os.chdir(local_path)

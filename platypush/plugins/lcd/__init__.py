@@ -19,9 +19,10 @@ class LcdPlugin(Plugin, ABC):
 
         pin_modes = ['BOARD', 'BCM']
         pin_mode = pin_mode.upper()
-        assert (
-            pin_mode in pin_modes
-        ), 'Invalid pin_mode: {}. Supported modes: {}'.format(pin_mode, pin_modes)
+        if not (pin_mode in pin_modes):
+            raise AssertionError(
+                'Invalid pin_mode: {}. Supported modes: {}'.format(pin_mode, pin_modes)
+            )
         return getattr(RPi.GPIO, pin_mode).value
 
     @abstractmethod
@@ -102,9 +103,10 @@ class LcdPlugin(Plugin, ABC):
         """
         modes = ['left', 'right']
         mode = mode.lower()
-        assert mode in modes, 'Unsupported text mode: {}. Supported modes: {}'.format(
-            mode, modes
-        )
+        if not (mode in modes):
+            raise AssertionError(
+                'Unsupported text mode: {}. Supported modes: {}'.format(mode, modes)
+            )
 
         self._init_lcd()
         self.lcd.text_align_mode = mode

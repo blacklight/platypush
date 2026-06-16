@@ -14,9 +14,8 @@ class MediaSearcher(ABC):
         from .. import MediaPlugin
 
         self.logger = logging.getLogger(self.__class__.__name__)
-        assert isinstance(
-            media_plugin, MediaPlugin
-        ), f'Invalid media plugin: {media_plugin}'
+        if not (isinstance(media_plugin, MediaPlugin)):
+            raise AssertionError(f'Invalid media plugin: {media_plugin}')
         self.media_plugin: Optional[MediaPlugin] = media_plugin
 
     @abstractmethod

@@ -24,7 +24,8 @@ class TtsPlugin(Plugin):
 
     def _playback(self, resource: str, **kwargs):
         audio = get_plugin('sound')
-        assert audio
+        if not (audio):
+            raise AssertionError
         audio.play(resource, **{**self.player_args, **kwargs})
 
     @action

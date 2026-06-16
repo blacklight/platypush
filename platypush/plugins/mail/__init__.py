@@ -143,7 +143,8 @@ class MailPlugin(RunnablePlugin):
         :param timeout: Timeout for the mail server connection (default: 20
             seconds).
         """
-        assert accounts, 'No mail accounts configured'
+        if not (accounts):
+            raise AssertionError('No mail accounts configured')
 
         super().__init__(poll_interval=poll_interval, **kwargs)
         self.timeout = timeout
@@ -181,27 +182,35 @@ class MailPlugin(RunnablePlugin):
 
         if isinstance(account, int):
             account -= 1
-            assert (
-                0 <= account < len(self.accounts)
-            ), f'Invalid account index {account} (valid range: 1-{len(self.accounts)})'
+            if not (0 <= account < len(self.accounts)):
+                raise AssertionError(
+                    f'Invalid account index {account} (valid range: 1-{len(self.accounts)})'
+                )
 
             return self.accounts[account]
 
         if isinstance(account, str):
             acc = self._accounts_by_name.get(account)
-            assert acc, f'No account found with name "{account}"'
+            if not (acc):
+                raise AssertionError(f'No account found with name "{account}"')
             return acc
 
         return self._default_account
 
     def _get_in_plugin(self, account: Optional[AccountType] = None) -> MailInPlugin:
         acc = self._get_account(account)
-        assert acc.incoming, f'No incoming configuration found for account "{acc.name}"'
+        if not (acc.incoming):
+            raise AssertionError(
+                f'No incoming configuration found for account "{acc.name}"'
+            )
         return acc.incoming
 
     def _get_out_plugin(self, account: Optional[AccountType] = None) -> MailOutPlugin:
         acc = self._get_account(account)
-        assert acc.outgoing, f'No outgoing configuration found for account "{acc.name}"'
+        if not (acc.outgoing):
+            raise AssertionError(
+                f'No outgoing configuration found for account "{acc.name}"'
+            )
         return acc.outgoing
 
     def _parse_accounts(self, accounts: List[Dict[str, Any]]) -> List[Account]:
@@ -213,12 +222,13 @@ class MailPlugin(RunnablePlugin):
             outgoing_conf = acc.pop('outgoing')
             monitor_folders = acc.pop('monitor_folders', [])
 
-            assert (
-                incoming_conf or outgoing_conf
-            ), f'No incoming/outgoing configuration specified for account "{name}"'
+            if not (incoming_conf or outgoing_conf):
+                raise AssertionError(
+                    f'No incoming/outgoing configuration specified for account "{name}"'
+                )
 
-            if monitor_folders:
-                assert incoming_conf, (
+            if monitor_folders and not (incoming_conf):
+                raise AssertionError(
                     f'Cannot monitor folders for account "{name}" '
                     'without incoming configuration'
                 )
@@ -1021,8 +1031,8 @@ class MailPlugin(RunnablePlugin):
                 mail_flag_removed_keys = cur_mail_keys - new_mail_keys
                 mail_flag_changed[folder][flag].update(
                     {
-                        **{msg_id: True for msg_id in mail_flag_added_keys},
-                        **{msg_id: False for msg_id in mail_flag_removed_keys},
+                        **dict.fromkeys(mail_flag_added_keys, True),
+                        **dict.fromkeys(mail_flag_removed_keys, False),
                     }
                 )
 

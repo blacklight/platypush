@@ -43,7 +43,8 @@ class TtsOpenaiPlugin(TtsPlugin):
         """
         super().__init__(**kwargs)
         openai = get_plugin('openai')
-        assert openai, 'openai plugin not configured'
+        if not (openai):
+            raise AssertionError('openai plugin not configured')
 
         self.openai: OpenaiPlugin = openai
         self.model = model

@@ -106,27 +106,33 @@ class InvidiousBackend(BaseBackend):
         if not item.get('type') or item.get('type') == 'shortVideo':
             item['type'] = 'video'
 
-        assert item.get('type') == 'video', f'Item [{item}] is not a video'
+        if not (item.get('type') == 'video'):
+            raise AssertionError(f'Item [{item}] is not a video')
         ret = self._to_entity(item)
-        assert isinstance(ret, YoutubeVideo), f'Expected a video, got {type(ret)}'
+        if not (isinstance(ret, YoutubeVideo)):
+            raise AssertionError(f'Expected a video, got {type(ret)}')
         return ret
 
     def _to_channel(self, item: dict) -> YoutubeChannel:
         if not item.get('type'):
             item['type'] = 'channel'
 
-        assert item.get('type') == 'channel', f'Item [{item}] is not a channel'
+        if not (item.get('type') == 'channel'):
+            raise AssertionError(f'Item [{item}] is not a channel')
         ret = self._to_entity(item)
-        assert isinstance(ret, YoutubeChannel), f'Expected a channel, got {type(ret)}'
+        if not (isinstance(ret, YoutubeChannel)):
+            raise AssertionError(f'Expected a channel, got {type(ret)}')
         return ret
 
     def _to_playlist(self, item: dict) -> YoutubePlaylist:
         if not item.get('type') or item.get('type') == 'invidiousPlaylist':
             item['type'] = 'playlist'
 
-        assert item.get('type') == 'playlist', f'Item [{item}] is not a playlist'
+        if not (item.get('type') == 'playlist'):
+            raise AssertionError(f'Item [{item}] is not a playlist')
         ret = self._to_entity(item)
-        assert isinstance(ret, YoutubePlaylist), f'Expected a playlist, got {type(ret)}'
+        if not (isinstance(ret, YoutubePlaylist)):
+            raise AssertionError(f'Expected a playlist, got {type(ret)}')
         return ret
 
     def _json(self, rs: requests.Response) -> Union[dict, list]:
@@ -155,12 +161,14 @@ class InvidiousBackend(BaseBackend):
 
     def _json_dict(self, rs: requests.Response) -> dict:
         resp = self._json(rs)
-        assert isinstance(resp, dict), f'Expected a dict, got {type(resp)}'
+        if not (isinstance(resp, dict)):
+            raise AssertionError(f'Expected a dict, got {type(resp)}')
         return resp
 
     def _json_list(self, rs: requests.Response) -> list:
         resp = self._json(rs)
-        assert isinstance(resp, list), f'Expected a list, got {type(resp)}'
+        if not (isinstance(resp, list)):
+            raise AssertionError(f'Expected a list, got {type(resp)}')
         return resp
 
     @staticmethod

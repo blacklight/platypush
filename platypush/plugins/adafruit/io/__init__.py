@@ -93,7 +93,8 @@ class AdafruitIoPlugin(RunnablePlugin):
         return self._mqtt_client
 
     def _on_connect(self, *_, **__):
-        assert self._mqtt_client, 'MQTT client not initialized'
+        if not (self._mqtt_client):
+            raise AssertionError('MQTT client not initialized')
         for feed in self.feeds:
             self._mqtt_client.subscribe(feed)
         self._bus.post(AdafruitConnectedEvent())
@@ -110,11 +111,13 @@ class AdafruitIoPlugin(RunnablePlugin):
         self._bus.post(AdafruitFeedUpdateEvent(feed=feed, data=data))
 
     def _subscribe(self, feed: str):
-        assert self._mqtt_client, 'MQTT client not initialized'
+        if not (self._mqtt_client):
+            raise AssertionError('MQTT client not initialized')
         self._mqtt_client.subscribe(feed)
 
     def _unsubscribe(self, feed: str):
-        assert self._mqtt_client, 'MQTT client not initialized'
+        if not (self._mqtt_client):
+            raise AssertionError('MQTT client not initialized')
         self._mqtt_client.unsubscribe(feed)
 
     def _data_throttler(self):

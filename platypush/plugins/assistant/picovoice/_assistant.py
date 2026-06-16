@@ -146,7 +146,8 @@ class Assistant(Thread):
     @property
     def tts(self) -> TtsPicovoicePlugin:
         p = get_plugin('tts.picovoice')
-        assert p, 'Picovoice TTS plugin not configured/found'
+        if not (p):
+            raise AssertionError('Picovoice TTS plugin not configured/found')
         return p
 
     def set_responding(self, responding: bool):
@@ -240,7 +241,8 @@ class Assistant(Thread):
         if self.should_stop():
             return self
 
-        assert not self.is_alive(), 'The assistant is already running'
+        if self.is_alive():
+            raise AssertionError('The assistant is already running')
         self._in_ctx = True
 
         if self._recorder:
@@ -382,9 +384,10 @@ class Assistant(Thread):
             self.logger.warning('The assistant event queue is full')
 
     def run(self):
-        assert (
-            self._in_ctx
-        ), 'The assistant can only be started through a context manager'
+        if not (self._in_ctx):
+            raise AssertionError(
+                'The assistant can only be started through a context manager'
+            )
 
         super().run()
 

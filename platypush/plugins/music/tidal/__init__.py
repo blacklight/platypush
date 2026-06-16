@@ -90,7 +90,10 @@ class MusicTidalPlugin(RunnablePlugin):
             return
 
         http: HttpBackend = get_backend('http')  # type: ignore
-        assert http, 'The HTTP backend is required to perform the TIDAL PKCE login flow'
+        if not (http):
+            raise AssertionError(
+                'The HTTP backend is required to perform the TIDAL PKCE login flow'
+            )
 
         self._login_event.clear()
         login_url = self._session.pkce_login_url()
@@ -99,7 +102,8 @@ class MusicTidalPlugin(RunnablePlugin):
             http.local_base_url + f'/tidal/login?url={quote_plus(login_url)}',
         )
 
-        assert self.bus, 'Event bus is not available'
+        if not (self.bus):
+            raise AssertionError('Event bus is not available')
         self.bus.register_handler(
             handler=self._custom_event_callback,
             type=CustomEvent,
@@ -114,7 +118,8 @@ class MusicTidalPlugin(RunnablePlugin):
                 type=CustomEvent,
             )
 
-        assert self._session.check_login(), 'TIDAL PKCE login failed'
+        if not (self._session.check_login()):
+            raise AssertionError('TIDAL PKCE login failed')
         self.logger.info("PKCE login successful.")
         pathlib.Path(self._credentials_file).parent.mkdir(parents=True, exist_ok=True)
         self._session.save_session_to_file(pathlib.Path(self._credentials_file))
@@ -127,8 +132,10 @@ class MusicTidalPlugin(RunnablePlugin):
             return
 
         url = event.args.get('url')
-        assert url, 'Missing "url" in TIDAL login callback event'
-        assert self._session, 'TIDAL session is not initialized'
+        if not (url):
+            raise AssertionError('Missing "url" in TIDAL login callback event')
+        if not (self._session):
+            raise AssertionError('TIDAL session is not initialized')
         token_data = self._session.pkce_get_auth_token(url)
 
         self._session.process_auth_token(token_data)
@@ -138,9 +145,8 @@ class MusicTidalPlugin(RunnablePlugin):
     def _ensure_user_playlist(playlist):
         from tidalapi import UserPlaylist
 
-        assert isinstance(
-            playlist, UserPlaylist
-        ), 'This operation is only possible on user playlists'
+        if not (isinstance(playlist, UserPlaylist)):
+            raise AssertionError('This operation is only possible on user playlists')
         return playlist
 
     @property
@@ -157,16 +163,16 @@ class MusicTidalPlugin(RunnablePlugin):
             # Create a new session if we couldn't load an existing one
             self._create_new_session()
 
-        assert (
-            self._session.user and self._session.check_login()
-        ), 'Could not connect to TIDAL'
+        if not (self._session.user and self._session.check_login()):
+            raise AssertionError('Could not connect to TIDAL')
 
         return self._session
 
     @property
     def user(self):
         user = self.session.user
-        assert user, 'Not logged in'
+        if not (user):
+            raise AssertionError('Not logged in')
         return user
 
     @action
@@ -338,9 +344,8 @@ class MusicTidalPlugin(RunnablePlugin):
         :param track_id: ID of the track to remove.
         :param index: Index of the track to remove.
         """
-        assert not (
-            track_id is None and index is None
-        ), 'Please specify either track_id or index'
+        if track_id is None and index is None:
+            raise AssertionError('Please specify either track_id or index')
 
         pl = self.session.playlist(playlist_id)
         pl = self._ensure_user_playlist(pl)

@@ -231,7 +231,8 @@ class InspectPlugin(Plugin):
         if not os.path.isfile(filename):
             filename = os.path.join(path, *modname.split('.'), '__init__.py')
 
-        assert os.path.isfile(filename), f'No such file or directory: {filename}'
+        if not (os.path.isfile(filename)):
+            raise AssertionError(f'No such file or directory: {filename}')
         return filename
 
     def _cache_integration(self, integration: Integration) -> dict:

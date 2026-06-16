@@ -76,9 +76,10 @@ class TorrentsCsvLocalProvider(TorrentsCsvBaseProvider):
             from a local copy of the CSV file.
         """
         super().__init__(**kwargs)
-        assert (
-            download_csv or csv_path or db_path
-        ), 'You must provide either download_csv, csv_path or db_path'
+        if not (download_csv or csv_path or db_path):
+            raise AssertionError(
+                'You must provide either download_csv, csv_path or db_path'
+            )
 
         self._init_csv_lock = RLock()
         self._init_db_lock = RLock()
@@ -104,8 +105,10 @@ class TorrentsCsvLocalProvider(TorrentsCsvBaseProvider):
             with self._init_db_lock:
                 self._build_db(csv_path=csv_path, db_path=db_path)
 
-        assert db_path, 'No download_csv, csv_path or db_path provided'
-        assert os.path.isfile(db_path), f'Invalid db_path: {db_path}'
+        if not (db_path):
+            raise AssertionError('No download_csv, csv_path or db_path provided')
+        if not (os.path.isfile(db_path)):
+            raise AssertionError(f'Invalid db_path: {db_path}')
         self.db_path = db_path
 
     def _get_engine(self):

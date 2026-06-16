@@ -66,17 +66,20 @@ class NextcloudNotesPlugin(BaseNotePlugin):
         self.username = username or nc_config.get('username', '')
         self.password = password or nc_config.get('password', '')
 
-        assert (
-            self.url
-        ), 'Nextcloud URL is required, either in this plugin or in the Nextcloud plugin configuration'
+        if not (self.url):
+            raise AssertionError(
+                'Nextcloud URL is required, either in this plugin or in the Nextcloud plugin configuration'
+            )
 
-        assert (
-            self.username
-        ), 'Nextcloud username is required, either in this plugin or in the Nextcloud plugin configuration'
+        if not (self.username):
+            raise AssertionError(
+                'Nextcloud username is required, either in this plugin or in the Nextcloud plugin configuration'
+            )
 
-        assert (
-            self.password
-        ), 'Nextcloud password is required, either in this plugin or in the Nextcloud plugin configuration'
+        if not (self.password):
+            raise AssertionError(
+                'Nextcloud password is required, either in this plugin or in the Nextcloud plugin configuration'
+            )
 
         self.settings = self._get_settings()
 

@@ -26,7 +26,8 @@ class CameraGstreamerPlugin(CameraPlugin):
         pipeline = Pipeline()
         src = pipeline.add_source('v4l2src', device=camera.info.device)
         convert = pipeline.add('videoconvert')
-        assert camera.info and camera.info.resolution
+        if not (camera.info and camera.info.resolution):
+            raise AssertionError
 
         video_filter = pipeline.add(
             'capsfilter',

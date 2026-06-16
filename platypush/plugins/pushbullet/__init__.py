@@ -157,7 +157,8 @@ class PushbulletPlugin(RunnablePlugin):
         with self._init_lock:
             self._initialize()
 
-        assert self._pb
+        if not (self._pb):
+            raise AssertionError
         return self._pb
 
     @property
@@ -168,7 +169,8 @@ class PushbulletPlugin(RunnablePlugin):
         with self._init_lock:
             self._initialize()
 
-        assert self._device
+        if not (self._device):
+            raise AssertionError
         return self._device
 
     @property
@@ -191,7 +193,8 @@ class PushbulletPlugin(RunnablePlugin):
         return resp.json()
 
     def get_device_id(self):
-        assert self._pb
+        if not (self._pb):
+            raise AssertionError
 
         try:
             return self._pb.get_device(self.device_name).device_iden
@@ -220,9 +223,10 @@ class PushbulletPlugin(RunnablePlugin):
     def on_close(self, args=None):
         err = args[0] if args else None
         self.close()
-        assert not err or self.should_stop(), 'Pushbullet connection closed: ' + str(
-            err or 'unknown error'
-        )
+        if not (not err or self.should_stop()):
+            raise AssertionError(
+                'Pushbullet connection closed: ' + str(err or 'unknown error')
+            )
 
     def on_error(self, *args):
         raise RuntimeError('Pushbullet error: ' + str(args))
@@ -381,7 +385,8 @@ class PushbulletPlugin(RunnablePlugin):
         dev = None
         if device:
             dev = self._get_device(device)
-            assert dev, f'No such device: {device}'
+            if not (dev):
+                raise AssertionError(f'No such device: {device}')
 
         kwargs['body'] = body
         kwargs['title'] = title
@@ -408,7 +413,8 @@ class PushbulletPlugin(RunnablePlugin):
         dev = None
         if device:
             dev = self._get_device(device)
-            assert dev, f'No such device: {device}'
+            if not (dev):
+                raise AssertionError(f'No such device: {device}')
 
         upload_req = self._request(
             'post',

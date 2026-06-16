@@ -50,11 +50,15 @@ class BaseMailPlugin(ABC):  # pylint: disable=too-few-public-methods
         domain: Optional[str],
     ) -> ServerConfig:
         url = urlparse(server)
-        assert url.hostname, f'No hostname specified: "{server}"'
+        if not (url.hostname):
+            raise AssertionError(f'No hostname specified: "{server}"')
 
         ssl = TransportEncryption.by_url_scheme(url.scheme)
         port = url.port or cls.default_ports().get(ssl)
-        assert port, f'No port specified and no default available: "{server}"'
+        if not (port):
+            raise AssertionError(
+                f'No port specified and no default available: "{server}"'
+            )
 
         if keyfile:
             keyfile = cls._get_path(keyfile)
@@ -110,14 +114,16 @@ class BaseMailPlugin(ABC):  # pylint: disable=too-few-public-methods
         from ._utils import mail_plugins
 
         url_parsed = urlparse(server)
-        assert url_parsed.hostname, f'No hostname specified: "{server}"'
+        if not (url_parsed.hostname):
+            raise AssertionError(f'No hostname specified: "{server}"')
 
         mail_cls = next(
             (plugin for plugin in mail_plugins if plugin.can_handle(server)),
             None,
         )
 
-        assert mail_cls, f'No mail plugin found for URL: "{server}"'
+        if not (mail_cls):
+            raise AssertionError(f'No mail plugin found for URL: "{server}"')
         return mail_cls(
             server=server,
             account=account,

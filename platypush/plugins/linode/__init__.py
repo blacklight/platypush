@@ -63,7 +63,8 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
             raise AssertionError(f'Invalid instance type: {type(instance)}')
 
         instances = client.linode.instances(*filters)
-        assert instances, f'No such Linode instance: {instance}'
+        if not (instances):
+            raise AssertionError(f'No such Linode instance: {instance}')
         return instances[0]
 
     @classmethod
@@ -221,7 +222,8 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
         :param token: Default access token override.
         """
         node = self._get_instance(instance=instance, token=token)
-        assert node.reboot(), 'Reboot failed'
+        if not (node.reboot()):
+            raise AssertionError('Reboot failed')
 
     @action
     def boot(self, instance: InstanceId, token: Optional[str] = None, **_):
@@ -232,7 +234,8 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
         :param token: Default access token override.
         """
         node = self._get_instance(instance=instance, token=token)
-        assert node.boot(), 'Boot failed'
+        if not (node.boot()):
+            raise AssertionError('Boot failed')
 
     @action
     def shutdown(self, instance: InstanceId, token: Optional[str] = None, **_):
@@ -243,7 +246,8 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
         :param token: Default access token override.
         """
         node = self._get_instance(instance=instance, token=token)
-        assert node.shutdown(), 'Shutdown failed'
+        if not (node.shutdown()):
+            raise AssertionError('Shutdown failed')
 
     @action
     def set(self, entity: str, value: str, **kwargs):
@@ -261,7 +265,8 @@ class LinodePlugin(RunnablePlugin, CloudInstanceEntityManager, EnumSwitchEntityM
         except (TypeError, ValueError) as e:
             raise AssertionError(f'Invalid entity: {entity}') from e
 
-        assert value in {'boot', 'reboot', 'shutdown'}, f'Invalid action: {value}'
+        if not (value in {'boot', 'reboot', 'shutdown'}):
+            raise AssertionError(f'Invalid action: {value}')
         method = getattr(self, value)
         return method(instance_id, **kwargs)
 

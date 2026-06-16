@@ -40,7 +40,8 @@ def get_frame_img():
     filename = os.path.join(tempfile.gettempdir(), 'camera_pi.jpg')
     response = send_request('camera.pi.take_picture', image_file=filename)
     frame_file = (response or {}).get('image_file')
-    assert frame_file is not None
+    if not (frame_file is not None):
+        raise AssertionError
 
     return send_from_directory(
         os.path.dirname(frame_file), os.path.basename(frame_file)

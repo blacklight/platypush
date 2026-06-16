@@ -95,10 +95,11 @@ class SpotifyMixin:
         pathlib.Path(self._spotify_data_dir).mkdir(parents=True, exist_ok=True)
 
     def _spotify_assert_keys(self):
-        assert self._spotify_api_credentials, (
-            'No Spotify API credentials provided. '
-            + 'Please register an app on https://developers.spotify.com'
-        )
+        if not (self._spotify_api_credentials):
+            raise AssertionError(
+                'No Spotify API credentials provided. '
+                + 'Please register an app on https://developers.spotify.com'
+            )
 
     def _spotify_authorization_header(self) -> dict:
         self._spotify_assert_keys()
@@ -234,7 +235,8 @@ class SpotifyMixin:
             self._spotify_logger.warning(e)
 
         http = get_backend('http')
-        assert http, 'HTTP backend not configured'
+        if not (http):
+            raise AssertionError('HTTP backend not configured')
         callback_url = '{scheme}://{host}:{port}/spotify/auth_callback'.format(
             scheme="https" if http.ssl_context else "http",
             host=get_ip_or_hostname(),
@@ -258,7 +260,8 @@ class SpotifyMixin:
         msg = json.loads(
             redis.blpop(self.get_spotify_queue_for_state(state))[1].decode()
         )
-        assert not msg.get('error'), f'Authentication error: {msg["error"]}'
+        if msg.get('error'):
+            raise AssertionError(f'Authentication error: {msg["error"]}')
         self._spotify_user_authenticate_phase_2(
             code=msg['code'], callback_url=callback_url, scopes=scopes
         )

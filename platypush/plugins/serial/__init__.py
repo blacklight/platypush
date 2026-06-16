@@ -120,10 +120,11 @@ class SerialPlugin(SensorPlugin):
         max_size = max_size or self._max_size
 
         while True:
-            assert len(output) <= max_size, (
-                'Maximum allowed size exceeded while reading from the device: '
-                f'read {len(output)} bytes'
-            )
+            if not (len(output) <= max_size):
+                raise AssertionError(
+                    'Maximum allowed size exceeded while reading from the device: '
+                    f'read {len(output)} bytes'
+                )
 
             ch = serial_port.read()
             if not ch:
@@ -169,11 +170,15 @@ class SerialPlugin(SensorPlugin):
             connection will be reset and a new one will be created instead.
         """
         if not device:
-            assert self.device, 'No device specified nor default device configured'
+            if not (self.device):
+                raise AssertionError(
+                    'No device specified nor default device configured'
+                )
             device = self.device
 
         if baud_rate is None:
-            assert self.baud_rate, 'No baud_rate specified nor default configured'
+            if not (self.baud_rate):
+                raise AssertionError('No baud_rate specified nor default configured')
             baud_rate = self.baud_rate
 
         if self.serial:
@@ -230,15 +235,17 @@ class SerialPlugin(SensorPlugin):
         """
 
         if not device:
-            assert (
-                self.device
-            ), 'No device specified and a default one is not configured'
+            if not (self.device):
+                raise AssertionError(
+                    'No device specified and a default one is not configured'
+                )
             device = self.device
 
         if baud_rate is None:
-            assert (
-                self.baud_rate is not None
-            ), 'No baud_rate specified nor a default value is configured'
+            if not (self.baud_rate is not None):
+                raise AssertionError(
+                    'No baud_rate specified nor a default value is configured'
+                )
             baud_rate = self.baud_rate
 
         return _DeviceAndRate(device, baud_rate)
@@ -304,18 +311,19 @@ class SerialPlugin(SensorPlugin):
         """
 
         device, baud_rate = self._get_device_and_baud_rate(device, baud_rate)
-        assert not (
-            (size is None and end is None) or (size is not None and end is not None)
-        ), 'Either size or end must be specified'
+        if (size is None and end is None) or (size is not None and end is not None):
+            raise AssertionError('Either size or end must be specified')
 
-        assert not (
-            end and isinstance(end, str) and len(end) > 1
-        ), 'The serial end must be a single character, not a string'
+        if end and isinstance(end, str) and len(end) > 1:
+            raise AssertionError(
+                'The serial end must be a single character, not a string'
+            )
 
         data = bytes()
 
         with get_lock(self.serial_lock, timeout=self._timeout) as serial_available:
-            assert serial_available, 'Serial read timed out'
+            if not (serial_available):
+                raise AssertionError('Serial read timed out')
 
             ser = self._get_serial(device=device, baud_rate=baud_rate)
             if size is not None:
@@ -364,7 +372,8 @@ class SerialPlugin(SensorPlugin):
 
         data = bytes(data)
         with get_lock(self.serial_lock, timeout=self._timeout) as serial_available:
-            assert serial_available, 'Could not acquire the device lock'
+            if not (serial_available):
+                raise AssertionError('Could not acquire the device lock')
             ser = self._get_serial(device=device, baud_rate=baud_rate)
             self.logger.info('Writing %d bytes to %s', len(data), device)
             ser.write(data)

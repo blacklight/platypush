@@ -152,7 +152,8 @@ class CameraPlugin(RunnablePlugin, ABC):
 
         workdir = Config.get('workdir')
         plugin_name = get_plugin_name_by_class(self)
-        assert isinstance(workdir, str) and plugin_name
+        if not (isinstance(workdir, str) and plugin_name):
+            raise AssertionError
         self.workdir = os.path.join(workdir, plugin_name)
         self._stream_on_start = stream_on_start
         pathlib.Path(self.workdir).mkdir(mode=0o755, exist_ok=True, parents=True)
@@ -214,7 +215,8 @@ class CameraPlugin(RunnablePlugin, ABC):
         else:
             info = self._devices[device].info.clone()
 
-        assert device is not None, 'No device specified/configured'
+        if not (device is not None):
+            raise AssertionError('No device specified/configured')
         if device in self._devices:
             camera = self._devices[device]
             if (
@@ -246,7 +248,8 @@ class CameraPlugin(RunnablePlugin, ABC):
         return camera
 
     def _prepare_stream_writer(self, camera: Camera, redis_queue: Optional[str] = None):
-        assert camera.info.stream_format, 'No stream format specified'
+        if not (camera.info.stream_format):
+            raise AssertionError('No stream format specified')
         writer_class = StreamWriter.get_class_by_name(camera.info.stream_format)
         camera.stream = writer_class(
             camera=camera, plugin=self, redis_queue=redis_queue
@@ -559,9 +562,8 @@ class CameraPlugin(RunnablePlugin, ABC):
         :param camera: An initialized :class:`platypush.plugins.camera.Camera` object.
         :param preview: Show a preview of the camera frames.
         """
-        assert not (
-            camera.capture_thread and camera.capture_thread.is_alive()
-        ), 'A capture session is already in progress'
+        if camera.capture_thread and camera.capture_thread.is_alive():
+            raise AssertionError('A capture session is already in progress')
 
         camera.capture_thread = threading.Thread(
             target=self.capturing_thread,
@@ -788,7 +790,8 @@ class CameraPlugin(RunnablePlugin, ABC):
             info['stream_format'] = stream_format
             camera = self.open_device(stream=True, **info)
 
-        assert camera.stream, 'No camera stream available'
+        if not (camera.stream):
+            raise AssertionError('No camera stream available')
         camera.stream.sock = sock
         self.start_camera(camera, duration=duration, frames_dir=None, image_file=None)
         self._wait_stream_stop(camera)
@@ -859,11 +862,16 @@ class CameraPlugin(RunnablePlugin, ABC):
     def _start_streaming(
         self, camera: Camera, duration: Optional[float], stream_format: str
     ):
-        assert camera.info.listen_port, 'No listen_port specified/configured'
-        assert (
+        if not (camera.info.listen_port):
+            raise AssertionError('No listen_port specified/configured')
+        if not (
             not camera.stream_event.is_set() and camera.info.device not in self._streams
-        ), f'A streaming session is already running for device {camera.info.device}'
-        assert camera.info.device is not None, 'No device name available'
+        ):
+            raise AssertionError(
+                f'A streaming session is already running for device {camera.info.device}'
+            )
+        if not (camera.info.device is not None):
+            raise AssertionError('No device name available')
 
         self._streams[camera.info.device] = camera
         camera.stream_event.set()

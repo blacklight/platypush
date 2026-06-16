@@ -42,7 +42,8 @@ class DbMixin(NotesIndexMixin, ABC):  # pylint: disable=too-few-public-methods
         Get the database plugin instance for the current context.
         """
         db = get_plugin(DbPlugin)
-        assert db is not None, 'Database plugin not found'
+        if not (db is not None):
+            raise AssertionError('Database plugin not found')
         return db
 
     @contextmanager
