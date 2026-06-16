@@ -84,7 +84,7 @@ multiple services and devices with [hundreds of supported
 integrations](https://docs.platypush.tech/plugins.html).
 
 It enables users to create their own self-hosted pieces of automation based on
-events (*if this happens then do that*)
+events (_if this happens then do that*)
 and it provides a comprehensive and customizable user interface that collects
 everything you need to visualize and control under one roof.
 
@@ -191,11 +191,11 @@ great versatility to build arbitrarily complex automation routines:
   and so on.
 
   - 🪝 **Hooks**. Users can define custom callbacks on events in the form of
-    *hooks*. Hooks can contain lists of actions to execute when a certain event
-    matches the hook *condition*, or any kind of custom logic - for example,
-    *send a notification on my phone when the presence sensor in my garage goes
-    on*, or *use a TTS plugin to process the digest of the latest RSS feeds if
-    I tell the voice assistant "play the news"*. Event hooks can be expressed
+    _hooks*. Hooks can contain lists of actions to execute when a certain event
+    matches the hook _condition*, or any kind of custom logic - for example,
+    _send a notification on my phone when the presence sensor in my garage goes
+    on_, or *use a TTS plugin to process the digest of the latest RSS feeds if
+    I tell the voice assistant "play the news"_. Event hooks can be expressed
     either in YAML format or as Python runtime scripts.
 
 - 📜 **Procedures**. Procedures are custom snippets of logic that can be invoked
@@ -586,11 +586,11 @@ or tags.
 
   Where:
 
-  - `deb_version` can be either:
+- `deb_version` can be either:
 
-    - `stable`: current Debian stable
-    - `oldstable`: previous Debian stable
-    - `ubuntu`: latest Ubuntu release
+  - `stable`: current Debian stable
+  - `oldstable`: previous Debian stable
+  - `ubuntu`: latest Ubuntu release
 
   - `branch` can be either:
 
