@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `assistant`: Added `input_device` support to assistant plugins backed by the
+  shared `AudioRecorder`, including `assistant.vosk`, `assistant.openai`,
+  `assistant.openwakeword` and `assistant.picovoice`.
+
+- `tts`: Added `output_device` support to the shared TTS playback path and to
+  `tts.picovoice`, so TTS plugins can target a specific audio output device.
+
+
 ## [1.3.23]
 
 ### Fixed
