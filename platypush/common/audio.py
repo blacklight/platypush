@@ -84,11 +84,30 @@ def resolve_audio_device(device: AudioDeviceName, kind: str) -> AudioDeviceName:
     if not isinstance(device, str):
         return device
 
-    return (
-        _pulse_device_descriptions(kind).get(device)
-        or _resolve_device_by_tokens(device, kind)
-        or device
-    )
+    candidates = [
+        candidate
+        for candidate in (_pulse_device_descriptions(kind).get(device), device)
+        if candidate
+    ]
+
+    for candidate in candidates:
+        if _is_sounddevice_device(candidate, kind):
+            return candidate
+
+    for candidate in candidates:
+        resolved = _resolve_device_by_tokens(candidate, kind)
+        if resolved:
+            return resolved
+
+    return device
+
+
+def _is_sounddevice_device(device: str, kind: str) -> bool:
+    try:
+        sd.query_devices(device=device, kind=kind)
+        return True
+    except (sd.PortAudioError, ValueError):
+        return False
 
 
 def _resolve_device_by_tokens(device: str, kind: str) -> Optional[str]:

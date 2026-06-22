@@ -1,11 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `assistant`: Made the audio device detection more robust.
+
 ## [1.3.26]
 
 ### Fixed
 
-- `assistant`: Added best-effort fallback for audio device where `pactl` is
-  unavailable.
+- `assistant`: Added best-effort fallback for audio devices when `pactl` is
+  unavailable, or when the PulseAudio/PipeWire description returned by `pactl`
+  does not match any PortAudio device name.
 
 ## [1.3.25]
 
