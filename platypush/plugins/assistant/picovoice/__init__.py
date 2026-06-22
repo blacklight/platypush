@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Union
 
 from platypush.context import get_plugin
 from platypush.plugins import RunnablePlugin, action
@@ -364,6 +364,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         enable_automatic_punctuation: bool = False,
         start_conversation_on_hotword: bool = True,
         audio_queue_size: int = 100,
+        input_device: Optional[Union[int, str]] = None,
         conversation_timeout: Optional[float] = 7.5,
         muted: bool = False,
         **kwargs,
@@ -472,6 +473,8 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             audio frame drops too often. Keep in mind that increasing this value
             will increase the memory usage of the integration. Also, a higher
             value may result in higher accuracy at the cost of higher latency.
+        :param input_device: Audio input device to use for recording. It can be
+            a device index or name. Default: system default input device.
         :param conversation_timeout: Maximum time to wait for some speech to be
             detected after the hotword is detected. If no speech is detected
             within this time, the conversation will time out and the plugin will
@@ -511,6 +514,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
                 else False
             ),
             'audio_queue_size': audio_queue_size,
+            'input_device': input_device,
             'conversation_timeout': conversation_timeout,
             'muted': muted,
             'on_conversation_start': self._on_conversation_start,

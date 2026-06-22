@@ -40,6 +40,8 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
     :param pause_seconds_after_hotword: Number of seconds to pause
         detection after a hotword is detected, to prevent multiple
         detections of the same hotword. Default: 2.0 seconds.
+    :param input_device: Audio input device to use for recording. It can be a
+        device index or name. Default: system default input device.
     """
 
     def __init__(
@@ -51,6 +53,7 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
         enable_speex_noise_suppression: Optional[bool] = None,
         audio_frame_timeout: float = 5.0,
         pause_seconds_after_hotword: float = 2.0,
+        input_device: Optional[Union[int, str]] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -74,6 +77,7 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
 
         self.detection_sensitivity = 1.0 - detection_sensitivity
         self.frame_duration = frame_duration
+        self.input_device = input_device
         self._pause_seconds_after_hotword = pause_seconds_after_hotword
         self._audio_frame_timeout = audio_frame_timeout
         self._recorder: Optional[AudioRecorder] = None
@@ -163,6 +167,7 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
                     dtype='int16',
                     frame_size=int(16000 * self.frame_duration),
                     channels=1,
+                    device=self.input_device,
                     open_retries=1,
                 ) as self._recorder:
                     while (

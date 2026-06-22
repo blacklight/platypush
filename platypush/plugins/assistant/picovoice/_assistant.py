@@ -3,7 +3,7 @@ import os
 from queue import Full, Queue
 from threading import Event, RLock, Thread
 from time import time
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, Union
 
 import pvporcupine
 
@@ -46,6 +46,7 @@ class Assistant(Thread):
         enable_automatic_punctuation: bool = False,
         start_conversation_on_hotword: bool = False,
         audio_queue_size: int = 100,
+        input_device: Optional[Union[int, str]] = None,
         muted: bool = False,
         conversation_timeout: Optional[float] = None,
         on_conversation_start=_default_callback,
@@ -70,6 +71,7 @@ class Assistant(Thread):
         self.enable_automatic_punctuation = enable_automatic_punctuation
         self.start_conversation_on_hotword = start_conversation_on_hotword
         self.audio_queue_size = audio_queue_size
+        self.input_device = input_device
         self._responding = Event()
         self._muted = muted
         self._speech_model_path = speech_model_path
@@ -257,6 +259,7 @@ class Assistant(Thread):
                 queue_size=self.audio_queue_size,
                 paused=self._muted,
                 channels=1,
+                device=self.input_device,
             )
 
             self._speech_processor.__enter__()

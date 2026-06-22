@@ -1,5 +1,5 @@
 import urllib.parse
-from typing import Optional
+from typing import Optional, Union
 
 from platypush.context import get_plugin
 from platypush.plugins import Plugin, action
@@ -11,21 +11,39 @@ class TtsPlugin(Plugin):
     frontend API.
     """
 
-    def __init__(self, language='en-US', **player_args):
+    def __init__(
+        self,
+        language='en-US',
+        output_device: Optional[Union[int, str]] = None,
+        **player_args,
+    ):
         """
         :param language: Language code (default: ``en-US``).
+        :param output_device: Audio output device to use for playback. It can
+            be a device index or name. If specified, it is passed as the
+            ``device`` argument to :meth:`platypush.plugins.sound.SoundPlugin.play`.
         :param player_args: Additional arguments to be passed to
             :meth:`platypush.plugins.sound.SoundPlugin.play` (like volume,
             duration, channels etc.).
         """
         super().__init__()
         self.language = language
+        self.output_device = output_device
         self.player_args = player_args or {}
+        if output_device is not None:
+            self.player_args.setdefault('device', output_device)
 
-    def _playback(self, resource: str, **kwargs):
+    def _playback(
+        self,
+        resource: str,
+        output_device: Optional[Union[int, str]] = None,
+        **kwargs,
+    ):
         audio = get_plugin('sound')
         if not (audio):
             raise AssertionError
+        if output_device is not None:
+            kwargs['device'] = output_device
         audio.play(resource, **{**self.player_args, **kwargs})
 
     @action
@@ -42,7 +60,7 @@ class TtsPlugin(Plugin):
         :param language: Language code override.
         :param player_args: Extends the additional arguments to be passed to
             :meth:`platypush.plugins.sound.SoundPlugin.play` (like volume,
-            duration, channels etc.).
+            duration, channels, output_device etc.).
         """
         language = language or self.language
         url = 'https://translate.google.com/translate_tts?' + urllib.parse.urlencode(

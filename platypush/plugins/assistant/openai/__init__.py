@@ -1,6 +1,6 @@
 from io import BytesIO
 from threading import Event
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 from pydub import AudioSegment
@@ -194,6 +194,7 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         sample_rate: int = 16000,
         frame_size: int = 16384,
         channels: int = 1,
+        input_device: Optional[Union[int, str]] = None,
         conversation_start_timeout: float = 5.0,
         conversation_end_timeout: float = 1.0,
         conversation_max_duration: float = 15.0,
@@ -216,6 +217,8 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
             ``sample_rate`` isn't smaller than the minimum silence duration,
             otherwise the silence detection won't work properly.
         :param channels: Number of recording channels (default: 1).
+        :param input_device: Audio input device to use for recording. It can be
+            a device index or name. Default: system default input device.
         :param conversation_start_timeout: How long to wait for the
             conversation to start (i.e. the first non-silent audio frame to be
             detected) before giving up and stopping the recording (default: 5.0
@@ -235,6 +238,7 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         self._sample_rate = sample_rate
         self._frame_size = frame_size
         self._channels = channels
+        self._input_device = input_device
         self._conversation_start_timeout = conversation_start_timeout
         self._conversation_end_timeout = conversation_end_timeout
         self._conversation_max_duration = conversation_max_duration
@@ -319,6 +323,7 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
                     sample_rate=self._sample_rate,
                     frame_size=self._frame_size,
                     channels=self._channels,
+                    device=self._input_device,
                 ) as self._recorder:
                     self._capture_audio(self._recorder)
             finally:

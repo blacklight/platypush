@@ -2,7 +2,7 @@ from logging import getLogger
 from queue import Empty, Full, Queue
 from threading import Event
 from time import sleep, time
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import sounddevice as sd
@@ -24,6 +24,7 @@ class AudioRecorder:
         sample_rate: int,
         frame_size: int,
         channels: int,
+        device: Optional[Union[int, str]] = None,
         paused: bool = False,
         dtype: str = 'int16',
         queue_size: int = 100,
@@ -33,6 +34,7 @@ class AudioRecorder:
         self._audio_queue: Queue[AudioFrame] = Queue(maxsize=queue_size)
         self.frame_size = frame_size
         self._target_sample_rate = sample_rate
+        self._device = device
         self._dtype = dtype
         self._stop_event = Event()
         self._upstream_stop_event = stop_event
@@ -45,6 +47,7 @@ class AudioRecorder:
         self.stream, self._actual_sample_rate = self._open_stream(
             sample_rate=sample_rate,
             channels=channels,
+            device=device,
             dtype=dtype,
             frame_size=frame_size,
             retries=open_retries,
@@ -54,6 +57,7 @@ class AudioRecorder:
         self,
         sample_rate: int,
         channels: int,
+        device: Optional[Union[int, str]],
         dtype: str,
         frame_size: int,
         retries: int = 5,
@@ -74,6 +78,7 @@ class AudioRecorder:
                 return self._try_open_stream(
                     sample_rate=sample_rate,
                     channels=channels,
+                    device=device,
                     dtype=dtype,
                     frame_size=frame_size,
                 )
@@ -98,6 +103,7 @@ class AudioRecorder:
         self,
         sample_rate: int,
         channels: int,
+        device: Optional[Union[int, str]],
         dtype: str,
         frame_size: int,
     ):
@@ -108,6 +114,7 @@ class AudioRecorder:
         try:
             stream = sd.InputStream(
                 samplerate=sample_rate,
+                device=device,
                 channels=channels,
                 dtype=dtype,
                 blocksize=frame_size,
@@ -122,7 +129,7 @@ class AudioRecorder:
                 raise
 
         # Fall back to the device's default sample rate
-        device_info = sd.query_devices(kind='input')
+        device_info = sd.query_devices(device=device, kind='input')
         native_rate = int(device_info['default_samplerate'])  # type: ignore
         # Adjust blocksize to produce the equivalent duration at the native rate
         native_block = int(frame_size * native_rate / sample_rate)
@@ -135,6 +142,7 @@ class AudioRecorder:
 
         stream = sd.InputStream(
             samplerate=native_rate,
+            device=device,
             channels=channels,
             dtype=dtype,
             blocksize=native_block,

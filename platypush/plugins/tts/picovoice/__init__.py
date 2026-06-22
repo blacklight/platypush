@@ -2,7 +2,7 @@ import logging
 import os
 import re
 from threading import RLock
-from typing import Optional
+from typing import Optional, Union
 
 import numpy as np
 import pvorca
@@ -111,11 +111,19 @@ class TtsPicovoicePlugin(TtsPlugin):
         self._stream: Optional[sd.OutputStream] = None
         self._stream_lock = RLock()
 
-    def _play_audio(self, orca: pvorca.Orca, pcm: np.ndarray):
+    def _play_audio(
+        self,
+        orca: pvorca.Orca,
+        pcm: np.ndarray,
+        output_device: Optional[Union[int, str]] = None,
+    ):
         with self._stream_lock:
             self.stop()
             self._stream = sd.OutputStream(
                 samplerate=orca.sample_rate,
+                device=(
+                    output_device if output_device is not None else self.output_device
+                ),
                 channels=1,
                 dtype='int16',
             )
@@ -151,6 +159,7 @@ class TtsPicovoicePlugin(TtsPlugin):
         text: str,
         *_,
         output_file: Optional[str] = None,
+        output_device: Optional[Union[int, str]] = None,
         speech_rate: Optional[float] = None,
         model_path: Optional[str] = None,
         **__,
@@ -161,6 +170,9 @@ class TtsPicovoicePlugin(TtsPlugin):
         :param text: Text to say.
         :param output_file: If set, save the audio to the specified file.
             Otherwise play it.
+        :param output_device: Audio output device to use for playback. It can
+            be a device index or name. Overrides the plugin's configured
+            ``output_device``.
         :param speech_rate: Speech rate (default: None).
         :param model_path: Path of the TTS model file (default: use the default
             configured model).
@@ -178,6 +190,7 @@ class TtsPicovoicePlugin(TtsPlugin):
 
         self._play_audio(
             orca=orca,
+            output_device=output_device,
             pcm=np.array(
                 orca.synthesize(text, speech_rate=speech_rate)[0],
                 dtype='int16',

@@ -7,7 +7,7 @@ import urllib.request
 import zipfile
 
 from threading import Event
-from typing import Optional
+from typing import Optional, Union
 
 from platypush.common.assistant import AudioRecorder
 from platypush.config import Config
@@ -103,6 +103,7 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         sample_rate: int = 16000,
         frame_size: int = 4000,
         channels: int = 1,
+        input_device: Optional[Union[int, str]] = None,
         conversation_start_timeout: float = 5.0,
         conversation_end_timeout: float = 1.5,
         conversation_max_duration: float = 15.0,
@@ -127,6 +128,8 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
             per frame.
         :param channels: Number of audio channels (default: 1). Vosk requires
             mono audio.
+        :param input_device: Audio input device to use for recording. It can be
+            a device index or name. Default: system default input device.
         :param conversation_start_timeout: Seconds to wait for speech after
             starting a conversation before timing out (default: 5.0).
         :param conversation_end_timeout: Seconds of silence after the last
@@ -150,6 +153,7 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         self._sample_rate = sample_rate
         self._frame_size = frame_size
         self._channels = channels
+        self._input_device = input_device
         self._conversation_start_timeout = conversation_start_timeout
         self._conversation_end_timeout = conversation_end_timeout
         self._conversation_max_duration = conversation_max_duration
@@ -373,6 +377,7 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
                 sample_rate=self._sample_rate,
                 frame_size=self._frame_size,
                 channels=self._channels,
+                device=self._input_device,
             ) as recorder:
                 self._recorder = recorder
 
