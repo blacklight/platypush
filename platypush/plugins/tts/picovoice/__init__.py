@@ -9,6 +9,7 @@ import pvorca
 import sounddevice as sd
 
 from platypush.config import Config
+from platypush.common.audio import resolve_audio_device
 from platypush.plugins import action
 from platypush.plugins.tts import TtsPlugin
 
@@ -121,8 +122,13 @@ class TtsPicovoicePlugin(TtsPlugin):
             self.stop()
             self._stream = sd.OutputStream(
                 samplerate=orca.sample_rate,
-                device=(
-                    output_device if output_device is not None else self.output_device
+                device=resolve_audio_device(
+                    (
+                        output_device
+                        if output_device is not None
+                        else self.output_device
+                    ),
+                    'output',
                 ),
                 channels=1,
                 dtype='int16',
@@ -170,9 +176,11 @@ class TtsPicovoicePlugin(TtsPlugin):
         :param text: Text to say.
         :param output_file: If set, save the audio to the specified file.
             Otherwise play it.
-        :param output_device: Audio output device to use for playback. It can
-            be a device index or name. Overrides the plugin's configured
-            ``output_device``.
+        :param output_device: Audio output device to use for playback.
+            Supported formats: PortAudio/sounddevice device index,
+            PortAudio/sounddevice device name, or PulseAudio/PipeWire sink name
+            (e.g. ``alsa_output.pci-...``; requires ``pactl``). Overrides the
+            plugin's configured ``output_device``.
         :param speech_rate: Speech rate (default: None).
         :param model_path: Path of the TTS model file (default: use the default
             configured model).

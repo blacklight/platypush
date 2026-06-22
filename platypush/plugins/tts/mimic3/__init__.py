@@ -41,6 +41,11 @@ class TtsMimic3Plugin(TtsPlugin):
         :param voice: Default voice to be used (default: ``en_US/vctk_low``).
             You can get a full list of the voices available on the server
             through :meth:`.voices`.
+        :param kwargs: Extra arguments to be passed to the
+            :class:`platypush.plugins.tts.TtsPlugin` constructor, including
+            ``output_device``. ``output_device`` accepts a
+            PortAudio/sounddevice device index, PortAudio/sounddevice device
+            name, or PulseAudio/PipeWire sink name (requires ``pactl``).
         """
         super().__init__(**kwargs)
         self.server_url = server_url

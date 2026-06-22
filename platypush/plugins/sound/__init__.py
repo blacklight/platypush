@@ -38,12 +38,18 @@ class SoundPlugin(RunnablePlugin):
         **kwargs,
     ):
         """
-        :param input_device: Index or name of the default input device. Use
-            :meth:`.status` to get the available devices. Default: system
-            default
-        :param output_device: Index or name of the default output device.
-            Use :meth:`.status` to get the available devices. Default:
-            system default
+        :param input_device: Default input device. Supported formats:
+            PortAudio/sounddevice device index, PortAudio/sounddevice device
+            name, or PulseAudio/PipeWire source name (e.g.
+            ``alsa_input.usb-...``; requires ``pactl``). Use :meth:`.status` to
+            get the available PortAudio/sounddevice devices. Default: system
+            default.
+        :param output_device: Default output device. Supported formats:
+            PortAudio/sounddevice device index, PortAudio/sounddevice device
+            name, or PulseAudio/PipeWire sink name (e.g.
+            ``alsa_output.pci-...``; requires ``pactl``). Use :meth:`.status`
+            to get the available PortAudio/sounddevice devices. Default:
+            system default.
         :param input_blocksize: Blocksize to be applied to the input device.
             Try to increase this value if you get input overflow errors while
             recording. Default: 1024
@@ -152,8 +158,11 @@ class SoundPlugin(RunnablePlugin):
                         }
                     ]
 
-        :param device: Output device (default: default configured device or
-            system default audio output if not configured)
+        :param device: Output device. Supported formats:
+            PortAudio/sounddevice device index, PortAudio/sounddevice device
+            name, or PulseAudio/PipeWire sink name (e.g.
+            ``alsa_output.pci-...``; requires ``pactl``). Default: configured
+            default output device or system default audio output.
         :param duration: Playback duration, in seconds. Default: None - play
             until the end of the audio source or until :meth:`.stop_playback`.
         :param blocksize: Audio block size (default: configured
@@ -271,11 +280,17 @@ class SoundPlugin(RunnablePlugin):
         """
         Return audio data from an audio source
 
-        :param device: Input device (default: default configured device or
-            system default audio input if not configured)
+        :param device: Input device. Supported formats:
+            PortAudio/sounddevice device index, PortAudio/sounddevice device
+            name, or PulseAudio/PipeWire source name (e.g.
+            ``alsa_input.usb-...``; requires ``pactl``). Default: configured
+            default input device or system default audio input.
         :param output_device: Audio output device if ``play_audio=True`` (audio
-            pass-through) (default: default configured device or system default
-            audio output if not configured)
+            pass-through). Supported formats: PortAudio/sounddevice device
+            index, PortAudio/sounddevice device name, or PulseAudio/PipeWire
+            sink name (e.g. ``alsa_output.pci-...``; requires ``pactl``).
+            Default: configured default output device or system default audio
+            output.
         :param fifo: Path of a FIFO that will be used to exchange audio frames
             with other consumers.
         :param outfile: If specified, the audio data will be persisted on the

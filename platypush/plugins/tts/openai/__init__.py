@@ -40,6 +40,11 @@ class TtsOpenaiPlugin(TtsPlugin):
             <https://platform.openai.com/docs/guides/text-to-speech/voice-options>`_
             for the list of available voices (default: ``nova``).
         :param timeout: Default timeout for the API requests (default: 10s).
+        :param kwargs: Extra arguments to be passed to the
+            :class:`platypush.plugins.tts.TtsPlugin` constructor, including
+            ``output_device``. ``output_device`` accepts a
+            PortAudio/sounddevice device index, PortAudio/sounddevice device
+            name, or PulseAudio/PipeWire sink name (requires ``pactl``).
         """
         super().__init__(**kwargs)
         openai = get_plugin('openai')

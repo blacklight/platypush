@@ -128,8 +128,11 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
             per frame.
         :param channels: Number of audio channels (default: 1). Vosk requires
             mono audio.
-        :param input_device: Audio input device to use for recording. It can be
-            a device index or name. Default: system default input device.
+        :param input_device: Audio input device to use for recording. Supported
+            formats: PortAudio/sounddevice device index, PortAudio/sounddevice
+            device name, or PulseAudio/PipeWire source name (e.g.
+            ``alsa_input.usb-...``; requires ``pactl``). Default: system
+            default input device.
         :param conversation_start_timeout: Seconds to wait for speech after
             starting a conversation before timing out (default: 5.0).
         :param conversation_end_timeout: Seconds of silence after the last

@@ -7,6 +7,7 @@ from typing import Optional, Union
 import numpy as np
 import sounddevice as sd
 
+from platypush.common.audio import resolve_audio_device
 from platypush.utils import wait_for_either
 
 from ._state import AudioFrame, PauseState
@@ -34,7 +35,7 @@ class AudioRecorder:
         self._audio_queue: Queue[AudioFrame] = Queue(maxsize=queue_size)
         self.frame_size = frame_size
         self._target_sample_rate = sample_rate
-        self._device = device
+        self._device = resolve_audio_device(device, 'input')
         self._dtype = dtype
         self._stop_event = Event()
         self._upstream_stop_event = stop_event
@@ -47,7 +48,7 @@ class AudioRecorder:
         self.stream, self._actual_sample_rate = self._open_stream(
             sample_rate=sample_rate,
             channels=channels,
-            device=device,
+            device=self._device,
             dtype=dtype,
             frame_size=frame_size,
             retries=open_retries,

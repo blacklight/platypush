@@ -473,8 +473,11 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             audio frame drops too often. Keep in mind that increasing this value
             will increase the memory usage of the integration. Also, a higher
             value may result in higher accuracy at the cost of higher latency.
-        :param input_device: Audio input device to use for recording. It can be
-            a device index or name. Default: system default input device.
+        :param input_device: Audio input device to use for recording. Supported
+            formats: PortAudio/sounddevice device index, PortAudio/sounddevice
+            device name, or PulseAudio/PipeWire source name (e.g.
+            ``alsa_input.usb-...``; requires ``pactl``). Default: system
+            default input device.
         :param conversation_timeout: Maximum time to wait for some speech to be
             detected after the hotword is detected. If no speech is detected
             within this time, the conversation will time out and the plugin will

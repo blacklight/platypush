@@ -32,7 +32,10 @@ class TtsGooglePlugin(TtsPlugin):
         :param credentials_file: Where your GCloud credentials for TTS are
             stored, see https://cloud.google.com/text-to-speech/docs/basics.
         :param kwargs: Extra arguments to be passed to the
-            :class:`platypush.plugins.tts.TtsPlugin` constructor.
+            :class:`platypush.plugins.tts.TtsPlugin` constructor, including
+            ``output_device``. ``output_device`` accepts a
+            PortAudio/sounddevice device index, PortAudio/sounddevice device
+            name, or PulseAudio/PipeWire sink name (requires ``pactl``).
         """
         super().__init__(**kwargs)
 

@@ -71,7 +71,10 @@ class TtsPiperPlugin(TtsPlugin):
             playback stream. This avoids clipping the tail of short generated
             speech on some audio backends (default: 1).
         :param kwargs: Extra arguments to be passed to the
-            :class:`platypush.plugins.tts.TtsPlugin` constructor.
+            :class:`platypush.plugins.tts.TtsPlugin` constructor, including
+            ``output_device``. ``output_device`` accepts a
+            PortAudio/sounddevice device index, PortAudio/sounddevice device
+            name, or PulseAudio/PipeWire sink name (requires ``pactl``).
         """
         from piper import PiperVoice
 

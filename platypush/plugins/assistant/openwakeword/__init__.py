@@ -40,8 +40,11 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
     :param pause_seconds_after_hotword: Number of seconds to pause
         detection after a hotword is detected, to prevent multiple
         detections of the same hotword. Default: 2.0 seconds.
-    :param input_device: Audio input device to use for recording. It can be a
-        device index or name. Default: system default input device.
+    :param input_device: Audio input device to use for recording. Supported
+        formats: PortAudio/sounddevice device index, PortAudio/sounddevice
+        device name, or PulseAudio/PipeWire source name (e.g.
+        ``alsa_input.usb-...``; requires ``pactl``). Default: system default
+        input device.
     """
 
     def __init__(
@@ -179,7 +182,7 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
                             continue
 
                         self._audio_queue.put(audio_data)
-            except sd.PortAudioError as e:
+            except (sd.PortAudioError, ValueError) as e:
                 self.logger.warning(
                     'Audio device unavailable: %s. Retrying in 5s...', e
                 )

@@ -2,6 +2,8 @@ from typing import List, Optional
 
 import sounddevice as sd
 
+from platypush.common.audio import resolve_audio_device
+
 from .._model import AudioDevice, DeviceType, StreamType
 
 
@@ -24,8 +26,13 @@ class DeviceManager:
         output_device: Optional[DeviceType] = None,
     ):
         """
-        :param input_device: The default input device to use (by index or name).
-        :param output_device: The default output device to use (by index or name).
+        :param input_device: The default input device to use. Supported
+            formats: PortAudio/sounddevice device index, PortAudio/sounddevice
+            device name, or PulseAudio/PipeWire source name (requires
+            ``pactl``).
+        :param output_device: The default output device to use. Supported
+            formats: PortAudio/sounddevice device index, PortAudio/sounddevice
+            device name, or PulseAudio/PipeWire sink name (requires ``pactl``).
         """
         self.input_device = (
             self.get_device(input_device, StreamType.INPUT)
@@ -65,9 +72,11 @@ class DeviceManager:
 
         Either ``device`` or ``type`` have to be specified.
 
-        :param device: The device to search for, either by index or name. If
-            not specified, then the default device for the given type is
-            returned.
+        :param device: The device to search for. Supported formats:
+            PortAudio/sounddevice device index, PortAudio/sounddevice device
+            name, or PulseAudio/PipeWire source/sink name (requires
+            ``pactl``). If not specified, then the default device for the given
+            type is returned.
         :param type: The type of the device to search.
         """
         if not (device or type):
@@ -77,6 +86,10 @@ class DeviceManager:
                 return self.input_device
             if type == StreamType.OUTPUT and self.output_device is not None:
                 return self.output_device
+        else:
+            device = resolve_audio_device(
+                device, type.value if type else StreamType.OUTPUT.value
+            )
 
         all_devices: List[dict] = sd.query_devices()  # type: ignore
         if not (all_devices):
@@ -86,7 +99,7 @@ class DeviceManager:
             dev: dict = sd.query_devices(
                 kind=type.value if type else None, device=device  # type: ignore
             )
-        except sd.PortAudioError as e:
+        except (sd.PortAudioError, ValueError) as e:
             raise AssertionError(
                 f'Could not get device for type={type} and device={device}: {e}',
                 type,

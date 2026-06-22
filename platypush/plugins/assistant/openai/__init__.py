@@ -217,8 +217,11 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
             ``sample_rate`` isn't smaller than the minimum silence duration,
             otherwise the silence detection won't work properly.
         :param channels: Number of recording channels (default: 1).
-        :param input_device: Audio input device to use for recording. It can be
-            a device index or name. Default: system default input device.
+        :param input_device: Audio input device to use for recording. Supported
+            formats: PortAudio/sounddevice device index, PortAudio/sounddevice
+            device name, or PulseAudio/PipeWire source name (e.g.
+            ``alsa_input.usb-...``; requires ``pactl``). Default: system
+            default input device.
         :param conversation_start_timeout: How long to wait for the
             conversation to start (i.e. the first non-silent audio frame to be
             detected) before giving up and stopping the recording (default: 5.0

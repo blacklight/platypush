@@ -19,9 +19,12 @@ class TtsPlugin(Plugin):
     ):
         """
         :param language: Language code (default: ``en-US``).
-        :param output_device: Audio output device to use for playback. It can
-            be a device index or name. If specified, it is passed as the
-            ``device`` argument to :meth:`platypush.plugins.sound.SoundPlugin.play`.
+        :param output_device: Audio output device to use for playback.
+            Supported formats: PortAudio/sounddevice device index,
+            PortAudio/sounddevice device name, or PulseAudio/PipeWire sink name
+            (e.g. ``alsa_output.pci-...``; requires ``pactl``). If specified,
+            it is passed as the ``device`` argument to
+            :meth:`platypush.plugins.sound.SoundPlugin.play`.
         :param player_args: Additional arguments to be passed to
             :meth:`platypush.plugins.sound.SoundPlugin.play` (like volume,
             duration, channels etc.).
@@ -60,7 +63,9 @@ class TtsPlugin(Plugin):
         :param language: Language code override.
         :param player_args: Extends the additional arguments to be passed to
             :meth:`platypush.plugins.sound.SoundPlugin.play` (like volume,
-            duration, channels, output_device etc.).
+            duration, channels, output_device etc.). ``output_device`` accepts
+            a PortAudio/sounddevice device index, PortAudio/sounddevice device
+            name, or PulseAudio/PipeWire sink name (requires ``pactl``).
         """
         language = language or self.language
         url = 'https://translate.google.com/translate_tts?' + urllib.parse.urlencode(

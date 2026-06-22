@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+- `assistant`: Resolve PulseAudio/PipeWire source and sink names to the
+  corresponding PortAudio device names when opening assistant recorders or TTS
+  playback streams.
+
+- `assistant.openwakeword`: Keep retrying instead of terminating the audio
+  thread when an invalid or temporarily unavailable input device is configured.
+
 ## [1.3.24]
 
 ### Added
