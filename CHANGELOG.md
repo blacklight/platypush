@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `assistant`: Added best-effort fallback for audio device where `pactl` is
+  unavailable.
+
 ## [1.3.25]
 
 - `assistant`: Resolve PulseAudio/PipeWire source and sink names to the
