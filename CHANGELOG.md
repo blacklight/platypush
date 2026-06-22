@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.25]
 
 - `assistant`: Resolve PulseAudio/PipeWire source and sink names to the
   corresponding PortAudio device names when opening assistant recorders or TTS
