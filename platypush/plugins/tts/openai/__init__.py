@@ -83,14 +83,17 @@ class TtsOpenaiPlugin(TtsPlugin):
         model: Optional[str] = None,
         voice: Optional[str] = None,
     ) -> requests.Response:
+        headers = {"Content-Type": "application/json"}
+        if self.openai._api_key:  # pylint: disable=protected-access
+            headers["Authorization"] = (
+                f"Bearer {self.openai._api_key}"  # pylint: disable=protected-access
+            )
+
         rs = requests.post(
-            "https://api.openai.com/v1/audio/speech",
+            f"{self.openai._api_base_url}/audio/speech",  # pylint: disable=protected-access
             timeout=self.timeout,
             stream=True,
-            headers={
-                "Authorization": f"Bearer {self.openai._api_key}",  # pylint: disable=protected-access
-                "Content-Type": "application/json",
-            },
+            headers=headers,
             json={
                 "model": model or self.model,
                 "voice": voice or self.voice,

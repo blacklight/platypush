@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `openai`: Added `base_url` parameter to support local or third-party
+  OpenAI-compatible model servers (e.g. Ollama at
+  `http://localhost:11434/v1`). The `api_key` is now optional when targeting a
+  non-OpenAI endpoint.
+
 ## [1.3.27]
 
 ### Fixed

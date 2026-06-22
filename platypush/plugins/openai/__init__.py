@@ -144,7 +144,8 @@ class OpenaiPlugin(Plugin):
 
     def __init__(
         self,
-        api_key: Optional[str],
+        api_key: Optional[str] = None,
+        base_url: str = "https://api.openai.com/v1",
         model: str = "gpt-3.5-turbo",
         timeout: float = 30,
         context: Optional[Iterable[dict]] = None,
@@ -153,7 +154,13 @@ class OpenaiPlugin(Plugin):
     ):
         """
         :param api_key: OpenAI API key. If not set, it will be read from the
-            ``OPENAI_API_KEY`` environment variable.
+            ``OPENAI_API_KEY`` environment variable. This parameter is optional
+            when using a local model server that does not require
+            authentication (e.g. Ollama).
+        :param base_url: Base URL for the API server. Default:
+            ``https://api.openai.com/v1``. Change this to point to a local or
+            third-party OpenAI-compatible server, e.g.
+            ``http://localhost:11434/v1`` for Ollama.
         :param model: The model to use. Default: ``gpt-3.5-turbo``.
         :param timeout: Default timeout for API requests (default: 30 seconds).
         :param context: Default context to use for completions, as a list of
@@ -178,10 +185,11 @@ class OpenaiPlugin(Plugin):
         """
         super().__init__(**kwargs)
         api_key = api_key or os.getenv('OPENAI_API_KEY')
-        if not (api_key):
+        if not api_key and base_url == "https://api.openai.com/v1":
             raise AssertionError('OpenAI API key not provided')
 
         self._api_key = api_key
+        self._api_base_url = base_url.rstrip('/')
         self._context_lock = RLock()
         self._runtime_context: List[ContextEntry] = []
         self._default_context = [
@@ -243,13 +251,14 @@ class OpenaiPlugin(Plugin):
             },
         ]
 
+        headers = {"Content-Type": "application/json"}
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+
         resp = requests.post(
-            "https://api.openai.com/v1/chat/completions",
+            f"{self._api_base_url}/chat/completions",
             timeout=timeout or self.timeout,
-            headers={
-                "Authorization": f"Bearer {self._api_key}",
-                "Content-Type": "application/json",
-            },
+            headers=headers,
             json={
                 "model": model or self.model,
                 "messages": [
@@ -307,12 +316,14 @@ class OpenaiPlugin(Plugin):
         model: Optional[str] = 'whisper-1',
         timeout: Optional[float] = None,
     ) -> str:
+        headers = {}
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+
         resp = requests.post(
-            "https://api.openai.com/v1/audio/transcriptions",
+            f"{self._api_base_url}/audio/transcriptions",
             timeout=timeout or self.timeout,
-            headers={
-                "Authorization": f"Bearer {self._api_key}",
-            },
+            headers=headers,
             files={
                 "file": f,
             },
@@ -330,12 +341,14 @@ class OpenaiPlugin(Plugin):
         model: Optional[str] = 'whisper-1',
         timeout: Optional[float] = None,
     ) -> str:
+        headers = {}
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+
         resp = requests.post(
-            "https://api.openai.com/v1/audio/transcriptions",
+            f"{self._api_base_url}/audio/transcriptions",
             timeout=timeout or self.timeout,
-            headers={
-                "Authorization": f"Bearer {self._api_key}",
-            },
+            headers=headers,
             files={
                 "file": (f"audio.{extension}", audio),
             },
