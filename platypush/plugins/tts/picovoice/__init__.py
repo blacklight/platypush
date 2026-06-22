@@ -117,7 +117,22 @@ class TtsPicovoicePlugin(TtsPlugin):
         orca: pvorca.Orca,
         pcm: np.ndarray,
         output_device: Optional[Union[int, str]] = None,
+        output_volume: Optional[float] = None,
     ):
+        gain = output_volume if output_volume is not None else self.output_volume
+        if gain is None:
+            gain = self.player_args.get('volume', 100)
+
+        if gain < 0:
+            raise ValueError('output_volume must be greater than or equal to 0')
+
+        if gain != 100:
+            info = np.iinfo(pcm.dtype)
+            pcm = np.asarray(
+                np.clip(pcm.astype(np.float64) * (gain / 100), info.min, info.max),
+                dtype=pcm.dtype,
+            )
+
         with self._stream_lock:
             self.stop()
             self._stream = sd.OutputStream(
@@ -166,6 +181,7 @@ class TtsPicovoicePlugin(TtsPlugin):
         *_,
         output_file: Optional[str] = None,
         output_device: Optional[Union[int, str]] = None,
+        output_volume: Optional[float] = None,
         speech_rate: Optional[float] = None,
         model_path: Optional[str] = None,
         **__,
@@ -181,6 +197,10 @@ class TtsPicovoicePlugin(TtsPlugin):
             PortAudio/sounddevice device name, or PulseAudio/PipeWire sink name
             (e.g. ``alsa_output.pci-...``; requires ``pactl``). Overrides the
             plugin's configured ``output_device``.
+        :param output_volume: Playback volume, as a percentage. ``100`` means
+            unchanged, values below ``100`` attenuate, and values above ``100``
+            amplify with clipping. Overrides the plugin's configured
+            ``output_volume``.
         :param speech_rate: Speech rate (default: None).
         :param model_path: Path of the TTS model file (default: use the default
             configured model).
@@ -199,6 +219,7 @@ class TtsPicovoicePlugin(TtsPlugin):
         self._play_audio(
             orca=orca,
             output_device=output_device,
+            output_volume=output_volume,
             pcm=np.array(
                 orca.synthesize(text, speech_rate=speech_rate)[0],
                 dtype='int16',

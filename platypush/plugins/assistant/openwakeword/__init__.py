@@ -45,6 +45,9 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
         device name, or PulseAudio/PipeWire source name (e.g.
         ``alsa_input.usb-...``; requires ``pactl``). Default: system default
         input device.
+    :param input_volume: Recording gain, as a percentage. ``100`` means
+        unchanged, values below ``100`` attenuate, and values above ``100``
+        amplify with clipping. Default: 100.
     """
 
     def __init__(
@@ -57,6 +60,7 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
         audio_frame_timeout: float = 5.0,
         pause_seconds_after_hotword: float = 2.0,
         input_device: Optional[Union[int, str]] = None,
+        input_volume: float = 100,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -81,6 +85,7 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
         self.detection_sensitivity = 1.0 - detection_sensitivity
         self.frame_duration = frame_duration
         self.input_device = input_device
+        self.input_volume = input_volume
         self._pause_seconds_after_hotword = pause_seconds_after_hotword
         self._audio_frame_timeout = audio_frame_timeout
         self._recorder: Optional[AudioRecorder] = None
@@ -171,6 +176,7 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
                     frame_size=int(16000 * self.frame_duration),
                     channels=1,
                     device=self.input_device,
+                    volume=self.input_volume,
                     open_retries=1,
                 ) as self._recorder:
                     while (

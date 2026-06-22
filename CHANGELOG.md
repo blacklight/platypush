@@ -9,6 +9,13 @@
 - `assistant.openwakeword`: Keep retrying instead of terminating the audio
   thread when an invalid or temporarily unavailable input device is configured.
 
+- `assistant`: Added `input_volume` support to assistant plugins backed by the
+  shared `AudioRecorder`, including `assistant.vosk`, `assistant.openai`,
+  `assistant.openwakeword` and `assistant.picovoice`.
+
+- `tts`: Added `output_volume` support to the shared TTS playback path and to
+  `tts.picovoice`.
+
 ## [1.3.24]
 
 ### Added
@@ -19,7 +26,6 @@
 
 - `tts`: Added `output_device` support to the shared TTS playback path and to
   `tts.picovoice`, so TTS plugins can target a specific audio output device.
-
 
 ## [1.3.23]
 

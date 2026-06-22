@@ -47,6 +47,7 @@ class Assistant(Thread):
         start_conversation_on_hotword: bool = False,
         audio_queue_size: int = 100,
         input_device: Optional[Union[int, str]] = None,
+        input_volume: float = 100,
         muted: bool = False,
         conversation_timeout: Optional[float] = None,
         on_conversation_start=_default_callback,
@@ -72,6 +73,7 @@ class Assistant(Thread):
         self.start_conversation_on_hotword = start_conversation_on_hotword
         self.audio_queue_size = audio_queue_size
         self.input_device = input_device
+        self.input_volume = input_volume
         self._responding = Event()
         self._muted = muted
         self._speech_model_path = speech_model_path
@@ -260,6 +262,7 @@ class Assistant(Thread):
                 paused=self._muted,
                 channels=1,
                 device=self.input_device,
+                volume=self.input_volume,
             )
 
             self._speech_processor.__enter__()

@@ -43,9 +43,10 @@ class TtsMimic3Plugin(TtsPlugin):
             through :meth:`.voices`.
         :param kwargs: Extra arguments to be passed to the
             :class:`platypush.plugins.tts.TtsPlugin` constructor, including
-            ``output_device``. ``output_device`` accepts a
+            ``output_device`` and ``output_volume``. ``output_device`` accepts a
             PortAudio/sounddevice device index, PortAudio/sounddevice device
             name, or PulseAudio/PipeWire sink name (requires ``pactl``).
+            ``output_volume`` is a playback volume percentage.
         """
         super().__init__(**kwargs)
         self.server_url = server_url

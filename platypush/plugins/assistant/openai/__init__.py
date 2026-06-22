@@ -195,6 +195,7 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         frame_size: int = 16384,
         channels: int = 1,
         input_device: Optional[Union[int, str]] = None,
+        input_volume: float = 100,
         conversation_start_timeout: float = 5.0,
         conversation_end_timeout: float = 1.0,
         conversation_max_duration: float = 15.0,
@@ -222,6 +223,9 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
             device name, or PulseAudio/PipeWire source name (e.g.
             ``alsa_input.usb-...``; requires ``pactl``). Default: system
             default input device.
+        :param input_volume: Recording gain, as a percentage. ``100`` means
+            unchanged, values below ``100`` attenuate, and values above ``100``
+            amplify with clipping. Default: 100.
         :param conversation_start_timeout: How long to wait for the
             conversation to start (i.e. the first non-silent audio frame to be
             detected) before giving up and stopping the recording (default: 5.0
@@ -242,6 +246,7 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         self._frame_size = frame_size
         self._channels = channels
         self._input_device = input_device
+        self._input_volume = input_volume
         self._conversation_start_timeout = conversation_start_timeout
         self._conversation_end_timeout = conversation_end_timeout
         self._conversation_max_duration = conversation_max_duration
@@ -327,6 +332,7 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
                     frame_size=self._frame_size,
                     channels=self._channels,
                     device=self._input_device,
+                    volume=self._input_volume,
                 ) as self._recorder:
                     self._capture_audio(self._recorder)
             finally:

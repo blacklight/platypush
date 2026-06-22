@@ -104,6 +104,7 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         frame_size: int = 4000,
         channels: int = 1,
         input_device: Optional[Union[int, str]] = None,
+        input_volume: float = 100,
         conversation_start_timeout: float = 5.0,
         conversation_end_timeout: float = 1.5,
         conversation_max_duration: float = 15.0,
@@ -133,6 +134,9 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
             device name, or PulseAudio/PipeWire source name (e.g.
             ``alsa_input.usb-...``; requires ``pactl``). Default: system
             default input device.
+        :param input_volume: Recording gain, as a percentage. ``100`` means
+            unchanged, values below ``100`` attenuate, and values above ``100``
+            amplify with clipping. Default: 100.
         :param conversation_start_timeout: Seconds to wait for speech after
             starting a conversation before timing out (default: 5.0).
         :param conversation_end_timeout: Seconds of silence after the last
@@ -157,6 +161,7 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         self._frame_size = frame_size
         self._channels = channels
         self._input_device = input_device
+        self._input_volume = input_volume
         self._conversation_start_timeout = conversation_start_timeout
         self._conversation_end_timeout = conversation_end_timeout
         self._conversation_max_duration = conversation_max_duration
@@ -381,6 +386,7 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
                 frame_size=self._frame_size,
                 channels=self._channels,
                 device=self._input_device,
+                volume=self._input_volume,
             ) as recorder:
                 self._recorder = recorder
 

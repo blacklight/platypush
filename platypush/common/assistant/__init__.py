@@ -26,16 +26,21 @@ class AudioRecorder:
         frame_size: int,
         channels: int,
         device: Optional[Union[int, str]] = None,
+        volume: float = 100,
         paused: bool = False,
         dtype: str = 'int16',
         queue_size: int = 100,
         open_retries: int = 5,
     ):
+        if volume < 0:
+            raise ValueError('volume must be greater than or equal to 0')
+
         self.logger = getLogger(__name__)
         self._audio_queue: Queue[AudioFrame] = Queue(maxsize=queue_size)
         self.frame_size = frame_size
         self._target_sample_rate = sample_rate
         self._device = resolve_audio_device(device, 'input')
+        self._gain = volume / 100
         self._dtype = dtype
         self._stop_event = Event()
         self._upstream_stop_event = stop_event
@@ -176,9 +181,23 @@ class AudioRecorder:
             data = indata.reshape(-1)
             if self._actual_sample_rate != self._target_sample_rate:
                 data = self._resample(data)
+            data = self._apply_gain(data)
             self._audio_queue.put_nowait(AudioFrame(data, time()))
         except Full:
             self.logger.warning('Audio queue is full, dropping audio frame')
+
+    def _apply_gain(self, data: np.ndarray) -> np.ndarray:
+        if self._gain == 1:
+            return data
+
+        amplified = data.astype(np.float64) * self._gain
+        if np.issubdtype(data.dtype, np.integer):
+            info = np.iinfo(data.dtype)
+            amplified = np.clip(amplified, info.min, info.max)
+        elif np.issubdtype(data.dtype, np.floating):
+            amplified = np.clip(amplified, -1.0, 1.0)
+
+        return amplified.astype(data.dtype)
 
     def _resample(self, data: np.ndarray) -> np.ndarray:
         """Resample audio data from the actual device rate to the target rate."""

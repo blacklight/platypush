@@ -365,6 +365,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
         start_conversation_on_hotword: bool = True,
         audio_queue_size: int = 100,
         input_device: Optional[Union[int, str]] = None,
+        input_volume: float = 100,
         conversation_timeout: Optional[float] = 7.5,
         muted: bool = False,
         **kwargs,
@@ -478,6 +479,9 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             device name, or PulseAudio/PipeWire source name (e.g.
             ``alsa_input.usb-...``; requires ``pactl``). Default: system
             default input device.
+        :param input_volume: Recording gain, as a percentage. ``100`` means
+            unchanged, values below ``100`` attenuate, and values above ``100``
+            amplify with clipping. Default: 100.
         :param conversation_timeout: Maximum time to wait for some speech to be
             detected after the hotword is detected. If no speech is detected
             within this time, the conversation will time out and the plugin will
@@ -518,6 +522,7 @@ class AssistantPicovoicePlugin(AssistantPlugin, RunnablePlugin):
             ),
             'audio_queue_size': audio_queue_size,
             'input_device': input_device,
+            'input_volume': input_volume,
             'conversation_timeout': conversation_timeout,
             'muted': muted,
             'on_conversation_start': self._on_conversation_start,
