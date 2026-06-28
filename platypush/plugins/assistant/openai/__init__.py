@@ -202,6 +202,7 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         conversation_end_timeout: float = 1.0,
         conversation_max_duration: float = 15.0,
         enable_noise_suppression: Optional[bool] = None,
+        energy_vad_threshold: float = 300,
         **kwargs,
     ):
         """
@@ -243,6 +244,12 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
             background noise and improves transcription accuracy, especially
             for distant speech. Default: auto-enabled if the package is
             available.
+        :param energy_vad_threshold: RMS energy threshold for the
+            energy-based VAD fallback (used when ``webrtcvad`` is not
+            installed).  Voices at conversational distance typically
+            produce RMS > 300 on int16 scale (~-34 dBFS).  Lower values
+            improve sensitivity for distant or quiet speech at the cost
+            of more false positives.  Default: 300.
         """
         kwargs["tts_plugin"] = tts_plugin
         super().__init__(**kwargs)
@@ -259,11 +266,13 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         self._conversation_end_timeout = conversation_end_timeout
         self._conversation_max_duration = conversation_max_duration
         self._enable_noise_suppression = enable_noise_suppression
+        self._energy_vad_threshold = energy_vad_threshold
         self._audio_processor = AudioPreprocessor(
             frame_size=frame_size,
             sample_rate=sample_rate,
             enable_noise_suppression=enable_noise_suppression,
             vad_enabled=False,
+            energy_vad_threshold=energy_vad_threshold,
         )
         self._start_recording_event = Event()
         self._disable_default_response = False

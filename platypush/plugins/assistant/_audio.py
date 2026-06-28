@@ -39,8 +39,9 @@ class AudioPreprocessor:
         *,
         enable_noise_suppression: Optional[bool] = None,
         vad_enabled: bool = True,
-        vad_mode: int = 3,
+        vad_mode: int = 2,
         vad_speech_threshold: float = 0.3,
+        energy_vad_threshold: float = 300,
     ):
         """
         :param frame_size: Number of int16 samples per audio frame.
@@ -48,16 +49,20 @@ class AudioPreprocessor:
         :param enable_noise_suppression: Enable Speex noise suppression.
             ``None`` (default) auto-enables if ``speexdsp_ns`` is installed.
         :param vad_enabled: Enable voice activity detection (default: True).
-        :param vad_mode: WebRTC VAD aggressiveness, 0–3 (default: 3).
+        :param vad_mode: WebRTC VAD aggressiveness, 0–3 (default: 2).
         :param vad_speech_threshold: Fraction of 30 ms sub-frames that must
             be classified as speech for the whole frame to count as speech
             (default: 0.3).
+        :param energy_vad_threshold: RMS threshold for the energy-based VAD
+            fallback.  Voices at conversational distance typically produce
+            RMS > 300 on int16 scale (~-34 dBFS).  Default: 300.
         """
         self.logger = getLogger(__name__)
         self._frame_size = frame_size
         self._sample_rate = sample_rate
         self._vad_enabled = vad_enabled
         self._vad_speech_threshold = vad_speech_threshold
+        self._energy_vad_threshold = energy_vad_threshold
         self._noise_suppressor = None
         self._vad = None
 
@@ -130,6 +135,11 @@ class AudioPreprocessor:
     # Public API
     # ------------------------------------------------------------------
 
+    @property
+    def noise_suppression_enabled(self) -> bool:
+        """Whether noise suppression is active."""
+        return self._noise_suppressor is not None
+
     def process(self, data: bytes) -> bytes:
         """
         Apply noise suppression to a frame of int16 PCM audio.
@@ -187,13 +197,13 @@ class AudioPreprocessor:
     def _energy_vad_check(self, data: bytes) -> bool:
         """
         Simple energy-based fallback.  Returns ``True`` if the RMS energy
-        exceeds ~1.5 % of int16 max (≈ 500).
+        exceeds the configured threshold.
         """
         samples = np.frombuffer(data, dtype=np.int16).astype(np.float64)
         if len(samples) == 0:
             return False
         rms = np.sqrt(np.mean(samples**2))
-        return rms > 500
+        return rms > self._energy_vad_threshold
 
 
 # vim:sw=4:ts=4:et:

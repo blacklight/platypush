@@ -107,13 +107,14 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         input_device: Optional[Union[int, str]] = None,
         input_volume: float = 100,
         conversation_start_timeout: float = 5.0,
-        conversation_end_timeout: float = 1.0,
+        conversation_end_timeout: float = 1.5,
         conversation_max_duration: float = 15.0,
         words: bool = False,
         enable_noise_suppression: Optional[bool] = None,
         vad_enabled: bool = True,
-        vad_mode: int = 3,
+        vad_mode: int = 2,
         vad_speech_threshold: float = 0.3,
+        energy_vad_threshold: float = 300,
         **kwargs,
     ):
         """
@@ -145,7 +146,7 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         :param conversation_start_timeout: Seconds to wait for speech after
             starting a conversation before timing out (default: 5.0).
         :param conversation_end_timeout: Seconds of silence after the last
-            detected speech before ending the conversation (default: 1.0).
+            detected speech before ending the conversation (default: 1.5).
         :param conversation_max_duration: Maximum conversation duration in
             seconds (default: 15.0).
         :param words: If True, include per-word timing and confidence
@@ -159,12 +160,19 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
             available, otherwise falls back to energy-based detection. VAD
             enables faster end-of-speech detection (~300 ms vs. relying on
             Vosk partial result timeouts).
-        :param vad_mode: WebRTC VAD aggressiveness mode, 0–3 (default: 3).
-            Higher values are more aggressive at filtering non-speech. Only
-            used when ``webrtcvad`` is installed.
+        :param vad_mode: WebRTC VAD aggressiveness mode, 0–3 (default: 2).
+            Higher values are more aggressive at filtering non-speech but
+            may miss distant or quiet speech.  Only used when ``webrtcvad``
+            is installed.
         :param vad_speech_threshold: Fraction of VAD sub-frames within an
             audio frame that must be classified as speech for the frame to
             be considered as containing speech (default: 0.3).
+        :param energy_vad_threshold: RMS energy threshold for the
+            energy-based VAD fallback (used when ``webrtcvad`` is not
+            installed).  Voices at conversational distance typically
+            produce RMS > 300 on int16 scale (~-34 dBFS).  Lower values
+            improve sensitivity for distant or quiet speech at the cost
+            of more false positives.  Default: 300.
         """
         super().__init__(**kwargs)
 
@@ -190,6 +198,7 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         self._vad_enabled = vad_enabled
         self._vad_mode = vad_mode
         self._vad_speech_threshold = vad_speech_threshold
+        self._energy_vad_threshold = energy_vad_threshold
         self._model = None
         self._audio_processor: Optional[AudioPreprocessor] = None
         self._start_recording_event = Event()
@@ -457,10 +466,13 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
                     # Vosk expects bytes (int16 PCM)
                     data = audio_data.data.tobytes()
 
-                    # Audio preprocessing (noise suppression + VAD)
+                    # Audio preprocessing:
+                    # - VAD runs on the ORIGINAL audio (before NS) so that
+                    #   weak distant speech is not suppressed before detection
+                    # - NS is applied only to what Vosk receives
                     if self._audio_processor is not None:
-                        data = self._audio_processor.process(data)
                         frame_is_speech = self._audio_processor.has_speech(data)
+                        data = self._audio_processor.process(data)
                         if frame_is_speech:
                             speech_detected = True
                             last_speech_time = time.time()
@@ -581,6 +593,7 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
             vad_enabled=self._vad_enabled,
             vad_mode=self._vad_mode,
             vad_speech_threshold=self._vad_speech_threshold,
+            energy_vad_threshold=self._energy_vad_threshold,
         )
 
         while not self.should_stop():
