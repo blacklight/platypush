@@ -13,6 +13,7 @@ from platypush.common.assistant import AudioRecorder
 from platypush.config import Config
 from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.assistant import AssistantPlugin
+from platypush.plugins.assistant._audio import AudioPreprocessor
 
 _VOSK_MODEL_LIST_URL = 'https://alphacephei.com/vosk/models/model-list.json'
 
@@ -101,14 +102,18 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         lang: Optional[str] = None,
         models_directory: Optional[str] = None,
         sample_rate: int = 16000,
-        frame_size: int = 4000,
+        frame_size: int = 2000,
         channels: int = 1,
         input_device: Optional[Union[int, str]] = None,
         input_volume: float = 100,
         conversation_start_timeout: float = 5.0,
-        conversation_end_timeout: float = 1.5,
+        conversation_end_timeout: float = 1.0,
         conversation_max_duration: float = 15.0,
         words: bool = False,
+        enable_noise_suppression: Optional[bool] = None,
+        vad_enabled: bool = True,
+        vad_mode: int = 3,
+        vad_speech_threshold: float = 0.3,
         **kwargs,
     ):
         """
@@ -124,9 +129,9 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
             Default: ``<PLATYPUSH_WORKDIR>/assistant.vosk/models``.
         :param sample_rate: Audio sample rate in Hz (default: 16000). Most
             Vosk models expect 16 kHz audio.
-        :param frame_size: Number of samples per audio frame (default: 4000).
-            With the default sample rate of 16000, this corresponds to 250 ms
-            per frame.
+        :param frame_size: Number of samples per audio frame (default: 2000).
+            With the default sample rate of 16000, this corresponds to 125 ms
+            per frame. Smaller values reduce latency but increase CPU usage.
         :param channels: Number of audio channels (default: 1). Vosk requires
             mono audio.
         :param input_device: Audio input device to use for recording. Supported
@@ -140,11 +145,26 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         :param conversation_start_timeout: Seconds to wait for speech after
             starting a conversation before timing out (default: 5.0).
         :param conversation_end_timeout: Seconds of silence after the last
-            detected speech before ending the conversation (default: 1.5).
+            detected speech before ending the conversation (default: 1.0).
         :param conversation_max_duration: Maximum conversation duration in
             seconds (default: 15.0).
         :param words: If True, include per-word timing and confidence
             information in the recognition results (default: False).
+        :param enable_noise_suppression: Whether to enable Speex-based noise
+            suppression (requires the ``speexdsp_ns`` package). Reduces
+            background noise and improves recognition, especially for distant
+            speech. Default: auto-enabled if the package is available.
+        :param vad_enabled: Whether to use Voice Activity Detection for
+            speech boundary detection (default: True). Uses ``webrtcvad`` if
+            available, otherwise falls back to energy-based detection. VAD
+            enables faster end-of-speech detection (~300 ms vs. relying on
+            Vosk partial result timeouts).
+        :param vad_mode: WebRTC VAD aggressiveness mode, 0–3 (default: 3).
+            Higher values are more aggressive at filtering non-speech. Only
+            used when ``webrtcvad`` is installed.
+        :param vad_speech_threshold: Fraction of VAD sub-frames within an
+            audio frame that must be classified as speech for the frame to
+            be considered as containing speech (default: 0.3).
         """
         super().__init__(**kwargs)
 
@@ -166,7 +186,12 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         self._conversation_end_timeout = conversation_end_timeout
         self._conversation_max_duration = conversation_max_duration
         self._words = words
+        self._enable_noise_suppression = enable_noise_suppression
+        self._vad_enabled = vad_enabled
+        self._vad_mode = vad_mode
+        self._vad_speech_threshold = vad_speech_threshold
         self._model = None
+        self._audio_processor: Optional[AudioPreprocessor] = None
         self._start_recording_event = Event()
         self._recorder: Optional[AudioRecorder] = None
 
@@ -372,6 +397,13 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
     def _capture_and_recognize(self):
         """
         Record audio and perform streaming recognition using Vosk.
+
+        Audio pipeline:
+        1. Read raw audio frame from microphone
+        2. Apply noise suppression (if enabled)
+        3. Detect speech via VAD (if enabled)
+        4. Feed (always) to Vosk for recognition
+        5. Use VAD result for speech boundary timing
         """
         rec = self._create_recognizer()
         conversation_start = time.time()
@@ -416,7 +448,7 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
                         self.logger.debug('Conversation end timeout (silence) reached')
                         break
 
-                    audio_data = recorder.read(timeout=0.5)
+                    audio_data = recorder.read(timeout=0.25)
                     if not audio_data or not len(  # pylint: disable=C1802
                         audio_data.data
                     ):
@@ -425,6 +457,15 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
                     # Vosk expects bytes (int16 PCM)
                     data = audio_data.data.tobytes()
 
+                    # Audio preprocessing (noise suppression + VAD)
+                    if self._audio_processor is not None:
+                        data = self._audio_processor.process(data)
+                        frame_is_speech = self._audio_processor.has_speech(data)
+                        if frame_is_speech:
+                            speech_detected = True
+                            last_speech_time = time.time()
+
+                    # Always feed audio to Vosk (it needs continuous stream)
                     if rec.AcceptWaveform(data):
                         result = json.loads(rec.Result())
                         text = result.get('text', '').strip()
@@ -533,6 +574,14 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
 
     def main(self):
         self._load_model()
+        self._audio_processor = AudioPreprocessor(
+            frame_size=self._frame_size,
+            sample_rate=self._sample_rate,
+            enable_noise_suppression=self._enable_noise_suppression,
+            vad_enabled=self._vad_enabled,
+            vad_mode=self._vad_mode,
+            vad_speech_threshold=self._vad_speech_threshold,
+        )
 
         while not self.should_stop():
             try:

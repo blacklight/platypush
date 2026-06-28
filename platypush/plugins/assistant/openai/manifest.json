@@ -18,27 +18,43 @@
     "install": {
       "apk": [
         "ffmpeg",
-        "py3-numpy"
+        "py3-numpy",
+        "speexdsp",
+        "swig"
       ],
       "apt": [
         "ffmpeg",
+        "libspeexdsp-dev",
         "python3-numpy",
-        "python3-pydub"
+        "python3-pydub",
+        "python3-sounddevice",
+        "swig"
       ],
       "dnf": [
         "ffmpeg",
-        "python-numpy"
+        "python-numpy",
+        "python-sounddevice",
+        "python-webrtcvad",
+        "speexdsp",
+        "swig"
       ],
       "pacman": [
         "ffmpeg",
+        "python-audioop-lts",
         "python-numpy",
-        "python-sounddevice"
+        "python-pydub",
+        "python-sounddevice",
+        "python-webrtcvad",
+        "speexdsp",
+        "swig"
       ],
       "pip": [
+        "audioop-lts",
         "numpy",
         "pydub",
-        "audioop-lts",
-        "sounddevice"
+        "sounddevice",
+        "speexdsp-ns",
+        "webrtcvad"
       ]
     }
   }

@@ -6,9 +6,11 @@ import numpy as np
 from pydub import AudioSegment
 
 from platypush.common.assistant import AudioRecorder
+from platypush.common.assistant._state import AudioFrame
 from platypush.context import get_plugin
 from platypush.plugins import RunnablePlugin, action
 from platypush.plugins.assistant import AssistantPlugin
+from platypush.plugins.assistant._audio import AudioPreprocessor
 from platypush.plugins.openai import OpenaiPlugin
 
 from ._state import RecordingState
@@ -199,6 +201,7 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         conversation_start_timeout: float = 5.0,
         conversation_end_timeout: float = 1.0,
         conversation_max_duration: float = 15.0,
+        enable_noise_suppression: Optional[bool] = None,
         **kwargs,
     ):
         """
@@ -235,6 +238,11 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
             (default: 1.5 seconds).
         :param conversation_max_duration: Maximum conversation duration in seconds
             (default: 15.0 seconds).
+        :param enable_noise_suppression: Whether to enable Speex-based noise
+            suppression (requires the ``speexdsp_ns`` package). Reduces
+            background noise and improves transcription accuracy, especially
+            for distant speech. Default: auto-enabled if the package is
+            available.
         """
         kwargs["tts_plugin"] = tts_plugin
         super().__init__(**kwargs)
@@ -250,6 +258,13 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         self._conversation_start_timeout = conversation_start_timeout
         self._conversation_end_timeout = conversation_end_timeout
         self._conversation_max_duration = conversation_max_duration
+        self._enable_noise_suppression = enable_noise_suppression
+        self._audio_processor = AudioPreprocessor(
+            frame_size=frame_size,
+            sample_rate=sample_rate,
+            enable_noise_suppression=enable_noise_suppression,
+            vad_enabled=False,
+        )
         self._start_recording_event = Event()
         self._disable_default_response = False
         self._recording_state = RecordingState(
@@ -317,7 +332,12 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
             if not audio_data:
                 continue
 
-            self._recording_state.add_audio(audio_data)
+            processed = self._audio_processor.process(audio_data.data.tobytes())
+            processed_frame = AudioFrame(
+                data=np.frombuffer(processed, dtype=audio_data.data.dtype),
+                timestamp=audio_data.timestamp,
+            )
+            self._recording_state.add_audio(processed_frame)
 
     def _audio_loop(self):
         while not self.should_stop():
