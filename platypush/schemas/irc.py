@@ -87,7 +87,7 @@ class IRCServerSchema(Schema):
         },
     )
 
-    response_timeout = fields.Number(
+    response_timeout = fields.Float(
         load_default=30.0,
         metadata={
             'description': 'How long we should wait for a response to an IRC request '
@@ -95,7 +95,7 @@ class IRCServerSchema(Schema):
         },
     )
 
-    dcc_file_transfer_timeout = fields.Number(
+    dcc_file_transfer_timeout = fields.Float(
         load_default=30.0,
         metadata={
             'description': 'How long we should wait on a pending DCC file transfer with '
@@ -103,7 +103,7 @@ class IRCServerSchema(Schema):
         },
     )
 
-    dcc_accept_timeout = fields.Number(
+    dcc_accept_timeout = fields.Float(
         load_default=300.0,
         metadata={
             'description': 'How long we should wait on a pending DCC request '

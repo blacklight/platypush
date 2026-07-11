@@ -113,13 +113,13 @@ class JellyfinTrackSchema(JellyfinSchema):
     item_type = fields.Constant('track')
     id = fields.String(attribute='Id')
     url = fields.URL()
-    duration = fields.Number(attribute='RunTimeTicks')
+    duration = fields.Float(attribute='RunTimeTicks')
     artist = fields.String()
     album = fields.String(attribute='Album')
     name = fields.String(attribute='Name')
-    track_number = fields.Number(attribute='IndexNumber')
-    disc_number = fields.Number(attribute='ParentIndexNumber')
-    year = fields.Number(attribute='ProductionYear')
+    track_number = fields.Integer(attribute='IndexNumber')
+    disc_number = fields.Integer(attribute='ParentIndexNumber')
+    year = fields.Integer(attribute='ProductionYear')
     playlist_item_id = fields.String(attribute='PlaylistItemId')
     image = fields.String()
     created_at = DateTime(attribute='DateCreated')
@@ -158,8 +158,8 @@ class JellyfinAlbumSchema(JellyfinSchema, MediaCollectionSchema):
     collection_type = fields.Constant('music')
     name = fields.String(attribute='Name')
     artist = fields.Nested(JellyfinArtistSchema, attribute='AlbumArtist')
-    duration = fields.Number(attribute='RunTimeTicks')
-    year = fields.Number(attribute='ProductionYear')
+    duration = fields.Float(attribute='RunTimeTicks')
+    year = fields.Integer(attribute='ProductionYear')
 
     @pre_dump
     def _expand_artist(self, data: dict, **_) -> dict:
@@ -189,8 +189,8 @@ class JellyfinCollectionSchema(JellyfinSchema, MediaCollectionSchema):
 class JellyfinVideoSchema(JellyfinSchema, MediaVideoSchema):
     type = fields.Constant('video')
     item_type = fields.Constant('video')
-    duration = fields.Number(attribute='RunTimeTicks')
-    community_rating = fields.Number(attribute='CommunityRating')
+    duration = fields.Float(attribute='RunTimeTicks')
+    community_rating = fields.Float(attribute='CommunityRating')
     container = fields.String(
         attribute='Container',
         metadata={
@@ -198,7 +198,7 @@ class JellyfinVideoSchema(JellyfinSchema, MediaVideoSchema):
             'example': 'mp4',
         },
     )
-    critic_rating = fields.Number(attribute='CriticRating')
+    critic_rating = fields.Float(attribute='CriticRating')
     imdb_url = fields.URL(
         attribute='ExternalUrl',
         metadata={
@@ -281,8 +281,8 @@ class JellyfinPhotoSchema(JellyfinSchema):
     item_type = fields.Constant('photo')
     path = fields.String(attribute='Path')
     created_at = DateTime(attribute='PremiereDate')
-    width = fields.Number(attribute='Width')
-    height = fields.Number(attribute='Height')
+    width = fields.Integer(attribute='Width')
+    height = fields.Integer(attribute='Height')
     camera_make = fields.String(attribute='CameraMake')
     camera_model = fields.String(attribute='CameraModel')
     software = fields.String(attribute='Software')
@@ -290,7 +290,7 @@ class JellyfinPhotoSchema(JellyfinSchema):
     focal_length = fields.Float(attribute='FocalLength')
     image_orientation = fields.String(attribute='ImageOrientation')
     aperture = fields.Float(attribute='Aperture')
-    iso = fields.Number(attribute='IsoSpeedRating')
+    iso = fields.Integer(attribute='IsoSpeedRating')
 
     @pre_dump
     def _gen_photo_url(self, data, **_):
@@ -331,8 +331,8 @@ class JellyfinPlaylistSchema(JellyfinSchema, MediaCollectionSchema):
     name = fields.String(attribute='Name')
     image = fields.String()
     public = fields.Boolean(attribute='IsPublic')
-    duration = fields.Number(attribute='RunTimeTicks')
-    n_items = fields.Number(attribute='ChildCount')
+    duration = fields.Float(attribute='RunTimeTicks')
+    n_items = fields.Integer(attribute='ChildCount')
     genres = fields.List(fields.String, attribute='Genres')
     tags = fields.List(fields.String, attribute='Tags')
     created_at = DateTime(attribute='DateCreated')

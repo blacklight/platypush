@@ -11,7 +11,7 @@ class MapsDistanceSchema(Schema):
         },
     )
 
-    value = fields.Number(
+    value = fields.Float(
         required=True,
         metadata={
             'description': 'Distance expressed as a numeric value according to the selected units',
@@ -29,7 +29,7 @@ class MapsDurationSchema(Schema):
         },
     )
 
-    value = fields.Number(
+    value = fields.Integer(
         required=True,
         metadata={
             'description': 'Duration expressed in seconds',
