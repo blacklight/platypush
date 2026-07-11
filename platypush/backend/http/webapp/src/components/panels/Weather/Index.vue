@@ -7,7 +7,7 @@
         <form class="location-search" @submit.prevent="search">
           <label>
             <input type="text" v-model="searchQuery" :disabled="searching"
-                   placeholder="Search a location, or enter lat,long coordinates" />
+                   placeholder="Location or lat,long" />
           </label>
           <button type="submit" title="Search location" :disabled="searching || !searchQuery?.trim()?.length">
             <i class="fas fa-magnifying-glass" />
@@ -39,7 +39,7 @@
 
       <div class="current-weather">
         <h1>
-          <WeatherIcon :weather="weather" :icon-color="iconColor" :size="iconSize"
+          <WeatherIcon :weather="weather" :icon-color="iconColor" :size="currentIconSize"
                        v-if="weather" />
           <span class="temperature" v-if="weather?.temperature != null">
             {{ Math.round(parseFloat(weather.temperature)) + '&deg;' }}
@@ -241,6 +241,11 @@ export default {
     // plugin's configured default location.
     displayedLocation() {
       return this.location || this.defaultLocation
+    },
+
+    // Scale down the current weather icon on mobile devices.
+    currentIconSize() {
+      return this.isMobile() ? Math.round(this.iconSize * 0.6) : this.iconSize
     },
 
     forecastDates() {
@@ -539,29 +544,51 @@ export default {
     padding: 0.75em;
     border-bottom: $default-border-2;
 
+    @include until($tablet) {
+      flex-wrap: nowrap;
+      padding: 0.5em;
+    }
+
     .location-search {
       position: relative;
       display: flex;
       align-items: center;
-      flex-grow: 1;
-      max-width: 30em;
+      flex: 1 1 auto;
+      min-width: 0;
       border: none;
       box-shadow: none;
       background: none;
       padding: 0;
       margin: 0;
 
+      @include until($tablet) {
+        max-width: 18em;
+      }
+
+      @include from($tablet) {
+        max-width: 30em;
+      }
+
       label {
-        flex-grow: 1;
+        flex: 1 1 auto;
+        min-width: 0;
       }
 
       input[type=text] {
         width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
       }
 
       button {
+        flex: 0 0 auto;
         margin-left: 0.5em;
         border-radius: 1.5em;
+
+        @include until($tablet) {
+          margin-left: 0.25em;
+          padding: 0.5em 0.65em;
+        }
       }
 
       .search-results {
@@ -595,10 +622,19 @@ export default {
 
     .units-toggle {
       display: flex;
+      flex: 0 0 auto;
       margin-left: 0.75em;
+
+      @include until($tablet) {
+        margin-left: 0.25em;
+      }
 
       button {
         padding: 0.4em 0.75em;
+
+        @include until($tablet) {
+          padding: 0.5em 0.65em;
+        }
 
         &:first-child {
           border-radius: 1.5em 0 0 1.5em;
@@ -646,20 +682,36 @@ export default {
     padding: 1em;
     border-bottom: $default-border-2;
 
+    @include until($tablet) {
+      padding: 0.5em;
+    }
+
     h1 {
       display: flex;
       justify-content: center;
       align-items: center;
+
+      @include until($tablet) {
+        margin: 0.25em 0;
+      }
     }
 
     .temperature {
       font-size: 2em;
       margin-left: 0.4em;
+
+      @include until($tablet) {
+        font-size: 1.5em;
+      }
     }
 
     .summary {
       font-size: 1.1em;
       margin-top: 0.75em;
+
+      @include until($tablet) {
+        margin-top: 0.25em;
+      }
     }
 
     .details {
@@ -669,11 +721,20 @@ export default {
       justify-content: center;
       margin-top: 1.5em;
 
+      @include until($tablet) {
+        margin-top: 0.75em;
+        font-size: 0.9em;
+      }
+
       .detail {
         display: flex;
         flex-direction: column;
         align-items: center;
         margin: 0.5em 1em;
+
+        @include until($tablet) {
+          margin: 0.25em 0.75em;
+        }
 
         .name {
           font-size: 0.85em;
@@ -706,6 +767,10 @@ export default {
         align-items: center;
         font-size: 0.8em;
         font-weight: normal;
+
+        input[type=date] {
+          max-width: 10em;
+        }
 
         button {
           background: none;
