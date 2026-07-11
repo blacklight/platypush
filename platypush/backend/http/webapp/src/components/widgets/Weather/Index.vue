@@ -3,11 +3,8 @@
     <Loading v-if="loading" />
 
     <h1 v-else>
-      <skycons :condition="weatherIcon" :paused="!animate" :size="iconSize" :color="iconColor"
-               v-if="_showIcon && weatherIcon && weatherPlugin === 'weather.darksky'" />
-      <img :src="`/icons/openweathermap/${iconColor || 'dark'}/${weatherIcon}.png`" :alt="weather?.summary"
-           :width="iconSize * 1.5" :height="iconSize * 1.5" class="owm-icon"
-           v-else-if="_showIcon && weatherIcon && weatherPlugin === 'weather.openweathermap'" />
+      <WeatherIcon :weather="weather" :icon-color="iconColor" :size="iconSize * 1.5"
+                   class="owm-icon" v-if="_showIcon && weather" />
       <span class="temperature" v-if="_showTemperature && weather">
         {{ Math.round(parseFloat(weather.temperature)) + '&deg;' }}
       </span>
@@ -19,22 +16,15 @@
 
 <script>
 import Utils from "@/Utils";
-import Skycons from "vue-skycons"
 import Loading from "@/components/Loading";
+import WeatherIcon from "@/components/panels/Weather/WeatherIcon";
 
 // Widget to show date, time, weather and temperature information
 export default {
   name: 'Weather',
   mixins: [Utils],
-  components: {Loading, Skycons},
+  components: {Loading, WeatherIcon},
   props: {
-    // If false then the weather icon will be animated.
-    // Otherwise, it will be a static image.
-    animate: {
-      required: false,
-      default: true,
-    },
-
     // Size of the weather icon in pixels.
     iconSize: {
       type: Number,
@@ -42,9 +32,9 @@ export default {
       default: 50,
     },
 
-    // Icon color.
-    // If Darksky is used as a plugin it can be any HTML-formatted color.
-    // If OpenWeatherMap is used it can be one theme between dark and light.
+    // Icon color theme (one between dark and light).
+    // It only applies to plugins that use icon identifiers rather than
+    // image URLs (e.g. weather.openweathermap).
     iconColor: {
       type: String,
       required: false,
@@ -79,12 +69,11 @@ export default {
   data: function() {
     return {
       weather: undefined,
-      weatherIcon: undefined,
       weatherPlugin: undefined,
       loading: false,
       weatherPlugins: [
         'weather.openweathermap',
-        'weather.darksky',
+        'weather.buienradar',
       ],
     };
   },
@@ -120,7 +109,6 @@ export default {
         this.weather = {}
 
       this.weather = {...this.weather, ...event}
-      this.weatherIcon = this.weather.icon
     },
 
     initWeatherPlugin() {
