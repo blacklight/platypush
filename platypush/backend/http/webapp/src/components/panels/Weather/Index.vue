@@ -12,6 +12,11 @@
           <button type="submit" title="Search location" :disabled="searching || !searchQuery?.trim()?.length">
             <i class="fas fa-magnifying-glass" />
           </button>
+          <button type="button" title="Use my current location (GPS)"
+                  :disabled="locating" @click="locate" v-if="hasGeolocation">
+            <i class="fas fa-spinner fa-spin" v-if="locating" />
+            <i class="fas fa-location-crosshairs" v-else />
+          </button>
 
           <div class="search-results" v-if="searchResults.length">
             <div class="result" v-for="(result, index) in searchResults" :key="index"
@@ -30,14 +35,6 @@
             &deg;F
           </button>
         </div>
-      </div>
-
-      <div class="selected-location" v-if="location">
-        <i class="fas fa-location-dot" />&nbsp;
-        <span v-text="location.name" />
-        <button class="clear" title="Reset to the default location" @click="clearLocation">
-          <i class="fas fa-xmark" />
-        </button>
       </div>
 
       <div class="current-weather">
@@ -60,6 +57,14 @@
             <div class="value" v-text="detail.value" />
           </div>
         </div>
+      </div>
+
+      <div class="selected-location" v-if="displayedLocation">
+        <i class="fas fa-location-dot" />&nbsp;
+        <span v-text="displayedLocation.name" />
+        <button class="clear" title="Reset to the default location" @click="clearLocation" v-if="location">
+          <i class="fas fa-xmark" />
+        </button>
       </div>
 
       <div class="forecast-container">
@@ -136,7 +141,9 @@ export default {
       searchQuery: '',
       searchResults: [],
       searching: false,
+      locating: false,
       location: null,
+      defaultLocation: null,
       units: null,
       selectedDate: null,
     }
@@ -224,6 +231,16 @@ export default {
 
     displayUnits() {
       return this.units || this.weather?.units || 'metric'
+    },
+
+    hasGeolocation() {
+      return !!navigator.geolocation
+    },
+
+    // The location to display: the user-selected one, if any, otherwise the
+    // plugin's configured default location.
+    displayedLocation() {
+      return this.location || this.defaultLocation
     },
 
     forecastDates() {
@@ -331,11 +348,106 @@ export default {
       }
     },
 
+    // Retrieve the current position through the browser's geolocation API.
+    // The browser will prompt the user for permission if it hasn't been
+    // granted yet.
+    locate() {
+      if (!this.hasGeolocation) {
+        this.notifyError('Geolocation is not supported by this browser')
+        return
+      }
+
+      this.locating = true
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          this.locating = false
+          const lat = Math.round(position.coords.latitude * 1e5) / 1e5
+          const long = Math.round(position.coords.longitude * 1e5) / 1e5
+          this.selectLocation({
+            name: `Current location (${lat}, ${long})`,
+            lat: lat,
+            long: long,
+          })
+        },
+        (error) => {
+          this.locating = false
+          let text = `Could not retrieve the current location: ${error.message}`
+          if (error.code === error.PERMISSION_DENIED)
+            text = 'Location access denied. Please grant the location ' +
+              'permission to this page in your browser settings.'
+
+          this.notify({
+            title: 'Geolocation',
+            text: text,
+            error: true,
+          })
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 30000,
+          maximumAge: 60000,
+        }
+      )
+    },
+
+    // Reverse geo lookup: retrieve the location name, if available, from its
+    // lat/long coordinates. Returns null if no location could be resolved.
+    async reverseLookup(lat, long) {
+      try {
+        const location = await this.request(
+          `${this.pluginName}.reverse_lookup_location`, {lat: lat, long: long}
+        )
+
+        if (location?.name)
+          return {...location, lat: lat, long: long}
+      } catch (e) {
+        console.warn('Reverse location lookup failed', e)
+      }
+
+      return null
+    },
+
+    // Selection is always done on the lat/long coordinates. If no
+    // human-readable name is available, resolve it asynchronously in the
+    // background through a reverse geo lookup, without blocking the weather
+    // refresh.
     selectLocation(location) {
       this.location = location
       this.searchResults = []
       this.searchQuery = ''
       this.refresh()
+
+      if (!location.type)
+        this.reverseLookup(location.lat, location.long).then((resolved) => {
+          // Only update the name if the selection hasn't changed in the
+          // meantime
+          if (resolved && this.location?.lat === location.lat && this.location?.long === location.long)
+            this.location = resolved
+        })
+    },
+
+    // Initialize the default location from the plugin configuration. If a
+    // location name is configured, display it as-is. If only lat/long are
+    // configured, reverse-resolve them to a location name, if available.
+    async initDefaultLocation() {
+      if (this.config?.location) {
+        this.defaultLocation = {name: this.config.location}
+        return
+      }
+
+      if (this.config?.lat != null && this.config?.long != null) {
+        const lat = parseFloat(this.config.lat)
+        const long = parseFloat(this.config.long)
+        this.defaultLocation = {
+          name: `${lat}, ${long}`,
+          lat: lat,
+          long: long,
+        }
+
+        const resolved = await this.reverseLookup(lat, long)
+        if (resolved)
+          this.defaultLocation = resolved
+      }
     },
 
     clearLocation() {
@@ -378,6 +490,7 @@ export default {
 
   mounted() {
     this.refresh()
+    this.initDefaultLocation()
     this.subscribe(this.onWeatherChange, `weather-panel-update-${this.pluginName}`,
         'platypush.message.event.weather.NewWeatherConditionEvent')
     this.subscribe(this.onForecastChange, `weather-panel-forecast-${this.pluginName}`,
@@ -507,7 +620,8 @@ export default {
     display: flex;
     align-items: center;
     padding: 0.5em 0.75em;
-    font-size: 0.9em;
+    font-size: 0.8em;
+    color: $input-icon-fg;
     border-bottom: $default-border-2;
 
     button.clear {
@@ -516,6 +630,8 @@ export default {
       padding: 0 0.5em;
       margin-left: 0.25em;
       cursor: pointer;
+      flex: 1;
+      text-align: right;
 
       &:hover {
         color: $default-hover-fg;
@@ -579,9 +695,11 @@ export default {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      background: $default-bg-3;
       font-size: 1.2em;
+      margin: 0;
       padding: 0.5em;
-      border-bottom: $default-border-2;
+      box-shadow: $border-shadow-bottom;
 
       .date-selector {
         display: flex;

@@ -13,12 +13,24 @@
 
   - A location selector, supporting both free-text search (via a new
     `lookup_location` action, see below) and direct `lat,long` coordinates.
+  - A button to fetch the current location via GPS, through the browser's
+    geolocation API, prompting the user for the location permission if
+    required.
   - A metric/imperial unit system toggle.
   - A date selector to filter the forecast by day.
+  - The plugin's configured default location is also displayed - either the
+    configured location name, or the configured lat/long coordinates
+    reverse-resolved to a location name, if available.
 
 - `weather`: Added a `lookup_location` action, shared by all the weather
   plugins, to resolve free-text location queries into geo-coordinates through
   the OpenStreetMap Nominatim API, with cached results.
+
+- `weather`: Added a `reverse_lookup_location` action, shared by all the
+  weather plugins, to resolve lat/long coordinates into a location name
+  through the OpenStreetMap Nominatim API, with cached results. The weather
+  panel uses it to asynchronously resolve the names of locations selected via
+  GPS or raw coordinates, without blocking the weather refresh.
 
 - `weather`: The weather widget now also supports `weather.buienradar`
   besides `weather.openweathermap`.

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from threading import RLock
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Union
 
 import requests
 
@@ -20,13 +20,14 @@ class WeatherPlugin(RunnablePlugin, WeatherEntityManager, ABC):
     """
 
     _geocode_url = 'https://nominatim.openstreetmap.org/search'
+    _reverse_geocode_url = 'https://nominatim.openstreetmap.org/reverse'
     _geocode_cache_size = 100
 
     def __init__(self, poll_interval: Optional[float] = 120, **kwargs):
         super().__init__(poll_interval=poll_interval, **kwargs)
         self._latest_weather = None
         self._latest_forecast = None
-        self._geocode_cache: Dict[Tuple[str, int], List[dict]] = {}
+        self._geocode_cache: Dict[tuple, Union[List[dict], dict]] = {}
         self._geocode_cache_lock = RLock()
 
     def _on_weather_data(self, weather: dict, always_publish: bool = False):
@@ -129,11 +130,10 @@ class WeatherPlugin(RunnablePlugin, WeatherEntityManager, ABC):
         return self._lookup_location(location, limit=limit)
 
     def _lookup_location(self, location: str, limit: int = 10) -> List[dict]:
-        cache_key = (location.strip().lower(), limit)
-        with self._geocode_cache_lock:
-            cached = self._geocode_cache.get(cache_key)
-            if cached is not None:
-                return cached
+        cache_key = ('search', location.strip().lower(), limit)
+        cached = self._geocode_cache_get(cache_key)
+        if cached is not None:
+            return cached
 
         rs = requests.get(
             self._geocode_url,
@@ -154,14 +154,76 @@ class WeatherPlugin(RunnablePlugin, WeatherEntityManager, ABC):
             if result.get('lat') is not None and result.get('lon') is not None
         ]
 
+        self._geocode_cache_put(cache_key, results)
+        return results
+
+    @action
+    def reverse_lookup_location(self, lat: float, long: float) -> Optional[dict]:
+        """
+        Retrieve the name of a location from its lat/long geo-coordinates,
+        using the `Nominatim
+        <https://nominatim.org/release-docs/latest/api/Reverse/>`_
+        OpenStreetMap API. Results are cached to limit the impact on the
+        upstream service.
+
+        :param lat: Latitude.
+        :param long: Longitude.
+        :return: The matching location, if available, in the format:
+
+            .. code-block:: json
+
+                {
+                    "name": "Brussels, Brussels-Capital, Belgium",
+                    "lat": 50.8465573,
+                    "long": 4.351697,
+                    "type": "city"
+                }
+
+        """
+        return self._reverse_lookup_location(lat, long)
+
+    def _reverse_lookup_location(self, lat: float, long: float) -> Optional[dict]:
+        # ~11 m precision is more than enough for weather purposes, and it
+        # improves the cache hit ratio
+        cache_key = ('reverse', round(lat, 4), round(long, 4))
+        cached = self._geocode_cache_get(cache_key)
+        if cached is not None:
+            return cached or None
+
+        rs = requests.get(
+            self._reverse_geocode_url,
+            params={'lat': lat, 'lon': long, 'format': 'json'},
+            headers={'User-Agent': 'platypush'},
+            timeout=10,
+        )
+
+        rs.raise_for_status()
+        response = rs.json()
+        result = None
+        if response.get('display_name'):
+            result = {
+                'name': response['display_name'],
+                'lat': float(response.get('lat', lat)),
+                'long': float(response.get('lon', long)),
+                'type': response.get('type'),
+            }
+
+        # Cache an empty dict for negative results, so we don't keep hitting
+        # the API for coordinates with no associated location
+        self._geocode_cache_put(cache_key, result or {})
+        return result
+
+    def _geocode_cache_get(self, key: tuple):
+        with self._geocode_cache_lock:
+            return self._geocode_cache.get(key)
+
+    def _geocode_cache_put(self, key: tuple, value):
         with self._geocode_cache_lock:
             if len(self._geocode_cache) >= self._geocode_cache_size:
                 # Drop the oldest cached entry
                 self._geocode_cache.pop(next(iter(self._geocode_cache)))
 
-            self._geocode_cache[cache_key] = results
-
-        return results
+            self._geocode_cache[key] = value
 
     @action
     def status(self, *args, **kwargs) -> dict:
