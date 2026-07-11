@@ -1,6 +1,10 @@
 .DS_Store
 node_modules
 
+# Copied from public/ by the prebuild script
+src/assets/icons
+src/assets/img
+
 
 # local env files
 .env.local
