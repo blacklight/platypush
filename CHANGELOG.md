@@ -1,5 +1,33 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `weather`: Added a new web panel for weather plugins, shared by
+  `weather.openweathermap` and `weather.buienradar`. It displays the current
+  weather conditions (with icons and details such as feels-like temperature,
+  humidity, pressure, wind, precipitation, visibility, sunrise and sunset) as
+  well as the upcoming forecast, and it live-updates on new weather events.
+  The panel also includes:
+
+  - A location selector, supporting both free-text search (via a new
+    `lookup_location` action, see below) and direct `lat,long` coordinates.
+  - A metric/imperial unit system toggle.
+  - A date selector to filter the forecast by day.
+
+- `weather`: Added a `lookup_location` action, shared by all the weather
+  plugins, to resolve free-text location queries into geo-coordinates through
+  the OpenStreetMap Nominatim API, with cached results.
+
+- `weather`: The weather widget now also supports `weather.buienradar`
+  besides `weather.openweathermap`.
+
+### Fixed
+
+- `weather`: Fixed the `status` action returning empty/default values for
+  most of the fields because of a double serialization of the weather data.
+
 ## [1.3.28]
 
 ### Added
