@@ -1,1 +1,0 @@
-"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[9631],{9631:function(p,s,u){u.r(s)}}]);

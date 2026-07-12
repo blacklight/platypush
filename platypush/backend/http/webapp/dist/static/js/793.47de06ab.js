@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[793],{80793:function(e,n,t){t.r(n),t.d(n,{default:function(){return f}});var a=t(20641);function r(e,n,t,r,u,p){const c=(0,a.g2)("Weather");return(0,a.uX)(),(0,a.Wv)(c,{"plugin-name":"weather.openweathermap",config:t.config},null,8,["config"])}var u=t(82151),p={name:"WeatherOpenweathermap",components:{Weather:u["default"]},props:{config:{type:Object,default:()=>{}}}},c=t(66262);const o=(0,c.A)(p,[["render",r]]);var f=o}}]);
+//# sourceMappingURL=793.47de06ab.js.map

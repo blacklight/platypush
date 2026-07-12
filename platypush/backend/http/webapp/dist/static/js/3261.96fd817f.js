@@ -1,0 +1,2 @@
+"use strict";(self["webpackChunkplatypush"]=self["webpackChunkplatypush"]||[]).push([[3261],{23261:function(e,n,t){t.r(n),t.d(n,{default:function(){return p}});var a=t(20641);function r(e,n,t,r,u,c){const f=(0,a.g2)("Weather");return(0,a.uX)(),(0,a.Wv)(f,{"plugin-name":"weather.buienradar",config:t.config},null,8,["config"])}var u=t(82151),c={name:"WeatherBuienradar",components:{Weather:u["default"]},props:{config:{type:Object,default:()=>{}}}},f=t(66262);const o=(0,f.A)(c,[["render",r]]);var p=o}}]);
+//# sourceMappingURL=3261.96fd817f.js.map
