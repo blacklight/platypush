@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `ntfy`: Added `icon` and `markdown` parameters to the `send` action to
+  support custom notification icons and Markdown-formatted messages.
+
 ## [1.3.30]
 
 ### Added

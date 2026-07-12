@@ -116,6 +116,8 @@ class NtfyPlugin(AsyncRunnablePlugin):
         priority: Optional[str] = None,
         tags: Optional[Collection[str]] = None,
         schedule: Optional[str] = None,
+        icon: Optional[str] = None,
+        markdown: bool = False,
     ):
         r"""
         Send a message/notification to a topic.
@@ -190,6 +192,8 @@ class NtfyPlugin(AsyncRunnablePlugin):
                 - Natural language strings (e.g. ``Tuesday, 7am`` or
                   ``tomorrow, 3pm``)
 
+        :param icon: Custom notification icon URL.
+        :param markdown: Use Markdown syntax for the message (default: ``False``).
         """
         method: Callable[..., requests.Response] = requests.post
         server_url = server_url or self._server_url
@@ -211,6 +215,8 @@ class NtfyPlugin(AsyncRunnablePlugin):
                 **({'X-Priority': priority} if priority else {}),
                 **({'X-Tags': ','.join(tags)} if tags else {}),
                 **({'X-Delay': schedule} if schedule else {}),
+                **({'X-Icon': icon} if icon else {}),
+                **({'X-Markdown': 'true'} if markdown else {}),
             }
 
             with open(attachment, 'rb') as f:
