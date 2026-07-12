@@ -28,6 +28,8 @@ class TtsOpenaiPlugin(TtsPlugin):
         model: str = 'tts-1',
         voice: str = 'nova',
         timeout: float = 10,
+        start_padding: float = 1,
+        end_padding: float = 1,
         **kwargs,
     ):
         """
@@ -40,6 +42,13 @@ class TtsOpenaiPlugin(TtsPlugin):
             <https://platform.openai.com/docs/guides/text-to-speech/voice-options>`_
             for the list of available voices (default: ``nova``).
         :param timeout: Default timeout for the API requests (default: 10s).
+        :param start_padding: Silence, in seconds, to prepend before playing
+            the audio. This gives the audio backend (e.g. PulseAudio/PipeWire)
+            time to initialize the output path, avoiding the first fraction of
+            generated speech being silently dropped (default: 1).
+        :param end_padding: Silence, in seconds, to append before closing the
+            playback stream. This avoids clipping the tail of short generated
+            speech on some audio backends (default: 1).
         :param kwargs: Extra arguments to be passed to the
             :class:`platypush.plugins.tts.TtsPlugin` constructor, including
             ``output_device`` and ``output_volume``. ``output_device`` accepts a
@@ -56,6 +65,8 @@ class TtsOpenaiPlugin(TtsPlugin):
         self.model = model
         self.voice = voice
         self.timeout = timeout
+        self.player_args.setdefault('start_padding', start_padding)
+        self.player_args.setdefault('end_padding', end_padding)
         self._audio_proc: Optional[Process] = None
 
     def _process_response(
