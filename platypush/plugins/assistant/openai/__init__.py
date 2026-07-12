@@ -13,6 +13,7 @@ from platypush.plugins.assistant import AssistantPlugin
 from platypush.plugins.assistant._audio import AudioPreprocessor
 from platypush.plugins.openai import OpenaiPlugin
 
+from ._markdown import strip_markdown
 from ._state import RecordingState
 
 
@@ -323,7 +324,7 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
     @property
     def _openai(self) -> OpenaiPlugin:
         openai: Optional[OpenaiPlugin] = get_plugin("openai")
-        if not (openai):
+        if not openai:
             raise AssertionError(
                 "OpenAI plugin not found. "
                 "Please configure the `openai` plugin to use `assistant.openai`"
@@ -413,7 +414,7 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
                 self.logger.debug("Default response disabled, skipping response")
                 return
 
-        response = self._openai.get_response(phrase).output
+        response = strip_markdown(self._openai.get_response(phrase).output)
         if response:
             self.render_response(response)
         else:
@@ -472,7 +473,7 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         :return: The response received from
             :meth:`platypush.plugins.openai.OpenaiPlugin.get_response`.
         """
-        response = self._openai.get_response(text).output
+        response = strip_markdown(self._openai.get_response(text).output)
         self.render_response(response)
         return response
 
