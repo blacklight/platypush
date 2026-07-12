@@ -26,7 +26,6 @@
         "ffmpeg",
         "libspeexdsp-dev",
         "python3-numpy",
-        "python3-pydub",
         "python3-sounddevice",
         "swig"
       ],
@@ -40,18 +39,14 @@
       ],
       "pacman": [
         "ffmpeg",
-        "python-audioop-lts",
         "python-numpy",
-        "python-pydub",
         "python-sounddevice",
         "python-webrtcvad",
         "speexdsp",
         "swig"
       ],
       "pip": [
-        "audioop-lts",
         "numpy",
-        "pydub",
         "sounddevice",
         "speexdsp-ns",
         "webrtcvad"
