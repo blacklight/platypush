@@ -1,5 +1,33 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `tts.openai`: Added `start_padding` and `end_padding` options to control
+  playback padding at the beginning and end of generated audio.
+
+### Changed
+
+- `assistant.openai`: Replaced the previous `pydub`-based silence detection
+  with VAD-based speech boundary detection, with new VAD parameters and faster
+  default frame sizing.
+
+- `assistant.openai`: Reworked audio export to encode MP3 output through an
+  `ffmpeg` subprocess, removing the `pydub`/`audioop` dependency path.
+
+- `webapp`: Migrated the frontend linting setup to the ESLint 10 flat config,
+  updated the related Vue linting dependencies, and adjusted the build config
+  accordingly.
+
+### Fixed
+
+- `assistant.openai`: Reset the OpenAI conversation context when a
+  conversation ends or times out, while keeping context across active turns.
+
+- `assistant.openai`: Strip Markdown formatting from assistant responses
+  before returning plain text.
+
 ## [1.3.29]
 
 ### Added
