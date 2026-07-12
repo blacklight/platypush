@@ -398,6 +398,14 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
 
         self._on_conversation_end()
 
+    def _on_conversation_end(self):
+        self._openai.clear_context()
+        super()._on_conversation_end()
+
+    def _on_conversation_timeout(self):
+        self._openai.clear_context()
+        super()._on_conversation_timeout()
+
     def _on_speech_recognized(self, phrase: Optional[str]):
         super()._on_speech_recognized(phrase)
 
@@ -413,7 +421,9 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
                 self.logger.debug("Default response disabled, skipping response")
                 return
 
-        response = strip_markdown(self._openai.get_response(phrase).output)
+        response = strip_markdown(
+            self._openai.get_response(phrase, clear_context=False).output
+        )
         if response:
             self.render_response(response)
         else:
@@ -472,7 +482,9 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         :return: The response received from
             :meth:`platypush.plugins.openai.OpenaiPlugin.get_response`.
         """
-        response = strip_markdown(self._openai.get_response(text).output)
+        response = strip_markdown(
+            self._openai.get_response(text, clear_context=False).output
+        )
         self.render_response(response)
         return response
 
