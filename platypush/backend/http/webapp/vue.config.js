@@ -13,7 +13,7 @@ const wsProxy = {
 }
 
 module.exports = {
-  lintOnSave: true,
+  lintOnSave: false,
   outputDir: "dist",
   assetsDir: "static",
   css: {
