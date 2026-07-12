@@ -3,7 +3,6 @@ from threading import Event
 from typing import Optional, Union
 
 import numpy as np
-from pydub import AudioSegment
 
 from platypush.common.assistant import AudioRecorder
 from platypush.common.assistant._state import AudioFrame
@@ -192,10 +191,8 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         self,
         model: str = "whisper-1",
         tts_plugin: Optional[str] = "tts.openai",
-        min_silence_secs: float = 1.0,
-        silence_threshold: int = -22,
         sample_rate: int = 16000,
-        frame_size: int = 16384,
+        frame_size: int = 2000,
         channels: int = 1,
         input_device: Optional[Union[int, str]] = None,
         input_volume: float = 100,
@@ -203,6 +200,9 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         conversation_end_timeout: float = 1.0,
         conversation_max_duration: float = 15.0,
         enable_noise_suppression: Optional[bool] = None,
+        vad_enabled: bool = True,
+        vad_mode: int = 2,
+        vad_speech_threshold: float = 0.3,
         energy_vad_threshold: float = 300,
         **kwargs,
     ):
@@ -211,17 +211,11 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
             ``whisper-1``).
         :param tts_plugin: Name of the TTS plugin to use for rendering the responses
             (default: ``tts.openai``).
-        :param min_silence_secs: Minimum silence duration in seconds to detect
-            the end of a conversation (default: 1.0 seconds).
-        :param silence_threshold: Silence threshold in dBFS (default: -22).
-            The value of 0 is the maximum amplitude, and -120 is associated to
-            a silent or nearly silent audio, thus the higher the value, the more
-            sensitive the silence detection will be (default: -22).
         :param sample_rate: Recording sample rate in Hz (default: 16000).
-        :param frame_size: Recording frame size in samples (default: 16384).
-            Note that it's important to make sure that ``frame_size`` /
-            ``sample_rate`` isn't smaller than the minimum silence duration,
-            otherwise the silence detection won't work properly.
+        :param frame_size: Recording frame size in samples (default: 2000).
+            With the default sample rate of 16000, this corresponds to 125 ms
+            per frame. Smaller values improve the responsiveness of the speech
+            boundary detection at the cost of higher CPU usage.
         :param channels: Number of recording channels (default: 1).
         :param input_device: Audio input device to use for recording. Supported
             formats: PortAudio/sounddevice device index, PortAudio/sounddevice
@@ -245,6 +239,19 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
             background noise and improves transcription accuracy, especially
             for distant speech. Default: auto-enabled if the package is
             available.
+        :param vad_enabled: Whether to use Voice Activity Detection for
+            speech boundary detection (default: True). Uses ``webrtcvad`` if
+            available, otherwise falls back to energy-based detection. If
+            disabled, every audio frame is treated as speech, so the
+            conversation will only end on ``conversation_max_duration`` or
+            :meth:`.stop_conversation`.
+        :param vad_mode: WebRTC VAD aggressiveness mode, 0–3 (default: 2).
+            Higher values are more aggressive at filtering non-speech but
+            may miss distant or quiet speech.  Only used when ``webrtcvad``
+            is installed.
+        :param vad_speech_threshold: Fraction of VAD sub-frames within an
+            audio frame that must be classified as speech for the frame to
+            be considered as containing speech (default: 0.3).
         :param energy_vad_threshold: RMS energy threshold for the
             energy-based VAD fallback (used when ``webrtcvad`` is not
             installed).  Voices at conversational distance typically
@@ -256,8 +263,6 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         super().__init__(**kwargs)
 
         self._model = model
-        self._min_silence_secs = min_silence_secs
-        self._silence_threshold = silence_threshold
         self._sample_rate = sample_rate
         self._frame_size = frame_size
         self._channels = channels
@@ -266,13 +271,13 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         self._conversation_start_timeout = conversation_start_timeout
         self._conversation_end_timeout = conversation_end_timeout
         self._conversation_max_duration = conversation_max_duration
-        self._enable_noise_suppression = enable_noise_suppression
-        self._energy_vad_threshold = energy_vad_threshold
         self._audio_processor = AudioPreprocessor(
             frame_size=frame_size,
             sample_rate=sample_rate,
             enable_noise_suppression=enable_noise_suppression,
-            vad_enabled=False,
+            vad_enabled=vad_enabled,
+            vad_mode=vad_mode,
+            vad_speech_threshold=vad_speech_threshold,
             energy_vad_threshold=energy_vad_threshold,
         )
         self._start_recording_event = Event()
@@ -280,19 +285,9 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         self._recording_state = RecordingState(
             sample_rate=sample_rate,
             channels=channels,
-            min_silence_secs=min_silence_secs,
-            silence_threshold=silence_threshold,
         )
 
         self._recorder: Optional[AudioRecorder] = None
-
-    def _to_audio_segment(self, data: np.ndarray) -> AudioSegment:
-        return AudioSegment(
-            data.tobytes(),
-            frame_rate=self._sample_rate,
-            sample_width=data.dtype.itemsize,
-            channels=self._channels,
-        )
 
     def _is_conversation_ended(self):
         # End if the recording has been stopped
@@ -342,12 +337,16 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
             if not audio_data:
                 continue
 
-            processed = self._audio_processor.process(audio_data.data.tobytes())
+            data = audio_data.data.tobytes()
+            # VAD runs on the ORIGINAL audio (before noise suppression) so
+            # that weak distant speech is not suppressed before detection
+            is_speech = self._audio_processor.has_speech(data)
+            processed = self._audio_processor.process(data)
             processed_frame = AudioFrame(
                 data=np.frombuffer(processed, dtype=audio_data.data.dtype),
                 timestamp=audio_data.timestamp,
             )
-            self._recording_state.add_audio(processed_frame)
+            self._recording_state.add_audio(processed_frame, is_speech=is_speech)
 
     def _audio_loop(self):
         while not self.should_stop():
