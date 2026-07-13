@@ -197,9 +197,11 @@ class NtfyPlugin(AsyncRunnablePlugin):
         """
         method: Callable[..., requests.Response] = requests.post
         server_url = server_url or self._server_url
-        args: Dict[str, Any] = {}
+        args: Dict[str, Any] = {'headers': {}}
         if username and password:
             args['auth'] = (username, password)
+        if markdown:
+            args['headers'].update({'Content-Type': 'text/markdown'})
 
         if attachment and not (
             attachment.startswith('http://') or attachment.startswith('https://')
@@ -207,17 +209,18 @@ class NtfyPlugin(AsyncRunnablePlugin):
             url = f'{url}/{topic}'
             attachment = os.path.expanduser(attachment)
             filename = filename or os.path.basename(attachment)
-            args['headers'] = {
-                'Filename': filename,
-                **({'X-Title': title} if title else {}),
-                **({'X-Click': url} if url else {}),
-                **({'X-Email': email} if email else {}),
-                **({'X-Priority': priority} if priority else {}),
-                **({'X-Tags': ','.join(tags)} if tags else {}),
-                **({'X-Delay': schedule} if schedule else {}),
-                **({'X-Icon': icon} if icon else {}),
-                **({'X-Markdown': 'true'} if markdown else {}),
-            }
+            args['headers'].update(
+                {
+                    'Filename': filename,
+                    **({'X-Title': title} if title else {}),
+                    **({'X-Click': url} if url else {}),
+                    **({'X-Email': email} if email else {}),
+                    **({'X-Priority': priority} if priority else {}),
+                    **({'X-Tags': ','.join(tags)} if tags else {}),
+                    **({'X-Delay': schedule} if schedule else {}),
+                    **({'X-Icon': icon} if icon else {}),
+                }
+            )
 
             with open(attachment, 'rb') as f:
                 args['data'] = f.read()
@@ -248,7 +251,7 @@ class NtfyPlugin(AsyncRunnablePlugin):
             }
 
         rs = method(server_url, **args)
-        if not (rs.ok):
+        if not rs.ok:
             raise AssertionError(
                 f'Could not send message to {topic}: '
                 + rs.json().get('error', f'HTTP error: {rs.status_code}')
