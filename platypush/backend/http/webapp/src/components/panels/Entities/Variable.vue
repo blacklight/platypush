@@ -10,7 +10,7 @@
       </div>
 
       <div class="value-and-toggler" @click.stop="collapsed = !collapsed">
-        <div class="value" v-text="value.value" />
+        <div class="value" :class="{truncated: collapsed}" v-text="value.value" />
         <div class="collapse-toggler" @click.stop="collapsed = !collapsed">
           <i class="fas" :class="{'fa-chevron-down': collapsed, 'fa-chevron-up': !collapsed}" />
         </div>
@@ -22,13 +22,16 @@
         <form @submit.prevent="setValue">
           <div class="row">
             <div class="col-9">
-              <input type="text" v-model="value_" placeholder="Variable value" :disabled="loading" ref="text" />
+              <textarea v-model="value_" placeholder="Variable value" :disabled="loading" ref="text" rows="1" />
             </div>
             <div class="col-3 pull-right">
-              <button type="button" title="Clear" @click.stop="clearValue" :disabled="loading">
+              <button type="button" title="Delete Variable" @click.stop="showDeleteConfirm" :disabled="loading">
                 <i class="fas fa-trash" />
               </button>
-              <button type="submit" title="Edit" :disabled="loading">
+              <button type="button" title="Clear Value" @click.stop="clearValue" :disabled="loading">
+                <i class="fas fa-eraser" />
+              </button>
+              <button type="submit" title="Save" :disabled="loading">
                 <i class="fas fa-check" />
               </button>
             </div>
@@ -36,16 +39,22 @@
         </form>
       </div>
     </div>
+
+    <ConfirmDialog ref="deleteConfirmDialog" @input="deleteVariable">
+      Are you sure you want to delete this variable?<br/><br/>
+      <b>{{ value.name }}</b>
+    </ConfirmDialog>
   </div>
 </template>
 
 <script>
+import ConfirmDialog from "@/components/elements/ConfirmDialog"
 import EntityMixin from "./EntityMixin"
 import EntityIcon from "./EntityIcon"
 
 export default {
   name: 'Variable',
-  components: {EntityIcon},
+  components: {ConfirmDialog, EntityIcon},
   mixins: [EntityMixin],
   emits: ['loading'],
   data: function() {
@@ -62,6 +71,29 @@ export default {
   },
 
   methods: {
+    autoResizeTextarea() {
+      const textarea = this.$refs.text
+      if (!textarea)
+        return
+
+      textarea.style.height = 'auto'
+      textarea.style.height = Math.min(textarea.scrollHeight, 300) + 'px'
+    },
+
+    showDeleteConfirm() {
+      this.$refs.deleteConfirmDialog.show()
+    },
+
+    async deleteVariable() {
+      this.$emit('loading', true)
+      try {
+        await this.request('entities.delete', [this.value.id])
+        this.$refs.deleteConfirmDialog?.close()
+      } finally {
+        this.$emit('loading', false)
+      }
+    },
+
     async clearValue() {
       this.$emit('loading', true)
       try {
@@ -91,6 +123,17 @@ export default {
     this.value_ = this.value.value
     this.$watch(() => this.value.value, (newValue) => {
       this.value_ = newValue
+      this.$nextTick(() => this.autoResizeTextarea())
+    })
+
+    this.$watch(() => this.value_, () => {
+      this.$nextTick(() => this.autoResizeTextarea())
+    })
+
+    this.$watch(() => this.collapsed, (newVal) => {
+      if (!newVal) {
+        this.$nextTick(() => this.autoResizeTextarea())
+      }
     })
   },
 }
@@ -118,6 +161,18 @@ $icon-width: 2em;
 
     .value-and-toggler {
       text-align: right;
+
+      .value {
+        &.truncated {
+          max-height: 2.4em;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          word-break: break-word;
+        }
+      }
     }
   }
 
@@ -126,8 +181,24 @@ $icon-width: 2em;
 
     .row {
       width: 100%;
-      input[type=text] {
+      
+      input[type=text], textarea {
         width: 100%;
+      }
+
+      textarea {
+        min-height: 2.5em;
+        max-height: 300px;
+        resize: vertical;
+        overflow-y: auto;
+        font-family: inherit;
+        padding: 0.5em;
+      }
+
+      .pull-right {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5em;
       }
     }
   }

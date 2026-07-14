@@ -280,18 +280,21 @@ export default {
         this.loading = true
 
       try {
-        this.entities = (await this.request('entities.get')).reduce((obj, entity) => {
-          entity.name = entity?.meta?.name_override || entity.name
-          entity.category = meta[entity.type].name_plural
-          entity.meta = {
-            ...(meta[entity.type] || {}),
-            ...(entity.meta || {}),
-          }
+        this.entities = (await this.request('entities.get'))
+          // Exclude variables - they mess up the UI, they have their separate tab
+          .filter(entity => entity.type !== 'variable')
+          .reduce((obj, entity) => {
+            entity.name = entity?.meta?.name_override || entity.name
+            entity.category = meta[entity.type].name_plural
+            entity.meta = {
+              ...(meta[entity.type] || {}),
+              ...(entity.meta || {}),
+            }
 
-          obj[entity.id] = entity
-          this.addEntity(entity)
-          return obj
-        }, {})
+            obj[entity.id] = entity
+            this.addEntity(entity)
+            return obj
+          }, {})
 
         this.selector.selectedEntities = this.entityGroups.id
         this.refreshEntitiesCache()
@@ -344,7 +347,7 @@ export default {
 
     onEntityUpdate(event) {
       const entityId = event.entity.id
-      if (entityId == null)
+      if (entityId == null || event.entity.type === 'variable')
         return
 
       this.clearEntityTimeouts(entityId)
@@ -416,9 +419,13 @@ export default {
       const cachedEntities = window.localStorage.getItem('entities')
       if (cachedEntities) {
         try {
-          this.entities = JSON.parse(cachedEntities)
-          if (!this.entities)
+          const allEntities = JSON.parse(cachedEntities)
+          if (!allEntities)
             throw Error('The list of cached entities is null')
+          
+          this.entities = Object.fromEntries(
+            Object.entries(allEntities).filter(([_, entity]) => entity.type !== 'variable')
+          )
         } catch (e) {
           console.warning('Could not parse cached entities', e)
           return false

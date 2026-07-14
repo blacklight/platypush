@@ -104,6 +104,7 @@ export default {
       this.plugins.execute = {}
       this.plugins.application = {}
       this.plugins.file = this.plugins.file || {}
+      this.plugins.variable = {}
     },
   },
 
