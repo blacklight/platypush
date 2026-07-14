@@ -4,6 +4,20 @@
 
 ### Added
 
+- `webapp`: Added a dedicated Variables panel to the web UI. Variables now have
+  their own tab in the navigation menu, separate from the main Entities panel,
+  to reduce UI clutter. The panel includes:
+
+  - A filter bar to search variables by name (case-insensitive) or value
+    (case-sensitive).
+  - Auto-resizing textarea for editing long variable values, with automatic
+    height adjustment based on content.
+  - Value truncation (max 2 lines with ellipsis) in collapsed view to prevent
+    long values from cluttering the interface.
+  - Separate "Delete Variable" and "Clear Value" actions, with a confirmation
+    dialog when deleting variables.
+  - Improved button spacing and layout in the variable editor.
+
 - `ntfy`: Added `icon` and `markdown` parameters to the `send` action to
   support custom notification icons and Markdown-formatted messages.
 
