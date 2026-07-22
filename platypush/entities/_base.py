@@ -167,7 +167,7 @@ if not is_defined('entity'):
             """
             try:
                 normalized_name = col.key.lstrip('_')
-                if len(col.key.lstrip('_')) == col.key or not hasattr(
+                if len(col.key.lstrip('_')) == len(col.key) or not hasattr(
                     self, normalized_name
                 ):
                     return col.key  # It's not a hidden column with a mapped property
