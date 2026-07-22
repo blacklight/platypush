@@ -153,7 +153,21 @@ if not is_defined('entity'):
             )
 
         def _serialize_value(self, column_name: str) -> Any:
-            val = getattr(self, column_name)
+            try:
+                val = getattr(self, column_name)
+            except (ObjectDeletedError, KeyError) as e:
+                # A ``KeyError`` may be raised by SQLAlchemy's deferred loader
+                # when the underlying row is missing (e.g. an orphaned polymorphic
+                # entity whose subclass table row was deleted): don't let one
+                # bad row break the whole entity serialization.
+                logger.warning(
+                    'Could not read column "%s" for entity ID "%s": %s',
+                    column_name,
+                    self.id,
+                    e,
+                )
+                return None
+
             if isinstance(val, datetime):
                 # All entity timestamps are in UTC
                 val = val.replace(tzinfo=tzutc()).isoformat()
