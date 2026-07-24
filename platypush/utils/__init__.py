@@ -24,6 +24,8 @@ from typing import Generator, Optional, Tuple, Type, Union
 
 from dateutil import parser, tz
 from redis import ConnectionPool, Redis
+from redis.exceptions import ConnectionError as RedisConnectionError
+from redis.exceptions import TimeoutError as RedisTimeoutError
 from rsa.key import PublicKey, PrivateKey, newkeys
 
 logger = logging.getLogger('utils')
@@ -657,6 +659,11 @@ def get_redis_pool(*args, **kwargs) -> ConnectionPool:
     if not (args or kwargs):
         kwargs = get_redis_conf()
 
+    kwargs.setdefault('socket_timeout', 70)
+    kwargs.setdefault('socket_connect_timeout', 5)
+    kwargs.setdefault('health_check_interval', 15)
+    kwargs.setdefault('retry_on_timeout', True)
+
     pool_key = (kwargs.get('host', 'localhost'), kwargs.get('port', 6379))
     pool = redis_pools.get(pool_key)
 
@@ -779,7 +786,16 @@ def get_message_response(msg):
     if not redis_queue:
         return None
 
-    response = redis.blpop(redis_queue, timeout=60)
+    try:
+        response = redis.blpop(redis_queue, timeout=60)
+    except (RedisConnectionError, RedisTimeoutError) as e:
+        logger.warning(
+            'Redis connection error while waiting for response to %s: %s',
+            msg.id if hasattr(msg, 'id') else msg,
+            e,
+        )
+        return None
+
     if response and len(response) > 1:
         response = Message.build(response[1])
     else:

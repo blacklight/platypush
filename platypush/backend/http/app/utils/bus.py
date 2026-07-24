@@ -1,4 +1,4 @@
-from multiprocessing import Lock
+from threading import Lock
 
 from platypush.bus.redis import RedisBus
 from platypush.context import get_bus

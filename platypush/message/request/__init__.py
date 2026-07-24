@@ -15,6 +15,7 @@ from platypush.message.response import Response
 from platypush.utils import (
     get_hash,
     get_module_and_method_from_action,
+    get_redis,
     get_redis_queue_name_by_message,
     is_functional_procedure,
 )
@@ -209,11 +210,19 @@ class Request(Message):
         if self.backend and self.origin:
             self.backend.send_response(response=response, request=self)
         else:
-            redis = get_plugin('redis')
-            if redis:
-                queue_name = get_redis_queue_name_by_message(self)
-                redis.send_message(queue_name, response)
-                redis.expire(queue_name, 60)
+            queue_name = get_redis_queue_name_by_message(self)
+            if queue_name:
+                try:
+                    redis = get_redis()
+                    redis.rpush(queue_name, str(response))
+                    redis.expire(queue_name, 60)
+                except Exception as e:
+                    logger.error(
+                        'Failed to send response for request[id=%s, action=%s]: %s',
+                        self.id,
+                        self.action,
+                        e,
+                    )
 
     # pylint: disable=too-many-statements
     def execute(self, n_tries=1, _async=True, **context):

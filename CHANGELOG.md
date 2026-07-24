@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- `backend.http`: Fixed `/execute` API requests hanging indefinitely when the
+  Redis connection breaks mid-operation. Added `socket_timeout`,
+  `socket_connect_timeout`, `health_check_interval`, and `retry_on_timeout`
+  defaults to the Redis connection pool. Added error handling around the
+  blocking `BLPOP` call. Replaced the `@action`-wrapped Redis plugin call in
+  `_send_response` with direct `rpush` to prevent silently swallowed errors.
+  Hardened the bus poll loop to recover from unexpected exceptions instead of
+  dying permanently. Cleared inherited Redis pools after fork and switched
+  `BusWrapper` to a `threading.Lock` to avoid cross-process deadlocks.
+
 ### Added
 
 - `webapp`: Added a dedicated Variables panel to the web UI. Variables now have

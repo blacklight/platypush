@@ -90,9 +90,13 @@ class RedisBus(Bus):
                             self._on_message(parsed_msg)
                     except Exception as e:
                         logger.exception(e)
-            except (RedisTimeoutError, RedisConnectionError) as e:
-                if not (self.should_stop() or has_error):
-                    logger.warning('Redis connection error: %s', e)
+            except Exception as e:
+                if isinstance(e, (RedisConnectionError, RedisConnectionError)):
+                    if not (self.should_stop() or has_error):
+                        logger.warning('Redis connection error: %s', e)
+                elif not self.should_stop():
+                    logger.error('Unexpected error in the Redis bus poll loop: %s', e)
+                    logger.exception(e)
 
                 has_error = True
                 self._close_pubsub()

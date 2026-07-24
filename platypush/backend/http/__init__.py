@@ -23,7 +23,7 @@ from platypush.backend.http.app.utils import get_streaming_routes, get_ws_routes
 from platypush.backend.http.app.ws.events import WSEventProxy
 from platypush.bus.redis import RedisBus
 from platypush.config import Config
-from platypush.utils import get_remaining_timeout
+from platypush.utils import get_remaining_timeout, redis_pools
 
 
 class HttpBackend(Backend):
@@ -355,6 +355,12 @@ class HttpBackend(Backend):
     async def _post_fork_main(self, sockets):
         if not (isinstance(self.bus, RedisBus)):
             raise AssertionError('The HTTP backend only works if backed by a Redis bus')
+
+        # Clear any inherited Redis connection pools from the parent process.
+        # After fork, inherited pool connections share file descriptors with
+        # the parent, which causes protocol corruption if both processes use
+        # the same socket.
+        redis_pools.clear()
 
         application.config['redis_queue'] = self.bus.redis_queue
         application.secret_key = self._get_secret_key()
