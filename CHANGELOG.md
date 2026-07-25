@@ -1,5 +1,20 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- `backend.http.app.mixins`: Hardened `PubSubMixin.listen()` to recover from
+  malformed or short Pub/Sub responses that cause `IndexError` inside
+  `redis-py`, preventing websocket event threads (`ws:events`, `ws:monitor`,
+  `ws/shell`, etc.) from crashing silently and stopping event delivery. The
+  listener now closes the broken connection, waits briefly, and reconnects.
+
+### Added
+
+- Added a regression test for the `PubSubMixin.listen()` recovery behavior in
+  `tests/test_http_app_mixins.py`.
+
 ## [1.3.31]
 
 ### Fixed

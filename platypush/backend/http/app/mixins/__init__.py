@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import json
 import logging
 from multiprocessing import RLock
+import time
 from typing import Generator, Iterable, Optional, Set, Union
 
 from redis import ConnectionError as RedisConnectionError
@@ -117,24 +118,43 @@ class PubSubMixin:
         """
         Listens for pub/sub messages and yields them.
         """
-        try:
-            with self.pubsub as pubsub:
-                pubsub.subscribe(*self._subscriptions)
-                while self._subscriptions:
-                    msg = pubsub.get_message(
-                        ignore_subscribe_messages=True,
-                        timeout=self._PUBSUB_POLL_TIMEOUT,
-                    )
-                    if not msg:
-                        continue
+        while self._subscriptions:
+            try:
+                with self.pubsub as pubsub:
+                    pubsub.subscribe(*self._subscriptions)
+                    while self._subscriptions:
+                        msg = pubsub.get_message(
+                            ignore_subscribe_messages=True,
+                            timeout=self._PUBSUB_POLL_TIMEOUT,
+                        )
+                        if not msg:
+                            continue
 
-                    channel = msg.get('channel', b'').decode()
-                    if not (channel and channel in self._subscriptions):
-                        continue
+                        channel = msg.get('channel', b'').decode()
+                        if not (channel and channel in self._subscriptions):
+                            continue
 
-                    yield Message(data=msg.get('data', b''), channel=channel)
-        except (AttributeError, ValueError, RedisConnectionError, RedisTimeoutError):
-            return
+                        yield Message(data=msg.get('data', b''), channel=channel)
+            except (
+                AttributeError,
+                ValueError,
+                IndexError,
+                RedisConnectionError,
+                RedisTimeoutError,
+            ):
+                # The PubSub connection may have returned an unexpected short
+                # response that redis-py cannot parse, or the connection may be
+                # down. Close the broken connection and reconnect.
+                logger.warning(
+                    'Unexpected PubSub response or connection error; reconnecting'
+                )
+                self._pubsub_close()
+                time.sleep(0.5)
+            except Exception as e:
+                logger.warning('Unexpected error in PubSub listen loop: %s', e)
+                logger.exception(e)
+                self._pubsub_close()
+                time.sleep(0.5)
 
     def _pubsub_close(self):
         """
