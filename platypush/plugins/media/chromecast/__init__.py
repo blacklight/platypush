@@ -15,6 +15,7 @@ from platypush.plugins.media import MediaPlugin, MediaResource
 from platypush.plugins.media._resource.youtube import YoutubeMediaResource
 from platypush.utils import get_mime_type
 from platypush.message.event.media import (
+    MediaEndEvent,
     MediaEvent,
     MediaPlayRequestEvent,
     MediaStopEvent,
@@ -22,7 +23,7 @@ from platypush.message.event.media import (
 
 from ._listener import MediaListener
 from ._subtitles import SubtitlesAsyncHandler
-from ._utils import convert_status, post_event
+from ._utils import convert_status
 
 
 class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
@@ -155,7 +156,7 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
         }
 
     def _event_callback(self, evt: MediaEvent, cast: Chromecast):
-        if isinstance(evt, MediaStopEvent):
+        if isinstance(evt, (MediaStopEvent, MediaEndEvent)):
             resource = self._latest_resources_by_device.pop(cast.uuid, None)
             if resource:
                 resource.close()
@@ -180,7 +181,7 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
     @action
     def play(
         self,
-        resource: str,
+        resource: Optional[str] = None,
         *_,
         content_type: Optional[str] = None,
         chromecast: Optional[str] = None,
@@ -219,10 +220,15 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
         :param use_ytdl: Override the default use_ytdl setting for this call.
         """
 
+        if not resource:
+            resume = self._resume_from_queue(resource)
+            if resume is not None:
+                return resume
+
         if not chromecast:
             chromecast = self.chromecast
 
-        post_event(MediaPlayRequestEvent, resource=resource, device=chromecast)
+        self.post_event(MediaPlayRequestEvent, resource=resource, device=chromecast)
         cast = self.get_chromecast(chromecast)
         mc = cast.media_controller
         media = self._latest_resource = self._latest_resources_by_device[cast.uuid] = (
@@ -517,7 +523,7 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
 
     def _status(self, chromecast: Optional[str] = None) -> dict:
         if chromecast:
-            if not (chromecast in self._chromecasts_by_name):
+            if chromecast not in self._chromecasts_by_name:
                 raise AssertionError(f'No such Chromecast device: {chromecast}')
             return self._serialize_device(self._chromecasts_by_name[chromecast])
 
@@ -674,6 +680,7 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
                         name=name or str(cc.uuid),
                         cast=cc,
                         callback=self._event_callback,
+                        fire_event=self.fire_event,
                     )
 
                     cc.media_controller.register_status_listener(

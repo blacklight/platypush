@@ -56,7 +56,18 @@ class MediaPlayEvent(MediaEvent):
         )
 
 
-class MediaStopEvent(MediaEvent):
+class MediaEndEvent(MediaEvent):
+    """
+    Event triggered when a media item has naturally reached the end of playback.
+    This is different from :class:`MediaStopEvent`, which is emitted when the
+    playback is explicitly stopped by the user or by an error.
+    """
+
+    def __init__(self, player=None, plugin=None, *args, **kwargs):
+        super().__init__(*args, player=player, plugin=plugin, **kwargs)
+
+
+class MediaStopEvent(MediaEndEvent):
     """
     Event triggered when a media is stopped
     """
@@ -110,6 +121,50 @@ class MediaMuteChangedEvent(MediaEvent):
 
     def __init__(self, mute, player=None, plugin=None, *args, **kwargs):
         super().__init__(*args, player=player, plugin=plugin, mute=mute, **kwargs)
+
+
+class MediaQueueEvent(MediaEvent, ABC):
+    """
+    Base class for media queue events.
+    """
+
+
+class MediaQueueAddedEvent(MediaQueueEvent):
+    """
+    Event triggered when an item is added to the media queue.
+    """
+
+    def __init__(self, item, index=None, *args, **kwargs):
+        super().__init__(*args, item=item, index=index, **kwargs)
+
+
+class MediaQueueRemovedEvent(MediaQueueEvent):
+    """
+    Event triggered when an item is removed from the media queue.
+    """
+
+    def __init__(self, item, index=None, *args, **kwargs):
+        super().__init__(*args, item=item, index=index, **kwargs)
+
+
+class MediaQueueMovedEvent(MediaQueueEvent):
+    """
+    Event triggered when an item is moved within the media queue.
+    """
+
+    def __init__(self, item, from_index, to_index, *args, **kwargs):
+        super().__init__(
+            *args, item=item, from_index=from_index, to_index=to_index, **kwargs
+        )
+
+
+class MediaQueueClearedEvent(MediaQueueEvent):
+    """
+    Event triggered when the media queue is cleared.
+    """
+
+    def __init__(self, count=0, *args, **kwargs):
+        super().__init__(*args, count=count, **kwargs)
 
 
 class NewPlayingMediaEvent(MediaEvent):

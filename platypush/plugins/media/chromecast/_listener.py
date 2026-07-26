@@ -3,13 +3,14 @@ import time
 from typing import Optional, Type
 
 from platypush.message.event.media import (
+    MediaEndEvent,
     MediaEvent,
-    MediaPlayEvent,
-    MediaStopEvent,
     MediaPauseEvent,
-    NewPlayingMediaEvent,
-    MediaVolumeChangedEvent,
+    MediaPlayEvent,
     MediaSeekEvent,
+    MediaStopEvent,
+    MediaVolumeChangedEvent,
+    NewPlayingMediaEvent,
 )
 
 from ._utils import MediaCallback, convert_status, post_event
@@ -22,12 +23,19 @@ class MediaListener:
     Listens for media status changes and posts events accordingly.
     """
 
-    def __init__(self, name: str, cast, callback: Optional[MediaCallback] = None):
+    def __init__(
+        self,
+        name: str,
+        cast,
+        callback: Optional[MediaCallback] = None,
+        fire_event=None,
+    ):
         self.name = name
         self.cast = cast
         self.status = convert_status(cast.media_controller.status)
         self.last_status_timestamp = time.time()
         self.callback = callback
+        self.fire_event = fire_event
 
     def new_media_status(self, status):
         status = convert_status(status)
@@ -47,7 +55,12 @@ class MediaListener:
                 'play',
                 'pause',
             ):
-                self._post_event(MediaStopEvent)
+                evt_type = (
+                    MediaEndEvent
+                    if status.get('idle_reason') == 'FINISHED'
+                    else MediaStopEvent
+                )
+                self._post_event(evt_type)
 
         if status.get('volume') != self.status.get('volume'):
             self._post_event(MediaVolumeChangedEvent, volume=status.get('volume'))
@@ -78,4 +91,10 @@ class MediaListener:
         if resource:
             args['resource'] = resource
 
-        post_event(evt_type, callback=self.callback, chromecast=self.cast, **args)
+        post_event(
+            evt_type,
+            callback=self.callback,
+            chromecast=self.cast,
+            fire_event=self.fire_event,
+            **args,
+        )

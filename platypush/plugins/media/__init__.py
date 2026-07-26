@@ -19,7 +19,15 @@ import requests
 
 from platypush.config import Config
 from platypush.context import get_plugin, get_backend
-from platypush.message.event.media import MediaEvent
+from platypush.message.event.media import (
+    MediaEndEvent,
+    MediaEvent,
+    MediaQueueAddedEvent,
+    MediaQueueClearedEvent,
+    MediaQueueMovedEvent,
+    MediaQueueRemovedEvent,
+    MediaStopEvent,
+)
 from platypush.plugins import RunnablePlugin, action
 from platypush.utils import (
     get_default_downloads_dir,
@@ -27,6 +35,7 @@ from platypush.utils import (
     get_plugin_name_by_class,
 )
 
+from ... import Response
 from ._constants import audio_extensions, video_extensions
 from ._model import DownloadState, MediaDirectory, PlayerState
 from ._resource import MediaResource
@@ -65,6 +74,7 @@ class MediaPlugin(RunnablePlugin, ABC):
 
     _supported_media_types = ['file', 'jellyfin', 'plex', 'torrent', 'youtube']
     _default_search_timeout = 60  # 60 seconds
+    _videos_queue_lock = threading.RLock()
 
     def __init__(
         self,
@@ -227,6 +237,7 @@ class MediaPlugin(RunnablePlugin, ABC):
         self._ytdl = os.path.expanduser(youtube_dl)
         self.volume = volume
         self._videos_queue = []
+        self.register_handler(MediaEndEvent, self._on_media_end)
         self._youtube_proc = None
         self.torrent_plugin = torrent_plugin
         self.youtube_format = youtube_format
@@ -281,7 +292,7 @@ class MediaPlugin(RunnablePlugin, ABC):
             if not (isinstance(v, dict)):
                 raise AssertionError(f'Invalid media_dirs format: {v}')
             path = v.get('path')
-            if not (path):
+            if not path:
                 raise AssertionError(f'Missing path in media_dirs entry {k}')
             path = os.path.abspath(os.path.expanduser(path))
             if not (os.path.isdir(path)):
@@ -345,7 +356,7 @@ class MediaPlugin(RunnablePlugin, ABC):
 
     @action
     @abstractmethod
-    def play(self, resource: str, **kwargs):
+    def play(self, resource: Optional[str] = None, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
     @action
@@ -383,16 +394,185 @@ class MediaPlugin(RunnablePlugin, ABC):
     def forward(self, **kwargs):
         raise self._NOT_IMPLEMENTED_ERR
 
+    @staticmethod
+    def _get_queue_item_url(item):
+        """
+        Extract the playable URL from a queue item. Queue items can be either
+        plain URL strings or dictionaries containing a ``url`` key.
+        """
+        if isinstance(item, dict):
+            return item.get('url')
+        return item
+
+    @staticmethod
+    def _normalize_queue_item(item):
+        """
+        Normalize an item added to the queue into a dictionary with at least
+        a ``url`` key, preserving any extra metadata passed by the caller.
+        """
+        if isinstance(item, dict):
+            return item
+
+        if isinstance(item, MediaResource):
+            return item.to_dict()
+
+        return {'url': item}
+
+    def _resume_from_queue(self, resource: Optional[str]):
+        """
+        If no resource is given and the player is stopped with queued items,
+        pop and play the next queued item. Returns the play() result or None.
+        """
+        if resource:
+            return None
+
+        if not self._videos_queue:
+            return None
+
+        state = getattr(self, '_state', None)
+        if state is None:
+            # noinspection PyBroadException
+            try:
+                status = self.status()
+                if isinstance(status, Response):
+                    status = status.output
+                state = PlayerState((status or {}).get('state', PlayerState.STOP.value))
+            except Exception:
+                state = PlayerState.STOP
+
+        if state != PlayerState.STOP:
+            return None
+
+        with self._videos_queue_lock:
+            item = self._videos_queue.pop(0)
+
+        self.post_event(MediaQueueRemovedEvent, item=item, index=0)
+
+        url = self._get_queue_item_url(item)
+        if not url:
+            return None
+
+        return self.play(url)
+
     @action
-    def next(self):
-        """Play the next item in the queue"""
+    def next(self, *args, **kwargs):
+        """Play the next item in the queue or the player-specific playlist."""
+        with self._videos_queue_lock:
+            video = self._videos_queue.pop(0) if self._videos_queue else None
+
+        if video:
+            self.post_event(MediaQueueRemovedEvent, item=video, index=0)
+            return self._play_queue_next(video)
+
+        return self._next(*args, **kwargs)
+
+    def _play_queue_next(self, item):
+        """Stop playback and play the next queued item."""
         self.stop()
+        return self.play(self._get_queue_item_url(item))
 
-        if self._videos_queue:
-            video = self._videos_queue.pop(0)
-            return self.play(video)
-
+    def _next(self, *args, **kwargs):
+        """Player-specific next action when the queue is empty."""
         return None
+
+    @action
+    def add_to_queue(self, resource: Union[str, dict], index: Optional[int] = None):
+        """
+        Add a media item to the playback queue.
+
+        :param resource: Media URL or media item dictionary to queue.
+        :param index: Optional zero-based position where the item should be
+            inserted. If not specified, the item is appended to the end of the
+            queue.
+        :return: The item that was added to the queue.
+        """
+        item = self._normalize_queue_item(resource)
+        with self._videos_queue_lock:
+            if index is None:
+                self._videos_queue.append(item)
+                index = len(self._videos_queue) - 1
+            else:
+                self._videos_queue.insert(index, item)
+
+        self.post_event(MediaQueueAddedEvent, item=item, index=index)
+        return item
+
+    @action
+    def pop_queue(self):
+        """
+        Remove and return the next item from the front of the playback queue.
+
+        :return: The removed queue item, or ``None`` if the queue is empty.
+        """
+        with self._videos_queue_lock:
+            if not self._videos_queue:
+                return None
+
+            item = self._videos_queue.pop(0)
+
+        self.post_event(MediaQueueRemovedEvent, item=item, index=0)
+        return item
+
+    @action
+    def remove_queue_item(self, index: int):
+        """
+        Remove an item from the playback queue by its index.
+
+        :param index: Zero-based index of the item to remove.
+        :return: The removed queue item.
+        """
+        with self._videos_queue_lock:
+            if index < 0 or index >= len(self._videos_queue):
+                raise IndexError(f'Queue index {index} out of range')
+
+            item = self._videos_queue.pop(index)
+
+        self.post_event(MediaQueueRemovedEvent, item=item, index=index)
+        return item
+
+    @action
+    def move_queue_item(self, from_index: int, to_index: int):
+        """
+        Change the position of an item in the playback queue.
+
+        :param from_index: Current zero-based index of the item.
+        :param to_index: New zero-based index for the item.
+        :return: The updated queue.
+        """
+        with self._videos_queue_lock:
+            if from_index < 0 or from_index >= len(self._videos_queue):
+                raise IndexError(f'Queue from_index {from_index} out of range')
+
+            item = self._videos_queue.pop(from_index)
+            self._videos_queue.insert(to_index, item)
+
+        self.post_event(
+            MediaQueueMovedEvent, item=item, from_index=from_index, to_index=to_index
+        )
+        return self._videos_queue
+
+    @action
+    def get_queue(self):
+        """
+        Get the items currently in the playback queue.
+
+        :return: List of queued media items.
+        """
+        return self._videos_queue
+
+    @action
+    def clear_queue(self):
+        """
+        Clear the playback queue.
+
+        :return: The number of items that were removed.
+        """
+        with self._videos_queue_lock:
+            count = len(self._videos_queue)
+            self._videos_queue = []
+
+        self.post_event(MediaQueueClearedEvent, count=count)
+        return count
 
     @action
     @abstractmethod
@@ -509,9 +689,9 @@ class MediaPlugin(RunnablePlugin, ABC):
 
         if results:
             if queue_results:
-                self._videos_queue = [_['url'] for _ in results]
+                self._videos_queue = results
                 if autoplay:
-                    self.play(self._videos_queue.pop(0))
+                    self.play(self._videos_queue.pop(0).get('url'))
             elif autoplay:
                 self.play(results[0]['url'])
 
@@ -599,7 +779,7 @@ class MediaPlugin(RunnablePlugin, ABC):
         self, media: str, subtitles: Optional[str] = None, download: bool = False
     ):
         http = get_backend('http')
-        if not (http):
+        if not http:
             raise AssertionError(
                 f'Unable to stream {media}: HTTP backend not configured'
             )
@@ -611,14 +791,14 @@ class MediaPlugin(RunnablePlugin, ABC):
             timeout=300,
         )
 
-        if not (response.ok):
+        if not response.ok:
             raise AssertionError(response.text or response.reason)
         return response.json()
 
     @action
     def stop_streaming(self, media_id: str):
         http = get_backend('http')
-        if not (http):
+        if not http:
             raise AssertionError(
                 f'Unable to stop streaming {media_id}: HTTP backend not configured'
             )
@@ -627,7 +807,7 @@ class MediaPlugin(RunnablePlugin, ABC):
             f'{http.local_base_url}/media/{media_id}', timeout=30
         )
 
-        if not (response.ok):
+        if not response.ok:
             raise AssertionError(response.text or response.reason)
         return response.json()
 
@@ -718,7 +898,7 @@ class MediaPlugin(RunnablePlugin, ABC):
 
                 break
 
-        if not (dl_thread):
+        if not dl_thread:
             raise AssertionError(f'No downloader found for resource {url}')
 
         if sync:
@@ -812,7 +992,7 @@ class MediaPlugin(RunnablePlugin, ABC):
         """
         :return: List of configured media directories.
         """
-        return {dir.name: dir.to_dict() for dir in self.media_dirs.values()}
+        return {dir_.name: dir_.to_dict() for dir_ in self.media_dirs.values()}
 
     def _get_downloads(self, url: Optional[str] = None, path: Optional[str] = None):
         if not (url or path):
@@ -838,7 +1018,7 @@ class MediaPlugin(RunnablePlugin, ABC):
                 if path_ == path
             ]
 
-        if not (threads):
+        if not threads:
             raise AssertionError(
                 f'No matching downloads found for [url={url}, path={path}]'
             )
@@ -857,10 +1037,41 @@ class MediaPlugin(RunnablePlugin, ABC):
         thread.start()
 
     def post_event(self, event_type: Type[MediaEvent], **kwargs):
-        evt = event_type(
-            player=get_plugin_name_by_class(self.__class__), plugin=self, **kwargs
-        )
-        self._bus.post(evt)
+        plugin_name = get_plugin_name_by_class(self.__class__)
+        evt = event_type(player=plugin_name, plugin=plugin_name, **kwargs)
+        self.fire_event(evt)
+
+    def _on_media_end(self, event: MediaEndEvent):
+        """Autoplay the next item in the queue when a media item naturally ends."""
+        if isinstance(event, MediaStopEvent):
+            self.logger.debug(
+                'Ignoring MediaStopEvent in _on_media_end: not a natural end'
+            )
+            return
+
+        if getattr(self, '_user_stopped', False):
+            self.logger.debug(
+                'Ignoring MediaEndEvent: the player was explicitly stopped'
+            )
+            return
+
+        self._play_next_queue()
+
+    def _play_next_queue(self):
+        """Pop the next item from the queue and play it."""
+        with self._videos_queue_lock:
+            if not self._videos_queue:
+                # The queue has ended, emit a MediaStopEvent
+                self.post_event(MediaStopEvent)
+                return
+
+            item = self._videos_queue.pop(0)
+
+        self.post_event(MediaQueueRemovedEvent, item=item, index=0)
+        try:
+            self.play(self._get_queue_item_url(item))
+        except Exception as e:
+            self.logger.exception(e)
 
     def is_local(self):
         return self._is_local

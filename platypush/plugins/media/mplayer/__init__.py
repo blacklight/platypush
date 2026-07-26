@@ -13,9 +13,10 @@ from platypush.message.response import Response
 from platypush.plugins import action
 from platypush.plugins.media import PlayerState, MediaPlugin
 from platypush.message.event.media import (
+    MediaEndEvent,
+    MediaPauseEvent,
     MediaPlayEvent,
     MediaPlayRequestEvent,
-    MediaPauseEvent,
     MediaResumeEvent,
     MediaStopEvent,
     NewPlayingMediaEvent,
@@ -99,6 +100,7 @@ class MediaMplayerPlugin(MediaPlugin):
         self._proc_monitor: Optional[Process] = None
         self._cmd_lock = RLock()
         self._cleanup_lock = RLock()
+        self._user_stopped = True
 
     def _init_mplayer_bin(self, mplayer_bin=None):
         if not mplayer_bin:
@@ -379,7 +381,7 @@ class MediaMplayerPlugin(MediaPlugin):
         ]
 
     def _post_event(self, evt_type, **evt):
-        self._bus.post(
+        self.fire_event(
             evt_type(
                 player='local',
                 plugin='media.mplayer',
@@ -392,7 +394,7 @@ class MediaMplayerPlugin(MediaPlugin):
     @action
     def play(
         self,
-        resource: str,
+        resource: Optional[str] = None,
         subtitles: Optional[str] = None,
         mplayer_args: Optional[List[str]] = None,
         **kwargs,
@@ -406,6 +408,12 @@ class MediaMplayerPlugin(MediaPlugin):
             MPlayer executable
         """
 
+        if not resource:
+            resume = self._resume_from_queue(resource)
+            if resume is not None:
+                return resume
+
+        self._user_stopped = False
         self._post_event(MediaPlayRequestEvent, resource=resource)
         if subtitles:
             subs = self.get_subtitles_file(subtitles)
@@ -431,7 +439,7 @@ class MediaMplayerPlugin(MediaPlugin):
     @action
     def stop(self, *_, **__):
         """Stop the playback"""
-        return self.quit()
+        return self._quit(user_stop=True)
 
     def _cleanup(self):
         with self._cleanup_lock:
@@ -448,7 +456,8 @@ class MediaMplayerPlugin(MediaPlugin):
                     pass
 
                 self._player = None
-                self._post_event(MediaStopEvent)
+                event_type = MediaStopEvent if self._user_stopped else MediaEndEvent
+                self._post_event(event_type)
 
             if self._proc_monitor and os.getpid() != self._proc_monitor.pid:
                 try:
@@ -472,12 +481,17 @@ class MediaMplayerPlugin(MediaPlugin):
 
                 self._proc_monitor = None
 
+    def _quit(self, user_stop=True):
+        self._user_stopped = user_stop
+        if user_stop:
+            self._exec('quit')
+        self._cleanup()
+        return self.status()
+
     @action
     def quit(self, *_, **__):
         """Quit the player"""
-        self._exec('quit')
-        self._cleanup()
-        return self.status()
+        return self._quit(user_stop=True)
 
     @action
     def voldown(self, *_, step=10.0, **__):
@@ -596,7 +610,9 @@ class MediaMplayerPlugin(MediaPlugin):
 
         :param volume: Volume value between 0 and 100
         """
-        self._exec('volume', max(0, min(100, volume)), 1, prefix='pausing_keep_force')
+        self._exec(
+            'volume', max(0.0, min(100.0, volume)), 1, prefix='pausing_keep_force'
+        )
         return self.status()
 
     @action
@@ -722,7 +738,7 @@ class MediaMplayerPlugin(MediaPlugin):
             # When get_property('filename') returns PROPERTY_UNAVAILABLE
             # it means that the player is no longer playing anything
             if property == 'filename' and self._status.state != PlayerState.STOP:
-                self.quit()
+                self._quit(user_stop=False)
         else:
             errors.append(f'{property}{args}: {error}')
 

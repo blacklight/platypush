@@ -14,6 +14,12 @@ class MediaGstreamerPlugin(MediaPlugin):
     Plugin to play media over GStreamer.
     """
 
+    @property
+    def _state(self) -> PlayerState:
+        if not self._player:
+            return PlayerState.STOP
+        return self._gst_to_player_state(self._player.get_state())
+
     def __init__(self, sink: Optional[str] = None, *args, **kwargs):
         """
         :param sink: GStreamer audio sink (default: ``None``, automatic).
@@ -24,6 +30,7 @@ class MediaGstreamerPlugin(MediaPlugin):
 
     def _allocate_pipeline(self, resource: MediaResource) -> MediaPipeline:
         pipeline = MediaPipeline(resource)
+        pipeline._fire_event_callback = self.fire_event
         if self.sink:
             sink = pipeline.add_sink(self.sink, sync=False)
             pipeline.link(pipeline.get_source(), sink)
@@ -85,15 +92,15 @@ class MediaGstreamerPlugin(MediaPlugin):
         """
 
         if not resource:
+            resume = self._resume_from_queue(resource)
+            if resume is not None:
+                return resume
+
             if self._player:
                 self._player.play()
             return self._status()
 
-        self._bus.post(
-            MediaPlayRequestEvent(
-                player='local', plugin='media.gstreamer', resource=resource
-            )
-        )
+        self.post_event(MediaPlayRequestEvent, resource=resource)
         media = self._latest_resource = self._get_resource(resource, **kwargs)
         media.open(**kwargs)
         if media.resource and os.path.isfile(os.path.abspath(media.resource)):

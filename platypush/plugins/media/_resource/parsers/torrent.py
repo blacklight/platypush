@@ -45,8 +45,16 @@ class TorrentResourceParser(MediaResourceParser):
         resources = [f for f in evt_queue.get()]  # noqa: C416,R1721
 
         if resources:
-            self._media._videos_queue = videos_queue = sorted(resources)
-            resource = videos_queue.pop(0)
+            files = sorted(resources)
+            self._media._videos_queue = [
+                {
+                    'url': f'file://{f}',
+                    'title': os.path.basename(f),
+                    'type': 'file',
+                }
+                for f in files[1:]
+            ]
+            resource = files[0]
         else:
             raise RuntimeError(f'No media file found in torrent {resource}')
 

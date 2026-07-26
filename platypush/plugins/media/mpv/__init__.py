@@ -1,5 +1,6 @@
 import logging
 import os
+import threading
 from typing import Any, Dict, Optional, Type
 from urllib.parse import quote
 
@@ -7,14 +8,15 @@ from platypush.plugins import action
 from platypush.plugins.media import PlayerState, MediaPlugin
 from platypush.plugins.media._resource import MediaResource, YoutubeMediaResource
 from platypush.message.event.media import (
+    MediaEndEvent,
     MediaEvent,
+    MediaPauseEvent,
     MediaPlayEvent,
     MediaPlayRequestEvent,
-    MediaPauseEvent,
+    MediaResumeEvent,
+    MediaSeekEvent,
     MediaStopEvent,
     NewPlayingMediaEvent,
-    MediaSeekEvent,
-    MediaResumeEvent,
 )
 
 
@@ -48,6 +50,8 @@ class MediaMpvPlugin(MediaPlugin):
 
         self._player = None
         self._latest_state = PlayerState.STOP
+        self._user_stopped = True
+        self._stop_lock = threading.RLock()
 
     def _init_mpv(
         self,
@@ -59,6 +63,7 @@ class MediaMpvPlugin(MediaPlugin):
     ):
         import mpv
 
+        self._close_mpv()
         mpv_args: dict = {**self.args}
 
         if isinstance(resource, YoutubeMediaResource):
@@ -93,7 +98,7 @@ class MediaMpvPlugin(MediaPlugin):
         self._player._event_callbacks += [self._event_callback()]
 
     def _post_event(self, evt_type: Type[MediaEvent], **evt):
-        self._bus.post(
+        self.fire_event(
             evt_type(
                 player='local',
                 plugin='media.mpv',
@@ -138,6 +143,36 @@ class MediaMpvPlugin(MediaPlugin):
 
         return self._cur_player.filename
 
+    def _close_mpv(self, player=None):
+        with self._stop_lock:
+            if player is None:
+                player = self._player
+                self._player = None
+
+            player_dict = getattr(player, '__dict__', None)
+            if (
+                not player
+                or player_dict is None
+                or player_dict.get('_platypush_terminated')
+            ):
+                return
+
+            if self._player is player:
+                self._player = None
+
+            player_dict['_platypush_terminated'] = True
+
+        def terminate():
+            try:
+                player.terminate()
+            except Exception as e:
+                self.logger.debug('Error terminating mpv: %s', e)
+
+        if threading.current_thread() is player_dict.get('_event_thread'):
+            threading.Thread(target=terminate, daemon=True).start()
+        else:
+            terminate()
+
     def _event_callback(self):
         def callback(event):
             from mpv import MpvEvent
@@ -175,14 +210,36 @@ class MediaMpvPlugin(MediaPlugin):
             self.logger.info('Received mpv event: %s', event)
 
             if event_id == 6:  # START_FILE
+                self._user_stopped = False
                 self._post_event(NewPlayingMediaEvent)
             elif event_id == 21:  # PLAYBACK_RESTART
                 self._post_event(MediaPlayEvent)
             elif event_id in {7, 11} and self._cur_player:  # EOF, IDLE
-                self._cur_player.quit(code=0)
+                evt_dict = {}
+                if isinstance(event, MpvEvent):
+                    try:
+                        evt_dict = event.as_dict() or {}
+                    except Exception:
+                        pass
+                elif isinstance(event, dict):
+                    evt_dict = event
+
+                reason = evt_dict.get('reason')
+                if isinstance(reason, bytes):
+                    reason = reason.decode('utf-8')
+
+                user_reasons = {'stop', 'quit', 'user', 'playlist'}
+                if reason in user_reasons:
+                    # User-initiated stop/playlist change, not a natural end
+                    self._user_stopped = True
+                else:
+                    # Natural end (eof/error/redirect) or idle - force shutdown
+                    self._user_stopped = False
+                    self._cur_player.quit(code=0)
             elif event_id == 1:  # SHUTDOWN
-                self._post_event(MediaStopEvent)
-                self._player = None
+                self._close_mpv()
+                event_type = MediaStopEvent if self._user_stopped else MediaEndEvent
+                self._post_event(event_type)
             elif event_id == 20 and self._cur_player:  # SEEK
                 self._post_event(
                     MediaSeekEvent, position=self._cur_player.playback_time
@@ -238,9 +295,14 @@ class MediaMpvPlugin(MediaPlugin):
         """
 
         if not resource:
+            resume = self._resume_from_queue(resource)
+            if resume is not None:
+                return resume
+
             self.pause()
             return self.status()
 
+        self._user_stopped = False
         self._post_event(MediaPlayRequestEvent, resource=resource)
         if fullscreen is not None:
             args['fs'] = fullscreen
@@ -254,7 +316,7 @@ class MediaMpvPlugin(MediaPlugin):
             only_audio=only_audio,
         )
 
-        if not (self._cur_player):
+        if not self._cur_player:
             raise AssertionError('The player is not ready')
         self._cur_player.play(media.resource or media.url)
 
@@ -274,15 +336,16 @@ class MediaMpvPlugin(MediaPlugin):
         self._cur_player.pause = not self._cur_player.pause
         return self.status()
 
-    @action
-    def quit(self, *_, **__):
-        """Stop and quit the player"""
-        player = self._cur_player
-        if not player:
-            return None
+    def _quit(self, user_stop=True):
+        """Internal method to quit the player."""
+        with self._stop_lock:
+            self._user_stopped = user_stop
+            player = self._cur_player
+            if not player:
+                return
 
-        player.stop()
-        player.quit(code=0)
+            player.stop()
+            player.quit(code=0)
 
         try:
             player.wait_for_shutdown(timeout=5)
@@ -292,14 +355,17 @@ class MediaMpvPlugin(MediaPlugin):
             # Older versions of python-mpv don't support the timeout argument
             player.wait_for_shutdown()
 
-        player.terminate()
-        self._player = None
-        return self.status()
+        self._close_mpv(player)
+
+    @action
+    def quit(self, *_, **__):
+        """Stop and quit the player"""
+        return self._quit(user_stop=True)
 
     @action
     def stop(self, *_, **__):
         """Stop and quit the player"""
-        return self.quit()
+        return self._quit(user_stop=True)
 
     def _set_vol(self, *_, step=10.0, **__):
         if not self._cur_player:
@@ -353,12 +419,12 @@ class MediaMpvPlugin(MediaPlugin):
         if not self._cur_player:
             return None
 
-        if not (self._cur_player.seekable):
+        if not self._cur_player.seekable:
             raise AssertionError('The resource is not seekable')
         self._cur_player.time_pos = min(
             float(self._cur_player.time_pos or 0)
             + float(self._cur_player.time_remaining or 0),
-            max(0, position),
+            max(0.0, position),
         )
         return self.status()
 
@@ -368,7 +434,7 @@ class MediaMpvPlugin(MediaPlugin):
         if not self._cur_player:
             return None
 
-        if not (self._cur_player.seekable):
+        if not self._cur_player.seekable:
             raise AssertionError('The resource is not seekable')
         cur_pos = float(self._cur_player.time_pos or 0)
         return self.seek(cur_pos - offset)
@@ -379,18 +445,21 @@ class MediaMpvPlugin(MediaPlugin):
         if not self._cur_player:
             return None
 
-        if not (self._cur_player.seekable):
+        if not self._cur_player.seekable:
             raise AssertionError('The resource is not seekable')
         cur_pos = float(self._cur_player.time_pos or 0)
         return self.seek(cur_pos + offset)
 
-    @action
-    def next(self, **_):
-        """Play the next item in the queue"""
+    def _next(self, *_, **__):
+        """Play the next item in the mpv internal playlist"""
         if not self._cur_player:
             return None
 
-        self._cur_player.playlist_next()
+        try:
+            self._cur_player.playlist_next()
+        except Exception as e:
+            self.logger.warning('No next item in mpv playlist: %s', e)
+
         return self.status()
 
     @action
@@ -476,7 +545,9 @@ class MediaMpvPlugin(MediaPlugin):
             return None
         if sub_id:
             return self._player.sub_remove(sub_id)
+
         self._player.sub_visibility = False
+        return None
 
     @action
     def is_playing(self, **_):

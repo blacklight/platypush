@@ -3,13 +3,14 @@ from typing import Type
 from platypush.common.gstreamer import Pipeline
 from platypush.context import get_bus
 from platypush.message.event.media import (
+    MediaEndEvent,
     MediaEvent,
-    MediaPlayEvent,
+    MediaMuteChangedEvent,
     MediaPauseEvent,
+    MediaPlayEvent,
+    MediaSeekEvent,
     MediaStopEvent,
     NewPlayingMediaEvent,
-    MediaMuteChangedEvent,
-    MediaSeekEvent,
 )
 from platypush.plugins.media import MediaResource
 
@@ -20,6 +21,7 @@ class MediaPipeline(Pipeline):
 
         self.resource = resource
         self._first_play = True
+        self._fire_event_callback = None
         if resource.resource and resource.fd is None:
             self.add_source('playbin', uri=resource.resource)
         elif resource.fd is not None:
@@ -37,7 +39,10 @@ class MediaPipeline(Pipeline):
             kwargs.update(resource_args)
 
         evt = evt_class(**kwargs)
-        get_bus().post(evt)
+        if self._fire_event_callback:
+            self._fire_event_callback(evt)
+        else:
+            get_bus().post(evt)
 
     def on_play(self):
         super().on_play()
@@ -56,6 +61,12 @@ class MediaPipeline(Pipeline):
 
         self._first_play = self.get_state() == Gst.State.NULL
         super().play()
+
+    def on_eos(self, *_, **__):
+        self.logger.info('End of stream event received')
+        self._first_play = True
+        self.post_event(MediaEndEvent)
+        super().stop()
 
     def stop(self):
         super().stop()

@@ -4,14 +4,14 @@ import time
 from typing import Optional
 from urllib.parse import urlparse
 
-from platypush.context import get_bus
 from platypush.plugins import action
 from platypush.plugins.media import MediaPlugin, PlayerState
 from platypush.message.event.media import (
-    MediaPlayEvent,
+    MediaEndEvent,
     MediaPauseEvent,
-    MediaStopEvent,
+    MediaPlayEvent,
     MediaSeekEvent,
+    MediaStopEvent,
     MediaVolumeChangedEvent,
 )
 
@@ -54,6 +54,7 @@ class MediaKodiPlugin(MediaPlugin):
         self.username = username
         self.password = password
         self._ws = None
+        self._user_stopped = True
         threading.Thread(target=self._websocket_thread()).start()
 
     def _get_kodi(self):
@@ -103,8 +104,7 @@ class MediaKodiPlugin(MediaPlugin):
         return thread_hndl
 
     def _post_event(self, evt_type, **evt):
-        bus = get_bus()
-        bus.post(evt_type(player=self.host, plugin='media.kodi', **evt))
+        self.fire_event(evt_type(player=self.host, plugin='media.kodi', **evt))
 
     def _on_ws_msg(self):
         def hndl(*args):
@@ -133,7 +133,8 @@ class MediaKodiPlugin(MediaPlugin):
                 )
             elif method == 'Player.OnStop':
                 player = msg.get('params', {}).get('data', {}).get('player', {})
-                self._post_event(MediaStopEvent, player_id=player.get('playerid'))
+                evt_type = MediaStopEvent if self._user_stopped else MediaEndEvent
+                self._post_event(evt_type, player_id=player.get('playerid'))
                 self._clear_resource()
             elif method == 'Player.OnSeek':
                 player = msg.get('params', {}).get('data', {}).get('player', {})
@@ -174,12 +175,18 @@ class MediaKodiPlugin(MediaPlugin):
             self._latest_resource = None
 
     @action
-    def play(self, resource: str, **kwargs):
+    def play(self, resource: Optional[str] = None, **kwargs):
         """
         Open and play the specified file or URL
 
         :param resource: URL or path to the media to be played
         """
+        if not resource:
+            resume = self._resume_from_queue(resource)
+            if resume is not None:
+                return resume
+
+        self._user_stopped = False
         media = self._latest_resource = self._get_resource(resource, **kwargs)
         media.open(**kwargs)
         result = self._get_kodi().Player.Open(item={'file': media.resource})
@@ -231,6 +238,7 @@ class MediaKodiPlugin(MediaPlugin):
         if player_id is None:
             return None, 'No active players found'
 
+        self._user_stopped = True
         result = self._get_kodi().Player.Stop(playerid=player_id)
         self._clear_resource()
         return self._build_result(result)

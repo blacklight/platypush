@@ -2,9 +2,9 @@ import os
 import threading
 from typing import Collection, Optional
 
-from platypush.context import get_bus
 from platypush.plugins.media import PlayerState, MediaPlugin, MediaResource
 from platypush.message.event.media import (
+    MediaEndEvent,
     MediaPlayEvent,
     MediaPlayRequestEvent,
     MediaPauseEvent,
@@ -22,6 +22,10 @@ class MediaVlcPlugin(MediaPlugin):
     """
     Plugin to control VLC instances.
     """
+
+    @property
+    def _state(self) -> PlayerState:
+        return self._player_state
 
     def __init__(
         self,
@@ -56,6 +60,7 @@ class MediaVlcPlugin(MediaPlugin):
         self._latest_resource: Optional[MediaResource] = None
         self._playing_url: Optional[str] = None
         self._latest_player_state: PlayerState = PlayerState.STOP
+        self._user_stopped = True
 
     @classmethod
     def _watched_event_types(cls):
@@ -137,7 +142,7 @@ class MediaVlcPlugin(MediaPlugin):
 
         self._on_stop_event.set()
         self.logger.info('VLC stream terminated')
-        self.quit()
+        self._quit(user_stop=False)
 
     def _reset_state(self):
         self._latest_seek = None
@@ -183,10 +188,8 @@ class MediaVlcPlugin(MediaPlugin):
 
             self._instance = None
 
-    @staticmethod
-    def _post_event(evt_type, **evt):
-        bus = get_bus()
-        bus.post(evt_type(player='local', plugin='media.vlc', **evt))
+    def _post_event(self, evt_type, **evt):
+        self.fire_event(evt_type(player='local', plugin='media.vlc', **evt))
 
     @property
     def _title(self) -> Optional[str]:
@@ -236,12 +239,17 @@ class MediaVlcPlugin(MediaPlugin):
             ):
                 self._on_stop_event.clear()
                 self._post_event(MediaPauseEvent)
-            elif event.type in (
-                EventType.MediaPlayerStopped,  # type: ignore
-                EventType.MediaPlayerEndReached,  # type: ignore
-            ) or (new_state == PlayerState.STOP and new_state != old_state):
+            elif event.type == EventType.MediaPlayerEndReached:  # type: ignore
+                self._user_stopped = False
                 self._on_stop_event.set()
-                self._post_event(MediaStopEvent)
+                self._post_event(MediaEndEvent)
+                self._reset_state()
+            elif event.type == EventType.MediaPlayerStopped or (  # type: ignore
+                new_state == PlayerState.STOP and new_state != old_state
+            ):
+                self._on_stop_event.set()
+                if self._user_stopped:
+                    self._post_event(MediaStopEvent)
                 self._reset_state()
             elif self._player and (
                 event.type
@@ -305,8 +313,13 @@ class MediaVlcPlugin(MediaPlugin):
         """
 
         if not resource:
+            resume = self._resume_from_queue(resource)
+            if resume is not None:
+                return resume
+
             return self.pause()
 
+        self._user_stopped = False
         self._post_event(MediaPlayRequestEvent, resource=resource)
         cache_streams = (
             cache_streams if cache_streams is not None else self.cache_streams
@@ -342,14 +355,13 @@ class MediaVlcPlugin(MediaPlugin):
         self._player.pause()
         return self.status()
 
-    @action
-    def quit(self, *_, **__):
-        """Quit the player (same as `stop`)"""
+    def _quit(self, user_stop=True):
         with self._stop_lock:
             if not self._player:
                 self.logger.debug('No vlc instance is running')
                 return self.status()
 
+            self._user_stopped = user_stop
             self._reset_state()
             self._close_player()
             self._on_stop_event.wait(timeout=5)
@@ -360,9 +372,14 @@ class MediaVlcPlugin(MediaPlugin):
         return self.status()
 
     @action
+    def quit(self, *_, **__):
+        """Quit the player (same as `stop`)"""
+        return self._quit(user_stop=True)
+
+    @action
     def stop(self, *_, **__):
         """Stop the application (same as `quit`)"""
-        return self.quit()
+        return self._quit(user_stop=True)
 
     @action
     def voldown(self, *_, step: float = 10.0, **__):

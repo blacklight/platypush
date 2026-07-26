@@ -52,6 +52,7 @@ __all__ = [
     'PlexMediaSearcher',
     'TorrentMediaSearcher',
     'YoutubeMediaSearcher',
+    'searchers',
 ]
 
 
