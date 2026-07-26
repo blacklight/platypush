@@ -30,6 +30,7 @@
     "@vue/cli-plugin-pwa": "~5.0.8",
     "@vue/cli-service": "~5.0.8",
     "eslint": "^10.6.0",
+    "eslint-plugin-html": "^8.1.4",
     "eslint-plugin-vue": "^10.9.0",
     "vue-eslint-parser": "^10.3.0"
   },
