@@ -88,6 +88,7 @@
                :selected-result="selectedResult"
                :show-date="false"
                @add-to-playlist="$emit('add-to-playlist', $event)"
+               @add-to-queue="$emit('add-to-queue', $event)"
                @download="$emit('download', $event)"
                @move="$emit('playlist-move', $event)"
                @play="$emit('play', $event)"
@@ -126,6 +127,7 @@ export default {
   mixins: [Mixin],
   emits: [
     'add-to-playlist',
+    'add-to-queue',
     'delete',
     'download',
     'play',

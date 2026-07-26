@@ -38,7 +38,7 @@ export default {
 
     async play(resource, subs, _, opts) {
       if (!resource) {
-        return await this.pause()
+        return await this.request(`${this.pluginName}.play`)
       }
 
       const args = {resource: resource.url, subtitles: subs, metadata: resource}
@@ -51,6 +51,10 @@ export default {
 
     async pause() {
       return await this.request(`${this.pluginName}.pause`)
+    },
+
+    async next() {
+      return await this.request(`${this.pluginName}.next`)
     },
 
     async stop() {

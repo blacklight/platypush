@@ -102,6 +102,7 @@ export default {
 
   emits: [
     'add-to-playlist',
+    'add-to-queue',
     'download',
     'download-audio',
     'open-channel',
@@ -208,6 +209,14 @@ export default {
           iconClass: 'fa fa-list',
           text: 'Add to Playlist',
           action: () => this.$emit('add-to-playlist'),
+        })
+      }
+
+      if (this.item.url) {
+        actions.push({
+          iconClass: 'fa fa-plus',
+          text: 'Add to Queue',
+          action: () => this.$emit('add-to-queue'),
         })
       }
 

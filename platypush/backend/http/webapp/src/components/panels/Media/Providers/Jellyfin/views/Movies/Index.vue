@@ -12,6 +12,7 @@
              :filter="filter"
              :selected-result="selectedResult"
              @add-to-playlist="$emit('add-to-playlist', $event)"
+             @add-to-queue="$emit('add-to-queue', $event)"
              @download="$emit('download', $event)"
              @play="$emit('play', $event)"
              @play-with-opts="$emit('play-with-opts', $event)"

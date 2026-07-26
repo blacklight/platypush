@@ -6,6 +6,7 @@
       <div class="item-container">
         <Item :item="item"
               @add-to-playlist="$emit('add-to-playlist', item)"
+              @add-to-queue="$emit('add-to-queue', item)"
               @open-channel="$emit('open-channel', item)"
               @play="$emit('play', item)"
               @play-with-opts="$emit('play-with-opts', $event)"
@@ -233,6 +234,7 @@ export default {
   mixins: [Utils, MediaUtils],
   emits: [
     'add-to-playlist',
+    'add-to-queue',
     'download',
     'download-audio',
     'open-channel',

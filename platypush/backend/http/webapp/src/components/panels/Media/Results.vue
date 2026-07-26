@@ -15,6 +15,7 @@
               :selected="selectedResult === i"
               :show-date="showDate"
               @add-to-playlist="$emit('add-to-playlist', item)"
+              @add-to-queue="$emit('add-to-queue', item)"
               @open-channel="$emit('open-channel', item)"
               @remove-from-playlist="$emit('remove-from-playlist', item)"
               @select="$emit('select', i)"
@@ -56,6 +57,7 @@
       <Info :item="results[selectedResult]"
             :pluginName="pluginName"
             @add-to-playlist="$emit('add-to-playlist', results[selectedResult])"
+            @add-to-queue="$emit('add-to-queue', results[selectedResult])"
             @download="$emit('download', results[selectedResult])"
             @download-audio="$emit('download-audio', results[selectedResult])"
             @open-channel="$emit('open-channel', results[selectedResult])"
@@ -86,6 +88,7 @@ export default {
 
   emits: [
     'add-to-playlist',
+    'add-to-queue',
     'download',
     'download-audio',
     'move',

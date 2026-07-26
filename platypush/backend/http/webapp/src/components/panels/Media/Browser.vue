@@ -29,6 +29,7 @@
             :selected-playlist="selectedPlaylist"
             :selected-channel="selectedChannel"
             @add-to-playlist="$emit('add-to-playlist', $event)"
+            @add-to-queue="$emit('add-to-queue', $event)"
             @back="back"
             @download="$emit('download', $event)"
             @download-audio="$emit('download-audio', $event)"
@@ -52,6 +53,7 @@ export default {
   mixins: [Utils],
   emits: [
     'add-to-playlist',
+    'add-to-queue',
     'back',
     'create-playlist',
     'download',

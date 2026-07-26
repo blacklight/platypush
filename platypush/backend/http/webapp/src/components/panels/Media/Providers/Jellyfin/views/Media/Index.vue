@@ -8,6 +8,7 @@
              :loading="isLoading"
              :path="path"
              @add-to-playlist="$emit('add-to-playlist', $event)"
+             @add-to-queue="$emit('add-to-queue', $event)"
              @delete="$emit('delete', $event)"
              @play="$emit('play', $event)"
              @play-with-opts="$emit('play-with-opts', $event)"
@@ -38,6 +39,7 @@
                :filter="filter"
                :selected-result="selectedResult"
                @add-to-playlist="$emit('add-to-playlist', $event)"
+               @add-to-queue="$emit('add-to-queue', $event)"
                @download="$emit('download', $event)"
                @play="$emit('play', $event)"
                @play-with-opts="$emit('play-with-opts', $event)"
@@ -61,6 +63,7 @@ export default {
   mixins: [Mixin],
   emits: [
     'add-to-playlist',
+    'add-to-queue',
     'delete',
     'download',
     'play',

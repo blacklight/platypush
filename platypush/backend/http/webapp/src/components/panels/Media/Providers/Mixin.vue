@@ -5,6 +5,7 @@ export default {
   mixins: [Utils],
   emits: [
     'add-to-playlist',
+    'add-to-queue',
     'back',
     'create-playlist',
     'download',

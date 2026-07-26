@@ -5,10 +5,12 @@
                  :status="selectedPlayer?.status || {}"
                  :track="selectedPlayer?.status || {}"
                  :buttons="mediaButtons"
+                 :queue="queue"
                  @info="infoTrack = $event"
-                 @play="pause"
+                 @play="togglePlay"
                  @pause="pause"
                  @stop="stop"
+                 @next="next"
                  @set-volume="setVolume"
                  @seek="seek"
                  @search="search"
@@ -20,6 +22,7 @@
             <Nav :selected-view="selectedView"
                  :torrent-plugin="torrentPlugin"
                  :download-icon-class="downloadIconClass"
+                 :views="views"
                  @input="setView"
                  @toggle="forceShowNav = !forceShowNav"
             />
@@ -35,6 +38,7 @@
                     :browser-filter="browserFilter"
                     :downloads-filter="downloadsFilter"
                     :show-nav-button="!forceShowNav"
+                    :is-queue="selectedView === 'queue'"
                     ref="header"
                     @search="search"
                     @select-player="selectedPlayer = $event"
@@ -42,8 +46,10 @@
                     @torrent-add="downloadTorrent($event)"
                     @show-subtitles="showSubtitlesModal = !showSubtitlesModal"
                     @play-url="showPlayUrlModal"
+                    @clear-queue="clearQueue"
                     @filter="browserFilter = $event"
                     @filter-downloads="downloadsFilter = $event"
+                    @filter-queue="queueFilter = $event"
                     @toggle-nav="forceShowNav = !forceShowNav"
                     @source-toggle="sources[$event] = !sources[$event]"
             />
@@ -56,6 +62,7 @@
                        :loading="loading"
                        :filter="browserFilter"
                        @add-to-playlist="addToPlaylistItem = $event"
+                       @add-to-queue="addToQueue"
                        @open-channel="selectChannelFromItem"
                        @select="onResultSelect($event)"
                        @play="play"
@@ -85,6 +92,7 @@
                        :selected-playlist="selectedPlaylist"
                        :selected-channel="selectedChannel"
                        @add-to-playlist="addToPlaylistItem = $event"
+                       @add-to-queue="addToQueue"
                        @back="selectedResult = null"
                        @download="download"
                        @download-audio="downloadAudio"
@@ -94,6 +102,14 @@
                        @set-filter="browserFilter = $event"
                        @view="view"
                        v-else-if="selectedView === 'browser'"
+              />
+
+              <Queue :plugin-name="pluginName"
+                     :queue="queue"
+                     :filter="queueFilter"
+                     @play="playFromQueue"
+                     @refresh="refreshQueue"
+                     v-else-if="selectedView === 'queue'"
               />
             </div>
           </div>
@@ -170,6 +186,7 @@ import MediaUtils from "@/components/Media/Utils";
 import MediaView from "@/components/Media/View";
 import Nav from "@/components/panels/Media/Nav";
 import PlaylistAdder from "@/components/panels/Media/PlaylistAdder";
+import Queue from "@/components/panels/Media/Queue";
 import Results from "@/components/panels/Media/Results";
 import Subtitles from "@/components/panels/Media/Subtitles";
 import TorrentTransfers from "@/components/panels/Torrent/Transfers";
@@ -189,6 +206,7 @@ export default {
     Modal,
     Nav,
     PlaylistAdder,
+    Queue,
     Results,
     Subtitles,
     TorrentTransfers,
@@ -206,7 +224,7 @@ export default {
       default: () => {
         return {
           previous: false,
-          next: false,
+          next: true,
           stop: true,
         }
       }
@@ -225,6 +243,8 @@ export default {
       loading: false,
       opening: false,
       prevSelectedView: null,
+      queue: [],
+      queueFilter: '',
       results: [],
       selectedPlayer: null,
       selectedResult: null,
@@ -316,6 +336,31 @@ export default {
 
       return ''
     },
+
+    views() {
+      return {
+        search: {
+          iconClass: 'fa fa-search',
+          displayName: 'Search',
+        },
+        browser: {
+          iconClass: 'fa fa-folder',
+          displayName: 'Browser',
+        },
+        queue: {
+          iconClass: 'fa fa-list',
+          displayName: 'Queue',
+        },
+        downloads: {
+          iconClass: 'fa fa-download',
+          displayName: 'Downloads',
+        },
+        torrents: {
+          iconClass: 'fa fa-magnet',
+          displayName: 'Torrents',
+        },
+      }
+    },
   },
 
   methods: {
@@ -328,6 +373,38 @@ export default {
       } finally {
         this.loading = false
       }
+    },
+
+    async playFromQueue(item) {
+      await this.play(item)
+      await this.refreshQueue()
+    },
+
+    async addToQueue(item) {
+      await this.request(`${this.pluginName}.add_to_queue`, {resource: item})
+      await this.refreshQueue()
+      this.notify({
+        text: 'Added to queue',
+        image: {
+          iconClass: 'fa fa-list',
+        }
+      })
+    },
+
+    async clearQueue() {
+      await this.request(`${this.pluginName}.clear_queue`)
+      await this.refreshQueue()
+    },
+
+    async refreshQueue() {
+      this.queue = await this.request(`${this.pluginName}.get_queue`)
+    },
+
+    async onMediaQueueEvent(event) {
+      if (event?.plugin !== this.pluginName)
+        return
+
+      await this.refreshQueue()
     },
 
     async play(item, opts) {
@@ -360,6 +437,19 @@ export default {
       }
     },
 
+    async togglePlay() {
+      if (this.selectedPlayer?.status?.state === 'pause') {
+        await this.pause()
+      } else {
+        await this.resume()
+      }
+    },
+
+    async resume() {
+      await this.selectedPlayer.component.play()
+      await this.refresh()
+    },
+
     async pause() {
       await this.selectedPlayer.component.pause(this.selectedPlayer)
       await this.refresh()
@@ -368,6 +458,12 @@ export default {
     async stop() {
       await this.selectedPlayer.component.stop(this.selectedPlayer)
       await this.refresh()
+    },
+
+    async next() {
+      await this.selectedPlayer.component.next(this.selectedPlayer)
+      await this.refresh()
+      await this.refreshQueue()
     },
 
     async setVolume(volume) {
@@ -415,18 +511,17 @@ export default {
 
     setStatus(status) {
       const curStatus = this.selectedPlayer?.status || {}
-      let newStatus = {}
+      const curResource = curStatus.resource || curStatus.url
+      const newResource = status.resource || status.url
 
-      if (curStatus.resource === status.resource) {
-        newStatus = {
+      if (curResource && newResource && curResource === newResource) {
+        this.selectedPlayer.status = {
           ...curStatus,
           ...status,
         }
       } else {
-        newStatus = status
+        this.selectedPlayer.status = status
       }
-
-      this.selectedPlayer.status = newStatus
     },
 
     onStatusUpdate(status) {
@@ -615,6 +710,10 @@ export default {
       if (title === 'search') {
         this.selectedResult = null
       }
+
+      if (title === 'queue') {
+        this.refreshQueue()
+      }
     },
 
     updateView() {
@@ -781,6 +880,13 @@ export default {
     this.subscribe(this.onDownloadClear,'on-download-clear',
         'platypush.message.event.media.MediaDownloadClearEvent')
 
+    this.subscribe(this.onMediaQueueEvent, 'on-media-queue-event',
+        'platypush.message.event.media.MediaStopEvent',
+        'platypush.message.event.media.MediaQueueAddedEvent',
+        'platypush.message.event.media.MediaQueueRemovedEvent',
+        'platypush.message.event.media.MediaQueueMovedEvent',
+        'platypush.message.event.media.MediaQueueClearedEvent')
+
     if ('media.plex' in this.$root.config)
       this.sources.plex = true
 
@@ -788,6 +894,7 @@ export default {
       this.sources.jellyfin = true
 
     await this.refreshDownloads()
+    await this.refreshQueue()
     this.updateView()
   },
 
@@ -805,6 +912,7 @@ export default {
     this.unsubscribe('on-download-resumed')
     this.unsubscribe('on-download-progress')
     this.unsubscribe('on-download-clear')
+    this.unsubscribe('on-media-queue-event')
   },
 }
 </script>

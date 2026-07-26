@@ -6,6 +6,8 @@
     <div class="controls-container">
       <Controls :buttons="buttons"
                 :image="image"
+                :plugin-name="pluginName"
+                :queue="queue"
                 :status="status"
                 :track="track"
                 @consume="$emit('consume', $event)"
@@ -67,6 +69,11 @@ export default {
     image: {
       type: String,
       default: null,
+    },
+
+    queue: {
+      type: Array,
+      default: () => [],
     },
 
     buttons: {

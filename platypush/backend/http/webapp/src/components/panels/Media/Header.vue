@@ -14,7 +14,7 @@
         </form>
       </div>
 
-      <div class="col-s-8 col-m-7 left side" v-else-if="selectedView === 'torrents'">
+      <div class="col-s-7 col-m-7 left side" v-else-if="selectedView === 'torrents'">
         <form @submit.prevent="$emit('torrent-add', torrentURL)">
           <label class="search-box">
             <input type="search" placeholder="Add torrent URL" v-model="torrentURL">
@@ -22,7 +22,7 @@
         </form>
       </div>
 
-      <div class="col-s-8 col-m-7 left side" v-else-if="selectedView === 'downloads'">
+      <div class="col-s-7 col-m-7 left side" v-else-if="selectedView === 'downloads'">
         <form @submit.prevent="$emit('filter-downloads', downloadFilter)">
           <label class="search-box">
             <input type="search" placeholder="Filter" v-model="downloadFilter">
@@ -30,14 +30,22 @@
         </form>
       </div>
 
-      <div class="col-s-8 col-m-7 left side" v-else-if="selectedView === 'browser'">
+      <div class="col-s-7 col-m-7 left side" v-else-if="selectedView === 'browser'">
         <label class="search-box">
           <input type="search" placeholder="Filter" :value="browserFilter" @change="$emit('filter', $event.target.value)"
                  @keyup="$emit('filter', $event.target.value)">
         </label>
       </div>
 
-      <div class="col-s-4 col-m-5 right side">
+      <div class="col-s-7 col-m-7 left side" v-else-if="selectedView === 'queue'">
+        <form @submit.prevent="$emit('filter-queue', queueFilter)">
+          <label class="search-box">
+            <input type="search" placeholder="Filter" v-model="queueFilter">
+          </label>
+        </form>
+      </div>
+
+      <div class="col-s-5 col-m-5 right side">
         <button class="mobile" title="Menu" @click="$emit('toggle-nav')" v-if="showNavButton">
           <i class="fas fa-bars" />
         </button>
@@ -53,6 +61,10 @@
 
         <button title="Play URL" @click="$emit('play-url')">
           <i class="fas fa-play" />
+        </button>
+
+        <button title="Clear queue" @click="$emit('clear-queue')" v-if="isQueue" class="clear-queue">
+          <i class="fa fa-eraser" />
         </button>
       </div>
     </div>
@@ -75,8 +87,10 @@ export default {
   components: {Players},
   mixins: [Utils],
   emits: [
+    'clear-queue',
     'filter',
     'filter-downloads',
+    'filter-queue',
     'play-url',
     'player-status',
     'search',
@@ -115,6 +129,11 @@ export default {
       type: Boolean,
     },
 
+    isQueue: {
+      type: Boolean,
+      default: false,
+    },
+
     browserFilter: {
       type: String,
       default: '',
@@ -132,6 +151,7 @@ export default {
       query: '',
       torrentURL: '',
       downloadFilter: '',
+      queueFilter: '',
     }
   },
 
@@ -169,6 +189,7 @@ export default {
       this.$emit('filter', '')
       this.torrentURL = ''
       this.query = ''
+      this.queueFilter = ''
     })
   },
 }
@@ -258,6 +279,18 @@ export default {
 
     &.selected {
       color: $selected-fg;
+    }
+  }
+
+  .clear-queue {
+    display: inline-flex;
+    align-items: center;
+    gap: .3em;
+    white-space: nowrap;
+    direction: ltr;
+
+    i {
+      margin-right: .2em;
     }
   }
 }

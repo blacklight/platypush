@@ -10,6 +10,7 @@
         <Feed :filter="filter"
               :loading="isLoading"
               @add-to-playlist="$emit('add-to-playlist', $event)"
+              @add-to-queue="$emit('add-to-queue', $event)"
               @download="$emit('download', $event)"
               @download-audio="$emit('download-audio', $event)" 
               @open-channel="selectChannelFromItem"
@@ -23,6 +24,7 @@
                    :loading="isLoading"
                    :selected-playlist="selectedPlaylist_"
                    @add-to-playlist="$emit('add-to-playlist', $event)"
+                   @add-to-queue="$emit('add-to-queue', $event)"
                    @download="$emit('download', $event)"
                    @download-audio="$emit('download-audio', $event)"
                    @open-channel="selectChannelFromItem"
@@ -38,6 +40,7 @@
                        :loading="isLoading"
                        :selected-channel="selectedChannel_"
                        @add-to-playlist="$emit('add-to-playlist', $event)"
+                       @add-to-queue="$emit('add-to-queue', $event)"
                        @download="$emit('download', $event)"
                        @download-audio="$emit('download-audio', $event)"
                        @play="$emit('play', $event)"
@@ -78,6 +81,7 @@ export default {
 
   emits: [
     'add-to-playlist',
+    'add-to-queue',
     'back',
     'download',
     'download-audio',

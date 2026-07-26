@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+### Added
+
+- `media`: Introduced media queue management with new event types
+  (`MediaEndEvent`, `MediaQueueAddedEvent`, `MediaQueueRemovedEvent`,
+  `MediaQueueMovedEvent`, `MediaQueueClearedEvent`). Added a polymorphic
+  `next()` action with player-specific fallback, user-initiated stop tracking
+  to prevent `MediaStopEvent` loops, and updated all player plugins
+  (`chromecast`, `gstreamer`, `kodi`, `mplayer`, `mpv`, `vlc`) with queue
+  lifecycle support.
+
+- `webapp`: Added a queue panel to the media web UI with filtering,
+  drag-and-drop reorder, remove, and play actions. Added "Add to queue" buttons
+  across all media providers and result views.
+
+- Added a regression test for the `PubSubMixin.listen()` recovery behavior in
+  `tests/test_http_app_mixins.py`.
+
 ### Fixed
 
 - `backend.http.app.mixins`: Hardened `PubSubMixin.listen()` to recover from
@@ -10,10 +27,21 @@
   `ws/shell`, etc.) from crashing silently and stopping event delivery. The
   listener now closes the broken connection, waits briefly, and reconnects.
 
-### Added
+- `ntfy`: Fixed headers being overwritten when adding attachment options to
+  notifications. Set `Content-Type` to `text/markdown` when markdown mode is
+  enabled
+  ([`c4e5a11`](https://git.platypush.tech/platypush/platypush/commit/c4e5a11b071ca43674a1f31f61d941b309e89b11)).
 
-- Added a regression test for the `PubSubMixin.listen()` recovery behavior in
-  `tests/test_http_app_mixins.py`.
+- `entities`: Fixed column-name normalization in `Entity._column_name`
+  comparing an `int` (from `len(...)`) to a `str`, which was always `False`
+  and caused every column to fall through to the ORM deferred loader — breaking
+  entity listing with `KeyError` on stale instances
+  ([`48108dc`](https://git.platypush.tech/platypush/platypush/commit/48108dc6b16b28c02b8bd8680dca7197850b6ad3)).
+
+- `entities`: Made `getattr(self, column_name)` evaluation more conservative
+  to avoid hard failures when a column doesn't exist on a specific instance or
+  has been deleted
+  ([`07baee9`](https://git.platypush.tech/platypush/platypush/commit/07baee9092995b9b2d52ac71604fcfeb435a8f8c)).
 
 ## [1.3.31]
 

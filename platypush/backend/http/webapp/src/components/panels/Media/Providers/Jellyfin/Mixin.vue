@@ -6,6 +6,7 @@ export default {
 
   emits: [
     'add-to-playlist',
+    'add-to-queue',
     'back',
     'download',
     'play',

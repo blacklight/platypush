@@ -31,6 +31,7 @@
         :filter="filter"
         :metadata="playlistsById[selectedPlaylist.id] || selectedPlaylist"
         @add-to-playlist="$emit('add-to-playlist', $event)"
+        @add-to-queue="$emit('add-to-queue', $event)"
         @download="$emit('download', $event)"
         @download-audio="$emit('download-audio', $event)"
         @open-channel="$emit('open-channel', $event)"
@@ -113,6 +114,7 @@ export default {
   mixins: [Utils],
   emits: [
     'add-to-playlist',
+    'add-to-queue',
     'create-playlist',
     'download',
     'download-audio',

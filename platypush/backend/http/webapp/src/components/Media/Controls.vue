@@ -22,7 +22,7 @@
           <button @click="$emit('stop')" v-if="buttons_.stop && status.state !== 'stop'" title="Stop playback">
             <i class="icon fa fa-stop"></i>
           </button>
-          <button @click="$emit('next')" title="Play next track" v-if="buttons_.next">
+          <button @click="$emit('next')" title="Play next track" v-if="buttons_.next && hasNext">
             <i class="icon fa fa-step-forward"></i>
           </button>
         </div>
@@ -85,7 +85,7 @@
         <button @click="$emit('stop')" v-if="buttons_.stop && status.state !== 'stop'" title="Stop playback">
           <i class="icon fa fa-stop"></i>
         </button>
-        <button @click="$emit('next')" title="Play next track" v-if="buttons_.next">
+        <button @click="$emit('next')" title="Play next track" v-if="buttons_.next && hasNext">
           <i class="icon fa fa-step-forward"></i>
         </button>
       </div>
@@ -157,6 +157,11 @@ export default {
       default: null,
     },
 
+    queue: {
+      type: Array,
+      default: () => [],
+    },
+
     // Enabled playback buttons
     buttons: {
       type: Object,
@@ -170,6 +175,11 @@ export default {
           repeat: true,
         }
       },
+    },
+
+    pluginName: {
+      type: String,
+      default: null,
     },
 
     // Volume range
@@ -226,6 +236,10 @@ export default {
 
     trackTitle() {
       return this.track?.title || this.track?.name || '[No Title]'
+    },
+
+    hasNext() {
+      return (this.queue?.length || 0) > 0 || this.pluginName?.startsWith('music.')
     },
   },
 

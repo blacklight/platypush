@@ -16,6 +16,7 @@
              v-on="componentData.on"
              :collection="collection"
              @add-to-playlist="$emit('add-to-playlist', $event)"
+             @add-to-queue="$emit('add-to-queue', $event)"
              @delete="deleteItem"
              @select="select"
              @select-collection="selectCollection"
@@ -43,6 +44,7 @@ export default {
 
   emits: [
     'add-to-playlist',
+    'add-to-queue',
     'back',
     'download',
     'path-change',
@@ -71,6 +73,7 @@ export default {
 
         on: {
           'add-to-playlist': (item) => this.$emit('add-to-playlist', item),
+          'add-to-queue': (item) => this.$emit('add-to-queue', item),
           'download': (item) => this.$emit('download', item),
           'play': (item) => this.$emit('play', item),
           'play-with-opts': (item) => this.$emit('play-with-opts', item),
