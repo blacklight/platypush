@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- `media`: Added pagination support to the media search action. The search API
+  now accepts `limit` and `page_token` parameters and returns a
+  `next_page_token`, with per-source pagination state handled for Jellyfin,
+  Plex, YouTube, torrents, and local media
+  ([`98034e0`](https://git.platypush.tech/platypush/platypush/commit/98034e016535d004b7a7ebffd03ab201a5e754e2)).
+
+- `webapp`: Added infinite scroll to the media search results, using the new
+  paginated search API
+  ([`b38aea9`](https://git.platypush.tech/platypush/platypush/commit/b38aea923a5e444499c161a5abea193a524ffba8)).
+
 ## [1.3.32]
 
 ### Added
