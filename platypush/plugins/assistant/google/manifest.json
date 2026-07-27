@@ -55,9 +55,7 @@
         "python-cachetools",
         "python-grpcio",
         "python-google-auth",
-        "python-monotonic",
         "python-numpy",
-        "python-sounddevice",
         "python-tenacity",
         "python-urllib3"
       ],
