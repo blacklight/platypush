@@ -239,7 +239,7 @@ class LocalMediaSearcher(MediaSearcher):
 
         session.commit()
 
-    def search(self, query, **_):
+    def search(self, query, *_, limit=None, page_state=None, **__):
         """
         Searches in the configured media directories given a query. It uses the
         built-in SQLite index if available. If any directory has changed since
@@ -247,6 +247,8 @@ class LocalMediaSearcher(MediaSearcher):
         will be returned.
         """
 
+        limit = limit or self._default_limit
+        offset = (page_state or {}).get('offset', 0)
         session = self._get_db_session()
         results = {}
 
@@ -268,17 +270,22 @@ class LocalMediaSearcher(MediaSearcher):
                     for _ in re.split(self._filename_separators, query.strip())
                 ]
 
-                for file_record in session.query(MediaFile).where(
-                    MediaFile.id.in_(
-                        session.query(MediaFile.id)
-                        .join(MediaFileToken)
-                        .join(MediaToken)
-                        .filter(MediaToken.token.in_(query_tokens))
-                        .group_by(MediaFile.id)
-                        .having(
-                            func.count(MediaFileToken.token_id) >= len(query_tokens)
+                for file_record in (
+                    session.query(MediaFile)
+                    .where(
+                        MediaFile.id.in_(
+                            session.query(MediaFile.id)
+                            .join(MediaFileToken)
+                            .join(MediaToken)
+                            .filter(MediaToken.token.in_(query_tokens))
+                            .group_by(MediaFile.id)
+                            .having(
+                                func.count(MediaFileToken.token_id) >= len(query_tokens)
+                            )
                         )
                     )
+                    .offset(offset)
+                    .limit(limit)
                 ):
                     if os.path.isfile(file_record.path):
                         results[file_record.path] = {
@@ -292,4 +299,6 @@ class LocalMediaSearcher(MediaSearcher):
                             'created_at': file_record.created_at,
                         }
 
-        return results.values()
+        result_list = list(results.values())
+        next_state = {'offset': offset + limit} if len(result_list) >= limit else None
+        return result_list, next_state

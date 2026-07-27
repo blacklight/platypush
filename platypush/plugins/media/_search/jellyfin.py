@@ -10,7 +10,7 @@ class JellyfinMediaSearcher(MediaSearcher):
     def supports(self, type: str) -> bool:
         return type == 'jellyfin'
 
-    def search(self, query, *_, **__):
+    def search(self, query, *_, limit=None, page_state=None, **__):
         """
         Performs a search on a Jellyfin server using the configured
         :class:`platypush.plugins.media.jellyfin.MediaJellyfinPlugin`
@@ -20,17 +20,22 @@ class JellyfinMediaSearcher(MediaSearcher):
         try:
             media = get_plugin('media.jellyfin')
         except RuntimeError:
-            return []
+            return [], None
 
         if not media:
-            return []
+            return [], None
+
+        limit = limit or self._default_limit
+        offset = (page_state or {}).get('offset', 0)
 
         self.logger.info('Searching Jellyfin for "%s"', query)
-        results = media.search(query=query).output
+        results = media.search(query=query, limit=limit, offset=offset).output
         self.logger.info(
             '%d Jellyfin results found for the search query "%s"', len(results), query
         )
-        return results
+
+        next_state = {'offset': offset + limit} if len(results) >= limit else None
+        return results, next_state
 
 
 # vim:sw=4:ts=4:et:

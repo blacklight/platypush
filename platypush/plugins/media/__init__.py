@@ -1,3 +1,5 @@
+import base64
+import json
 import os
 import pathlib
 import queue
@@ -5,6 +7,7 @@ import tempfile
 import threading
 from abc import ABC, abstractmethod
 from typing import (
+    Any,
     Dict,
     Iterable,
     Optional,
@@ -471,7 +474,7 @@ class MediaPlugin(RunnablePlugin, ABC):
         self.stop()
         return self.play(self._get_queue_item_url(item))
 
-    def _next(self, *args, **kwargs):
+    def _next(self, *_, **__):
         """Player-specific next action when the queue is empty."""
         return None
 
@@ -632,7 +635,9 @@ class MediaPlugin(RunnablePlugin, ABC):
         queue_results: bool = False,
         autoplay: bool = False,
         timeout: float = _default_search_timeout,
-    ):
+        limit: Optional[int] = None,
+        page_token: Optional[str] = None,
+    ) -> Dict[str, Any]:
         """
         Perform a video search.
 
@@ -641,7 +646,22 @@ class MediaPlugin(RunnablePlugin, ABC):
         :param queue_results: Append the results to the current playing queue (default: False)
         :param autoplay: Play the first result of the search (default: False)
         :param timeout: Search timeout (default: 60 seconds)
+        :param limit: Maximum number of results per source per page
+            (default: 25).
+        :param page_token: Opaque pagination token returned by a previous
+            search call as ``next_page_token``.  Pass it to retrieve the
+            next page of results.
+        :return: A dictionary with ``results`` (list of media items) and
+            ``next_page_token`` (string or ``null`` when there are no more
+            pages).
         """
+
+        page_states = {}
+        if page_token:
+            try:
+                page_states = json.loads(base64.b64decode(page_token).decode())
+            except Exception:
+                self.logger.warning('Invalid page token: %s', page_token)
 
         results = {}
         results_queues = {}
@@ -650,26 +670,44 @@ class MediaPlugin(RunnablePlugin, ABC):
         if types is None:
             types = self._supported_media_types
 
-        for media_type in types:
+        active_types = [t for t in types if not page_token or t in page_states]
+
+        for media_type in active_types:
             results[media_type] = []
             results_queues[media_type] = queue.Queue()
             search_hndl = self._get_search_handler_by_type(media_type)
+            if not search_hndl:
+                continue
+
             worker_threads[media_type] = threading.Thread(
                 target=self._search_worker(
                     query=query,
                     search_hndl=search_hndl,
                     results_queue=results_queues[media_type],
+                    limit=limit,
+                    page_state=page_states.get(media_type),
                 )
             )
             worker_threads[media_type].start()
 
-        for media_type in types:
-            try:
-                items = results_queues[media_type].get(timeout=timeout) or []
-                if isinstance(items, Exception):
-                    raise items
+        next_page_states: Dict[str, dict] = {}
+        for media_type in active_types:
+            if media_type not in results_queues:
+                continue
 
-                results[media_type].extend(items)
+            try:
+                result = results_queues[media_type].get(timeout=timeout)
+                if isinstance(result, Exception):
+                    raise result
+
+                if isinstance(result, tuple):
+                    items, next_state = result
+                else:
+                    items, next_state = result, None
+
+                results[media_type].extend(items or [])
+                if next_state:
+                    next_page_states[media_type] = next_state
             except queue.Empty:
                 self.logger.warning(
                     'Search for "%s" media type %s timed out', query, media_type
@@ -680,28 +718,39 @@ class MediaPlugin(RunnablePlugin, ABC):
                 )
                 self.logger.exception(e)
 
-        results = [
+        flat_results = [
             {**result, 'type': media_type}
             for media_type in self._supported_media_types
             for result in results.get(media_type, [])
             if media_type in results
         ]
 
-        if results:
+        if flat_results:
             if queue_results:
-                self._videos_queue = results
+                self._videos_queue = flat_results
                 if autoplay:
                     self.play(self._videos_queue.pop(0).get('url'))
             elif autoplay:
-                self.play(results[0]['url'])
+                self.play(flat_results[0]['url'])
 
-        return results
+        next_token = (
+            base64.b64encode(json.dumps(next_page_states).encode()).decode()
+            if next_page_states
+            else None
+        )
+
+        return {
+            'results': flat_results,
+            'next_page_token': next_token,
+        }
 
     @staticmethod
-    def _search_worker(query, search_hndl, results_queue):
+    def _search_worker(query, search_hndl, results_queue, limit=None, page_state=None):
         def thread():
             try:
-                results_queue.put(search_hndl.search(query))
+                results_queue.put(
+                    search_hndl.search(query, limit=limit, page_state=page_state)
+                )
             except Exception as e:
                 results_queue.put(e)
 

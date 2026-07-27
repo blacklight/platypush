@@ -210,11 +210,20 @@ class YoutubePlugin(Plugin):
         raise ValueError(f'Unknown backend: {backend}')
 
     @action
-    def search(self, query: str, backend: Optional[str] = None, **_) -> List[dict]:
+    def search(
+        self,
+        query: str,
+        page: Optional[Any] = None,
+        backend: Optional[str] = None,
+        **_,
+    ) -> List[dict]:
         """
         Search for YouTube videos.
 
         :param query: Query string.
+        :param page: Optional page token for pagination. The type depends on
+            the backend (e.g. a string token for Piped/Google, an integer page
+            number for Invidious).
         :param backend: Optional backend to use. If not specified, the default
             one will be used.
         :return: .. schema:: piped.PipedVideoSchema(many=True)
@@ -223,7 +232,7 @@ class YoutubePlugin(Plugin):
         self.logger.info(
             'Searching YouTube through the %s backend for "%s"', api.name, query
         )
-        results = [item.to_dict() for item in api.search(query)]
+        results = [item.to_dict() for item in api.search(query, page=page)]
 
         self.logger.info(
             '%d YouTube results for the search query "%s"',

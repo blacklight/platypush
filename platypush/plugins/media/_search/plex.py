@@ -20,7 +20,7 @@ class PlexMediaSearcher(MediaSearcher):
         try:
             plex = get_plugin('media.plex')
         except RuntimeError:
-            return []
+            return [], None
 
         if not (plex):
             raise AssertionError('No Plex plugin configured')
@@ -33,7 +33,7 @@ class PlexMediaSearcher(MediaSearcher):
         self.logger.info(
             '%d Plex results found for the search query "%s"', len(results), query
         )
-        return results
+        return results, None
 
     @staticmethod
     def _flatten_result(result):

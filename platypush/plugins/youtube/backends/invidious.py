@@ -72,7 +72,7 @@ class InvidiousBackend(BaseBackend):
 
     def _to_entity(self, item: dict) -> YoutubeEntity:
         def dump(schema: Schema, item: dict) -> dict:
-            data = dict(schema.dump(item))
+            data: dict = dict(schema.dump(item))  # type: ignore
             id = data.pop("id", None)
             item_type = data.pop("item_type", None)
 
@@ -221,7 +221,11 @@ class InvidiousBackend(BaseBackend):
             )
         )
 
-        return [self._to_entity(item) for item in rs]
+        results = [self._to_entity(item) for item in rs]
+        next_page = (page or 1) + 1
+        for result in results:
+            result.next_page_token = next_page
+        return results
 
     def get_feed(self, page: Optional[Any] = None, **_) -> List[YoutubeVideo]:
         resp = self._json_dict(self._request("feed", params={"page": page or 1}))

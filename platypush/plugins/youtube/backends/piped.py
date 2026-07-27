@@ -160,9 +160,28 @@ class PipedBackend(BaseBackend):
             PipedChannelSchema().dump(self._request(f'channel/{id}')) or {}  # type: ignore
         )
 
-    def search(self, query: str, *_, **__) -> List[YoutubeEntity]:
-        rs = self._request('search', auth=False, params={'q': query, 'filter': 'all'})
+    def search(
+        self, query: str, page: Optional[str] = None, *_, **__
+    ) -> List[YoutubeEntity]:
+        if page:
+            next_page_raw = base64.b64decode(page.encode()).decode()
+            rs = self._request(
+                'nextpage/search',
+                auth=False,
+                params={'q': query, 'filter': 'all', 'nextpage': next_page_raw},
+            )
+        else:
+            rs = self._request(
+                'search', auth=False, params={'q': query, 'filter': 'all'}
+            )
+
+        raw_nextpage = rs.get('nextpage')
+        next_page_token = (
+            base64.b64encode(raw_nextpage.encode()).decode() if raw_nextpage else None
+        )
         results = [self._to_entity(item) for item in rs.get('items', [])]
+        for result in results:
+            result.next_page_token = next_page_token
         return results
 
     def get_feed(self, **_) -> List[YoutubeVideo]:
