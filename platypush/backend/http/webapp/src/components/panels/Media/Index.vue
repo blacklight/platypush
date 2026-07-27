@@ -64,6 +64,7 @@
                        @add-to-playlist="addToPlaylistItem = $event"
                        @add-to-queue="addToQueue"
                        @open-channel="selectChannelFromItem"
+                       @scroll-end="loadMore"
                        @select="onResultSelect($event)"
                        @play="play"
                        @play-with-opts="play($event.item, $event.opts)"
@@ -246,6 +247,9 @@ export default {
       queue: [],
       queueFilter: '',
       results: [],
+      pageToken: null,
+      searchQuery: null,
+      searchTypes: null,
       selectedPlayer: null,
       selectedResult: null,
       selectedSubtitles: null,
@@ -366,10 +370,36 @@ export default {
   methods: {
     async search(event) {
       this.loading = true
+      this.searchQuery = event.query
+      this.searchTypes = event.types
+      this.pageToken = null
+      this.results = []
       this.setUrlArgs({q: event.query})
 
       try {
-        this.results = await this.request(`${this.pluginName}.search`, event)
+        const response = await this.request(`${this.pluginName}.search`, event)
+        this.results = response.results || []
+        this.pageToken = response.next_page_token || null
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async loadMore() {
+      if (!this.pageToken || this.loading || !this.searchQuery)
+        return
+
+      this.loading = true
+
+      try {
+        const response = await this.request(`${this.pluginName}.search`, {
+          query: this.searchQuery,
+          types: this.searchTypes,
+          page_token: this.pageToken,
+        })
+
+        this.results = [...this.results, ...(response.results || [])]
+        this.pageToken = response.next_page_token || null
       } finally {
         this.loading = false
       }
