@@ -108,6 +108,7 @@ def _create_token():
     user = None
     username = payload.get('username')
     password = payload.get('password')
+    code = payload.get('code')
     name = payload.get('name')
     expiry_days = payload.get('expiry_days')
     user_manager = UserManager()
@@ -115,8 +116,13 @@ def _create_token():
 
     # Try and authenticate with the credentials passed in the JSON payload
     if username and password:
-        user = user_manager.authenticate_user(username, password, skip_2fa=True)
+        user, status = user_manager.authenticate_user(
+            username, password, code=code, with_status=True
+        )
         if not isinstance(user, User):
+            auth_status = UserAuthStatus.by_status(status)
+            if auth_status:
+                return auth_status.to_response()
             return UserAuthStatus.INVALID_CREDENTIALS.to_response()
 
     if not user:
@@ -365,7 +371,7 @@ def auth_endpoint():
             {
                 "username": "USERNAME",
                 "password": "PASSWORD",
-                "code": "2FA_CODE",
+                "code": "2FA_CODE (required if the account has OTP/2FA enabled)",
                 "expiry_days": "The generated token should be valid for these many days"
             }
 
