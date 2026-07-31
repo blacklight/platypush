@@ -21,7 +21,7 @@ from .utils import run
 # see https://git.platypush.tech/platypush/platypush/issues/399
 when = hook
 
-__version__ = '1.3.32'
+__version__ = '1.3.33'
 __author__ = 'Fabio Manganiello <fabio@manganiello.tech>'
 __all__ = [
     'Application',
