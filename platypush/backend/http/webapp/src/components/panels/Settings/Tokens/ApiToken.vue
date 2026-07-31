@@ -15,19 +15,12 @@
 
     <Modal title="Generate an API token"
            ref="tokenParamsModal"
-           @open="$nextTick(() => $refs.password.focus())"
+           @open="$nextTick(() => $refs.generateTokenForm.name.focus())"
            @close="$refs.generateTokenForm.reset()">
       <div class="form-container">
-        <p>Confirm your credentials in order to generate a new API token.</p>
+        <p>Generate a new API token using your current authenticated session.</p>
 
         <form @submit.prevent="generateToken" ref="generateTokenForm">
-          <label>
-            <span>Confirm password</span>
-            <span>
-              <input type="password" name="password" ref="password" placeholder="Password">
-            </span>
-          </label>
-
           <label>
             <span>
               A friendly name used to identify this token - such as <code>My
@@ -139,29 +132,84 @@ export default {
   },
 
   methods: {
+    async getCsrfToken() {
+      let csrfToken = this.getCookie('csrf_token')
+      if (csrfToken) {
+        return csrfToken
+      }
+
+      // Fallback: if the csrf_token cookie is not available,
+      // fetch it from the current session and set it.
+      try {
+        const authStatus = await axios.get('/auth')
+        const token = authStatus?.data?.csrf_token
+        if (token) {
+          const expiresAt = authStatus?.data?.expires_at
+            ? new Date(authStatus.data.expires_at)
+            : null
+          this.setCookie('csrf_token', token, {expires: expiresAt})
+          return token
+        }
+      } catch (e) {
+        console.error('Failed to refresh CSRF token', e)
+      }
+
+      return null
+    },
+
     async generateToken(event) {
-      const username = this.currentUser.username
-      const password = event.target.password.value
       const name = event.target.name.value
-      let validityDays = event.target.validityDays?.length ? parseInt(event.target.validityDays.value) : 0
+      let validityDays = event.target.validityDays?.value?.length ? parseFloat(event.target.validityDays.value) : 0
       if (!validityDays)
         validityDays = null
 
+      const csrfToken = await this.getCsrfToken()
+      if (!csrfToken) {
+        this.notify({
+          text: 'Your session has expired, please log in again.',
+          error: true,
+        })
+        return
+      }
+
       this.loading = true
       try {
-        this.token = (await axios.post('/auth?type=token', {
-          username: username,
-          password: password,
-          name: name,
-          expiry_days: validityDays,
-        })).data.token
+        this.token = (await axios.post(
+          '/auth?type=token',
+          {
+            name: name,
+            expiry_days: validityDays,
+          },
+          {
+            headers: {
+              'X-CSRF-Token': csrfToken,
+            },
+          },
+        )).data.token
 
         if (this.token?.length)
           this.$refs.tokenModal.show()
       } catch (e) {
         console.error(e.toString())
+        const status = e?.response?.status
+        const error = e?.response?.data?.error
+        let message
+
+        if (status === 401 || error === 'INVALID_SESSION') {
+          message = 'Your session has expired, please log in again.'
+          this.deleteCookie('session_token')
+          this.deleteCookie('csrf_token')
+        } else if (status === 403 || error === 'INVALID_CSRF') {
+          message = 'Authorization error, please log in again.'
+          this.deleteCookie('csrf_token')
+        } else if (error === 'TOKEN_NAME_EXISTS') {
+          message = e?.response?.data?.message || 'A token with this name already exists.'
+        } else {
+          message = e?.response?.data?.message || e?.message || e?.toString()
+        }
+
         this.notify({
-          text: e.toString(),
+          text: message,
           error: true,
         })
       } finally {

@@ -4,6 +4,12 @@
 
 ### Added
 
+- `backend.http.app`: Session-based API token issuance for the web UI. Browser
+  sessions now receive a per-session CSRF token, and `POST /auth?type=token`
+  supports a session mode where the cookie authenticates the user and the
+  `X-CSRF-Token` header authorizes the state change, removing the need for
+  another password/OTP prompt in the UI.
+
 - `media`: Added pagination support to the media search action. The search API
   now accepts `limit` and `page_token` parameters and returns a
   `next_page_token`, with per-source pagination state handled for Jellyfin,

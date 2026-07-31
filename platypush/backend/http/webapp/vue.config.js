@@ -30,6 +30,10 @@ module.exports = {
   pwa: {
     name: 'Platypush',
     themeColor: '#ffffff',
+    workboxOptions: {
+      skipWaiting: true,
+      clientsClaim: true,
+    },
   },
 
   devServer: {

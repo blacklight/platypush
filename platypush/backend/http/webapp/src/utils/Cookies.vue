@@ -15,17 +15,38 @@ export default {
     },
 
     setCookie(name, value, opts) {
-      document.cookie = (
-        `${name}=${value}; path=${opts?.path || '/'}` + (
-          opts?.expires ? `; expires=${new Date(opts.expires).toUTCString()}` : ''
-        )
-      )
+      const isSecure = window?.location?.protocol === 'https:'
+      const parts = [
+        `${name}=${value}`,
+        `path=${opts?.path || '/'}`,
+      ]
+
+      if (opts?.expires) {
+        parts.push(`expires=${new Date(opts.expires).toUTCString()}`)
+      }
+
+      if (isSecure) {
+        parts.push('Secure')
+      }
+
+      parts.push(`SameSite=${opts?.sameSite || 'Lax'}`)
+      document.cookie = parts.join('; ')
     },
 
     deleteCookie(name) {
-      document.cookie = (
-        `${name}=; expires=1970-01-01T00:00:00Z`
-      )
+      const isSecure = window?.location?.protocol === 'https:'
+      const parts = [
+        `${name}=`,
+        'expires=1970-01-01T00:00:00Z',
+        'path=/',
+      ]
+
+      if (isSecure) {
+        parts.push('Secure')
+      }
+
+      parts.push('SameSite=Lax')
+      document.cookie = parts.join('; ')
     },
   }
 }

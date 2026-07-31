@@ -126,12 +126,22 @@ export default {
       try {
         const authStatus = await axios.post(url, data)
         const sessionToken = authStatus?.data?.session_token
+        const csrfToken = authStatus?.data?.csrf_token
         if (sessionToken) {
           const expiresAt = authStatus?.data?.expires_at ? new Date(authStatus.data.expires_at) : null
           this.isAuthenticated = true
           this.setCookie('session_token', sessionToken, {
             expires: expiresAt,
           })
+
+          if (csrfToken) {
+            this.setCookie('csrf_token', csrfToken, {
+              expires: expiresAt,
+            })
+          } else {
+            this.deleteCookie('csrf_token')
+          }
+
           window.location.href = authStatus.redirect || this.redirect
         } else {
           this.authError = "Invalid credentials"
@@ -144,8 +154,10 @@ export default {
           })
         } else {
           this.authError = e?.response?.data?.message || e?.response?.data?.error || e?.message || e?.toString()
-          if (e?.response?.status === 401) {
+          if ([401, 403].includes(e?.response?.status)) {
             this.authError = this.authError || "Invalid credentials"
+            this.deleteCookie('session_token')
+            this.deleteCookie('csrf_token')
           } else {
             this.authError = this.authError || "An error occurred while processing the request"
             if (e?.response)
@@ -161,11 +173,22 @@ export default {
       try {
         const authStatus = await axios.get('/auth')
         if (authStatus.data.session_token) {
+          const expiresAt = authStatus?.data?.expires_at ? new Date(authStatus.data.expires_at) : null
           this.isAuthenticated = true
+
+          if (authStatus.data.csrf_token) {
+            this.setCookie('csrf_token', authStatus.data.csrf_token, {
+              expires: expiresAt,
+            })
+          } else {
+            this.deleteCookie('csrf_token')
+          }
+
           window.location.href = authStatus.redirect || this.redirect
         }
       } catch (e) {
         this.isAuthenticated = false
+        this.deleteCookie('csrf_token')
       } finally {
         this.initialized = true
       }

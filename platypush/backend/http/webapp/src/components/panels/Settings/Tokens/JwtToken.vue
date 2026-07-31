@@ -15,7 +15,7 @@
 
     <Modal title="Generate a JWT token"
            ref="tokenParamsModal"
-           @open="$nextTick(() => $refs.password.focus())"
+           @open="$nextTick(() => $refs.password?.focus())"
            @close="$refs.generateTokenForm.reset()">
       <div class="form-container">
         <p>Confirm your credentials in order to generate a new JWT token.</p>
@@ -25,6 +25,13 @@
             <span>Confirm password</span>
             <span>
               <input type="password" name="password" ref="password" placeholder="Password">
+            </span>
+          </label>
+
+          <label v-if="requires2fa">
+            <span>OTP code</span>
+            <span>
+              <input type="text" name="code" ref="code" placeholder="OTP code">
             </span>
           </label>
 
@@ -130,6 +137,7 @@ export default {
   data() {
     return {
       loading: false,
+      requires2fa: this.currentUser?.has_2fa === true,
       token: null,
     }
   },
@@ -138,26 +146,54 @@ export default {
     async generateToken(event) {
       const username = this.currentUser.username
       const password = event.target.password.value
+      const code = this.requires2fa ? event.target.code?.value : undefined
       let validityDays = event.target.validityDays?.length ? parseInt(event.target.validityDays.value) : 0
       if (!validityDays)
         validityDays = null
 
       this.loading = true
       try {
-        this.token = (await axios.post('/auth?type=jwt', {
+        const response = await axios.post('/auth?type=jwt', {
           username: username,
           password: password,
+          code: code,
           expiry_days: validityDays,
-        })).data.token
+        })
 
-        if (this.token?.length)
+        this.token = response.data.token
+        if (this.token?.length) {
+          this.$refs.tokenParamsModal.close()
           this.$refs.tokenModal.show()
+        }
       } catch (e) {
         console.error(e.toString())
-        this.notify({
-          text: e.toString(),
-          error: true,
-        })
+        const error = e?.response?.data?.error
+
+        if (error === 'MISSING_OTP_CODE') {
+          this.requires2fa = true
+          this.notify({
+            text: e?.response?.data?.message || 'Please enter your OTP code.',
+            error: true,
+          })
+          this.$nextTick(() => {
+            this.$refs.code?.focus()
+          })
+        } else if (error === 'INVALID_OTP_CODE') {
+          this.notify({
+            text: e?.response?.data?.message || 'Invalid OTP code.',
+            error: true,
+          })
+        } else if (error === 'INVALID_CREDENTIALS') {
+          this.notify({
+            text: e?.response?.data?.message || 'Invalid credentials.',
+            error: true,
+          })
+        } else {
+          this.notify({
+            text: e?.response?.data?.message || e?.message || e?.toString(),
+            error: true,
+          })
+        }
       } finally {
         this.loading = false
       }
