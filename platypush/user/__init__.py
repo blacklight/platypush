@@ -17,9 +17,12 @@ from platypush.context import get_plugin
 from platypush.exceptions.user import (
     InvalidCredentialsException,
     InvalidJWTTokenException,
+    InvalidOtpCodeException,
     InvalidTokenException,
+    MissingOtpCodeException,
     NoUserException,
     OtpRecordAlreadyExistsException,
+    TokenNameExistsException,
 )
 from platypush.utils import get_or_generate_stored_rsa_key_pair, utcnow
 
@@ -341,6 +344,17 @@ class UserManager:
             _, priv_key = self._get_or_generate_otp_rsa_key_pair()
             return self._decrypt(user_otp.otp_secret, priv_key)
 
+    def has_otp_secret(self, username: str) -> bool:
+        with self._get_session() as session:
+            user = self._get_user(session, username)
+            if not user:
+                return False
+
+            return (
+                session.query(UserOtp).filter_by(user_id=user.user_id).first()
+                is not None
+            )
+
     @staticmethod
     def _get_user(session, username):
         return session.query(User).filter_by(username=username).first()
@@ -419,6 +433,7 @@ class UserManager:
         username: str,
         password: str,
         expires_at: Optional[datetime.datetime] = None,
+        code: Optional[str] = None,
     ) -> str:
         """
         Create a user JWT token for API usage.
@@ -426,11 +441,28 @@ class UserManager:
         :param username: User name.
         :param password: Password.
         :param expires_at: Expiration datetime of the token.
+        :param code: Optional OTP/2FA code (required if 2FA is enabled).
         :return: The generated JWT token as a string.
         :raises: :class:`platypush.exceptions.user.InvalidCredentialsException` in case of invalid credentials.
         """
-        user = self.authenticate_user(username, password, skip_2fa=True)
-        if not user:
+        response = self.authenticate_user(
+            username,
+            password,
+            code=code,
+            skip_2fa=False,
+            with_status=True,
+        )
+
+        if not response:
+            raise InvalidCredentialsException()
+
+        _, status = response
+
+        if status == AuthenticationStatus.MISSING_OTP_CODE:
+            raise MissingOtpCodeException()
+        if status == AuthenticationStatus.INVALID_OTP_CODE:
+            raise InvalidOtpCodeException()
+        if status != AuthenticationStatus.OK:
             raise InvalidCredentialsException()
 
         pub_key, _ = self._get_jwt_rsa_key_pair()
@@ -702,7 +734,15 @@ class UserManager:
             random.choice("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567") for _ in range(8)
         )
 
-        with self._get_session() as session:
+        with self._get_session(locked=True) as session:
+            if (
+                name
+                and session.query(UserToken)
+                .filter_by(user_id=user.user_id, name=name)
+                .first()
+            ):
+                raise TokenNameExistsException()
+
             user_token = UserToken(
                 user_id=user.user_id,
                 name=name,

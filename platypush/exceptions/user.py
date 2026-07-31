@@ -73,6 +73,15 @@ class InvalidOtpCodeException(AuthenticationException):
         super().__init__(error, *args, **kwargs)
 
 
+class MissingOtpCodeException(AuthenticationException):
+    """
+    Exception raised when an OTP code is required but not provided.
+    """
+
+    def __init__(self, error='Missing OTP code', *args, **kwargs):
+        super().__init__(error, *args, **kwargs)
+
+
 class OtpRecordAlreadyExistsException(UserException):
     """
     Exception raised in case of an OTP record already existing for a user.
@@ -81,4 +90,13 @@ class OtpRecordAlreadyExistsException(UserException):
     def __init__(
         self, *args, error='An OTP record already exists for this user', **kwargs
     ):
+        super().__init__(*args, error, **kwargs)
+
+
+class TokenNameExistsException(UserException):
+    """
+    Exception raised when a token with the requested name already exists.
+    """
+
+    def __init__(self, *args, error='A token with this name already exists', **kwargs):
         super().__init__(*args, error, **kwargs)

@@ -7,10 +7,17 @@ from flask import Blueprint, request, abort, jsonify
 from platypush.backend.http.app.utils import authenticate
 from platypush.backend.http.app.utils.auth import (
     UserAuthStatus,
+    authenticate_session_with_csrf,
     current_user,
     get_current_user_or_auth_status,
 )
-from platypush.exceptions.user import UserException
+from platypush.exceptions.user import (
+    InvalidCredentialsException,
+    InvalidOtpCodeException,
+    MissingOtpCodeException,
+    TokenNameExistsException,
+    UserException,
+)
 from platypush.user import User, UserManager
 from platypush.utils import utcnow
 
@@ -29,6 +36,7 @@ def _dump_session(session, redirect_page='/'):
             'status': 'ok',
             'user_id': session.user_id,
             'session_token': session.session_token,
+            'csrf_token': session.csrf_token,
             'expires_at': session.expires_at,
             'redirect': redirect_page,
         }
@@ -48,16 +56,26 @@ def _jwt_auth():
     if expiry_days:
         expires_at = datetime.datetime.now() + datetime.timedelta(days=expiry_days)
 
+    code = payload.get('code')
     user_manager = UserManager()
 
     try:
         return jsonify(
             {
                 'token': user_manager.generate_jwt_token(
-                    username=username, password=password, expires_at=expires_at
+                    username=username,
+                    password=password,
+                    expires_at=expires_at,
+                    code=code,
                 ),
             }
         )
+    except MissingOtpCodeException:
+        return UserAuthStatus.MISSING_OTP_CODE.to_response()
+    except InvalidOtpCodeException:
+        return UserAuthStatus.INVALID_OTP_CODE.to_response()
+    except InvalidCredentialsException:
+        return UserAuthStatus.INVALID_CREDENTIALS.to_response()
     except UserException as e:
         abort(401, str(e))
 
@@ -105,16 +123,15 @@ def _create_token():
     except json.JSONDecodeError:
         pass
 
-    user = None
     username = payload.get('username')
     password = payload.get('password')
     code = payload.get('code')
     name = payload.get('name')
     expiry_days = payload.get('expiry_days')
     user_manager = UserManager()
-    response = get_current_user_or_auth_status(request)
 
-    # Try and authenticate with the credentials passed in the JSON payload
+    # Credential mode: authenticate with the username/password/OTP supplied
+    # in the JSON payload. Two-factor authentication is enforced when enabled.
     if username and password:
         user, status = user_manager.authenticate_user(
             username, password, code=code, with_status=True
@@ -124,22 +141,28 @@ def _create_token():
             if auth_status:
                 return auth_status.to_response()
             return UserAuthStatus.INVALID_CREDENTIALS.to_response()
-
-    if not user:
-        if not (response and isinstance(response, User)):
+    elif not username and not password:
+        # Session mode: the browser's session cookie authenticates the user and
+        # the X-CSRF-Token header proves the request came from the Platypush UI.
+        response = authenticate_session_with_csrf(request)
+        if not isinstance(response, User):
             return response.to_response()
 
         user = response
+    else:
+        return UserAuthStatus.INVALID_CREDENTIALS.to_response()
 
     expires_at = None
     if expiry_days:
         expires_at = datetime.datetime.now() + datetime.timedelta(days=expiry_days)
 
     try:
-        token = UserManager().generate_api_token(
+        token = user_manager.generate_api_token(
             username=str(user.username), name=name, expires_at=expires_at
         )
         return jsonify({'token': token})
+    except TokenNameExistsException:
+        return UserAuthStatus.TOKEN_NAME_EXISTS.to_response()
     except UserException:
         return UserAuthStatus.INVALID_CREDENTIALS.to_response()
 
@@ -363,8 +386,11 @@ def _tokens_delete():
 @auth.route('/auth', methods=['GET', 'POST', 'DELETE'])
 def auth_endpoint():
     """
-    Authentication endpoint. It validates the user credentials provided over a
-    JSON payload with the following structure:
+    Authentication endpoint.
+
+    ``POST /auth?type=token`` can generate a new API token in two modes:
+
+    * **Credential mode:** the caller provides the following JSON fields:
 
         .. code-block:: json
 
@@ -372,14 +398,28 @@ def auth_endpoint():
                 "username": "USERNAME",
                 "password": "PASSWORD",
                 "code": "2FA_CODE (required if the account has OTP/2FA enabled)",
+                "name": "Token name",
                 "expiry_days": "The generated token should be valid for these many days"
             }
+
+      Two-factor authentication is enforced when enabled.
+
+    * **Session mode:** the request is authenticated by the browser's
+      ``session_token`` cookie and the JSON body only contains token metadata:
+
+        .. code-block:: json
+
+            {
+                "name": "Token name",
+                "expiry_days": "The generated token should be valid for these many days"
+            }
+
+      The ``X-CSRF-Token`` header must be set to the per-session CSRF token
+      returned when the session was created or queried via ``GET /auth``.
 
     ``expiry_days`` is optional, and if omitted or set to zero the token will
     be valid indefinitely.
 
-    Upon successful validation, a new JWT token will be generated using the
-    service's self-generated RSA key-pair and it will be returned to the user.
     The token can then be used to authenticate API calls to ``/execute`` by
     setting the ``Authorization: Bearer <TOKEN_HERE>`` header upon HTTP calls.
 

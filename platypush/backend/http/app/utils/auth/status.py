@@ -20,6 +20,9 @@ class UserAuthStatus(Enum):
     INVALID_CREDENTIALS = StatusValue(
         401, AuthenticationStatus.INVALID_CREDENTIALS, 'Invalid credentials'
     )
+    INVALID_CSRF = StatusValue(
+        403, AuthenticationStatus.INVALID_CSRF, 'Invalid CSRF token'
+    )
     INVALID_JWT_TOKEN = StatusValue(
         401, AuthenticationStatus.INVALID_JWT_TOKEN, 'Invalid JWT token'
     )
@@ -52,6 +55,11 @@ class UserAuthStatus(Enum):
     )
     REGISTRATION_REQUIRED = StatusValue(
         412, AuthenticationStatus.REGISTRATION_REQUIRED, 'Please create a user first'
+    )
+    TOKEN_NAME_EXISTS = StatusValue(
+        400,
+        AuthenticationStatus.TOKEN_NAME_EXISTS,
+        'A token with this name already exists',
     )
     UNKNOWN_ERROR = StatusValue(
         500, AuthenticationStatus.UNKNOWN_ERROR, 'Unknown error'

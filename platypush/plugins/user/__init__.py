@@ -273,6 +273,7 @@ class UserPlugin(Plugin):
             'user_id': user.user_id,
             'username': user.username,
             'created_at': user.created_at.isoformat(),
+            'has_2fa': self.user_manager.has_otp_secret(user.username),
         }
 
 

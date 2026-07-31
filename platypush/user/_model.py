@@ -21,6 +21,7 @@ class AuthenticationStatus(enum.Enum):
     OK = ''
     INVALID_AUTH_TYPE = 'invalid_auth_type'
     INVALID_CREDENTIALS = 'invalid_credentials'
+    INVALID_CSRF = 'invalid_csrf'
     INVALID_METHOD = 'invalid_method'
     INVALID_JWT_TOKEN = 'invalid_jwt_token'
     INVALID_OTP_CODE = 'invalid_otp_code'
@@ -31,6 +32,7 @@ class AuthenticationStatus(enum.Enum):
     PASSWORD_MISMATCH = 'password_mismatch'
     REGISTRATION_DISABLED = 'registration_disabled'
     REGISTRATION_REQUIRED = 'registration_required'
+    TOKEN_NAME_EXISTS = 'token_name_exists'
     UNKNOWN_ERROR = 'unknown_error'
 
 

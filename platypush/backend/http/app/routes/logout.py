@@ -1,4 +1,4 @@
-from flask import Blueprint, request, redirect, make_response, abort
+from flask import Blueprint, request, redirect, make_response
 
 from platypush.backend.http.app import template_folder
 from platypush.user import UserManager
@@ -20,16 +20,21 @@ def logout_route():
     )
     session_token = request.cookies.get('session_token')
 
-    if not session_token:
-        abort(417, 'Not logged in')
-
-    user, _ = user_manager.authenticate_user_session(session_token)[:2]
-    if not user:
-        abort(403, 'Invalid session token')
+    if session_token:
+        user, _ = user_manager.authenticate_user_session(session_token)[:2]
+        if user:
+            user_manager.delete_user_session(session_token)
 
     redirect_target = redirect(redirect_page, 302)  # lgtm [py/url-redirection]
     response = make_response(redirect_target)
-    response.set_cookie('session_token', '', expires=0)
+    cookie_kwargs = {
+        'expires': 0,
+        'path': '/',
+        'secure': request.is_secure,
+        'samesite': 'Lax',
+    }
+    response.set_cookie('session_token', '', **cookie_kwargs)
+    response.set_cookie('csrf_token', '', **cookie_kwargs)
     return response
 
 

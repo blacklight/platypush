@@ -1,4 +1,5 @@
 import base64
+import secrets
 from functools import wraps
 from typing import Optional, Union
 
@@ -120,6 +121,32 @@ def authenticate_session(req) -> Optional[User]:
 
     if user_session_token:
         user, _ = user_manager.authenticate_user_session(user_session_token)[:2]
+
+    return user
+
+
+def authenticate_session_with_csrf(
+    req,
+) -> Union[User, UserAuthStatus]:
+    """
+    Authenticate a browser session and validate the CSRF token sent in the
+    ``X-CSRF-Token`` header. Returns the authenticated user only when both the
+    session and the CSRF token are valid.
+    """
+    session_token = get_cookie(req, 'session_token')
+    if not session_token:
+        return UserAuthStatus.INVALID_SESSION
+
+    user, session = user_manager.authenticate_user_session(session_token)[:2]
+    if not user or not session:
+        return UserAuthStatus.INVALID_SESSION
+
+    if not session.csrf_token:
+        return UserAuthStatus.INVALID_SESSION
+
+    csrf_token = req.headers.get('X-CSRF-Token')
+    if not csrf_token or not secrets.compare_digest(csrf_token, session.csrf_token):
+        return UserAuthStatus.INVALID_CSRF
 
     return user
 
