@@ -1,0 +1,30 @@
+DEFAULT_APP_ID = 'CC1AD845'
+DEFAULT_DISPLAY_NAME = 'Default Media Receiver'
+DEFAULT_MANUFACTURER = 'Platypush'
+DEFAULT_MODEL_NAME = 'Platypush'
+DEFAULT_DEVICE_NAME = 'Platypush'
+
+NAMESPACE_CONNECTION = 'urn:x-cast:com.google.cast.tp.connection'
+NAMESPACE_HEARTBEAT = 'urn:x-cast:com.google.cast.tp.heartbeat'
+NAMESPACE_RECEIVER = 'urn:x-cast:com.google.cast.receiver'
+NAMESPACE_MEDIA = 'urn:x-cast:com.google.cast.media'
+
+DEFAULT_PORT = 8009
+DEFAULT_STATUS_INTERVAL = 1.0
+DEFAULT_CAPABILITIES_AV = 5
+DEFAULT_CAPABILITIES_AUDIO = 4
+
+SUPPORTED_MEDIA_COMMANDS = 12303
+
+RECEIVER_STATUS_IDLE = 'Ready To Cast'
+RECEIVER_STATUS_PLAYING = 'Playing'
+RECEIVER_STATUS_PAUSED = 'Paused'
+
+STREAM_TYPE_BUFFERED = 'BUFFERED'
+STREAM_TYPE_LIVE = 'LIVE'
+
+PRIVATE_NETWORKS = [
+    '192.168.0.0/16',
+    '10.0.0.0/8',
+    '172.16.0.0/12',
+]
