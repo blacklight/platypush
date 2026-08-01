@@ -66,7 +66,10 @@ setup(
             'backend/http/webapp/public/**',
         ],
     },
-    extras_require=parse_manifests(),
+    extras_require={
+        **parse_manifests(),
+        'chromecast-receiver': ['protobuf'],
+    },
     package_data={
         'platypush': [
             'migrations/alembic.ini',

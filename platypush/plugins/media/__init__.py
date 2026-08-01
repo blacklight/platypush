@@ -93,6 +93,7 @@ class MediaPlugin(RunnablePlugin, ABC):
         cache_dir: Optional[str] = None,
         cache_streams: bool = False,
         ytdl_args: Optional[Sequence[str]] = None,
+        chromecast_receiver: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         """
@@ -187,6 +188,32 @@ class MediaPlugin(RunnablePlugin, ABC):
             especially at the beginning, and seeking may not be supported.
         :param ytdl_args: Additional arguments to pass to the youtube-dl
             executable. Default: None.
+        :param chromecast_receiver: Optional configuration to expose this
+            media plugin as a Chromecast receiver on the LAN. The HTTP backend
+            must be configured, and the ``chromecast-receiver`` extra must be
+            installed:
+
+          .. code-block:: bash
+
+            pip install platypush[chromecast-receiver]
+
+          Example configuration:
+
+          .. code-block:: yaml
+
+            media.mpv:
+                chromecast_receiver:
+                    enabled: true
+                    device_name: Living Room Platypush
+                    host: 192.168.1.50
+                    port: 8009
+                    model_name: Platypush
+                    manufacturer: Platypush
+                    allowed_networks:
+                        - 192.168.0.0/16
+                        - 10.0.0.0/8
+                    status_interval: 1.0
+
         """
 
         super().__init__(**kwargs)
@@ -267,6 +294,15 @@ class MediaPlugin(RunnablePlugin, ABC):
             )
             for searcher in searchers
         }
+
+        if chromecast_receiver and chromecast_receiver.get('enabled'):
+            from ._chromecast_receiver import ChromecastReceiverService
+
+            self._chromecast_receiver_service = ChromecastReceiverService(
+                self, chromecast_receiver
+            )
+        else:
+            self._chromecast_receiver_service = None
 
     @staticmethod
     def _parse_media_dirs(
@@ -1153,7 +1189,19 @@ class MediaPlugin(RunnablePlugin, ABC):
         return True
 
     def main(self):
-        self.wait_stop()
+        if self._chromecast_receiver_service:
+            try:
+                self._chromecast_receiver_service.start()
+            except Exception as e:
+                self.logger.warning(
+                    'Could not start Chromecast receiver service: %s', e
+                )
+
+        try:
+            self.wait_stop()
+        finally:
+            if self._chromecast_receiver_service:
+                self._chromecast_receiver_service.stop()
 
 
 __all__ = [
