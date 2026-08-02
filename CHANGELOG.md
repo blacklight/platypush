@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- `media`: Add Chromecast receiver support, allowing media plugins to advertise
+  and act as cast receivers on the local network. Includes mDNS advertisement,
+  the cast control protocol, HTTP setup endpoints, and a test suite.
+  Context: [#466](https://git.platypush.tech/platypush/platypush/issues/466).
+  ([`0e7a1c5`](https://git.platypush.tech/platypush/platypush/commit/0e7a1c587fb41507aaf73b4acb24bb8abeb8c6b0)).
+
+- `chromecast`: Add a DeviceAuth namespace handler, binary CastMessage encoding,
+  and diagnostic logging to the Chromecast receiver support.
+  ([`97996d0`](https://git.platypush.tech/platypush/platypush/commit/97996d036f8b1c0dd6a8e872b1785d60d75bcf86)).
+
+### Changed
+
+- `backend.http`: Add a `zeroconf_enabled` option to the HTTP backend so users can
+  disable Zeroconf/mDNS advertisement, and run the service registration thread
+  as a daemon.
+  ([`f8cfa5b`](https://git.platypush.tech/platypush/platypush/commit/f8cfa5bb87c505738073f7de7aee814bde74a219)).
+
+### Fixed
+
+- `chromecast`: Prefer native `avc1`/`mp4a` YouTube codecs on Chromecast to
+  avoid forced FFmpeg transcoding, and use a unique protobuf file name to avoid
+  descriptor-pool conflicts with pychromecast.
+  ([`f5fc041`](https://git.platypush.tech/platypush/platypush/commit/f5fc041bef49ed6e9a34ea210f8b0c99544685d8)).
+
 ## [1.3.33]
 
 ### Added
