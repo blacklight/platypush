@@ -12,7 +12,26 @@ from platypush.user import User, UserManager
 from ..logger import logger
 from .status import UserAuthStatus
 
-user_manager = UserManager()
+
+class _LazyUserManager:
+    """
+    Lazy proxy for the UserManager singleton.
+
+    The UserManager (and the underlying db plugin) must not be instantiated at
+    import time: modules that import this package may be loaded before the
+    configuration is initialized (e.g. during test collection), and the db
+    plugin instance would be built - and cached - against the wrong database.
+    """
+
+    _instance: Optional[UserManager] = None
+
+    def __getattr__(self, item):
+        if _LazyUserManager._instance is None:
+            _LazyUserManager._instance = UserManager()
+        return getattr(_LazyUserManager._instance, item)
+
+
+user_manager = _LazyUserManager()
 
 
 def get_arg(req, name: str) -> Optional[str]:

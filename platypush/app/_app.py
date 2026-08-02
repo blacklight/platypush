@@ -293,6 +293,14 @@ class Application:
             'localhost',
             '--port',
             str(port),
+            # The managed Redis instance is only used as a message bus, so
+            # disable persistence - otherwise stale messages dumped to disk by
+            # a previous instance (e.g. a previous test run) would be replayed
+            # on the next start.
+            '--save',
+            '',
+            '--appendonly',
+            'no',
         ]
 
         try:
