@@ -73,6 +73,40 @@ class ReceiverNamespace(NamespaceHandler):
             source_id,
         )
 
+    def _handle_GET_APP_AVAILABILITY(self, session, message, source_id, destination_id):
+        """
+        Handle GET_APP_AVAILABILITY requests from Cast SDK senders.
+
+        Cast SDK v3 senders (Netflix, Tidal, Jellyfin, etc.) send this message
+        immediately after connecting to determine which apps the receiver
+        supports. If no response is sent, the sender hides the device from
+        the cast picker.
+
+        We respond APP_AVAILABLE for the Default Media Receiver (CC1AD845)
+        and APP_UNAVAILABLE for everything else.
+        """
+        app_ids = message.get('appId', [])
+        if isinstance(app_ids, str):
+            app_ids = [app_ids]
+
+        availability = {}
+        for app_id in app_ids:
+            if app_id == DEFAULT_APP_ID:
+                availability[app_id] = 'APP_AVAILABLE'
+            else:
+                availability[app_id] = 'APP_UNAVAILABLE'
+
+        self.send(
+            session,
+            {
+                'type': 'RECEIVER_STATUS',
+                'requestId': self.request_id(message),
+                'availability': availability,
+            },
+            destination_id,
+            source_id,
+        )
+
     def _handle_SET_VOLUME(self, session, message, source_id, destination_id):
         volume = message.get('volume', {})
         level = volume.get('level')

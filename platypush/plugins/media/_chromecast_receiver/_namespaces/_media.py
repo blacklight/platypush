@@ -34,6 +34,15 @@ class MediaNamespace(NamespaceHandler):
 
     def _handle_LOAD(self, session, message, source_id, destination_id):
         media = message.get('media', {})
+        logger.info(
+            'LOAD message from %s: contentId=%r contentType=%r streamType=%r tracks=%r metadata=%r',
+            source_id,
+            media.get('contentId'),
+            media.get('contentType'),
+            media.get('streamType'),
+            media.get('tracks'),
+            media.get('metadata'),
+        )
         content_id = media.get('contentId')
         if not content_id:
             self._send_error(session, message, 'LOAD_FAILED', 'Missing contentId')
@@ -76,6 +85,12 @@ class MediaNamespace(NamespaceHandler):
                 'title': resolved.get('title'),
             }
 
+            logger.info(
+                'Playing resolved URL %r (content_type=%r, stream_type=%r)',
+                resolved['resolved_url'],
+                resolved.get('content_type'),
+                resolved.get('stream_type'),
+            )
             self.plugin.play(resolved['resolved_url'], **kwargs)
 
             if resolved.get('current_time', 0) > 0:

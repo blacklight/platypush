@@ -82,6 +82,10 @@ class ChromecastReceiverService:
                     self._update_advertisement()
 
                     if changed:
+                        logger.info(
+                            'Broadcasting media status: state=%s',
+                            self.state.player_state,
+                        )
                         self.broadcast_media_status()
             except Exception as e:
                 logger.debug('Error polling media status: %s', e)

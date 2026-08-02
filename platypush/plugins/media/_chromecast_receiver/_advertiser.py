@@ -1,5 +1,5 @@
+import hashlib
 import logging
-import re
 import socket
 from ipaddress import ip_address
 from typing import Dict, Optional
@@ -22,10 +22,19 @@ class ChromecastReceiverAdvertiser:
     def _build_txt(self, state) -> Dict[bytes, bytes]:
         st = '1' if state.is_active else '0'
         rs = state.status_text or 'Ready To Cast'
-        bs = self.config.device_id[:16]
+        # Cast mDNS 'bs' is a 12-character lowercase hex token (Bluetooth-MAC
+        # style). Truncate to 12 chars as required by the Cast protocol.
+        bs = self.config.device_id[:12]
+
+        # 'cd' (CloudDeviceID) is a 32-character uppercase hex string that
+        # Cast SDK senders use for device identity/pairing. Real Chromecasts
+        # derive this from cloud registration; we derive it deterministically
+        # from the device_id so it's stable across restarts.
+        cd = hashlib.md5(self.config.device_id.encode('utf-8')).hexdigest().upper()
 
         return {
             b'id': self.config.device_id.encode('utf-8'),
+            b'cd': cd.encode('utf-8'),
             b'fn': self.config.device_name.encode('utf-8'),
             b'md': self.config.model_name.encode('utf-8'),
             b've': b'05',
@@ -35,6 +44,7 @@ class ChromecastReceiverAdvertiser:
             b'rs': rs.encode('utf-8'),
             b'bs': bs.encode('utf-8'),
             b'nf': b'1',
+            b'rm': b'',
         }
 
     def _build_info(self, state) -> ServiceInfo:
@@ -55,20 +65,47 @@ class ChromecastReceiverAdvertiser:
         except Exception:
             addresses = [socket.inet_aton('0.0.0.0')]
 
-        safe_name = re.sub(r'[^a-zA-Z0-9-]', '-', self.config.device_name).strip('-')
+        # The mDNS service instance name MUST be based on the device ID, not
+        # the friendly name.  Using the friendly name (which may contain spaces
+        # or non-ASCII characters) causes Android's Cast SDK to silently skip
+        # the record during discovery.
+        # Real Chromecasts use "<ModelPrefix>-<device_id>._googlecast._tcp.local."
+        # The friendly name is conveyed exclusively via the "fn" TXT record.
+        instance_name = f'Platypush-{self.config.device_id}._googlecast._tcp.local.'
+        server_name = f'platypush-{self.config.device_id[:8]}.local.'
         return ServiceInfo(
             type_='_googlecast._tcp.local.',
-            name=f'{self.config.device_name}._googlecast._tcp.local.',
+            name=instance_name,
             addresses=addresses,
             port=self.config.port,
             properties=self._build_txt(state),
-            server=f'{safe_name}.local.',
+            server=server_name,
         )
+
+    def _get_interfaces(self) -> list:
+        """
+        Return the list of network interfaces to advertise on — restricted to
+        the interface(s) that own the configured host address so that Zeroconf
+        does not try to multicast over VPN/WireGuard interfaces (which raise
+        ENOTAVAIL / errno 126).
+        """
+        try:
+            target = ip_address(
+                socket.getaddrinfo(self.config.host, None, type=socket.SOCK_STREAM)[0][
+                    4
+                ][0]
+            )
+            return [str(target)]
+        except Exception:
+            return []
 
     def start(self, state):
         try:
             self._info = self._build_info(state)
-            self._zeroconf = Zeroconf()
+            interfaces = self._get_interfaces()
+            self._zeroconf = (
+                Zeroconf(interfaces=interfaces) if interfaces else Zeroconf()
+            )
             self._zeroconf.register_service(self._info)
             logger.info(
                 'Chromecast receiver advertised as %s on port %d',

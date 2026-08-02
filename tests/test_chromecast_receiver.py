@@ -11,6 +11,7 @@ from platypush.plugins.media._chromecast_receiver._config import (
 from platypush.plugins.media._chromecast_receiver._media import resolve_media
 from platypush.plugins.media._chromecast_receiver._messages import (
     decode_frame,
+    encode_binary_message,
     encode_message,
 )
 from platypush.plugins.media._chromecast_receiver._state import (
@@ -20,6 +21,9 @@ from platypush.plugins.media._chromecast_receiver._state import (
 from platypush.plugins.media._chromecast_receiver._status import (
     build_media_status,
     build_receiver_status,
+)
+from platypush.plugins.media._chromecast_receiver.proto.cast_channel_pb2 import (
+    DeviceAuthMessage,
 )
 
 
@@ -168,3 +172,63 @@ def test_certificate_reuses_existing(tmp_path):
         assert cert1 == cert2
         assert key1 == key2
         assert os.path.getmtime(cert2) == mtime
+
+
+def test_encode_binary_roundtrip():
+    challenge = DeviceAuthMessage()
+    challenge.challenge.SetInParent()
+    raw = challenge.SerializeToString()
+
+    encoded = encode_binary_message(
+        raw, 'sender-0', 'receiver-0', 'urn:x-cast:com.google.cast.tp.deviceauth'
+    )
+    length = int.from_bytes(encoded[:4], 'big')
+    assert length == len(encoded) - 4
+
+    decoded = decode_frame(encoded[4:])
+    assert decoded.payload_type == decoded.BINARY
+    assert decoded.namespace == 'urn:x-cast:com.google.cast.tp.deviceauth'
+
+    parsed = DeviceAuthMessage()
+    parsed.ParseFromString(decoded.payload_binary)
+    assert parsed.HasField('challenge')
+
+
+def test_device_auth_response(tmp_path):
+    from platypush.plugins.media._chromecast_receiver._namespaces._deviceauth import (
+        DeviceAuthNamespace,
+    )
+
+    # Generate a certificate in a temp directory first
+    with patch('platypush.config.Config.get_workdir', return_value=str(tmp_path)):
+        cert_path, key_path = load_or_create_certificate('test-device')
+
+    with patch(
+        'platypush.plugins.media._chromecast_receiver._namespaces._deviceauth.get_certificate_paths',
+        return_value=(cert_path, key_path),
+    ):
+        handler = DeviceAuthNamespace(None, None)
+        response_bytes = handler._build_response()
+
+        response = DeviceAuthMessage()
+        response.ParseFromString(response_bytes)
+        assert response.HasField('response')
+        assert len(response.response.signature) > 0
+        assert len(response.response.client_auth_certificate) > 0
+
+        # Verify the signature is valid
+        from cryptography import x509
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import padding
+
+        with open(cert_path, 'rb') as f:
+            cert = x509.load_pem_x509_certificate(f.read())
+
+        cert_der = cert.public_bytes(serialization.Encoding.DER)
+        assert response.response.client_auth_certificate == cert_der
+
+        # Verify signature using the public key
+        public_key = cert.public_key()
+        public_key.verify(
+            response.response.signature, cert_der, padding.PKCS1v15(), hashes.SHA1()
+        )

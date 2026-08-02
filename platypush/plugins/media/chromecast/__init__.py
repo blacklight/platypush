@@ -166,6 +166,68 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
             cast
         )
 
+    def _ensure_connected(self, cast: Chromecast) -> Chromecast:
+        """
+        Ensure the Chromecast connection is alive.  If the socket client
+        thread has died (heartbeat timeout, TLS error, etc.) we create a
+        fresh ``Chromecast`` object and update the caches so every
+        subsequent call uses the new, live connection.
+
+        If the thread was never started we leave it alone —
+        :meth:`Chromecast.wait` will start it.
+        """
+        sc = cast.socket_client
+        # Thread alive or never started yet — nothing to do
+        if not sc.ident or (sc.is_alive() and not sc.is_stopped):
+            return cast
+
+        self.logger.warning('Chromecast %s connection is dead, reconnecting', cast.name)
+
+        # Tear down the old connection cleanly
+        try:
+            sc.disconnect()
+        except Exception:
+            pass
+
+        # Look up the current CastInfo from the browser
+        info = None
+        for dev in self.browser.devices.values():
+            if dev.uuid == cast.uuid:
+                info = dev
+                break
+
+        if info is None:
+            raise AssertionError(f'Chromecast {cast.name} is no longer discoverable')
+
+        new_cc = get_chromecast_from_cast_info(
+            info,
+            self.browser.zc,
+            tries=2,
+            retry_wait=5,
+            timeout=30,
+        )
+
+        new_cc.start()
+        new_cc.wait()
+
+        name = self._get_device_property(new_cc, 'friendly_name')
+        self._chromecasts_by_uuid[new_cc.uuid] = new_cc
+        self._chromecasts_by_name[name] = new_cc
+
+        if name in self._media_listeners:
+            self._media_listeners[name] = MediaListener(
+                name=name or str(new_cc.uuid),
+                cast=new_cc,
+                callback=self._event_callback,
+                fire_event=self.fire_event,
+            )
+            new_cc.media_controller.register_status_listener(
+                self._media_listeners[name]
+            )
+
+        self.logger.info('Reconnected to Chromecast %s', name)
+        return new_cc
+
     def get_chromecast(self, chromecast=None) -> Chromecast:
         if isinstance(chromecast, Chromecast):
             return chromecast
@@ -229,7 +291,8 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
             chromecast = self.chromecast
 
         self.post_event(MediaPlayRequestEvent, resource=resource, device=chromecast)
-        cast = self.get_chromecast(chromecast)
+        cast = self._ensure_connected(self.get_chromecast(chromecast))
+        cast.wait()
         mc = cast.media_controller
         media = self._latest_resource = self._latest_resources_by_device[cast.uuid] = (
             self._get_resource(resource, **kwargs)
@@ -646,6 +709,20 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
     def _refresh_chromecasts(self):
         cast_info = {cast.friendly_name: cast for cast in self.browser.devices.values()}
 
+        # Prune dead connections so they get rediscovered below.
+        # ``sc.ident`` is set once the thread has been started; skip
+        # connections that were never started (they'll start on demand).
+        for uuid, cc in list(self._chromecasts_by_uuid.items()):
+            sc = cc.socket_client
+            if sc.ident and (not sc.is_alive() or sc.is_stopped):
+                name = self._get_device_property(cc, 'friendly_name')
+                self.logger.info(
+                    'Chromecast %s connection is dead, removing from cache', name
+                )
+                self._chromecasts_by_uuid.pop(uuid, None)
+                self._chromecasts_by_name.pop(name, None)
+                self._media_listeners.pop(name, None)
+
         for info in cast_info.values():
             name = info.friendly_name
             if self._chromecasts_by_uuid.get(
@@ -676,6 +753,7 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
 
                 if name not in self._media_listeners:
                     cc.start()
+                    cc.wait()
                     self._media_listeners[name] = MediaListener(
                         name=name or str(cc.uuid),
                         cast=cc,
