@@ -26,6 +26,13 @@ from ._subtitles import SubtitlesAsyncHandler
 from ._utils import convert_status
 
 
+CHROMECAST_YOUTUBE_FORMAT = (
+    'bv*[vcodec^=avc1][height<=?1080][ext=mp4]+'
+    'ba[acodec^=mp4a][ext=m4a]/'
+    'b[vcodec^=avc1][height<=?1080][ext=mp4]'
+)
+
+
 class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
     """
     Plugin to control Chromecast devices.
@@ -39,15 +46,9 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
         self,
         chromecast: Optional[str] = None,
         poll_interval: float = 30,
-        youtube_format: Optional[str] = 'bv[width<=?1080][ext=mp4]+ba[ext=m4a]/bv+ba',
+        youtube_format: Optional[str] = CHROMECAST_YOUTUBE_FORMAT,
         merge_output_format: str = 'mp4',
-        # Transcode to H.264/AAC to maximimze compatibility with Chromecast codecs
-        ytdl_args: Optional[Sequence[str]] = (
-            '--use-postprocessor',
-            'FFmpegCopyStream',
-            '--ppa',
-            'CopyStream:"-c:v libx264 -preset veryfast -crf 28 +faststart -c:a aac"',
-        ),
+        ytdl_args: Optional[Sequence[str]] = None,
         use_ytdl: bool = True,
         **kwargs,
     ):
