@@ -206,6 +206,7 @@ class HttpBackend(Backend):
         secret_key_file: Optional[str] = None,
         num_workers: Optional[int] = None,
         use_werkzeug_server: bool = False,
+        zeroconf_enabled: bool = True,
         **kwargs,
     ):
         """
@@ -237,6 +238,11 @@ class HttpBackend(Backend):
                 - You have issues with running a full Tornado server - for
                   example, you are running the application on a small embedded
                   device that doesn't support Tornado.
+        :param zeroconf_enabled: Whether the backend should advertise itself
+            on the local network over Zeroconf/mDNS (default: ``True``). You
+            may want to disable it if you don't want the service to be
+            advertised on the network, or to avoid name conflicts with other
+            running Platypush instances (e.g. when running tests).
         """
         super().__init__(**kwargs)
         if not (bind_address or bind_socket):
@@ -244,6 +250,7 @@ class HttpBackend(Backend):
 
         self.port = port
         self._server_proc: Optional[Process] = None
+        self._wsgi_server = None
         self._service_registry_thread = None
         self.bind_address = bind_address
 
@@ -271,6 +278,7 @@ class HttpBackend(Backend):
         self.local_base_url = f'http://localhost:{self.port}'
         self.num_workers = num_workers or (cpu_count() * 2) + 1
         self.use_werkzeug_server = use_werkzeug_server
+        self.zeroconf_enabled = zeroconf_enabled
 
     def send_message(self, *_, **__):
         self.logger.warning('Use cURL or any HTTP client to query the HTTP backend')
@@ -283,6 +291,14 @@ class HttpBackend(Backend):
         remaining_time: partial[float] = partial(
             get_remaining_timeout, timeout=self._STOP_TIMEOUT, start=start  # type: ignore
         )
+
+        if self._wsgi_server:
+            try:
+                self._wsgi_server.shutdown()
+            except Exception as e:
+                self.logger.warning('Could not stop the Werkzeug server: %s', e)
+
+            self._wsgi_server = None
 
         if self._server_proc:
             if self._server_proc.pid:
@@ -346,9 +362,16 @@ class HttpBackend(Backend):
             self.logger.exception(e)
 
     def _start_zeroconf_service(self):
+        if not self.zeroconf_enabled:
+            return
+
         self._service_registry_thread = threading.Thread(
             target=self._register_service,
             name='ZeroconfService',
+            # Zeroconf registration may block for several seconds (e.g. on
+            # service name conflicts with other instances on the network), and
+            # it shouldn't prevent the process from exiting.
+            daemon=True,
         )
         self._service_registry_thread.start()
 
@@ -393,33 +416,38 @@ class HttpBackend(Backend):
             self.num_workers,
         )
 
-        if self.use_werkzeug_server:
-            if not (self.bind_address):
-                raise AssertionError('bind_address must be set when using Werkzeug')
-            application.config['redis_queue'] = self.bus.redis_queue  # type: ignore
-            application.run(
-                host=self.bind_address,
-                port=self.port,
-                use_reloader=False,
-                debug=True,
-            )
-        else:
-            sockets = []
+        sockets = []
 
-            if self.bind_address:
-                sockets.extend(bind_sockets(self.port, address=self.bind_address))
+        if self.bind_address:
+            sockets.extend(bind_sockets(self.port, address=self.bind_address))
 
-            if self.socket_path:
-                sockets.append(bind_unix_socket(self.socket_path))
+        if self.socket_path:
+            sockets.append(bind_unix_socket(self.socket_path))
 
-            try:
-                fork_processes(self.num_workers)
-                future = self._post_fork_main(sockets)
-                asyncio.run(future)
-            except (asyncio.CancelledError, KeyboardInterrupt):
-                pass
-            finally:
-                self._stop_workers()
+        try:
+            fork_processes(self.num_workers)
+            future = self._post_fork_main(sockets)
+            asyncio.run(future)
+        except (asyncio.CancelledError, KeyboardInterrupt):
+            pass
+        finally:
+            self._stop_workers()
+
+    def _run_werkzeug_server(self):
+        from werkzeug.serving import make_server
+
+        if not (self.bind_address):
+            raise AssertionError('bind_address must be set when using Werkzeug')
+
+        self.logger.info('Starting local Werkzeug server on port %s', self.port)
+        application.config['redis_queue'] = self.bus.redis_queue  # type: ignore
+        self._wsgi_server = make_server(
+            self.bind_address,
+            self.port,
+            application,
+            threaded=True,
+        )
+        self._wsgi_server.serve_forever()
 
     def _stop_workers(self):
         """
@@ -486,6 +514,14 @@ class HttpBackend(Backend):
                     pass
 
     def _start_web_server(self):
+        if self.use_werkzeug_server:
+            # Run the Werkzeug server in a thread within this process.
+            # Forking the (heavily multi-threaded) main process can
+            # intermittently deadlock the child before it can serve any
+            # request, and Werkzeug doesn't need a separate process anyway.
+            self._run_werkzeug_server()
+            return
+
         # Python 3.14: with the forkserver/spawn start methods, the process
         # target (a bound method) requires pickling the backend instance.
         # Backend threads carry a contextvars.Context which isn't picklable.
