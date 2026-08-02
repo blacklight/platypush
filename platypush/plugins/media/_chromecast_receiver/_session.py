@@ -10,6 +10,7 @@ from ._constants import NAMESPACE_MEDIA, NAMESPACE_RECEIVER
 from ._messages import encode_message, read_message
 from ._namespaces import (
     ConnectionNamespace,
+    DeviceAuthNamespace,
     HeartbeatNamespace,
     MediaNamespace,
     ReceiverNamespace,
@@ -45,6 +46,7 @@ class CastSession(threading.Thread):
         self.alive = True
         self._send_lock = threading.Lock()
 
+        self._device_auth = DeviceAuthNamespace(service, self.state)
         self.handlers = [
             ConnectionNamespace(service, self.state),
             HeartbeatNamespace(service, self.state),
@@ -66,6 +68,10 @@ class CastSession(threading.Thread):
                 msg = read_message(self.socket)
                 if msg is None:
                     break
+
+                if msg.payload_type == msg.BINARY:
+                    self._handle_binary_message(msg)
+                    continue
 
                 if msg.payload_type != msg.STRING:
                     logger.warning(
@@ -92,6 +98,16 @@ class CastSession(threading.Thread):
                 break
 
         self.close()
+
+    def _handle_binary_message(self, msg: CastMessage):
+        if self._device_auth.can_handle(msg.namespace):
+            self._device_auth.handle_binary(self, msg)
+        else:
+            logger.debug(
+                'No handler for binary namespace %s from %s',
+                msg.namespace,
+                self.address,
+            )
 
     def _handle_message(
         self,

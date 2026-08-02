@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 from platypush.utils import get_mime_type
 
-from ._constants import STREAM_TYPE_BUFFERED, STREAM_TYPE_LIVE
+from ._constants import STREAM_TYPE_BUFFERED, STREAM_TYPE_LIVE, STREAM_TYPE_NONE
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +140,7 @@ def resolve_media(
         'content_type': content_type or 'video/mp4',
         'stream_type': (
             stream_type
-            if stream_type in (STREAM_TYPE_BUFFERED, STREAM_TYPE_LIVE)
+            if stream_type in (STREAM_TYPE_BUFFERED, STREAM_TYPE_LIVE, STREAM_TYPE_NONE)
             else STREAM_TYPE_BUFFERED
         ),
         'title': title,

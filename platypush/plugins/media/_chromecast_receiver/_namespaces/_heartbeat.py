@@ -13,6 +13,10 @@ class HeartbeatNamespace(NamespaceHandler):
     timeout = 30.0
 
     def _handle_PING(self, session, message, source_id, destination_id):
+        # Update last_heartbeat when we receive a PING from the sender —
+        # the Cast sender drives the heartbeat (it sends PINGs, we send PONGs).
+        # Recording the receipt time here is what keeps the session alive.
+        session.last_heartbeat = time.time()
         session.send_message(
             {'type': 'PONG'},
             destination_id,
@@ -21,6 +25,7 @@ class HeartbeatNamespace(NamespaceHandler):
         )
 
     def _handle_PONG(self, session, message, source_id, destination_id):
+        # Update last_heartbeat if the sender ever replies with a PONG too.
         session.last_heartbeat = time.time()
 
     @classmethod

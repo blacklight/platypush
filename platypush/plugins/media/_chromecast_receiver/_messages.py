@@ -28,6 +28,27 @@ def encode_message(
     return struct.pack('>I', len(data)) + data
 
 
+def encode_binary_message(
+    payload: bytes,
+    source_id: str,
+    destination_id: str,
+    namespace: str,
+) -> bytes:
+    """
+    Encode a binary message as a length-prefixed CastMessage frame.
+    """
+    cast = CastMessage()
+    cast.protocol_version = CastMessage.ProtocolVersion.CASTV2_1_0
+    cast.source_id = source_id
+    cast.destination_id = destination_id
+    cast.namespace = namespace
+    cast.payload_type = CastMessage.PayloadType.BINARY
+    cast.payload_binary = payload
+
+    data = cast.SerializeToString()
+    return struct.pack('>I', len(data)) + data
+
+
 def decode_frame(data: bytes) -> CastMessage:
     """
     Decode a protobuf CastMessage from raw frame bytes.

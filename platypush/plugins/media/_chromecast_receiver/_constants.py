@@ -5,6 +5,7 @@ DEFAULT_MODEL_NAME = 'Platypush'
 DEFAULT_DEVICE_NAME = 'Platypush'
 
 NAMESPACE_CONNECTION = 'urn:x-cast:com.google.cast.tp.connection'
+NAMESPACE_DEVICEAUTH = 'urn:x-cast:com.google.cast.tp.deviceauth'
 NAMESPACE_HEARTBEAT = 'urn:x-cast:com.google.cast.tp.heartbeat'
 NAMESPACE_RECEIVER = 'urn:x-cast:com.google.cast.receiver'
 NAMESPACE_MEDIA = 'urn:x-cast:com.google.cast.media'
@@ -22,6 +23,7 @@ RECEIVER_STATUS_PAUSED = 'Paused'
 
 STREAM_TYPE_BUFFERED = 'BUFFERED'
 STREAM_TYPE_LIVE = 'LIVE'
+STREAM_TYPE_NONE = 'NONE'
 
 PRIVATE_NETWORKS = [
     '192.168.0.0/16',
