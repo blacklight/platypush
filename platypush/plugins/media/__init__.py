@@ -213,6 +213,9 @@ class MediaPlugin(RunnablePlugin, ABC):
                         - 192.168.0.0/16
                         - 10.0.0.0/8
                     status_interval: 1.0
+                    dial:
+                        # To enable the DIAL protocol
+                        enabled: true
 
         """
 

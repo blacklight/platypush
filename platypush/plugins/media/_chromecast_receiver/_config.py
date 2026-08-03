@@ -1,10 +1,11 @@
 import ipaddress
+import logging
 import os
 import re
 import socket
 import uuid
 from dataclasses import dataclass, field
-from typing import List, Optional, Union
+from typing import ClassVar, List, Optional, Union
 
 from platypush.config import Config
 from platypush.utils import get_ip_or_hostname
@@ -19,6 +20,8 @@ from ._constants import (
     DEFAULT_STATUS_INTERVAL,
     PRIVATE_NETWORKS,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize_device_id(device_id: Optional[str]) -> str:
@@ -71,6 +74,84 @@ def _load_or_generate_device_id(workdir: str, device_id: Optional[str]) -> str:
     return device_id
 
 
+def get_http_port() -> int:
+    """
+    Return the configured HTTP backend port, defaulting to 8008.
+    """
+    http_conf = (Config.get_backends() or {}).get('http') or {}
+    return int(http_conf.get('port', 8008))
+
+
+def get_http_scheme() -> str:
+    """
+    Return ``"https"`` if the HTTP backend is configured with an SSL
+    certificate, ``"http"`` otherwise. Used to build DIAL/SSDP URLs that
+    correctly reflect whether the HTTP backend is served over TLS.
+    """
+    http_conf = (Config.get_backends() or {}).get('http') or {}
+    return 'https' if http_conf.get('ssl_cert') else 'http'
+
+
+def get_dial_state_path() -> str:
+    """
+    Return the path to the DIAL state JSON file written by DialService.
+    """
+    return os.path.join(Config.get_workdir(), 'chromecast_receiver', 'dial_state.json')
+
+
+@dataclass
+class DialConfig:
+    """
+    Parsed and normalized DIAL sub-configuration.
+
+    Attributes
+    ----------
+    enabled:
+        Whether the DIAL layer is active. Defaults to False (opt-in).
+    ssdp_max_age:
+        SSDP CACHE-CONTROL max-age in seconds.
+    ssdp_interfaces:
+        IP addresses (or resolvable hostnames) of interfaces to bind the
+        SSDP multicast socket. Empty list means fall back to
+        ChromecastReceiverConfig.host.
+    advertise_host:
+        Explicit host/IP to embed in SSDP LOCATION and Application-URL.
+        If empty, falls back to ChromecastReceiverConfig.host.
+    supported_apps:
+        List of DIAL app IDs this device supports.
+        Valid values: ``"Media"``, ``"YouTube"``.
+        ``Media`` is the supported default for direct URL playback.
+        ``YouTube`` is **experimental** — it has not been validated against
+        a real YouTube DIAL sender and may not handle all sender payload
+        variants.  Enable it only for testing.
+        An empty list is replaced with ``["Media"]``; set ``enabled: false``
+        to disable DIAL entirely.
+    """
+
+    enabled: bool = False
+    ssdp_max_age: int = 1800
+    ssdp_interfaces: List[str] = field(default_factory=list)
+    advertise_host: str = ''
+    supported_apps: List[str] = field(default_factory=lambda: ['Media'])
+
+    _VALID_APPS: ClassVar[frozenset] = frozenset({'Media', 'YouTube'})
+    # Note: YouTube is experimental — it has not been validated against a real
+    # DIAL sender.  Only enable it for testing.  See 01-PLAN.md for details.
+
+    @classmethod
+    def build(cls, raw: dict) -> 'DialConfig':
+        if not raw:
+            return cls()
+        apps = [a for a in raw.get('supported_apps', ['Media']) if a in cls._VALID_APPS]
+        return cls(
+            enabled=bool(raw.get('enabled', False)),
+            ssdp_max_age=int(raw.get('ssdp_max_age', 1800)),
+            ssdp_interfaces=list(raw.get('ssdp_interfaces') or []),
+            advertise_host=str(raw.get('advertise_host') or ''),
+            supported_apps=apps or ['Media'],
+        )
+
+
 @dataclass
 class ChromecastReceiverConfig:
     """
@@ -91,6 +172,7 @@ class ChromecastReceiverConfig:
     status_interval: float = DEFAULT_STATUS_INTERVAL
     capabilities: int = DEFAULT_CAPABILITIES_AV
     audio_only: bool = False
+    dial: DialConfig = field(default_factory=DialConfig)
 
     @classmethod
     def build(
@@ -144,6 +226,8 @@ class ChromecastReceiverConfig:
             )
         )
 
+        dial = DialConfig.build(config.get('dial') or {})
+
         return cls(
             enabled=bool(config.get('enabled', False)),
             device_name=device_name,
@@ -159,7 +243,26 @@ class ChromecastReceiverConfig:
             ),
             capabilities=capabilities,
             audio_only=audio_only,
+            dial=dial,
         )
+
+    @property
+    def dial_advertise_host(self) -> str:
+        """
+        Host/IP to embed in SSDP LOCATION and Application-URL headers.
+        Priority: dial.advertise_host > self.host > get_ip_or_hostname().
+        """
+        if self.dial.advertise_host:
+            return self.dial.advertise_host
+        if self.host:
+            return self.host
+        fallback = get_ip_or_hostname()
+        logger.warning(
+            'dial.advertise_host falling back to %s; '
+            'consider setting an explicit host or dial.advertise_host',
+            fallback,
+        )
+        return fallback
 
     def is_client_allowed(self, ip: str) -> bool:
         """
