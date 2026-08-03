@@ -74,6 +74,20 @@ class HttpBackend(Backend):
                         }
                       }' http://host:8008/execute
 
+            * Alternatively, for headless or containerized deployments, you can
+              authenticate requests through the ``PLATYPUSH_API_TOKEN`` environment
+              variable. If set, its value will be accepted as a valid token on
+              any authenticated endpoint, without requiring a registered user or
+              a database lookup. It will not be displayed in the Web UI tokens
+              list.
+
+                .. code-block:: shell
+
+                    curl -XPOST -H 'Content-Type: application/json' \
+                        -H "Authorization: Bearer $PLATYPUSH_API_TOKEN" \
+                        -d '{"type":"request","action":"procedure.at_home"}' \
+                        http://host:8008/execute
+
         * To interact with your system (and control plugins and backends)
           through the Platypush web panel, by default available on
           ``http://host:8008/``. Any configured plugin that has an available

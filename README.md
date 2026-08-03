@@ -50,6 +50,7 @@
   * [Virtual environment (`platyvenv`)](#virtual-environment-platyvenv)
   * [Manual installation](#manual-installation-1)
 - [HTTP API](#http-api)
+    + [Environment variable token](#environment-variable-token)
   * [The _Execute_ tab](#the-_execute_-tab)
 - [Websocket API](#websocket-api)
   * [Events](#events)
@@ -914,6 +915,24 @@ You can then send requests to Platypush using a simple RPC API:
     "errors": []
   }
 }
+```
+
+#### Environment variable token
+
+For headless or containerized deployments, you can also set the `PLATYPUSH_API_TOKEN`
+environment variable. When set, requests that carry that token value (via
+`Authorization: Bearer`, the `X-Token` header or the `?token` query parameter)
+are authenticated without requiring a registered user or a database lookup.
+The token is an operator-level secret and will not be displayed in the Web UI
+tokens list.
+
+```bash
+❯ export PLATYPUSH_API_TOKEN=my-secret-token
+❯ curl -XPOST \
+    -d '{"type":"request", "action":"procedure.at_home"}' \
+    -H "Authorization: Bearer $PLATYPUSH_API_TOKEN" \
+    -H "Content-Type: application/json" \
+    http://localhost:8008/execute
 ```
 
 If your procedure returned something, then that will be returned on the API
