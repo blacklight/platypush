@@ -1,9 +1,10 @@
 import base64
+import os
 import secrets
 from functools import wraps
 from typing import Optional, Union
 
-from flask import request, redirect
+from flask import redirect, request
 from flask.wrappers import Response
 
 from platypush.config import Config
@@ -76,6 +77,15 @@ def authenticate_token(req) -> Optional[User]:
 
     if not user_token:
         return None
+
+    # Environment-variable token authentication.
+    # If the PLATYPUSH_API_TOKEN environment variable is set, requests bearing that
+    # exact token value are accepted without a DB lookup.  This is intended
+    # for headless / containerised deployments where the normal
+    # user-registration flow is impractical.
+    env_token = os.environ.get('PLATYPUSH_API_TOKEN')
+    if env_token and user_token and secrets.compare_digest(user_token, env_token):
+        return User(username='__env_token__', user_id=0)
 
     try:
         # Stantard API token authentication
