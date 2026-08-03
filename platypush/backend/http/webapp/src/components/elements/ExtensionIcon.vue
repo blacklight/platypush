@@ -28,7 +28,7 @@ export default {
 
   computed: {
     iconUrl() {
-      return `https://static.platypush.tech/icons/${this.extensionName}-64.png`
+      return `/plugin/${this.extensionName}/icon?size=64`
     },
 
     extensionType() {

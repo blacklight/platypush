@@ -33,6 +33,19 @@ module.exports = {
     workboxOptions: {
       skipWaiting: true,
       clientsClaim: true,
+      runtimeCaching: [
+        {
+          urlPattern: /\/plugin\/.*\/icon/,
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'plugin-icons',
+            expiration: {
+              maxEntries: 200,
+              maxAgeSeconds: 30 * 24 * 60 * 60,  // 30 days
+            },
+          },
+        },
+      ],
     },
   },
 
