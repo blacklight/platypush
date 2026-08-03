@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.35
 
 ### Added
 - `chromecast`: Add DIAL protocol support to the cast receiver, with SSDP
