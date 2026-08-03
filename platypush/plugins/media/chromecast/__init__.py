@@ -5,26 +5,31 @@ from pychromecast import (
     CastBrowser,
     Chromecast,
     ChromecastConnectionError,
+    RequestTimeout,
     SimpleCastListener,
     get_chromecast_from_cast_info,
 )
+from pychromecast.models import CastInfo, HostServiceInfo, MDNSServiceInfo
 
 from platypush.backend.http.app.utils import get_remote_base_url
-from platypush.plugins import RunnablePlugin, action
-from platypush.plugins.media import MediaPlugin, MediaResource
-from platypush.plugins.media._resource.youtube import YoutubeMediaResource
-from platypush.utils import get_mime_type
 from platypush.message.event.media import (
     MediaEndEvent,
     MediaEvent,
     MediaPlayRequestEvent,
     MediaStopEvent,
 )
+from platypush.plugins import RunnablePlugin, action
+from platypush.plugins.media import MediaPlugin, MediaResource
+from platypush.plugins.media._chromecast_receiver._constants import (
+    DEFAULT_MANUFACTURER,
+    DEFAULT_MODEL_NAME,
+)
+from platypush.plugins.media._resource.youtube import YoutubeMediaResource
+from platypush.utils import get_mime_type
 
 from ._listener import MediaListener
 from ._subtitles import SubtitlesAsyncHandler
 from ._utils import convert_status
-
 
 CHROMECAST_YOUTUBE_FORMAT = (
     'bv*[vcodec^=avc1][height<=?1080][ext=mp4]+'
@@ -200,13 +205,7 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
         if info is None:
             raise AssertionError(f'Chromecast {cast.name} is no longer discoverable')
 
-        new_cc = get_chromecast_from_cast_info(
-            info,
-            self.browser.zc,
-            tries=2,
-            retry_wait=5,
-            timeout=30,
-        )
+        new_cc = self._get_chromecast_from_info(info)
 
         new_cc.start()
         new_cc.wait()
@@ -707,6 +706,84 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
     def remove_subtitles(self, *_, **__):
         raise NotImplementedError
 
+    def _is_local_receiver(self, info: CastInfo) -> bool:
+        """
+        Return ``True`` if this :class:`CastInfo` belongs to the local
+        Chromecast/DIAL receiver rather than a remote cast target.
+        """
+        if (info.model_name or '').lower() == DEFAULT_MODEL_NAME.lower():
+            return True
+        if (info.manufacturer or '').lower() == DEFAULT_MANUFACTURER.lower():
+            return True
+        return any(
+            isinstance(s, MDNSServiceInfo)
+            and s.name.startswith(f'{DEFAULT_MODEL_NAME}-')
+            for s in info.services
+        )
+
+    def _prepare_cast_info(self, info: CastInfo) -> Optional[CastInfo]:
+        """
+        Return a :class:`CastInfo` that can be safely passed to pychromecast.
+
+        This filters out the local Chromecast/DIAL receiver, skips stale
+        entries whose service set has been emptied, and makes sure a
+        :class:`HostServiceInfo` is present so pychromecast does not trip over
+        an unresolvable or empty service set.
+        """
+        if self._is_local_receiver(info):
+            self.logger.debug(
+                'Ignoring local %s receiver %s', DEFAULT_MODEL_NAME, info.friendly_name
+            )
+            return None
+
+        if not info.host or not info.port:
+            self.logger.debug(
+                'Ignoring Chromecast %s with no host/port', info.friendly_name
+            )
+            return None
+
+        host_service = HostServiceInfo(info.host, info.port)
+        if host_service in info.services:
+            return info
+
+        return CastInfo(
+            services=info.services | {host_service},
+            uuid=info.uuid,
+            model_name=info.model_name,
+            friendly_name=info.friendly_name,
+            host=info.host,
+            port=info.port,
+            cast_type=info.cast_type,
+            manufacturer=info.manufacturer,
+        )
+
+    def _get_chromecast_from_info(self, info: CastInfo) -> Chromecast:
+        """
+        Build a pychromecast :class:`Chromecast` from a :class:`CastInfo` while
+        working around pychromecast bugs with empty or unresolvable service
+        sets.
+        """
+        cast_info = self._prepare_cast_info(info)
+        if cast_info is None:
+            raise ChromecastConnectionError(
+                f'No usable connection info for {info.friendly_name}'
+            )
+
+        try:
+            return get_chromecast_from_cast_info(
+                cast_info,
+                self.browser.zc,
+                tries=2,
+                retry_wait=5,
+                timeout=30,
+            )
+        except UnboundLocalError as e:
+            # pychromecast's dial._get_status raises UnboundLocalError when the
+            # service set contains no resolvable host.
+            raise ChromecastConnectionError(
+                f'Failed to resolve {info.friendly_name}: {e}'
+            ) from e
+
     def _refresh_chromecasts(self):
         cast_info = {cast.friendly_name: cast for cast in self.browser.devices.values()}
 
@@ -735,41 +812,37 @@ class MediaChromecastPlugin(MediaPlugin, RunnablePlugin):
             self.logger.info('Started scan for Chromecast %s', name)
 
             try:
-                cc = get_chromecast_from_cast_info(
-                    info,
-                    self.browser.zc,
-                    tries=2,
-                    retry_wait=5,
-                    timeout=30,
-                )
-
+                cc = self._get_chromecast_from_info(info)
                 self._chromecasts_by_name[cc.name] = cc
-            except ChromecastConnectionError:
-                self.logger.warning('Failed to connect to Chromecast %s', info)
-                continue
 
-            if cc.uuid not in self._chromecasts_by_uuid:
+                if cc.uuid not in self._chromecasts_by_uuid:
+                    self._chromecasts_by_uuid[cc.uuid] = cc
+                    self.logger.debug('Connecting to Chromecast %s', name)
+
+                    if name not in self._media_listeners:
+                        cc.start()
+                        cc.wait()
+
+                        self._media_listeners[name] = MediaListener(
+                            name=name or str(cc.uuid),
+                            cast=cc,
+                            callback=self._event_callback,
+                            fire_event=self.fire_event,
+                        )
+
+                        cc.media_controller.register_status_listener(
+                            self._media_listeners[name]
+                        )
+
+                        self.logger.info('Connected to Chromecast %s', name)
+
                 self._chromecasts_by_uuid[cc.uuid] = cc
-                self.logger.debug('Connecting to Chromecast %s', name)
-
-                if name not in self._media_listeners:
-                    cc.start()
-                    cc.wait()
-                    self._media_listeners[name] = MediaListener(
-                        name=name or str(cc.uuid),
-                        cast=cc,
-                        callback=self._event_callback,
-                        fire_event=self.fire_event,
-                    )
-
-                    cc.media_controller.register_status_listener(
-                        self._media_listeners[name]
-                    )
-
-                    self.logger.info('Connected to Chromecast %s', name)
-
-            self._chromecasts_by_uuid[cc.uuid] = cc
-            self._chromecasts_by_name[name] = cc
+                self._chromecasts_by_name[name] = cc
+            except (ChromecastConnectionError, RequestTimeout) as e:
+                self.logger.warning('Failed to connect to Chromecast %s: %s', name, e)
+                self._chromecasts_by_name.pop(name, None)
+                self._chromecasts_by_uuid.pop(info.uuid, None)
+                continue
 
     @property
     def supports_local_media(self) -> bool:
