@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `chromecast`: Add DIAL protocol support to the cast receiver, with SSDP
+  discovery, an app registry, HTTP endpoints, and bus handlers.
+  ([`eb85e27`](https://git.platypush.tech/platypush/platypush/commit/eb85e27e305c0aa5edae60fefd14c682a142ede6)).
+
+- `pwa`: Add a dynamic plugin icon endpoint and update the PWA manifest, service
+  worker, and frontend to use plugin-specific icons.
+  ([`0cf1532`](https://git.platypush.tech/platypush/platypush/commit/0cf1532c8c6826cbc2f751ef436f3ccc73916459)).
+
+### Fixed
+- `chromecast`: Avoid pychromecast UnboundLocalError and ignore the local
+  Platypush receiver by normalizing discovered CastInfo objects.
+  ([`d179e1e`](https://git.platypush.tech/platypush/platypush/commit/d179e1eddc416a154cd589b16959b7987a40671e)).
+
 ## 1.3.34
 
 ### Added
