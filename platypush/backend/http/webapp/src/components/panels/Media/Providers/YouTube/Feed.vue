@@ -25,8 +25,7 @@
              @play="$emit('play', $event)"
              @play-with-opts="$emit('play-with-opts', $event)"
              @scroll-end="loadFeed"
-             @view="$emit('view', $event)"
-             v-else />
+             @view="$emit('view', $event)" />
   </div>
 </template>
 
