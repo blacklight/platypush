@@ -1,11 +1,18 @@
 <template>
   <div class="media-youtube-feed">
     <Loading v-if="isLoading" />
-    <NoItems :with-shadow="false" v-else-if="!feed?.length">
+    <NoItems :with-shadow="false" v-else-if="!visibleFeed?.length">
       No videos found.
     </NoItems>
 
-    <Results :results="feed"
+    <div class="feed-options" v-if="feed?.length">
+      <label>
+        <input type="checkbox" v-model="hideStories" />
+        Hide stories
+      </label>
+    </div>
+
+    <Results :results="visibleFeed"
              :filter="filter"
              :sources="{'youtube': true}"
              :selected-result="selectedResult"
@@ -64,6 +71,7 @@ export default {
     return {
       feed: [],
       firstLoad: true,
+      hideStories: true,
       loading_: false,
       page: 1,
       selectedResult: null,
@@ -73,6 +81,13 @@ export default {
   computed: {
     isLoading() {
       return (this.loading_ || this.loading) && this.firstLoad
+    },
+
+    visibleFeed() {
+      if (!this.hideStories)
+        return this.feed
+
+      return this.feed.filter(item => (item.duration || 0) > 0)
     },
   },
 
@@ -110,5 +125,21 @@ export default {
 <style lang="scss" scoped>
 .media-youtube-feed {
   height: 100%;
+
+  .feed-options {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.5em;
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      cursor: pointer;
+
+      input {
+        margin-right: 0.5em;
+      }
+    }
+  }
 }
 </style>
