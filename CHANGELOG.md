@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.36
 
 ### Added
 - `http`: Add support for authenticating HTTP requests via a
