@@ -1,8 +1,6 @@
 import logging
-import random
 import threading
 import time
-from typing import Callable
 
 from platypush.bus import Bus
 from platypush.message import Message
@@ -16,7 +14,9 @@ class RedisBus(Bus):
     """
 
     DEFAULT_REDIS_QUEUE: str = 'platypush/bus'
-    _PUBSUB_POLL_TIMEOUT: float = 1.0
+    # Short bounded poll interval to keep Redis bus pickup latency low while
+    # still allowing the poll loop to exit promptly on shutdown.
+    _PUBSUB_POLL_TIMEOUT: float = 0.1
 
     def __init__(self, *_, on_message=None, redis_queue=None, **kwargs):
         super().__init__(on_message=on_message)
@@ -53,10 +53,8 @@ class RedisBus(Bus):
         """
         Polls the Redis queue for new messages
         """
-        from redis.exceptions import (
-            ConnectionError as RedisConnectionError,
-            TimeoutError as RedisTimeoutError,
-        )
+        from redis.exceptions import ConnectionError as RedisConnectionError
+        from redis.exceptions import TimeoutError as RedisTimeoutError
 
         from platypush.message.event.application import ApplicationStartedEvent
         from platypush.utils import redis_pools
@@ -115,25 +113,10 @@ class RedisBus(Bus):
                         )
 
     def _on_message(self, msg: Message):
-        if self.on_message:
-            self.on_message(msg)
-
-        def msg_handler(event: Message, handler: Callable[[Message], None]):
-            logger.debug(
-                'Triggering event handler <%s.%s> from event %s',
-                handler.__module__,
-                handler.__name__,
-                type(event),
-            )
-            handler(event)
+        self._executor.submit(self._run_on_message, msg)
 
         for hndl in self._get_matching_handlers(msg):
-            threading.Thread(
-                target=msg_handler,
-                args=(msg, hndl),
-                name=f'handler-{hndl.__name__}-{random.randint(0, 10000)}',
-                daemon=True,
-            ).start()
+            self._executor.submit(self._run_handler, msg, hndl)
 
     def post(self, msg):
         """

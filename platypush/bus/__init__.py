@@ -1,14 +1,13 @@
-from collections import defaultdict
-from dataclasses import dataclass, field
 import logging
 import threading
 import time
-
-from queue import Queue, Empty
+from collections import defaultdict
+from dataclasses import dataclass, field
+from queue import Empty, Queue
 from typing import Callable, Dict, Iterable, Optional, Type
 
 from platypush.message import Message
-from platypush.message.event import Event
+from platypush.utils.executor import get_bus_executor
 
 logger = logging.getLogger('platypush:bus')
 
@@ -45,6 +44,7 @@ class Bus:
         ] = defaultdict(dict)
 
         self._should_stop = threading.Event()
+        self._executor = get_bus_executor()
 
     def post(self, msg):
         """Sends a message to the bus"""
@@ -70,23 +70,29 @@ class Bus:
             if hndl.match(msg)
         ]
 
+    def _run_handler(self, msg: Message, handler: Callable[[Message], None]):
+        logger.info('Triggering event handler %s', handler.__name__)
+        try:
+            handler(msg)
+        except Exception as e:
+            logger.error(
+                'Error in event handler %s for message %s', handler.__name__, msg
+            )
+            logger.exception(e)
+
+    def _run_on_message(self, msg: Message):
+        try:
+            if self.on_message:
+                self.on_message(msg)
+        except Exception as e:
+            logger.error('Error on processing message %s', msg)
+            logger.exception(e)
+
     def _msg_executor(self, msg):
-        def event_handler(event: Event, handler: Callable[[Event], None]):
-            logger.info('Triggering event handler %s', handler.__name__)
-            handler(event)
+        for hndl in self._get_matching_handlers(msg):
+            self._executor.submit(self._run_handler, msg, hndl)
 
-        def executor():
-            for hndl in self._get_matching_handlers(msg):
-                threading.Thread(target=event_handler, args=(msg, hndl)).start()
-
-            try:
-                if self.on_message:
-                    self.on_message(msg)
-            except Exception as e:
-                logger.error('Error on processing message %s', msg)
-                logger.exception(e)
-
-        return executor
+        self._run_on_message(msg)
 
     def should_stop(self):
         return self._should_stop.is_set()
@@ -113,7 +119,7 @@ class Bus:
                 )
                 continue
 
-            threading.Thread(target=self._msg_executor(msg)).start()
+            self._executor.submit(self._msg_executor, msg)
 
         logger.info('Bus service stopped')
 

@@ -1,11 +1,11 @@
-from contextlib import contextmanager
 import logging
 import multiprocessing
-import pathlib
 import os
+import pathlib
 import signal
 import subprocess
 import sys
+from contextlib import contextmanager
 from textwrap import dedent
 from typing import Optional, Sequence
 
@@ -16,13 +16,14 @@ from platypush.commands import CommandStream
 from platypush.config import Config
 from platypush.context import register_backends, register_plugins
 from platypush.cron.scheduler import CronScheduler
-from platypush.entities import init_entities_engine, EntitiesEngine
+from platypush.entities import EntitiesEngine, init_entities_engine
 from platypush.event.processor import EventProcessor
 from platypush.logger import Logger
 from platypush.message.event import Event
 from platypush.message.request import Request
 from platypush.message.response import Response
 from platypush.utils import get_enabled_plugins, get_redis_conf
+from platypush.utils.executor import shutdown_executors
 
 log = logging.getLogger('platypush')
 
@@ -443,6 +444,8 @@ class Application:
         if self.bus:
             self.bus.stop()
             self.bus = None
+
+        shutdown_executors(wait=False)
 
         if self.start_redis:
             self._stop_redis()

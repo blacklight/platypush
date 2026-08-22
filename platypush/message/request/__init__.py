@@ -6,8 +6,6 @@ import random
 import re
 import time
 
-from threading import Thread
-
 from platypush.config import Config
 from platypush.context import get_plugin
 from platypush.message import Message
@@ -19,6 +17,7 @@ from platypush.utils import (
     get_redis_queue_name_by_message,
     is_functional_procedure,
 )
+from platypush.utils.executor import get_request_executor
 
 logger = logging.getLogger('platypush')
 
@@ -319,13 +318,23 @@ class Request(Message):
 
             return response
 
+        def _run_thread_func(_n_tries):
+            try:
+                return _thread_func(_n_tries)
+            except Exception as e:
+                logger.exception(e)
+                try:
+                    self._send_response(Response(output=None, errors=[str(e)]))
+                except Exception as send_err:
+                    logger.exception(send_err)
+
         stored_token_hash = Config.get('token_hash')
         token = getattr(self, 'token', '')
         if stored_token_hash and get_hash(token) != stored_token_hash:
             raise PermissionError()
 
         if _async:
-            Thread(target=_thread_func, args=(n_tries,)).start()
+            get_request_executor().submit(_run_thread_func, n_tries)
         else:
             return _thread_func(n_tries)
 
