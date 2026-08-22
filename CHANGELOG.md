@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `http`: Add support for authenticating HTTP requests via a
+  `PLATYPUSH_API_TOKEN` environment variable, bypassing the database user
+  lookup.
+  ([`98c9f2a`](https://git.platypush.tech/platypush/platypush/commit/98c9f2afcf93ed61728a3ca5c54b8e6de0f9a7d8)).
+
+- `youtube`: Add a "Hide stories" option (default on) and filter out
+  zero-duration items from displayed results.
+  ([`812b96e`](https://git.platypush.tech/platypush/platypush/commit/812b96ea46b7396e0fd79baccfcbc04cd10e439f)).
+
+### Changed
+- `bus`: Replace ad-hoc threads with bounded thread pool executors for bus
+  message handling and async request execution, capping OS thread churn,
+  improving shutdown behavior, and centralizing error handling for event
+  handlers.
+  ([`64cf243`](https://git.platypush.tech/platypush/platypush/commit/64cf24393b145ecdd82c8d6cd4f2963a7ceac3e7)).
+
+### Fixed
+- `ui`: Fix the YouTube feed panel by removing the `v-else` directive.
+  ([`9737659`](https://git.platypush.tech/platypush/platypush/commit/97376598dbacd605be5824c02bca02f381c848f7)).
+
+- `mopidy`: Prevent stale Mopidy task misrouting across client reconnects by
+  introducing a monotonic generation counter to tag each MopidyTask with the
+  client lifetime that created it, discarding responses from previous
+  connections instead of routing them to unrelated tasks that share the same
+  numeric ID.
+  ([`b5531ba`](https://git.platypush.tech/platypush/platypush/commit/b5531ba16ecf30d3abd096e0edf28529f71d99b0)).
+
 ## 1.3.35
 
 ### Added
