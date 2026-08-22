@@ -40,6 +40,17 @@ class MopidyClient(Thread):
     Thread that listens for Mopidy events and posts them to the bus.
     """
 
+    # Minimum interval between non-track status refreshes.
+    _MIN_REFRESH_INTERVAL = 0.5
+    # Tracklist refreshes are considered higher priority and bypass debounce.
+    _MIN_TRACKLIST_REFRESH_INTERVAL = 0.0
+
+    # Monotonic generation counter used to prevent responses from a previous
+    # client lifetime being routed into stale task entries.
+    _next_generation = 0
+    _generation_lock = RLock()
+    _tasks_lock = RLock()
+
     def __init__(
         self,
         config: MopidyConfig,
@@ -66,8 +77,16 @@ class MopidyClient(Thread):
         self._msg_id = 0
         self._ws = None
         self._refresh_status_thread: Optional[Thread] = None
+        self._last_refresh_time = 0.0
+        self._client_generation = self._next_client_generation()
         self.connected_event = Event()
         self.closed_event = Event()
+
+    @classmethod
+    def _next_client_generation(cls):
+        with cls._generation_lock:
+            cls._next_generation += 1
+            return cls._next_generation
 
     @property
     def _bus(self):
@@ -87,6 +106,46 @@ class MopidyClient(Thread):
     def wait_stop(self, timeout: Optional[float] = None):
         self._stop_event.wait(timeout=timeout)
 
+    def _register_task(self, task: MopidyTask) -> MopidyTask:
+        task.generation = self._client_generation
+        task.created_at = time.time()
+        self._cleanup_stale_tasks(max_age=120)
+        with self._tasks_lock:
+            self._tasks[task.id] = task
+        return task
+
+    def _cleanup_task(self, task_id: int) -> None:
+        with self._tasks_lock:
+            self._tasks.pop(task_id, None)
+
+    def _cleanup_stale_tasks(self, *, max_age: float) -> int:
+        now = time.time()
+        stale_ids = []
+        with self._tasks_lock:
+            for tid, task in self._tasks.items():
+                if now - task.created_at > max_age:
+                    stale_ids.append(tid)
+            for tid in stale_ids:
+                self._tasks.pop(tid, None)
+        return len(stale_ids)
+
+    def _fail_all_pending_tasks(self, exc: Exception, *, generation: int) -> int:
+        failed = 0
+        with self._tasks_lock:
+            for tid, task in list(self._tasks.items()):
+                if task.generation == generation:
+                    self._tasks.pop(tid, None)
+                    try:
+                        task.put_response(exc)
+                    except Exception as e:
+                        self.logger.warning('Failed to fail Mopidy task %s: %s', tid, e)
+                    failed += 1
+        return failed
+
+    def _get_task(self, task_id: int) -> Optional[MopidyTask]:
+        with self._tasks_lock:
+            return self._tasks.get(task_id)
+
     def make_task(self, method: str, **args: dict) -> MopidyTask:
         with self._req_lock:
             self._msg_id += 1
@@ -96,14 +155,13 @@ class MopidyClient(Thread):
                 args=args or {},
             )
 
-        self._tasks[task.id] = task
-        return task
+        return self._register_task(task)
 
     def send(self, *tasks: MopidyTask):
         """
         Send a list of tasks to the Mopidy server.
         """
-        if not (self._ws):
+        if not self._ws:
             raise AssertionError('Websocket not connected')
 
         for task in tasks:
@@ -123,10 +181,14 @@ class MopidyClient(Thread):
             )
 
             try:
-                task_state = self._tasks.get(task.id)
-                if not (task_state):
+                task_state = self._get_task(task.id)
+                if not task_state:
                     raise AssertionError(
                         f'The Mopidy task {task.id} is not found or is no longer running'
+                    )
+                if task_state.generation != self._client_generation:
+                    raise AssertionError(
+                        f'The Mopidy task {task.id} belongs to a previous client connection'
                     )
                 ret = task_state.get_response(timeout=remaining_timeout)
                 if isinstance(ret, Exception):
@@ -134,19 +196,24 @@ class MopidyClient(Thread):
                 self.logger.debug('Got response for %s: %s', task, ret)
                 yield ret
             except Empty as e:
-                t = self._tasks.get(task.id)
+                t = self._get_task(task.id)
                 err = 'Mopidy request timeout'
                 if t:
                     err += f' - method: {t.method} args: {t.args}'
 
                 raise TimeoutError(err) from e
             finally:
-                self._tasks.pop(task.id, None)
+                self._cleanup_task(task.id)
 
     def exec(self, *msgs: dict, timeout: Optional[float] = DEFAULT_TIMEOUT) -> list:
         tasks = [self.make_task(**msg) for msg in msgs]
-        for task in tasks:
-            self.send(task)
+        try:
+            for task in tasks:
+                self.send(task)
+        except Exception:
+            for task in tasks:
+                self._cleanup_task(task.id)
+            raise
 
         return list(self.gather(*tasks, timeout=timeout))
 
@@ -211,13 +278,23 @@ class MopidyClient(Thread):
                 state, volume, t = ret[5:8]
 
                 if track:
-                    idx = self.exec(
-                        {
-                            'method': 'core.tracklist.index',
-                            'tlid': track.track_id,
-                        },
-                        timeout=timeout,
-                    )[0]
+                    if with_tracks:
+                        # Fast path: the tracklist is already part of the
+                        # response, so avoid a second round-trip.
+                        idx = None
+                        tl_tracks = ret[8] if len(ret) > 8 else []
+                        for i, tl_track in enumerate(tl_tracks):
+                            if (tl_track or {}).get('tlid') == track.track_id:
+                                idx = i
+                                break
+                    else:
+                        idx = self.exec(
+                            {
+                                'method': 'core.tracklist.index',
+                                'tlid': track.track_id,
+                            },
+                            timeout=timeout,
+                        )[0]
 
                     self._status.track = track
                     self._status.duration = track.time
@@ -259,6 +336,7 @@ class MopidyClient(Thread):
                 'Error while refreshing Mopidy status: %s', e, exc_info=True
             )
         finally:
+            self._last_refresh_time = time.time()
             self._refresh_in_progress.clear()
             self._refresh_status_thread = None
 
@@ -277,6 +355,14 @@ class MopidyClient(Thread):
         """
         with self._refresh_start_lock:
             if self._refresh_in_progress.is_set() or self._refresh_status_thread:
+                return
+
+            min_interval = (
+                self._MIN_TRACKLIST_REFRESH_INTERVAL
+                if with_tracks
+                else self._MIN_REFRESH_INTERVAL
+            )
+            if time.time() - self._last_refresh_time < min_interval:
                 return
 
             self._refresh_status_thread = Thread(
@@ -316,11 +402,13 @@ class MopidyClient(Thread):
             self.logger.warning(tb)
 
         if msg_id:
-            task = self._tasks.get(msg_id)
-            if task:
+            task = self._get_task(msg_id)
+            if task and task.generation == self._client_generation:
                 task.put_response(
                     RuntimeError(err.get('message') + ': ' + err_data.get('message'))
                 )
+            elif task and task.generation != self._client_generation:
+                self._cleanup_task(msg_id)
 
     def on_pause(self, *_, **__):
         self._status.state = PlayerState.PAUSE
@@ -417,9 +505,20 @@ class MopidyClient(Thread):
             return
 
         if msg_id:
-            task = self._tasks.get(msg_id)
-            if task:
+            task = self._get_task(msg_id)
+            if task and task.generation == self._client_generation:
                 task.put_response(msg)
+                return
+            if task and task.generation != self._client_generation:
+                # Stale response from a previous client lifetime; clean it up.
+                self.logger.debug(
+                    'Ignoring stale Mopidy response for task %s from generation %s '
+                    '(current %s)',
+                    msg_id,
+                    task.generation,
+                    self._client_generation,
+                )
+                self._cleanup_task(msg_id)
                 return
 
         if not event:
@@ -464,6 +563,10 @@ class MopidyClient(Thread):
                 self._ws = None
 
         self.logger.warning('Mopidy websocket connection closed')
+        self._fail_all_pending_tasks(
+            ConnectionResetError('Mopidy websocket connection closed'),
+            generation=self._client_generation,
+        )
 
     def _on_open(self, *_):
         self.connected_event.set()
@@ -501,6 +604,11 @@ class MopidyClient(Thread):
             if self._ws:
                 self._ws.close()
                 self._ws = None
+
+        self._fail_all_pending_tasks(
+            ConnectionResetError('Mopidy client stopped'),
+            generation=self._client_generation,
+        )
 
     def __enter__(self):
         return self

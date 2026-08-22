@@ -1,4 +1,5 @@
 import json
+import time
 from dataclasses import dataclass, field
 from queue import Queue
 from threading import Event
@@ -21,6 +22,8 @@ class MopidyTask:
     response: Optional[Any] = None
     response_ready: Event = field(default_factory=Event)
     response_queue: Queue = field(default_factory=Queue)
+    created_at: float = field(default_factory=time.time)
+    generation: int = 0
 
     def to_dict(self):
         return {
@@ -34,7 +37,7 @@ class MopidyTask:
         return json.dumps(self.to_dict())
 
     def send(self, ws: WebSocketApp):
-        if not (ws):
+        if not ws:
             raise AssertionError("Websocket connection not established")
         self.response_ready.clear()
         ws.send(str(self))

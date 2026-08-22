@@ -1092,6 +1092,18 @@ class MusicMopidyPlugin(RunnablePlugin):
             self._exec({'method': 'core.library.browse', 'uri': uri})[0]
         )
 
+    def _reconcile_tasks(self):
+        """
+        Fail and clear any pending tasks from the previous client lifetime
+        before a new client is started.
+        """
+        if self._client:
+            self._client._fail_all_pending_tasks(
+                ConnectionResetError('Mopidy client reconnect'),
+                generation=self._client._client_generation,
+            )
+        self._tasks.clear()
+
     def main(self):
         while not self.should_stop():
             try:
@@ -1105,6 +1117,7 @@ class MusicMopidyPlugin(RunnablePlugin):
                     self._client.start()
                     wait_for_either(self._should_stop, self._client.closed_event)
             finally:
+                self._reconcile_tasks()
                 self._client = None
                 self.wait_stop(10)
 
