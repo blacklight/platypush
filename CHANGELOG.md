@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.37
 
 ### Fixed
 - `http`: Run the Tornado HTTP server in-process in the backend thread and use a
