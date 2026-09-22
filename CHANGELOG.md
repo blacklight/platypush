@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- `http`: Run the Tornado HTTP server in-process in the backend thread and use a
+  WSGI ThreadPoolExecutor to handle requests, removing the unsafe fork while
+  preserving concurrent request handling, WebSocket and streaming routes, and
+  server shutdown.
+  ([`abc8046`](https://git.platypush.tech/platypush/platypush/commit/abc804669f9911a5942418dc0521a9ca565f88da)).
+
 ## 1.3.36
 
 ### Added

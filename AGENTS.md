@@ -36,4 +36,4 @@
 
 - `pyproject.toml` configures `skip-string-normalization = true` for Black.
 - `setup.cfg` configures `flake8` with a max line length of 120 and ignores
-  `E203`, `W503`, `SIM104`, `SIM105`, and `SIM115`.
+  `E203`, `W503`, `SIM104`, `SIM105`, `SIM115`, and `I`.

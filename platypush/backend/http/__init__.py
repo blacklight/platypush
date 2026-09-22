@@ -2,20 +2,17 @@ import asyncio
 import os
 import pathlib
 import secrets
-import signal
 import threading
-import multiprocessing
-
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-from multiprocessing import Process
 from time import time
 from typing import Mapping, Optional, Union
 
 from tornado.httpserver import HTTPServer
 from tornado.netutil import bind_sockets, bind_unix_socket
-from tornado.process import cpu_count, fork_processes
-from tornado.wsgi import WSGIContainer
+from tornado.process import cpu_count
 from tornado.web import Application, FallbackHandler
+from tornado.wsgi import WSGIContainer
 
 from platypush.backend import Backend
 from platypush.backend.http.app import application
@@ -23,7 +20,7 @@ from platypush.backend.http.app.utils import get_streaming_routes, get_ws_routes
 from platypush.backend.http.app.ws.events import WSEventProxy
 from platypush.bus.redis import RedisBus
 from platypush.config import Config
-from platypush.utils import get_remaining_timeout, redis_pools
+from platypush.utils import get_remaining_timeout
 
 
 class HttpBackend(Backend):
@@ -241,7 +238,8 @@ class HttpBackend(Backend):
             the value is the absolute path to expose.
         :param secret_key_file: Path to the file containing the secret key that will be used by Flask
             (default: ``~/.local/share/platypush/flask.secret.key``).
-        :param num_workers: Number of worker processes to use (default: ``(cpu_count * 2) + 1``).
+        :param num_workers: Number of WSGI request worker threads to use when
+            running on Tornado (default: ``(cpu_count * 2) + 1``).
         :param use_werkzeug_server: Whether the backend should be served by a
             Werkzeug server (default: ``False``). Note that using the built-in
             Werkzeug server instead of Tornado is very inefficient, and it
@@ -263,9 +261,12 @@ class HttpBackend(Backend):
             raise AssertionError('Either bind_address or bind_socket must be set')
 
         self.port = port
-        self._server_proc: Optional[Process] = None
         self._wsgi_server = None
         self._service_registry_thread = None
+        self._tornado_server = None
+        self._io_loop = None
+        self._stop_asyncio_event = None
+        self._wsgi_executor = None
         self.bind_address = bind_address
 
         if bind_socket is True:
@@ -314,25 +315,19 @@ class HttpBackend(Backend):
 
             self._wsgi_server = None
 
-        if self._server_proc:
-            if self._server_proc.pid:
-                try:
-                    os.kill(self._server_proc.pid, signal.SIGINT)
-                except OSError:
-                    pass
+        if self._io_loop is not None and self._stop_asyncio_event is not None:
+            try:
+                self._io_loop.call_soon_threadsafe(self._stop_asyncio_event.set)
+            except Exception as e:
+                self.logger.warning('Could not stop the Tornado server: %s', e)
 
-            if self._server_proc and self._server_proc.is_alive():
-                self._server_proc.join(timeout=remaining_time() / 2)
-                try:
-                    self._server_proc.terminate()
-                    self._server_proc.join(timeout=remaining_time() / 2)
-                except AttributeError:
-                    pass
+        if self._wsgi_executor is not None:
+            try:
+                self._wsgi_executor.shutdown(wait=False)
+            except Exception as e:
+                self.logger.warning('Could not stop the WSGI executor: %s', e)
 
-        if self._server_proc and self._server_proc.is_alive():
-            self._server_proc.kill()
-
-        self._server_proc = None
+            self._wsgi_executor = None
 
         if self._service_registry_thread and self._service_registry_thread.is_alive():
             self._service_registry_thread.join(timeout=remaining_time())
@@ -389,19 +384,13 @@ class HttpBackend(Backend):
         )
         self._service_registry_thread.start()
 
-    async def _post_fork_main(self, sockets):
+    async def _run_tornado_server(self, sockets):
         if not (isinstance(self.bus, RedisBus)):
             raise AssertionError('The HTTP backend only works if backed by a Redis bus')
 
-        # Clear any inherited Redis connection pools from the parent process.
-        # After fork, inherited pool connections share file descriptors with
-        # the parent, which causes protocol corruption if both processes use
-        # the same socket.
-        redis_pools.clear()
-
         application.config['redis_queue'] = self.bus.redis_queue
         application.secret_key = self._get_secret_key()
-        container = WSGIContainer(application)
+        container = WSGIContainer(application, executor=self._wsgi_executor)
         tornado_app = Application(
             [
                 *[
@@ -414,18 +403,27 @@ class HttpBackend(Backend):
 
         server = HTTPServer(tornado_app)
         server.add_sockets(sockets)
+        self._tornado_server = server
+        self._io_loop = asyncio.get_running_loop()
+        self._stop_asyncio_event = asyncio.Event()
+
+        if self._stop_event.is_set():
+            self._stop_asyncio_event.set()
 
         try:
-            await asyncio.Event().wait()
+            await self._stop_asyncio_event.wait()
         except (asyncio.CancelledError, KeyboardInterrupt):
             pass
         finally:
             server.stop()
             await server.close_all_connections()
+            self._tornado_server = None
+            self._io_loop = None
+            self._stop_asyncio_event = None
 
-    def _web_server_proc(self):
+    def _start_tornado_server(self):
         self.logger.info(
-            'Starting local web server on port %s with %d service workers',
+            'Starting local Tornado web server on port %s (up to %d WSGI workers)',
             self.port,
             self.num_workers,
         )
@@ -438,14 +436,20 @@ class HttpBackend(Backend):
         if self.socket_path:
             sockets.append(bind_unix_socket(self.socket_path))
 
+        self._wsgi_executor = ThreadPoolExecutor(
+            max_workers=self.num_workers,
+            thread_name_prefix='HttpBackend-WSGI',
+        )
+
         try:
-            fork_processes(self.num_workers)
-            future = self._post_fork_main(sockets)
+            future = self._run_tornado_server(sockets)
             asyncio.run(future)
         except (asyncio.CancelledError, KeyboardInterrupt):
             pass
         finally:
-            self._stop_workers()
+            if self._wsgi_executor is not None:
+                self._wsgi_executor.shutdown(wait=False)
+                self._wsgi_executor = None
 
     def _run_werkzeug_server(self):
         from werkzeug.serving import make_server
@@ -463,70 +467,6 @@ class HttpBackend(Backend):
         )
         self._wsgi_server.serve_forever()
 
-    def _stop_workers(self):
-        """
-        Stop all the worker processes.
-
-        We have to run this manually on server termination because of a
-        long-standing issue with Tornado not being able to wind down the forked
-        workers when the server terminates:
-        https://github.com/tornadoweb/tornado/issues/1912.
-        """
-        try:
-            import psutil
-        except ImportError:
-            self.logger.warning(
-                'Could not import psutil, hanging worker processes might remain active'
-            )
-            return
-
-        parent_pid = (
-            self._server_proc.pid
-            if self._server_proc and self._server_proc.pid
-            else None
-        )
-
-        if not parent_pid:
-            return
-
-        try:
-            cur_proc = psutil.Process(parent_pid)
-        except psutil.NoSuchProcess:
-            return
-
-        # Send a SIGTERM to all the children
-        children = cur_proc.children()
-        for child in children:
-            if child.pid != parent_pid and child.is_running():
-                try:
-                    os.kill(child.pid, signal.SIGTERM)
-                except OSError as e:
-                    self.logger.warning(
-                        'Could not send SIGTERM to PID %d: %s', child.pid, e
-                    )
-
-        # Initialize the timeout
-        start = time()
-        remaining_time: partial[int] = partial(
-            get_remaining_timeout, timeout=self._STOP_TIMEOUT, start=start, cls=int  # type: ignore
-        )
-
-        # Wait for all children to terminate (with timeout)
-        for child in children:
-            if child.pid != parent_pid and child.is_running():
-                try:
-                    child.wait(timeout=remaining_time())
-                except TimeoutError:
-                    pass
-
-        # Send a SIGKILL to any child process that is still running
-        for child in children:
-            if child.pid != parent_pid and child.is_running():
-                try:
-                    child.kill()
-                except OSError:
-                    pass
-
     def _start_web_server(self):
         if self.use_werkzeug_server:
             # Run the Werkzeug server in a thread within this process.
@@ -536,14 +476,13 @@ class HttpBackend(Backend):
             self._run_werkzeug_server()
             return
 
-        # Python 3.14: with the forkserver/spawn start methods, the process
-        # target (a bound method) requires pickling the backend instance.
-        # Backend threads carry a contextvars.Context which isn't picklable.
-        # Force fork for this process on POSIX to avoid the pickle requirement.
-        ctx = multiprocessing.get_context('fork')
-        self._server_proc = ctx.Process(target=self._web_server_proc)
-        self._server_proc.start()
-        self._server_proc.join()
+        # Run the Tornado server in the current thread instead of forking from
+        # the multi-threaded main process. Forking after other backend threads
+        # have started can leave inherited locks (threading.RLock/Condition,
+        # multiprocessing internals) in a locked state in the child, which
+        # makes worker startup non-deterministically hang. Use a
+        # ThreadPoolExecutor to run the Flask WSGI app concurrently instead.
+        self._start_tornado_server()
 
     def run(self):
         super().run()
