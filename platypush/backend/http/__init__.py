@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import os
 import pathlib
 import secrets
@@ -21,6 +22,14 @@ from platypush.backend.http.app.ws.events import WSEventProxy
 from platypush.bus.redis import RedisBus
 from platypush.config import Config
 from platypush.utils import get_remaining_timeout
+
+
+def _supports_wsgi_executor() -> bool:
+    """
+    Whether the installed version of Tornado supports running the WSGI
+    application on a separate thread pool executor (requires Tornado >= 6.3).
+    """
+    return 'executor' in inspect.signature(WSGIContainer.__init__).parameters
 
 
 class HttpBackend(Backend):
@@ -239,7 +248,9 @@ class HttpBackend(Backend):
         :param secret_key_file: Path to the file containing the secret key that will be used by Flask
             (default: ``~/.local/share/platypush/flask.secret.key``).
         :param num_workers: Number of WSGI request worker threads to use when
-            running on Tornado (default: ``(cpu_count * 2) + 1``).
+            running on Tornado (default: ``(cpu_count * 2) + 1``). It requires
+            Tornado >= 6.3 - on older versions the WSGI application will be
+            run on the main I/O loop instead.
         :param use_werkzeug_server: Whether the backend should be served by a
             Werkzeug server (default: ``False``). Note that using the built-in
             Werkzeug server instead of Tornado is very inefficient, and it
@@ -390,7 +401,10 @@ class HttpBackend(Backend):
 
         application.config['redis_queue'] = self.bus.redis_queue
         application.secret_key = self._get_secret_key()
-        container = WSGIContainer(application, executor=self._wsgi_executor)
+        if self._wsgi_executor is not None:
+            container = WSGIContainer(application, executor=self._wsgi_executor)
+        else:
+            container = WSGIContainer(application)
         tornado_app = Application(
             [
                 *[
@@ -422,11 +436,21 @@ class HttpBackend(Backend):
             self._stop_asyncio_event = None
 
     def _start_tornado_server(self):
-        self.logger.info(
-            'Starting local Tornado web server on port %s (up to %d WSGI workers)',
-            self.port,
-            self.num_workers,
-        )
+        wsgi_executor_supported = _supports_wsgi_executor()
+        if wsgi_executor_supported:
+            self.logger.info(
+                'Starting local Tornado web server on port %s (up to %d WSGI workers)',
+                self.port,
+                self.num_workers,
+            )
+        else:
+            self.logger.warning(
+                'Starting local Tornado web server on port %s. The installed '
+                'version of Tornado does not support running WSGI '
+                'applications on a thread pool executor (requires Tornado '
+                '>= 6.3) - WSGI requests will be handled on the main I/O loop',
+                self.port,
+            )
 
         sockets = []
 
@@ -436,10 +460,11 @@ class HttpBackend(Backend):
         if self.socket_path:
             sockets.append(bind_unix_socket(self.socket_path))
 
-        self._wsgi_executor = ThreadPoolExecutor(
-            max_workers=self.num_workers,
-            thread_name_prefix='HttpBackend-WSGI',
-        )
+        if wsgi_executor_supported:
+            self._wsgi_executor = ThreadPoolExecutor(
+                max_workers=self.num_workers,
+                thread_name_prefix='HttpBackend-WSGI',
+            )
 
         try:
             future = self._run_tornado_server(sockets)
