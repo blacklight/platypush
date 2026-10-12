@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- `http`: Fall back to running the WSGI application on the main I/O loop when
+  the installed Tornado version (< 6.3) doesn't support a WSGI thread pool
+  executor, fixing a `TypeError` on backend startup.
+  ([`9c5c728`](https://git.platypush.tech/platypush/platypush/commit/9c5c7287263351129d2350d0ac75d351c767000a)).
+
 ## 1.3.37
 
 ### Fixed
