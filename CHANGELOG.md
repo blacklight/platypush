@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.38
 
 ### Fixed
 - `http`: Fall back to running the WSGI application on the main I/O loop when
