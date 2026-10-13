@@ -58,7 +58,7 @@ def parse_manifests():
 
 
 setup(
-    packages=find_namespace_packages(exclude=['tests']),
+    packages=find_namespace_packages(include=['platypush', 'platypush.*']),
     include_package_data=True,
     exclude_package_data={
         'platypush': [
