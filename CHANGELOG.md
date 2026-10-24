@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Added `light.tuya` plugin
+  ([`c6d86558`](https://git.platypush.tech/platypush/platypush/commit/c6d8655850d43a5713ebac97b81203f5be900327)).
+
 ## 1.3.38
 
 ### Fixed
