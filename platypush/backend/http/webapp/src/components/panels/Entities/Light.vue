@@ -82,7 +82,7 @@ export default {
 
   data() {
     return {
-      colorConverter: null,
+      colorConverter: new ColorConverter(),
     }
   },
 

@@ -59,6 +59,7 @@ module.exports = {
       '^/logout': httpProxy,
       '^/media/': httpProxy,
       '^/otp': httpProxy,
+      '^/plugin/': httpProxy,
       '^/sound/': httpProxy,
       '^/tokens': httpProxy,
       '^/ws/': wsProxy,

@@ -66,6 +66,7 @@ Plugins
     platypush/plugins/lcd.i2c.rst
     platypush/plugins/leap.rst
     platypush/plugins/light.hue.rst
+    platypush/plugins/light.tuya.rst
     platypush/plugins/linode.rst
     platypush/plugins/log.http.rst
     platypush/plugins/logger.rst
