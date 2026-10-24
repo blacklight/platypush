@@ -21,6 +21,7 @@ from platypush.config import Config
 from platypush.context import get_bus
 from platypush.entities import Entity, LightEntityManager
 from platypush.entities.lights import Light as LightEntity
+from platypush.message.event.hue import HueSensorEvent
 from platypush.message.event.light import (
     LightAnimationStartedEvent,
     LightAnimationStoppedEvent,
@@ -42,6 +43,12 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
     ANIMATION_CTRL_QUEUE_NAME = 'platypush/light/hue/AnimationCtrl'
     _MAX_RECONNECT_SECS = 60
     _UNINITIALIZED_BRIDGE_ERR = 'The Hue bridge is not initialized'
+    _BUTTON_ACTIONS = {
+        0: 'initial_press',
+        1: 'hold',
+        2: 'short_release',
+        3: 'long_release',
+    }
 
     class Animation(Enum):
         """
@@ -67,6 +74,7 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         lights: Optional[Iterable[str]] = None,
         groups: Optional[Iterable[str]] = None,
         poll_interval: Optional[float] = 20.0,
+        sensor_poll_interval: Optional[float] = 1.0,
         config_file: Optional[str] = None,
         **kwargs,
     ):
@@ -76,6 +84,11 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         :param groups: Default groups to be controlled (default: all)
         :param poll_interval: How often the plugin should check the bridge for light
             updates (default: 20 seconds).
+        :param sensor_poll_interval: How often the plugin should check the
+            bridge for sensor/accessory updates (default: 1 second). Sensors
+            need a faster polling interval than lights since button events on
+            switches and dimmers are transient. Set to 0 or ``None`` to
+            disable sensor polling.
         :param config_file: Path to the phue configuration file containing the
             access token to authenticate to the Hue bridge and the bridge
             configuration (default: ``<WORKDIR>/light.hue/config.json``).
@@ -101,6 +114,7 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         self.lights = set()
         self.groups = set()
         self.poll_interval = poll_interval
+        self.sensor_poll_interval = sensor_poll_interval
         self._cached_lights: Dict[str, dict] = {}
 
         if lights:
@@ -274,6 +288,40 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
                 **scene,
             }
             for id, scene in self._get_scenes().items()
+        }
+
+    @action
+    def get_sensors(self):
+        """
+        Get the sensors, switches and other accessories paired to the bridge.
+
+        :returns: The sensors configured on the bridge as id->dict.
+
+        Example output::
+
+            {
+                "4": {
+                    "state": {
+                        "buttonevent": 1002,
+                        "lastupdated": "2024-10-24T06:18:48"
+                    },
+                    "type": "ZLLSwitch",
+                    "name": "Living Room Dimmer",
+                    "modelid": "RWL021",
+                    "manufacturername": "Philips",
+                    "uniqueid": "00:11:22:33:44:55:66:77-88-99",
+                    "swversion": "6.1.1.28573"
+                }
+            }
+
+        """
+
+        return {
+            id: {
+                'id': id,
+                **sensor,
+            }
+            for id, sensor in self._get_sensors().items()
         }
 
     @action
@@ -1263,6 +1311,46 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
         scenes = self.bridge.get_scene() or {}
         return {id: scene for id, scene in scenes.items() if not scene.get('recycle')}
 
+    def _get_sensors(self) -> dict:
+        if not (self.bridge):
+            raise AssertionError(self._UNINITIALIZED_BRIDGE_ERR)
+        sensors = self.bridge.get_sensor() or {}
+        return {
+            id: sensor for id, sensor in sensors.items() if not sensor.get('recycle')
+        }
+
+    def _post_sensor_events(self, sensors_new: dict, sensors_prev: dict):
+        for sensor_id, sensor in sensors_new.items():
+            new_state = sensor.get('state', {})
+            prev_state = sensors_prev.get(sensor_id, {}).get('state', {})
+
+            if new_state == prev_state:
+                continue
+
+            event_args = {
+                'plugin_name': 'light.hue',
+                'sensor_id': sensor_id,
+                'sensor_name': sensor.get('name'),
+                'sensor_type': sensor.get('type'),
+                'unique_id': sensor.get('uniqueid'),
+                'state': new_state,
+            }
+
+            button_attrs = self._decode_button_event(new_state.get('buttonevent'))
+            if button_attrs:
+                event_args['button'], event_args['button_action'] = button_attrs
+
+            get_bus().post(HueSensorEvent(**event_args))
+
+    @classmethod
+    def _decode_button_event(cls, button_event) -> Optional[tuple]:
+        if not isinstance(button_event, int):
+            return None
+
+        button, action_idx = divmod(button_event, 1000)
+        button_action = cls._BUTTON_ACTIONS.get(action_idx)
+        return (button, button_action) if button and button_action else None
+
     @action
     def status(self, *_, **__) -> Iterable[LightEntity]:
         lights = self.transform_entities(self._get_lights(publish_entities=True))
@@ -1280,31 +1368,46 @@ class LightHuePlugin(RunnablePlugin, LightEntityManager):
 
     def main(self):
         lights_prev = self._get_lights(publish_entities=True)  # Initialize the lights
+        sensors_prev = self._get_sensors() if self.sensor_poll_interval else {}
+        last_lights_poll = time.monotonic()
 
         while not self.should_stop():
             try:
-                lights_new = self._get_lights()
-                for light_id, light in lights_new.items():
-                    event_args = {}
-                    new_state = light.get('state', {})
-                    prev_state = lights_prev.get(light_id, {}).get('state', {})
+                if (
+                    self.poll_interval
+                    and time.monotonic() - last_lights_poll >= self.poll_interval
+                ):
+                    lights_new = self._get_lights()
+                    for light_id, light in lights_new.items():
+                        event_args = {}
+                        new_state = light.get('state', {})
+                        prev_state = lights_prev.get(light_id, {}).get('state', {})
 
-                    for attr in ['on', 'bri', 'sat', 'hue', 'ct', 'xy']:
-                        if attr in new_state and new_state.get(attr) != prev_state.get(
-                            attr
-                        ):
-                            event_args[attr] = new_state.get(attr)
+                        for attr in ['on', 'bri', 'sat', 'hue', 'ct', 'xy']:
+                            if attr in new_state and new_state.get(
+                                attr
+                            ) != prev_state.get(attr):
+                                event_args[attr] = new_state.get(attr)
 
-                    if event_args:
-                        event_args['plugin_name'] = 'light.hue'
-                        event_args['light_id'] = light_id
-                        event_args['light_name'] = light.get('name')
-                        get_bus().post(LightStatusChangeEvent(**event_args))
-                        self.publish_entities([{'id': light_id, **light}])  # type: ignore
+                        if event_args:
+                            event_args['plugin_name'] = 'light.hue'
+                            event_args['light_id'] = light_id
+                            event_args['light_name'] = light.get('name')
+                            get_bus().post(LightStatusChangeEvent(**event_args))
+                            self.publish_entities([{'id': light_id, **light}])  # type: ignore
 
-                lights_prev = lights_new
+                    lights_prev = lights_new
+                    last_lights_poll = time.monotonic()
+
+                if self.sensor_poll_interval:
+                    try:
+                        sensors_new = self._get_sensors()
+                        self._post_sensor_events(sensors_new, sensors_prev)
+                        sensors_prev = sensors_new
+                    except Exception as e:
+                        self.logger.warning('Error while polling Hue sensors: %s', e)
             finally:
-                self.wait_stop(self.poll_interval)
+                self.wait_stop(self.sensor_poll_interval or self.poll_interval)
 
 
 # vim:sw=4:ts=4:et:

@@ -3,7 +3,8 @@
     "events": {
       "platypush.message.event.light.LightAnimationStartedEvent": "when an animation is started.",
       "platypush.message.event.light.LightAnimationStoppedEvent": "when an animation is stopped.",
-      "platypush.message.event.light.LightStatusChangeEvent": "when the status of a lightbulb changes."
+      "platypush.message.event.light.LightStatusChangeEvent": "when the status of a lightbulb changes.",
+      "platypush.message.event.hue.HueSensorEvent": "when the state of a sensor or accessory (including switches and dimmers) connected to the bridge changes."
     },
     "install": {
       "pip": [

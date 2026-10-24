@@ -32,6 +32,7 @@ Events
     platypush/events/http.rst
     platypush/events/http.hook.rst
     platypush/events/http.rss.rst
+    platypush/events/hue.rst
     platypush/events/inotify.rst
     platypush/events/irc.rst
     platypush/events/joystick.rst
