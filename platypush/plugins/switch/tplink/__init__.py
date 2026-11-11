@@ -7,13 +7,14 @@ from typing import (
     Union,
 )
 
-from pyHS100 import (
-    SmartDevice,
-    SmartPlug,
-    SmartBulb,
-    SmartStrip,
+import threading
+import asyncio
+from kasa import (
+    Device,
+    DeviceType,
     Discover,
-    SmartDeviceException,
+    KasaException,
+    Module
 )
 
 from platypush.entities import Entity, SwitchEntityManager
@@ -26,8 +27,8 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
     (https://www.tp-link.com/us/products/details/cat-5516_HS100.html).
     """
 
-    _ip_to_dev: Dict[str, SmartDevice] = {}
-    _alias_to_dev: Dict[str, SmartDevice] = {}
+    _ip_to_dev: Dict[str, Device] = {}
+    _alias_to_dev: Dict[str, Device] = {}
 
     def __init__(
         self,
@@ -37,14 +38,18 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
         **kwargs,
     ):
         """
-        :param plugs: Optional list of IP addresses or name->address mapping if you have a static list of
-            TpLink plugs and you want to save on the scan time.
-        :param bulbs: Optional list of IP addresses or name->address mapping if you have a static list of
-            TpLink bulbs and you want to save on the scan time.
-        :param strips: Optional list of IP addresses or name->address mapping if you have a static list of
-            TpLink strips and you want to save on the scan time.
+        :param plugs: Optional list of IP addresses or name->address mappings if you have a static list of
+            TP-Link plugs and you want to save on the scan time.
+        :param bulbs: Optional list of IP addresses or name->address mappings if you have a static list of
+            TP-Link bulbs and you want to save on the scan time.
+        :param strips: Optional list of IP addresses or name->address mappings if you have a static list of
+            TP-Link strips and you want to save on the scan time.
         """
         super().__init__(**kwargs)
+        self._loop = asyncio.new_event_loop()
+        self._loop_thread = threading.Thread(target=self._loop.run_forever, daemon=True)  
+        self._loop_thread.start()
+      
         self._ip_to_dev = {}
         self._alias_to_dev = {}
         self._static_devices = {}
@@ -59,44 +64,51 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
         for name, addr in (plugs or {}).items():
             self._static_devices[addr] = {
                 'name': name,
-                'type': SmartPlug,
+                'type': DeviceType.Plug,
             }
 
         for name, addr in (bulbs or {}).items():
             self._static_devices[addr] = {
                 'name': name,
-                'type': SmartBulb,
+                'type': DeviceType.Bulb,
             }
 
         for name, addr in (strips or {}).items():
             self._static_devices[addr] = {
                 'name': name,
-                'type': SmartStrip,
+                'type': DeviceType.Strip,
             }
 
         self._update_devices()
+    
+    def _run_async(self, loop):
+      return asyncio.run_coroutine_threadsafe(loop, self._loop).result()
 
     def _update_devices(
         self,
-        devices: Optional[Mapping[str, SmartDevice]] = None,
+        devices: Optional[Mapping[str, Device]] = None,
         publish_entities: bool = True,
     ):
         for addr, info in self._static_devices.items():
             try:
-                dev = info['type'](addr)
+                dev = self._run_async(Device.connect(host=addr))
+                self._run_async(dev.update())
                 self._alias_to_dev[info.get('name', dev.alias)] = dev
                 self._ip_to_dev[addr] = dev
+            except KasaException as e:
+              self.logger.warning(
+                'Could not update device %s: %s',
+                addr,
+                e
+              )
+        for ip, dev in (devices or {}).items():
+            self._ip_to_dev[ip] = dev
+            self._alias_to_dev[dev.alias] = dev
 
-                for ip, dev in (devices or {}).items():
-                    self._ip_to_dev[ip] = dev
-                    self._alias_to_dev[dev.alias] = dev
+        if devices and publish_entities:
+            self.publish_entities(devices.values())
 
-                if devices and publish_entities:
-                    self.publish_entities(devices.values())
-            except SmartDeviceException as e:
-                self.logger.warning('Could not communicate with device %s: %s', addr, e)
-
-    def transform_entities(self, entities: Collection[SmartDevice]):
+    def transform_entities(self, entities: Collection[Device]):
         from platypush.entities.switches import Switch
 
         return super().transform_entities(
@@ -106,7 +118,7 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
                     name=dev.alias,
                     state=dev.is_on,
                     data={
-                        'current_consumption': dev.current_consumption(),
+                        'current_consumption': self._current_consumption(dev),
                         'ip': dev.host,
                         'host': dev.host,
                         'hw_info': dev.hw_info,
@@ -116,10 +128,19 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
             ]
         )
 
-    def _scan(self, publish_entities: bool = True) -> Dict[str, SmartDevice]:
-        devices = Discover.discover()
-        self._update_devices(devices, publish_entities=publish_entities)
-        return devices
+    def _scan(self, publish_entities: bool = True) -> Dict[str, Device]:
+      devices = self._run_async(Discover.discover())
+      for dev in devices.values():  
+        try:
+          self._run_async(dev.update())  
+        except KasaException as e:
+          self.logger.warning(
+            'Could not communicate with device %s: %s',
+            device.host,
+            e
+          )
+      self._update_devices(devices, publish_entities=publish_entities)
+      return devices
 
     def _get_device(self, device, use_cache=True):
         if not use_cache:
@@ -138,7 +159,7 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
             return self._get_device(device, use_cache=False)
         raise RuntimeError(f'Device {device} not found')
 
-    def _set(self, device: SmartDevice, state: bool):
+    def _set(self, device: Device, state: bool):
         action_name = 'turn_on' if state else 'turn_off'
         act = getattr(device, action_name, None)
         if not (act):
@@ -146,7 +167,8 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
                 f'No such action available on the device "{device.alias}": '
                 f'"{action_name}"'
             )
-        act()
+        self._run_async(act())
+        self._run_async(device.update())
         self.publish_entities([device])
         return self._serialize(device)
 
@@ -186,10 +208,12 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
         device = self._get_device(device)
         return self._set(device, not device.is_on)
 
-    def _current_consumption(self, device: SmartDevice) -> Optional[float]:
+    def _current_consumption(self, device: Device) -> Optional[float]:
         try:
-            return device.current_consumption()
-        except SmartDeviceException as e:
+            if Module.Energy not in device.modules:
+                return None
+            return device.modules[Module.Energy].current_consumption
+        except KasaException as e:
             self.logger.debug(
                 'Could not retrieve current consumption for device %s: %s',
                 device.host,
@@ -197,7 +221,7 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
             )
             return None
 
-    def _serialize(self, device: SmartDevice) -> Optional[dict]:
+    def _serialize(self, device: Device) -> Optional[dict]:
         try:
             return {
                 'current_consumption': self._current_consumption(device),
@@ -208,10 +232,12 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
                 'name': device.alias,
                 'on': device.is_on,
             }
-        except SmartDeviceException as e:
-            self.logger.warning(
-                'Could not communicate with device %s: %s', device.host, e
-            )
+        except KasaException as e:
+          self.logger.warning(
+            'Could not serialize device %s: %s',
+            device.host,
+            e
+          )
 
     @action
     def status(self, *_, **__) -> List[dict]:

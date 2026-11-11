@@ -3,7 +3,7 @@
     "events": {},
     "install": {
       "pip": [
-        "pyHS100"
+        "python-kasa"
       ]
     },
     "package": "platypush.plugins.switch.tplink",

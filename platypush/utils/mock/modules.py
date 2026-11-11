@@ -87,7 +87,7 @@ mock_imports = [
     "pvorca",
     "pvporcupine",
     "pvrhino",
-    "pyHS100",
+    "python-kasa",
     "pyaudio",
     "pychromecast",
     "pyclip",
