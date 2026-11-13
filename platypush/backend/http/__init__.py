@@ -220,7 +220,7 @@ class HttpBackend(Backend):
     def __init__(
         self,
         port: int = DEFAULT_HTTP_PORT,
-        bind_address: Optional[str] = '0.0.0.0',
+        bind_address: Optional[str] = '127.0.0.1',
         bind_socket: Optional[Union[str, bool]] = None,
         resource_dirs: Optional[Mapping[str, str]] = None,
         secret_key_file: Optional[str] = None,
@@ -231,8 +231,9 @@ class HttpBackend(Backend):
     ):
         """
         :param port: Listen port for the web server (default: 8008)
-        :param bind_address: Address/interface to bind to (default: 0.0.0.0,
-            accept connection from any IP). You can set it to null to disable
+        :param bind_address: Address/interface to bind to (default: 127.0.0.1,
+            only accept connections from localhost). Set it to ``0.0.0.0`` to
+            accept connections from any IP. You can set it to null to disable
             the network interface binding, but then you must set ``bind_socket``
             as an alternative.
         :param bind_socket: Path to the Unix socket to bind to. If set, the

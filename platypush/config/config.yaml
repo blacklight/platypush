@@ -208,8 +208,10 @@
 # https://git.platypush.tech/platypush/platypush/src/branch/master/examples/nginx/nginx.sample.conf
 
 backend.http:
-    # # Bind address (default: 0.0.0.0)
-    # bind_address: 0.0.0.0
+    # # Bind address (default: 127.0.0.1). Set it to 0.0.0.0 to accept
+    # # connections from any IP (e.g. when serving behind a reverse proxy
+    # # on a different host).
+    bind_address: 127.0.0.1
     # # Listen port (default: 8008)
     port: 8008
 
