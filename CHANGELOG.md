@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.3.40
 
 ### Added
 - `light.hue`: Poll sensors and accessories paired to the bridge and emit a
