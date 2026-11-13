@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- `light.hue`: Poll sensors and accessories paired to the bridge and emit a
+  `HueSensorEvent` on state changes, exposing the decoded `button` index and
+  `button_action` for devices using the Hue `buttonevent` encoding.
+  ([`d145649`](https://git.platypush.tech/platypush/platypush/commit/d145649b8e4aff6838fb75071f6bb3de83d0aa12)).
+
+- `switch.tplink`: Replace the unmaintained `pyHS100` library with
+  `python-kasa` and migrate the plugin to its async API.
+  ([`86ef633`](https://git.platypush.tech/platypush/platypush/commit/86ef633639b10267b84584b022777ca4016a23a4)).
+
+### Fixed
+- `http`: Default the backend HTTP server `bind_address` to `127.0.0.1`
+  instead of binding to all interfaces.
+  ([`7afbb47`](https://git.platypush.tech/platypush/platypush/commit/7afbb4799c597fee68178178f2219b7cc00b6b91)).
+
 ## 1.3.39
 
 ### Added
