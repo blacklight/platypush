@@ -207,7 +207,7 @@ class SwitchTplinkPlugin(RunnablePlugin, SwitchEntityManager):
 
     def _current_consumption(self, device: Device) -> Optional[float]:
         try:
-            if Module.Energy not in device.modules:
+            if Module.Energy not in (device.modules or []):
                 return None
             return device.modules[Module.Energy].current_consumption
         except (KasaException, OSError) as e:
