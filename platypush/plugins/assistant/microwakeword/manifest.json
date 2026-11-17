@@ -1,0 +1,15 @@
+{
+  "manifest": {
+    "package": "platypush.plugins.assistant.microwakeword",
+    "type": "plugin",
+    "events": [
+      "platypush.message.event.assistant.HotwordDetectedEvent"
+    ],
+    "install": {
+      "pip": [
+        "pymicro-wakeword",
+        "sounddevice"
+      ]
+    }
+  }
+}

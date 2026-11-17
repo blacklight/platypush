@@ -11,6 +11,7 @@ Plugins
     platypush/plugins/application.rst
     platypush/plugins/arduino.rst
     platypush/plugins/assistant.google.rst
+    platypush/plugins/assistant.microwakeword.rst
     platypush/plugins/assistant.openai.rst
     platypush/plugins/assistant.openwakeword.rst
     platypush/plugins/assistant.picovoice.rst
