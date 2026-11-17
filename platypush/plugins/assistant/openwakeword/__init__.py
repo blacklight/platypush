@@ -27,11 +27,21 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
         (use with caution as this may consume significant resources).
     :param models_directory: Directory where to store wake word models.
         Default: ``<PLATYPUSH_WORKDIR>/openwakeword/models``
-    :param detection_sensitivity: Wake word detection sensitivity, a float
-        between 0.0 and 1.0 (default: 0.4). Higher values increase the
-        sensitivity, i.e. make the plugin more likely to detect a hotword.
-    :param frame_duration: Audio frame duration in seconds. Default: 0.5
-        seconds.
+    :param detection_threshold: Minimum confidence score (between 0.0 and
+        1.0) for a hotword to be detected. Higher values make detection
+        stricter, i.e. fewer false positives but more missed hotwords.
+        Default: 0.5. Mutually exclusive with ``detection_sensitivity``.
+    :param detection_sensitivity: Alternative to ``detection_threshold``, a
+        float between 0.0 and 1.0. Higher values increase the sensitivity,
+        i.e. the threshold is ``1.0 - detection_sensitivity``.
+    :param frame_duration: Audio frame duration in seconds. Default: 0.08
+        seconds (1280 samples, the frame size recommended by OpenWakeWord).
+        Longer frames only return the highest score over their sub-frames,
+        which can miss hotwords.
+    :param patience_frames: Number of consecutive frames above the detection
+        threshold required before a hotword is detected. Reduces false
+        positives at the cost of a slightly longer detection latency. Default:
+        2. Set to 0 to disable.
     :param enable_speex_noise_suppression: Whether to enable Speex-based
         noise suppression (requires the ``speexdsp_ns`` package to be
         installed). By default it's enabled if the package is available.
@@ -54,13 +64,15 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
         self,
         models: Optional[Iterable[str]] = None,
         models_directory: Optional[str] = None,
-        detection_sensitivity: float = 0.4,
-        frame_duration: float = 0.5,
+        detection_sensitivity: Optional[float] = None,
+        frame_duration: float = 0.08,
         enable_speex_noise_suppression: Optional[bool] = None,
         audio_frame_timeout: float = 5.0,
         pause_seconds_after_hotword: float = 2.0,
         input_device: Optional[Union[int, str]] = None,
         input_volume: float = 100,
+        detection_threshold: Optional[float] = None,
+        patience_frames: int = 2,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -77,15 +89,28 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
             else self._has_speex_dsp
         )
 
-        if not 0 <= detection_sensitivity <= 1:
+        if detection_sensitivity is not None and detection_threshold is not None:
             raise ValueError(
-                "detection_sensitivity must be a float between 0.0 and 1.0"
+                "Set either detection_threshold or detection_sensitivity, not both"
             )
 
-        self.detection_sensitivity = 1.0 - detection_sensitivity
+        if detection_sensitivity is not None:
+            if not 0 <= detection_sensitivity <= 1:
+                raise ValueError(
+                    "detection_sensitivity must be a float between 0.0 and 1.0"
+                )
+            detection_threshold = 1.0 - detection_sensitivity
+
+        if detection_threshold is None:
+            detection_threshold = 0.5
+        if not 0 <= detection_threshold <= 1:
+            raise ValueError("detection_threshold must be a float between 0.0 and 1.0")
+
+        self.detection_threshold = detection_threshold
         self.frame_duration = frame_duration
         self.input_device = input_device
         self.input_volume = input_volume
+        self._patience_frames = patience_frames
         self._pause_seconds_after_hotword = pause_seconds_after_hotword
         self._audio_frame_timeout = audio_frame_timeout
         self._recorder: Optional[AudioRecorder] = None
@@ -94,6 +119,7 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
         self._audio_queue = queue.Queue()
         self._audio_thread: Optional[Thread] = None
         self._last_detection_time = 0.0
+        self._consecutive_hits = 0
         self._conversation_active = Event()
         self._unregister_handlers: List[Callable[[], None]] = []
 
@@ -167,6 +193,7 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
 
             if self._model:
                 self._model.reset()
+            self._consecutive_hits = 0
 
             try:
                 with AudioRecorder(
@@ -211,7 +238,7 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
             self.logger.debug("Discarding stale audio frame")
             return
 
-        if not (self._model is not None):
+        if self._model is None:
             raise AssertionError("Model not initialized")
         prediction = self._model.predict(audio_data.data)
 
@@ -222,14 +249,21 @@ class AssistantOpenwakewordPlugin(RunnablePlugin):
                     best_match = model_name
                     confidence = model_confidence
 
+            self._consecutive_hits = (
+                self._consecutive_hits + 1
+                if confidence >= self.detection_threshold
+                else 0
+            )
+
             if (
-                confidence >= self.detection_sensitivity
+                self._consecutive_hits >= max(1, self._patience_frames)
                 and best_match
                 and (
                     time.time() - self._last_detection_time
                     >= self._pause_seconds_after_hotword
                 )
             ):
+                self._consecutive_hits = 0
                 self._last_detection_time = time.time()
                 self._bus.post(
                     HotwordDetectedEvent(
