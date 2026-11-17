@@ -47,6 +47,7 @@
       ],
       "pip": [
         "numpy",
+        "onnxruntime",
         "sounddevice",
         "speexdsp-ns",
         "webrtcvad"

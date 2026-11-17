@@ -45,6 +45,7 @@
       ],
       "pip": [
         "numpy",
+        "onnxruntime",
         "platypush-vosk",
         "sounddevice",
         "speexdsp-ns",

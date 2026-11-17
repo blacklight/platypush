@@ -201,9 +201,13 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         conversation_max_duration: float = 15.0,
         enable_noise_suppression: Optional[bool] = None,
         vad_enabled: bool = True,
+        vad_backend: str = 'auto',
+        vad_model_path: Optional[str] = None,
         vad_mode: int = 2,
-        vad_speech_threshold: float = 0.3,
+        vad_speech_threshold: float = 0.5,
+        vad_window_duration: float = 0.5,
         energy_vad_threshold: float = 300,
+        noise_floor_factor: float = 2.0,
         **kwargs,
     ):
         """
@@ -231,7 +235,7 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
             seconds).
         :param conversation_end_timeout: How many seconds of silence to wait
             after the last non-silent audio frame before stopping the recording
-            (default: 1.5 seconds).
+            (default: 1.0 seconds).
         :param conversation_max_duration: Maximum conversation duration in seconds
             (default: 15.0 seconds).
         :param enable_noise_suppression: Whether to enable Speex-based noise
@@ -240,24 +244,37 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
             for distant speech. Default: auto-enabled if the package is
             available.
         :param vad_enabled: Whether to use Voice Activity Detection for
-            speech boundary detection (default: True). Uses ``webrtcvad`` if
-            available, otherwise falls back to energy-based detection. If
-            disabled, every audio frame is treated as speech, so the
-            conversation will only end on ``conversation_max_duration`` or
-            :meth:`.stop_conversation`.
+            speech boundary detection (default: True). If disabled, every
+            audio frame is treated as speech, so the conversation will only end
+            on ``conversation_max_duration`` or :meth:`.stop_conversation`.
+        :param vad_backend: VAD backend: ``auto`` (Silero VAD if ``onnxruntime``
+            is available, then WebRTC VAD if ``webrtcvad`` is installed, then
+            energy-based detection), ``silero``, ``webrtc`` or ``energy``
+            (default: ``auto``).
+        :param vad_model_path: Path to the Silero VAD ONNX model. If not set,
+            the official v4.0 model is downloaded into the platypush workdir on
+            first use.
         :param vad_mode: WebRTC VAD aggressiveness mode, 0–3 (default: 2).
             Higher values are more aggressive at filtering non-speech but
-            may miss distant or quiet speech.  Only used when ``webrtcvad``
-            is installed.
-        :param vad_speech_threshold: Fraction of VAD sub-frames within an
-            audio frame that must be classified as speech for the frame to
-            be considered as containing speech (default: 0.3).
+            may miss distant or quiet speech.  Only used by the WebRTC backend.
+        :param vad_speech_threshold: Score (0-1) above which an audio frame is
+            considered as speech (default: 0.5). For Silero it's the speech
+            probability; for WebRTC it's the fraction of VAD sub-frames
+            classified as speech. Frames above the threshold minus a hysteresis
+            margin keep being considered as speech once detected.
+        :param vad_window_duration: Duration in seconds of the sliding window
+            over which the per-frame speech decisions are smoothed by majority
+            vote, so that isolated noise bursts don't extend the conversation
+            (default: 0.5).
         :param energy_vad_threshold: RMS energy threshold for the
-            energy-based VAD fallback (used when ``webrtcvad`` is not
-            installed).  Voices at conversational distance typically
-            produce RMS > 300 on int16 scale (~-34 dBFS).  Lower values
-            improve sensitivity for distant or quiet speech at the cost
+            energy-based VAD backend.  Voices at conversational distance
+            typically produce RMS > 300 on int16 scale (~-34 dBFS).  Lower
+            values improve sensitivity for distant or quiet speech at the cost
             of more false positives.  Default: 300.
+        :param noise_floor_factor: The background noise level is tracked
+            adaptively, and frames whose RMS is not at least this many times the
+            noise floor are never considered as speech (default: 2.0). Increase
+            it if background noise still keeps the conversation alive.
         """
         kwargs["tts_plugin"] = tts_plugin
         super().__init__(**kwargs)
@@ -276,9 +293,13 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
             sample_rate=sample_rate,
             enable_noise_suppression=enable_noise_suppression,
             vad_enabled=vad_enabled,
+            vad_backend=vad_backend,
+            vad_model_path=vad_model_path,
             vad_mode=vad_mode,
             vad_speech_threshold=vad_speech_threshold,
+            vad_window_duration=vad_window_duration,
             energy_vad_threshold=energy_vad_threshold,
+            noise_floor_factor=noise_floor_factor,
         )
         self._start_recording_event = Event()
         self._disable_default_response = False
@@ -352,6 +373,7 @@ class AssistantOpenaiPlugin(AssistantPlugin, RunnablePlugin):
         while not self.should_stop():
             self._wait_recording_start()
             self._recording_state.reset()
+            self._audio_processor.reset()
             self._on_conversation_start()
 
             try:

@@ -112,9 +112,13 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         words: bool = False,
         enable_noise_suppression: Optional[bool] = None,
         vad_enabled: bool = True,
+        vad_backend: str = 'auto',
+        vad_model_path: Optional[str] = None,
         vad_mode: int = 2,
-        vad_speech_threshold: float = 0.3,
+        vad_speech_threshold: float = 0.5,
+        vad_window_duration: float = 0.5,
         energy_vad_threshold: float = 300,
+        noise_floor_factor: float = 2.0,
         **kwargs,
     ):
         """
@@ -156,23 +160,37 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
             background noise and improves recognition, especially for distant
             speech. Default: auto-enabled if the package is available.
         :param vad_enabled: Whether to use Voice Activity Detection for
-            speech boundary detection (default: True). Uses ``webrtcvad`` if
-            available, otherwise falls back to energy-based detection. VAD
-            enables faster end-of-speech detection (~300 ms vs. relying on
-            Vosk partial result timeouts).
+            speech boundary detection (default: True). VAD enables faster
+            end-of-speech detection (~300 ms vs. relying on Vosk partial result
+            timeouts).
+        :param vad_backend: VAD backend: ``auto`` (Silero VAD if ``onnxruntime``
+            is available, then WebRTC VAD if ``webrtcvad`` is installed, then
+            energy-based detection), ``silero``, ``webrtc`` or ``energy``
+            (default: ``auto``).
+        :param vad_model_path: Path to the Silero VAD ONNX model. If not set,
+            the official v4.0 model is downloaded into the platypush workdir on
+            first use.
         :param vad_mode: WebRTC VAD aggressiveness mode, 0–3 (default: 2).
             Higher values are more aggressive at filtering non-speech but
-            may miss distant or quiet speech.  Only used when ``webrtcvad``
-            is installed.
-        :param vad_speech_threshold: Fraction of VAD sub-frames within an
-            audio frame that must be classified as speech for the frame to
-            be considered as containing speech (default: 0.3).
+            may miss distant or quiet speech.  Only used by the WebRTC backend.
+        :param vad_speech_threshold: Score (0-1) above which an audio frame is
+            considered as speech (default: 0.5). For Silero it's the speech
+            probability; for WebRTC it's the fraction of VAD sub-frames
+            classified as speech. Frames above the threshold minus a hysteresis
+            margin keep being considered as speech once detected.
+        :param vad_window_duration: Duration in seconds of the sliding window
+            over which the per-frame speech decisions are smoothed by majority
+            vote, so that isolated noise bursts don't extend the conversation
+            (default: 0.5).
         :param energy_vad_threshold: RMS energy threshold for the
-            energy-based VAD fallback (used when ``webrtcvad`` is not
-            installed).  Voices at conversational distance typically
-            produce RMS > 300 on int16 scale (~-34 dBFS).  Lower values
-            improve sensitivity for distant or quiet speech at the cost
+            energy-based VAD backend.  Voices at conversational distance
+            typically produce RMS > 300 on int16 scale (~-34 dBFS).  Lower
+            values improve sensitivity for distant or quiet speech at the cost
             of more false positives.  Default: 300.
+        :param noise_floor_factor: The background noise level is tracked
+            adaptively, and frames whose RMS is not at least this many times the
+            noise floor are never considered as speech (default: 2.0). Increase
+            it if background noise still keeps the conversation alive.
         """
         super().__init__(**kwargs)
 
@@ -196,9 +214,13 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         self._words = words
         self._enable_noise_suppression = enable_noise_suppression
         self._vad_enabled = vad_enabled
+        self._vad_backend = vad_backend
+        self._vad_model_path = vad_model_path
         self._vad_mode = vad_mode
         self._vad_speech_threshold = vad_speech_threshold
+        self._vad_window_duration = vad_window_duration
         self._energy_vad_threshold = energy_vad_threshold
+        self._noise_floor_factor = noise_floor_factor
         self._model = None
         self._audio_processor: Optional[AudioPreprocessor] = None
         self._start_recording_event = Event()
@@ -415,6 +437,8 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
         5. Use VAD result for speech boundary timing
         """
         rec = self._create_recognizer()
+        if self._audio_processor is not None:
+            self._audio_processor.reset()
         conversation_start = time.time()
         last_speech_time = None
         speech_detected = False
@@ -591,9 +615,13 @@ class AssistantVoskPlugin(AssistantPlugin, RunnablePlugin):
             sample_rate=self._sample_rate,
             enable_noise_suppression=self._enable_noise_suppression,
             vad_enabled=self._vad_enabled,
+            vad_backend=self._vad_backend,
+            vad_model_path=self._vad_model_path,
             vad_mode=self._vad_mode,
             vad_speech_threshold=self._vad_speech_threshold,
+            vad_window_duration=self._vad_window_duration,
             energy_vad_threshold=self._energy_vad_threshold,
+            noise_floor_factor=self._noise_floor_factor,
         )
 
         while not self.should_stop():
