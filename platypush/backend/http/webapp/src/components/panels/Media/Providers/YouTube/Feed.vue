@@ -72,7 +72,8 @@ export default {
       firstLoad: true,
       hideStories: true,
       loading_: false,
-      page: 1,
+      nextPageToken: 1,
+      renderedPageTokens: {},
       selectedResult: null,
     }
   },
@@ -92,22 +93,35 @@ export default {
 
   methods: {
     async loadFeed() {
+      if (this.loading_ || this.nextPageToken == null) {
+        return
+      }
+
+      // Don't load the same page twice
+      if (this.renderedPageTokens[this.nextPageToken]) {
+        return
+      }
+
       this.loading_ = true
       try {
-        this.feed.push(
-          ...(
-            await this.request('youtube.get_feed', {
-              page: this.page,
-            })
-          ).map(item => ({
-            ...item,
-            type: 'youtube',
-          }))
-        )
+        const items = (await this.request('youtube.get_feed', {
+          page: this.nextPageToken,
+        })).map(item => ({
+          ...item,
+          type: 'youtube',
+        }))
+
+        const knownIds = new Set(this.feed.map(item => item.id))
+        const newItems = items.filter(item => !knownIds.has(item.id))
+        this.feed.push(...newItems)
 
         this.firstLoad = false
-        if (this.feed.length) {
-          this.page++
+        this.renderedPageTokens[this.nextPageToken] = true
+
+        if (items.length && newItems.length) {
+          this.nextPageToken = items[items.length - 1].next_page_token
+        } else {
+          this.nextPageToken = null
         }
       } finally {
         this.loading_ = false

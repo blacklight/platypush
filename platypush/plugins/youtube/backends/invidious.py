@@ -228,8 +228,9 @@ class InvidiousBackend(BaseBackend):
         return results
 
     def get_feed(self, page: Optional[Any] = None, **_) -> List[YoutubeVideo]:
-        resp = self._json_dict(self._request("feed", params={"page": page or 1}))
-        return [
+        page = int(page or 1)
+        resp = self._json_dict(self._request("feed", params={"page": page}))
+        videos = [
             self._to_video(video)
             for video in sorted(
                 [
@@ -245,6 +246,11 @@ class InvidiousBackend(BaseBackend):
                 reverse=True,
             )
         ]
+
+        for video in videos:
+            video.next_page_token = page + 1
+
+        return videos
 
     def get_playlists(self, **_) -> List[YoutubePlaylist]:
         return [
