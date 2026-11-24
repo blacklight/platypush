@@ -2,6 +2,7 @@ import colorsys
 import json
 import os
 import threading
+import time
 
 from typing import (
     TYPE_CHECKING,
@@ -50,6 +51,7 @@ class LightTuyaPlugin(RunnablePlugin, LightEntityManager):
     MAX_TEMP = 500
     MAX_HUE = 360
     MAX_SAT = 100
+    MAX_BACKOFF = 900.0
 
     _DEFAULT_DEVICES_FILES = (
         os.path.join(
@@ -102,6 +104,8 @@ class LightTuyaPlugin(RunnablePlugin, LightEntityManager):
         self._bulbs: Dict[str, 'tinytuya.BulbDevice'] = {}
         self._bulb_locks: Dict[str, threading.Lock] = {}
         self._cached_dps: Dict[str, dict] = {}
+        self._poll_failures: Dict[str, int] = {}
+        self._poll_not_before: Dict[str, float] = {}
 
         self._init_devices(devices=devices, devices_file=devices_file)
         self.logger.info(
@@ -748,6 +752,27 @@ class LightTuyaPlugin(RunnablePlugin, LightEntityManager):
             for name, lights in self.groups.items()
         }
 
+    def _update_poll_backoff(self, dev_ids, states: Dict[str, dict]):
+        """
+        Apply exponential backoff to devices that failed to respond to the
+        last poll. Tuya devices can lock their local protocol endpoint after
+        repeated failed session negotiations, so unreachable devices are
+        polled less and less often (up to ``MAX_BACKOFF`` seconds) instead of
+        hammering them every ``poll_interval``.
+        """
+        now = time.monotonic()
+        for dev_id in dev_ids:
+            if (states.get(dev_id) or {}).get('reachable'):
+                self._poll_failures.pop(dev_id, None)
+                self._poll_not_before.pop(dev_id, None)
+                continue
+
+            failures = self._poll_failures[dev_id] = (
+                self._poll_failures.get(dev_id, 0) + 1
+            )
+            delay = min(self.poll_interval * (2**failures), self.MAX_BACKOFF)
+            self._poll_not_before[dev_id] = now + delay
+
     def transform_entities(self, entities: Collection[dict], **_) -> Collection[Entity]:
         new_entities = []
         for entity in entities:
@@ -814,7 +839,17 @@ class LightTuyaPlugin(RunnablePlugin, LightEntityManager):
 
         while not self.should_stop():
             try:
-                states_new = self._get_states()
+                now = time.monotonic()
+                due = [
+                    dev_id
+                    for dev_id in self._dev_info
+                    if now >= self._poll_not_before.get(dev_id, 0.0)
+                ]
+                states_new = dict(states_prev)
+                if due:
+                    states_new.update(self._get_states(due))
+                    self._update_poll_backoff(due, states_new)
+
                 for dev_id, state in states_new.items():
                     prev = states_prev.get(dev_id) or {}
                     if state == prev:
