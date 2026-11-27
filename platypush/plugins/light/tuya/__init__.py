@@ -52,6 +52,8 @@ class LightTuyaPlugin(RunnablePlugin, LightEntityManager):
     MAX_HUE = 360
     MAX_SAT = 100
     MAX_BACKOFF = 900.0
+    _CLOUD_REGIONS = ('eu', 'us', 'cn', 'in')
+    _CLOUD_DEVICES_TTL = 300.0
 
     _DEFAULT_DEVICES_FILES = (
         os.path.join(
@@ -66,6 +68,10 @@ class LightTuyaPlugin(RunnablePlugin, LightEntityManager):
         devices_file: Optional[str] = None,
         poll_interval: Optional[float] = 20.0,
         connect_timeout: float = 5.0,
+        cloud_client_id: Optional[str] = None,
+        cloud_client_secret: Optional[str] = None,
+        cloud_region: Optional[str] = None,
+        key_check_interval: float = 3600.0,
         **kwargs,
     ):
         """
@@ -87,11 +93,26 @@ class LightTuyaPlugin(RunnablePlugin, LightEntityManager):
             events (default: 20 seconds). Set to 0/None to disable polling.
         :param connect_timeout: Timeout for the connection to the devices
             (default: 5 seconds).
+        :param cloud_client_id: Tuya IoT platform API client ID, used to
+            detect and fix rotated device local keys. Falls back to the
+            ``TUYA_CLIENT_ID`` environment variable.
+        :param cloud_client_secret: Tuya IoT platform API client secret.
+            Falls back to the ``TUYA_CLIENT_SECRET`` environment variable.
+        :param cloud_region: Tuya IoT data center region (``eu``, ``us``,
+            ``cn``, ``in``). If unset, all regions are tried.
+        :param key_check_interval: Minimum number of seconds between cloud
+            key checks for the same device (default: 3600).
         """
         super().__init__(**kwargs)
 
         self.poll_interval = poll_interval
         self.connect_timeout = connect_timeout
+        self.cloud_client_id = cloud_client_id or os.environ.get('TUYA_CLIENT_ID')
+        self.cloud_client_secret = cloud_client_secret or os.environ.get(
+            'TUYA_CLIENT_SECRET'
+        )
+        self.cloud_region = cloud_region or os.environ.get('TUYA_REGION')
+        self.key_check_interval = key_check_interval
         self._state_refresh_delay = 0.75
         self._state_refresh_retries = 4
         self.groups: Dict[str, Set[str]] = {
@@ -106,6 +127,13 @@ class LightTuyaPlugin(RunnablePlugin, LightEntityManager):
         self._cached_dps: Dict[str, dict] = {}
         self._poll_failures: Dict[str, int] = {}
         self._poll_not_before: Dict[str, float] = {}
+        self._devices_file: Optional[str] = None
+        self._cloud = None
+        self._cloud_failed = False
+        self._cloud_devices: Dict[str, str] = {}
+        self._cloud_devices_ts = 0.0
+        self._key_check_lock = threading.Lock()
+        self._key_check_not_before: Dict[str, float] = {}
 
         self._init_devices(devices=devices, devices_file=devices_file)
         self.logger.info(
@@ -157,6 +185,7 @@ class LightTuyaPlugin(RunnablePlugin, LightEntityManager):
 
         for fname in candidates:
             if fname and os.path.isfile(os.path.expanduser(fname)):
+                self._devices_file = fname
                 with open(os.path.expanduser(fname)) as f:
                     return json.load(f)
 
@@ -343,6 +372,8 @@ class LightTuyaPlugin(RunnablePlugin, LightEntityManager):
                 states[dev_id] = self._get_state(dev_id)
             except Exception as e:
                 self.logger.warning('Could not get the status of %s: %s', dev_id, e)
+                if '914' in str(e) or 'Check device key' in str(e):
+                    self._maybe_recover_key(dev_id)
                 states[dev_id] = {
                     'id': dev_id,
                     'name': self._dev_info[dev_id]['name'],
@@ -772,6 +803,155 @@ class LightTuyaPlugin(RunnablePlugin, LightEntityManager):
             )
             delay = min(self.poll_interval * (2**failures), self.MAX_BACKOFF)
             self._poll_not_before[dev_id] = now + delay
+
+    def _get_cloud(self):
+        """
+        Lazily create a ``tinytuya.Cloud`` client from the configured
+        credentials, trying each known region until one works.
+        """
+        if self._cloud is not None or self._cloud_failed:
+            return self._cloud
+
+        if not (self.cloud_client_id and self.cloud_client_secret):
+            self._cloud_failed = True
+            return None
+
+        import tinytuya
+
+        regions = [self.cloud_region] if self.cloud_region else self._CLOUD_REGIONS
+        for region in regions:
+            if not region:
+                continue
+            try:
+                cloud = tinytuya.Cloud(
+                    apiRegion=region,
+                    apiKey=self.cloud_client_id,
+                    apiSecret=self.cloud_client_secret,
+                )
+                # Verify credentials actually work for this region
+                devs = cloud.getdevices()
+                if not isinstance(devs, list) or not devs:
+                    continue
+                self._cloud = cloud
+                self.logger.info('Tuya cloud access configured (region: %s)', region)
+                return cloud
+            except Exception as e:
+                self.logger.debug('Tuya cloud region %s unavailable: %s', region, e)
+
+        self._cloud_failed = True
+        return None
+
+    def _get_cloud_devices(self) -> Dict[str, str]:
+        """
+        Return a ``device ID -> local key`` mapping fetched from the Tuya
+        cloud, cached for ``_CLOUD_DEVICES_TTL`` seconds.
+        """
+        now = time.monotonic()
+        if (
+            self._cloud_devices
+            and now - self._cloud_devices_ts < self._CLOUD_DEVICES_TTL
+        ):
+            return self._cloud_devices
+
+        cloud = self._get_cloud()
+        if cloud is None:
+            return {}
+
+        try:
+            devs = cloud.getdevices()
+        except Exception as e:
+            self.logger.debug('Could not fetch Tuya cloud devices: %s', e)
+            return {}
+
+        if isinstance(devs, dict):
+            return {}
+
+        self._cloud_devices = {
+            d['id']: key
+            for d in devs
+            if d.get('id')
+            for key in [d.get('local_key') or d.get('key')]
+            if key
+        }
+        self._cloud_devices_ts = now
+        return self._cloud_devices
+
+    def _persist_device_key(self, dev_id: str):
+        """
+        Write an updated local key back to the ``devices.json`` file the
+        configuration was loaded from, so the fix survives restarts.
+        """
+        if not self._devices_file:
+            return
+
+        try:
+            path = os.path.expanduser(self._devices_file)
+            with open(path) as f:
+                data = json.load(f)
+
+            devs = data if isinstance(data, list) else list(data.values())
+            for dev in devs:
+                if isinstance(dev, dict) and dev.get('id') == dev_id:
+                    if 'key' in dev:
+                        dev['key'] = self._dev_info[dev_id]['key']
+                    if 'local_key' in dev:
+                        dev['local_key'] = self._dev_info[dev_id]['key']
+                    if 'key' not in dev and 'local_key' not in dev:
+                        dev['key'] = self._dev_info[dev_id]['key']
+
+            with open(path, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            self.logger.debug(
+                'Could not persist updated Tuya key for %s: %s', dev_id, e
+            )
+
+    def _maybe_recover_key(self, dev_id: str):
+        """
+        A persistent ``Check device key or version`` (914) failure can mean
+        either that the device local key rotated (device re-pairing or
+        firmware update) or that the device locked its LAN endpoint. Ask
+        the Tuya cloud for the current key: if it differs from the
+        configured one, update it and reconnect; if it matches, the device
+        itself is at fault and likely needs a power cycle.
+        """
+        if not (self.cloud_client_id and self.cloud_client_secret):
+            return
+
+        now = time.monotonic()
+        if now < self._key_check_not_before.get(dev_id, 0.0):
+            return
+        self._key_check_not_before[dev_id] = now + self.key_check_interval
+
+        info = self._dev_info.get(dev_id)
+        if not info:
+            return
+
+        with self._key_check_lock:
+            cloud_key = self._get_cloud_devices().get(dev_id)
+            if not cloud_key:
+                return
+
+            if cloud_key == info['key']:
+                self.logger.warning(
+                    'Tuya device %s keeps failing with a key/version error, '
+                    'but its local key matches the Tuya cloud - the device '
+                    'likely needs a power cycle.',
+                    info.get('name', dev_id),
+                )
+                return
+
+            info['key'] = cloud_key
+            self._reset_bulb(dev_id)
+            self._cached_dps.pop(dev_id, None)
+            self._poll_failures.pop(dev_id, None)
+            self._poll_not_before.pop(dev_id, None)
+            self._persist_device_key(dev_id)
+            self.logger.warning(
+                'Tuya local key for %s had rotated; fetched the new key '
+                'from the Tuya cloud and updated the configuration.',
+                info.get('name', dev_id),
+            )
 
     def transform_entities(self, entities: Collection[dict], **_) -> Collection[Entity]:
         new_entities = []
